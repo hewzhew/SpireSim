@@ -199,10 +199,10 @@ The segment endpoint also omits everything after this limited horizon.
 ```powershell
 cargo test --locked -p sts_guided_search --lib natural::
 cargo test --locked -p sts_guided_search --example natural_demo
-.\py.ps1 -m pytest tools/guided_search/test_natural_demonstrations.py -q
+.\scripts\py.ps1 -m pytest tools/guided_search/test_natural_demonstrations.py -q
 cargo test --locked -p sts_guided_search --lib segment_learning
 .\learning\dev.ps1 refresh-bridge
-.\py.ps1 -m pytest tools/guided_search/test_segment_learning.py -q
+.\scripts\py.ps1 -m pytest tools/guided_search/test_segment_learning.py -q
 ```
 
 Mechanism sentinels deliberately use small artificial decks to check Feed,

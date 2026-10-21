@@ -51,9 +51,9 @@ All commands are PowerShell 7 and use Python's standard library. They never
 build Rust.
 
 ```powershell
-.\wiki.ps1 probe --api-url https://slaythespire.wiki.gg/api.php
+.\scripts\wiki.ps1 probe --api-url https://slaythespire.wiki.gg/api.php
 
-.\wiki.ps1 crawl `
+.\scripts\wiki.ps1 crawl `
   --source-id slaythespire-wikigg-en `
   --api-url https://slaythespire.wiki.gg/api.php `
   --capture-name 2026-08-20-full
@@ -74,7 +74,7 @@ deduplicated by MediaWiki page ID.
 5. Install the downloaded file into a fresh capture path:
 
 ```powershell
-.\wiki.ps1 import-browser `
+.\scripts\wiki.ps1 import-browser `
   --bundle C:\Users\<user>\Downloads\slay-the-spire-huiji-zh-....jsonl.gz `
   --capture-name 2026-08-20-full
 ```
@@ -87,23 +87,23 @@ completion trailer, page-ID digest, and full-file SHA-256 before installation.
 Normalize one verified capture, then rebuild the cross-source index atomically:
 
 ```powershell
-.\wiki.ps1 normalize `
+.\scripts\wiki.ps1 normalize `
   --bundle .oracle-lab/external-research/sources/slaythespire-wikigg-en/captures/2026-08-20-full/export.jsonl.gz `
   --source-root .oracle-lab/external-research/sources/slaythespire-wikigg-en
 
-.\wiki.ps1 rebuild-index
-.\wiki.ps1 verify --bundle <export.jsonl.gz>
-.\wiki.ps1 issues --bundle <export.jsonl.gz>
-.\wiki.ps1 inventory --source-id slay-the-spire-huiji-zh
-.\wiki.ps1 list-pages --source-id slaythespire-wikigg-en --namespace 0 --limit 20
-.\wiki.ps1 search Brutality --source-id slaythespire-wikigg-en
-.\wiki.ps1 search Brutality --content-only
-.\wiki.ps1 search Brutality --namespace 0
-.\wiki.ps1 page --source-id slay-the-spire-huiji-zh --title 残暴
-.\wiki.ps1 page --source-id slaythespire-wikigg-en --title Gremlins --metadata-only
-.\wiki.ps1 page-sections --source-id slaythespire-wikigg-en --title Gremlins
-.\wiki.ps1 structure --source-id slay-the-spire-huiji-zh
-.\wiki.ps1 table --source-id slay-the-spire-huiji-zh --title 'Data:Card data.tabx' --columns 'page,card_id,name_en' --limit 5
+.\scripts\wiki.ps1 rebuild-index
+.\scripts\wiki.ps1 verify --bundle <export.jsonl.gz>
+.\scripts\wiki.ps1 issues --bundle <export.jsonl.gz>
+.\scripts\wiki.ps1 inventory --source-id slay-the-spire-huiji-zh
+.\scripts\wiki.ps1 list-pages --source-id slaythespire-wikigg-en --namespace 0 --limit 20
+.\scripts\wiki.ps1 search Brutality --source-id slaythespire-wikigg-en
+.\scripts\wiki.ps1 search Brutality --content-only
+.\scripts\wiki.ps1 search Brutality --namespace 0
+.\scripts\wiki.ps1 page --source-id slay-the-spire-huiji-zh --title 残暴
+.\scripts\wiki.ps1 page --source-id slaythespire-wikigg-en --title Gremlins --metadata-only
+.\scripts\wiki.ps1 page-sections --source-id slaythespire-wikigg-en --title Gremlins
+.\scripts\wiki.ps1 structure --source-id slay-the-spire-huiji-zh
+.\scripts\wiki.ps1 table --source-id slay-the-spire-huiji-zh --title 'Data:Card data.tabx' --columns 'page,card_id,name_en' --limit 5
 ```
 
 Search treats its query as a literal phrase by default. Use `--raw-query` only
@@ -135,25 +135,25 @@ simulator's stable Rust identity owners. Its daily build and query path is
 Python/PowerShell only; it does not compile or link Rust:
 
 ```powershell
-.\wiki.ps1 simulator-entities
-.\wiki.ps1 rebuild-entities
-.\wiki.ps1 entity-inventory
-.\wiki.ps1 mechanics-scope-inventory --example-limit 3
-.\wiki.ps1 mechanics-scope-inventory --kind relic --example-limit 3
-.\wiki.ps1 entity --kind card --id Brutality
-.\wiki.ps1 entity --query 残暴
-.\wiki.ps1 entity-search 'At the start of your turn' --kind card --id Brutality
-.\wiki.ps1 entity-search 'Weak' --kind encounter --id GremlinGang --include-related
-.\wiki.ps1 entity-page-search 'Weak' --kind enemy --id GremlinFat
-.\wiki.ps1 entity-sections --kind enemy --id GremlinFat
-.\wiki.ps1 entity-section-search 'Weak' --kind enemy --id GremlinFat
-.\wiki.ps1 entity --kind relic --id RunicCube --full-evidence
-.\wiki.ps1 entity-unmatched --side simulator --kind relic --candidate-state some
-.\wiki.ps1 entity-candidate-audit --kind relic
-.\wiki.ps1 entity-candidate-audit --kind relic --details --limit 20
-.\wiki.ps1 entity-reviews
-.\wiki.ps1 entity-conflicts
-.\wiki.ps1 entity-issues
+.\scripts\wiki.ps1 simulator-entities
+.\scripts\wiki.ps1 rebuild-entities
+.\scripts\wiki.ps1 entity-inventory
+.\scripts\wiki.ps1 mechanics-scope-inventory --example-limit 3
+.\scripts\wiki.ps1 mechanics-scope-inventory --kind relic --example-limit 3
+.\scripts\wiki.ps1 entity --kind card --id Brutality
+.\scripts\wiki.ps1 entity --query 残暴
+.\scripts\wiki.ps1 entity-search 'At the start of your turn' --kind card --id Brutality
+.\scripts\wiki.ps1 entity-search 'Weak' --kind encounter --id GremlinGang --include-related
+.\scripts\wiki.ps1 entity-page-search 'Weak' --kind enemy --id GremlinFat
+.\scripts\wiki.ps1 entity-sections --kind enemy --id GremlinFat
+.\scripts\wiki.ps1 entity-section-search 'Weak' --kind enemy --id GremlinFat
+.\scripts\wiki.ps1 entity --kind relic --id RunicCube --full-evidence
+.\scripts\wiki.ps1 entity-unmatched --side simulator --kind relic --candidate-state some
+.\scripts\wiki.ps1 entity-candidate-audit --kind relic
+.\scripts\wiki.ps1 entity-candidate-audit --kind relic --details --limit 20
+.\scripts\wiki.ps1 entity-reviews
+.\scripts\wiki.ps1 entity-conflicts
+.\scripts\wiki.ps1 entity-issues
 ```
 
 `entity-page-search` first resolves one exact simulator kind and stable ID through

@@ -74,7 +74,7 @@ To inspect a recorded schema-4 development trial, provide a JSON list of explici
 requirements and a fresh output directory:
 
 ```powershell
-.\py.ps1 -m tools.guided_search.combat_quality <trial-directory> <fresh-output> --requirements <requirements.json>
+.\scripts\py.ps1 -m tools.guided_search.combat_quality <trial-directory> <fresh-output> --requirements <requirements.json>
 ```
 
 This reads both endpoints for every declared model and case. It checks the

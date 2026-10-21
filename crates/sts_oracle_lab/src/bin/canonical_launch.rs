@@ -12,13 +12,14 @@ pub(super) fn validate(canonical_oracle: bool) -> Result<(), String> {
 
     if !canonical_oracle {
         return Err(
-            "oracle_lab refuses direct execution; run `.\\ol.ps1 <command> ...`".to_string(),
+            "oracle_lab refuses direct execution; run `.\\scripts\\ol.ps1 <command> ...`"
+                .to_string(),
         );
     }
     if BUILT_PROFILE != REQUIRED_PROFILE {
         return Err(format!(
             "oracle_lab was built with forbidden profile `{BUILT_PROFILE}`; \
-             run `.\\ol.ps1 build oracle`"
+             run `.\\scripts\\ol.ps1 build oracle`"
         ));
     }
     let executable_name = if cfg!(windows) {
@@ -36,14 +37,14 @@ pub(super) fn validate(canonical_oracle: bool) -> Result<(), String> {
     let expected = expected.canonicalize().map_err(|error| {
         format!(
             "canonical oracle_lab artifact is missing at {}: {error}; \
-             run `.\\ol.ps1 build oracle`",
+             run `.\\scripts\\ol.ps1 build oracle`",
             expected.display()
         )
     })?;
     if current != expected {
         return Err(format!(
             "oracle_lab refuses non-canonical artifact {}; expected {}; \
-             run `.\\ol.ps1 <command> ...`",
+             run `.\\scripts\\ol.ps1 <command> ...`",
             current.display(),
             expected.display()
         ));
@@ -59,7 +60,7 @@ fn validate_source_freshness(executable: &Path) -> Result<(), String> {
         &repository,
         CanonicalArtifact::OracleHost,
         "canonical oracle laboratory",
-        ".\\ol.ps1 build oracle",
+        ".\\scripts\\ol.ps1 build oracle",
     )
 }
 
@@ -182,7 +183,7 @@ pub(super) fn runtime_source_content_fingerprint() -> Result<String, String> {
         &repository,
         CanonicalArtifact::OracleHost,
         "canonical oracle laboratory",
-        ".\\ol.ps1 build oracle",
+        ".\\scripts\\ol.ps1 build oracle",
     )?;
     source_content_fingerprint(&repository, &dependencies)
 }

@@ -3344,7 +3344,7 @@ fn next_request(
 fn discover_live_session(output_dir: &Path) -> Result<(SessionManifest, SessionPaths), String> {
     if !output_dir.is_dir() {
         return Err(format!(
-            "no Java parity live workspace exists at {}; run .\\java-play.ps1 launch and enter a stable combat decision first",
+            "no Java parity live workspace exists at {}; run .\\scripts\\java-play.ps1 launch and enter a stable combat decision first",
             output_dir.display()
         ));
     }

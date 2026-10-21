@@ -30,7 +30,7 @@
 
 - 沿真实 owner 完成改动，删除被替代的副本；避免由一次故障衍生新的外壳、别名或迁移层。
 - 文档、静态检查和离线测试不启动 Java。实机检查先说明问题和停止条件，尽量复用 resident JVM。
-- Python 和 pytest 使用 `py.ps1`。Rust 提交前运行 `cargo fmt --all -- --check` 与
+- Python 和 pytest 使用 `scripts/py.ps1`。Rust 提交前运行 `cargo fmt --all -- --check` 与
   `git diff --check`；文档检查相对链接。功能修改先跑 owner 窄测，再按风险补集成哨兵。
 - 删除或递归移动前核对显式绝对路径和范围；保留无关修改与未知文件。
 - 可为当前任务创建范围明确、可回退的本地提交；只有用户明确要求时才 push、开 PR 或修改远端。

@@ -246,7 +246,7 @@ does not ensure useful exploration or prevent gradual drift across updates.
 After refreshing the bridge with `learning/dev.ps1`, run:
 
 ```powershell
-.\py.ps1 -m pytest tools/guided_search/test_entity_learning.py -q
+.\scripts\py.ps1 -m pytest tools/guided_search/test_entity_learning.py -q
 cargo test --locked -p sts_guided_search --lib learning_scope_probes -- --ignored --nocapture
 ```
 
@@ -333,7 +333,7 @@ executable hash alongside the panel.
 
 ```powershell
 cargo run --locked -p sts_guided_search --example mechanism_panel -- <fresh-panel-directory>
-.\py.ps1 -m tools.guided_search.mechanism_eval <panel-directory> <entity-trial-directory> <fresh-evaluation-directory>
+.\scripts\py.ps1 -m tools.guided_search.mechanism_eval <panel-directory> <entity-trial-directory> <fresh-evaluation-directory>
 ```
 
 [mechanism_eval.py](mechanism_eval.py) checks the saved training sources against

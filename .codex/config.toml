@@ -1,3 +1,0 @@
-# Inherit the user connection without loading cloud compute tools for local work.
-[mcp_servers.runpod]
-enabled = false

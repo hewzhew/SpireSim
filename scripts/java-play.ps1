@@ -6,7 +6,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$repository = $PSScriptRoot
+$repository = Split-Path -Parent $PSScriptRoot
 $liveBinary = Join-Path $repository 'target\debug\sts_java_parity_live.exe'
 $liveBuildReceipt = Join-Path $repository 'target\debug\sts_java_parity_live.build-receipt.json'
 $compareBinary = Join-Path $repository 'target\debug\sts_java_parity_compare.exe'
@@ -45,18 +45,18 @@ $isolatedStartupTimeoutSeconds = 60
 
 function Show-JavaPlayHelp {
     @'
-Usage: .\java-play.ps1 <command> ...
+Usage: .\scripts\java-play.ps1 <command> ...
 
-  .\java-play.ps1 build
+  .\scripts\java-play.ps1 build
       Build the typed live bridge, shared protocol, offline comparator, and
       fresh-runtime suite owner.
 
-  .\java-play.ps1 install
+  .\scripts\java-play.ps1 install
       Build the Rust bridge and CommunicationMod, deploy the audited Mod JAR,
       back up the CommunicationMod config, and select the live bridge command.
       Slay the Spire and ModTheSpire must be closed.
 
-  .\java-play.ps1 launch [--profile strict|accelerated] [--control combat|run]
+  .\scripts\java-play.ps1 launch [--profile strict|accelerated] [--control combat|run]
       Launch without the ModTheSpire selection window. strict (the default)
       loads BaseMod + CommunicationMod. accelerated additionally loads the
       exact installed SuperFastMode and records its JAR and config identity.
@@ -66,41 +66,41 @@ Usage: .\java-play.ps1 <command> ...
       automation is used. Constructed scenarios use the separate managed
       command below so their saves and preferences stay isolated.
 
-  .\java-play.ps1 status [--json]
+  .\scripts\java-play.ps1 status [--json]
       Show the newest running live session and frame-bound fN:aN actions.
 
-  .\java-play.ps1 act <fN:aN|exact-action-id> [--timeout-seconds N]
+  .\scripts\java-play.ps1 act <fN:aN|exact-action-id> [--timeout-seconds N]
       Submit exactly one action from the latest Java-owned action space and
       wait for its create-new result/successor receipt.
 
-  .\java-play.ps1 start-run --character IRONCLAD --ascension 20 [--seed 0]
+  .\scripts\java-play.ps1 start-run --character IRONCLAD --ascension 20 [--seed 0]
       At a typed main-menu frame, start one run with structured parameters.
 
-  .\java-play.ps1 continue-run [--content-profile current_profile|all_unlocked]
+  .\scripts\java-play.ps1 continue-run [--content-profile current_profile|all_unlocked]
       At a typed main-menu frame, apply the explicit in-memory content profile
       and invoke the original Continue button without editing native storage.
 
-  .\java-play.ps1 hand-select [--card-uuid UUID ...] [--timeout-seconds N]
+  .\scripts\java-play.ps1 hand-select [--card-uuid UUID ...] [--timeout-seconds N]
       At a typed HAND_SELECT frame, atomically submit the ordered UUID set.
       Omit --card-uuid for a legal zero-card confirmation such as Elixir.
 
-  .\java-play.ps1 grid-select --card-uuid UUID [--timeout-seconds N]
+  .\scripts\java-play.ps1 grid-select --card-uuid UUID [--timeout-seconds N]
       At the capability-closed GRID_SELECT frame, submit one advertised UUID.
 
-  .\java-play.ps1 probe elixir-hand-select
+  .\scripts\java-play.ps1 probe elixir-hand-select
       Launch two isolated accelerated run-control sessions, naturally replay
       the zero-card and first-Strike Elixir variants, prove typed invariants,
       create lifecycle receipts plus a workflow-bound proof bundle, and close
       only the managed processes. Passing UUID sandboxes are removed.
 
-  .\java-play.ps1 probe natural-base-strike
+  .\scripts\java-play.ps1 probe natural-base-strike
       Launch one isolated accelerated run-control session, naturally travel
       from a fresh main menu to seed-0 A20 Ironclad's first combat, select the
       minimum-hand-index Strike occurrence from the Java action space, compare
       its adjacent transition with Rust, and promote natural reachability only
       in a lifecycle-bound workflow. This is not strategy or training evidence.
 
-  .\java-play.ps1 mirror plan --run-play-head <head.json> --output <fresh-plan.json> --seed <decimal-engine-u64> [--character IRONCLAD] [--ascension 20] [--scope first-reward|active-prefix]
+  .\scripts\java-play.ps1 mirror plan --run-play-head <head.json> --output <fresh-plan.json> --seed <decimal-engine-u64> [--character IRONCLAD] [--ascension 20] [--scope first-reward|active-prefix]
       Compile the authoritative active path of one retained run-play head that
       has completed its first combat reward into a read-only current V4 mirror
       plan. The default scope stops at the following Map; active-prefix continues
@@ -110,49 +110,49 @@ Usage: .\java-play.ps1 <command> ...
       game's base-35 display text. The plan does not mutate the Rust session or
       claim parity.
 
-  .\java-play.ps1 mirror run --plan <mirror-plan.json>
+  .\scripts\java-play.ps1 mirror run --plan <mirror-plan.json>
       Launch one isolated accelerated run-control session and execute only the
       compiled continuous prefix. Resolve every action from the current Java
       action space and stop at the first typed mismatch.
 
-  .\java-play.ps1 mirror checkpoint --plan <mirror-plan.json>
+  .\scripts\java-play.ps1 mirror checkpoint --plan <mirror-plan.json>
       Execute one continuous prefix ending at a combat root and preserve the
       exact native ENTER_ROOM autosave plus a lifecycle-bound manifest.
 
-  .\java-play.ps1 mirror suffix --checkpoint <checkpoint.json> --plan <extended-plan.json>
+  .\scripts\java-play.ps1 mirror suffix --checkpoint <checkpoint.json> --plan <extended-plan.json>
       Restore one validated native combat checkpoint in fresh isolated storage
       and execute only the target plan's exact suffix. A non-empty suffix that
       reaches a new room's combat root emits a parent-bound next checkpoint.
 
-  .\java-play.ps1 mirror reuse-probe --checkpoint <checkpoint.json> --plan <extended-plan.json>
+  .\scripts\java-play.ps1 mirror reuse-probe --checkpoint <checkpoint.json> --plan <extended-plan.json>
       Compatibility sentinel for batch with the same typed plan supplied as
       two independently reported members.
 
-  .\java-play.ps1 mirror batch --checkpoint <checkpoint.json> --plan <plan.json> --plan <plan.json> [...]
+  .\scripts\java-play.ps1 mirror batch --checkpoint <checkpoint.json> --plan <plan.json> --plan <plan.json> [...]
       Preflight two to sixty-four non-empty combat suffix members against one
       native checkpoint, then execute each in one isolated JVM with a typed,
       save-preserving reset between members. Every member remains a separate
       execution artifact; inputs are closed before launch.
 
-  .\java-play.ps1 paired-root prepare --checkpoint <checkpoint.json> --plan <mirror-plan.json> --session <run-play-session> --at <retained-selector> [--store <artifact-store>]
+  .\scripts\java-play.ps1 paired-root prepare --checkpoint <checkpoint.json> --plan <mirror-plan.json> --session <run-play-session> --at <retained-selector> [--store <artifact-store>]
       Restore one validated native checkpoint in fresh isolated storage, stop
       at its stable combat frame, and run the first probe-only PairedRoot
       preflight against one retained Rust decision. The source run-play head
       is guarded by a before/after inventory hash; the Java sandbox is closed
       after a ready or typed preflight_stopped report.
 
-  .\java-play.ps1 paired-root actions --root <root-id> [--store <artifact-store>]
+  .\scripts\java-play.ps1 paired-root actions --root <root-id> [--store <artifact-store>]
       Read the immutable root's exact Java/Rust action-space and combat
       projections, verify they still agree, and print stable typed handles.
       This is artifact-only and does not launch or require the game.
 
-  .\java-play.ps1 paired-root preview --checkpoint <checkpoint.json> --plan <mirror-plan.json> --session <run-play-session> --at <retained-selector> --action <paired-action-id> [--store <artifact-store>]
+  .\scripts\java-play.ps1 paired-root preview --checkpoint <checkpoint.json> --plan <mirror-plan.json> --session <run-play-session> --at <retained-selector> --action <paired-action-id> [--store <artifact-store>]
       In one isolated Java runtime, prepare the paired root, resolve one
       source-bound stable typed handle, execute it once in Java and Rust, and
       write either an exact child-root receipt or a typed divergence. It never
       moves the source run-play head.
 
-  .\java-play.ps1 paired-root resume-preview --target-root <root-id> --action <paired-action-id> [--action <paired-action-id> ...] [--store <artifact-store>] [--output text|json]
+  .\scripts\java-play.ps1 paired-root resume-preview --target-root <root-id> --action <paired-action-id> [--action <paired-action-id> ...] [--store <artifact-store>] [--output text|json]
       Resolve the target root's immutable native launch payload and retained
       Rust checkpoint from the artifact store, automatically reuse a compatible
       neutral resident or open one, replay the stable commitment chain, and
@@ -163,15 +163,15 @@ Usage: .\java-play.ps1 <command> ...
       before a target activation is issued. JSON output is the typed worker
       boundary and contains no human preamble.
 
-  .\java-play.ps1 paired-root resume-witness --target-root <root-id> --witness-plan <typed-plan.json> [--store <artifact-store>] [--output text|json]
+  .\scripts\java-play.ps1 paired-root resume-witness --target-root <root-id> --witness-plan <typed-plan.json> [--store <artifact-store>] [--output text|json]
       Internal sequential-witness transaction. Continue and recover the initial
       root once, re-resolve each typed intent at its Exact child, compare every
       Java/Rust successor, then reset once. The plan is closed typed evidence;
       this command does not accept action handles, Java UUIDs, or run sessions.
 
-  .\java-play.ps1 paired-root resident --mode open --target-root <root-id> [--store <artifact-store>]
-  .\java-play.ps1 paired-root resident --mode preview --resident <resident-id> --target-root <root-id> --action <action-id>
-  .\java-play.ps1 paired-root resident --mode status|close --resident <resident-id>
+  .\scripts\java-play.ps1 paired-root resident --mode open --target-root <root-id> [--store <artifact-store>]
+  .\scripts\java-play.ps1 paired-root resident --mode preview --resident <resident-id> --target-root <root-id> --action <action-id>
+  .\scripts\java-play.ps1 paired-root resident --mode status|close --resident <resident-id>
       Development-only lifecycle proof for a cross-invocation isolated Java
       resident. The immutable manifest binds exact process start identities,
       launch plan, native bundle, session/connection, sandbox, autosave and
@@ -181,43 +181,43 @@ Usage: .\java-play.ps1 <command> ...
       cross-invocation operation without a stale busy flag. A clean close stops
       only those exact processes and removes only its verified isolated sandbox.
 
-  .\java-play.ps1 scenario create-combat (--case <exact-case-id> | --draft <draft.json>) [--profile strict|accelerated]
+  .\scripts\java-play.ps1 scenario create-combat (--case <exact-case-id> | --draft <draft.json>) [--profile strict|accelerated]
       Launch one isolated scenario-control session, turn a tracked exact case
       or explicit ad-hoc draft into a fresh immutable plan, construct the
       combat at Neow, prove the stable root as constructed_validated, record
       lifecycle/storage evidence, and close managed processes. Failed
       sandboxes are retained for diagnosis.
 
-  .\java-play.ps1 scenario registry
+  .\scripts\java-play.ps1 scenario registry
       Show the supported orchestration recipe, closed typed capabilities,
       dependencies, cardinality, and commit phase without launching the game.
 
-  .\java-play.ps1 scenario cases
+  .\scripts\java-play.ps1 scenario cases
       Validate and show tracked scenario drafts by exact case ID and SHA-256.
 
-  .\java-play.ps1 scenario probe-cases
+  .\scripts\java-play.ps1 scenario probe-cases
       Validate and show tracked root-plus-transition probe drafts by exact ID.
 
-  .\java-play.ps1 scenario trajectories
+  .\scripts\java-play.ps1 scenario trajectories
       Validate and show tracked root-plus-ordered-transition drafts by exact ID
       without launching the game.
 
-  .\java-play.ps1 scenario suites
+  .\scripts\java-play.ps1 scenario suites
       Validate and show tracked fresh-runtime suite manifests by exact ID.
 
-  .\java-play.ps1 scenario shared-suites
+  .\scripts\java-play.ps1 scenario shared-suites
       Validate and show tracked shared-runtime suite manifests by exact ID.
 
-  .\java-play.ps1 scenario shared-trajectory-suites
+  .\scripts\java-play.ps1 scenario shared-trajectory-suites
       Validate and show tracked shared-runtime trajectory suite manifests.
 
-  .\java-play.ps1 scenario probe --probe-case <exact-probe-case-id> [--profile strict|accelerated]
+  .\scripts\java-play.ps1 scenario probe --probe-case <exact-probe-case-id> [--profile strict|accelerated]
       Compile a root-and-transition-bound immutable probe plan before launch,
       construct its isolated combat root, submit the closed typed transition,
       and preserve the adjacent original-game receipt without claiming a Rust
       comparison.
 
-  .\java-play.ps1 scenario trajectory --trajectory-case <exact-trajectory-case-id> [--profile strict|accelerated] [--step-index <zero-based-index>]...
+  .\scripts\java-play.ps1 scenario trajectory --trajectory-case <exact-trajectory-case-id> [--profile strict|accelerated] [--step-index <zero-based-index>]...
       Compile one exact root and its complete ordered typed transition list
       before launch, then resolve and execute each step from successive Java
       action spaces. With no step index, compare every transition and bind the
@@ -225,18 +225,18 @@ Usage: .\java-play.ps1 <command> ...
       more step indices, compare only those transitions and publish an honest
       selected-step attempt without first failing an all-step comparison.
 
-  .\java-play.ps1 scenario verify --probe-case <exact-probe-case-id> [--profile strict|accelerated]
+  .\scripts\java-play.ps1 scenario verify --probe-case <exact-probe-case-id> [--profile strict|accelerated]
       Run the same isolated typed probe, compare its exact adjacent receipt
       with the Rust production stepper, and create a workflow report binding
       the still-separate root, capture, and scoped-comparison evidence.
 
-  .\java-play.ps1 scenario recompare --probe-report <probe-report.json>
-  .\java-play.ps1 scenario recompare-trajectory --trajectory-report <trajectory-report.json> --step-index <zero-based-index>
+  .\scripts\java-play.ps1 scenario recompare --probe-report <probe-report.json>
+  .\scripts\java-play.ps1 scenario recompare-trajectory --trajectory-report <trajectory-report.json> --step-index <zero-based-index>
       Re-run only the Rust comparator from one completed, plan-bound
       constructed probe. Create a fresh comparison/workflow directory without
       launching Java, parsing an action, or modifying the original capture.
 
-  .\java-play.ps1 scenario reuse-probe (--case <exact-case-id> | --draft <draft.json> | --probe-case <exact-probe-case-id>) [--profile strict|accelerated]
+  .\scripts\java-play.ps1 scenario reuse-probe (--case <exact-case-id> | --draft <draft.json> | --probe-case <exact-probe-case-id>) [--profile strict|accelerated]
       In one isolated shared JVM, construct one exact root, perform a typed
       reset to a proven fresh main menu, and construct a second independently
       identified copy of the same root. With --probe-case, capture the same
@@ -244,23 +244,23 @@ Usage: .\java-play.ps1 <command> ...
       then compare both immutable captures offline. This is prerequisite
       lifecycle evidence, not yet a production warm suite.
 
-  .\java-play.ps1 scenario suite --suite <exact-suite-id>
+  .\scripts\java-play.ps1 scenario suite --suite <exact-suite-id>
       Run every typed suite member sequentially with its own fresh process and
       isolated storage, then bind the member workflows into one aggregate.
       This reduces supervision; it does not reuse a JVM or hide startup cost.
 
-  .\java-play.ps1 scenario shared-suite --suite <exact-suite-id>
+  .\scripts\java-play.ps1 scenario shared-suite --suite <exact-suite-id>
       Compile all member UUID plans before launch, capture every member and
       inter-member reset in one isolated JVM, then shut down and bind every
       offline comparison plus the managed lifecycle into one aggregate.
       This reduces repeated startup cost while keeping per-member evidence.
 
-  .\java-play.ps1 scenario shared-trajectory-suite --suite <exact-suite-id>
+  .\scripts\java-play.ps1 scenario shared-trajectory-suite --suite <exact-suite-id>
       Compile every complete trajectory plan before launch, capture all
       ordered steps and typed inter-member resets in one isolated JVM, then
       compare each immutable trajectory offline and bind one managed lifecycle.
 
-  .\java-play.ps1 doctor
+  .\scripts\java-play.ps1 doctor
       Inspect bridge freshness, installed Mod identity, config, and processes.
 
 The live session, frames, requests, receipts, and transcript are written below
@@ -273,7 +273,7 @@ function Assert-LiveBridgeFresh {
         Executable = $liveBinary
         Repository = $repository
         Label = 'Java parity live bridge'
-        RebuildCommand = '.\java-play.ps1 build'
+        RebuildCommand = '.\scripts\java-play.ps1 build'
         CargoReceipt = $liveBuildReceipt
         CargoPackage = 'sts_java_parity_live'
         AdditionalInputs = @(
@@ -289,7 +289,7 @@ function Assert-JavaParityComparatorFresh {
         Executable = $compareBinary
         Repository = $repository
         Label = 'Java parity offline comparator'
-        RebuildCommand = '.\java-play.ps1 build'
+        RebuildCommand = '.\scripts\java-play.ps1 build'
         CargoReceipt = $compareBuildReceipt
         CargoPackage = 'sts_java_parity_compare'
         AdditionalInputs = @(
@@ -306,7 +306,7 @@ function Assert-JavaParitySuiteFresh {
         Executable = $suiteBinary
         Repository = $repository
         Label = 'Java parity suite owner'
-        RebuildCommand = '.\java-play.ps1 build'
+        RebuildCommand = '.\scripts\java-play.ps1 build'
         CargoReceipt = $suiteBuildReceipt
         CargoPackage = 'sts_java_parity_compare'
         AdditionalInputs = @(
@@ -321,7 +321,7 @@ function Assert-JavaParitySuiteFresh {
 function Invoke-LiveBridge {
     param([Parameter(Mandatory)] [string[]] $CommandArguments)
     if (-not (Test-Path -LiteralPath $liveBinary -PathType Leaf)) {
-        throw "Java parity live bridge is missing: $liveBinary. Run .\java-play.ps1 build."
+        throw "Java parity live bridge is missing: $liveBinary. Run .\scripts\java-play.ps1 build."
     }
     & $liveBinary @CommandArguments
     if ($LASTEXITCODE -ne 0) {
@@ -945,7 +945,7 @@ function Start-JavaPlayLaunch([string[]] $CommandArguments, [switch] $Hidden, [o
     }
     if ($options.ControlProfile -eq 'parity_scenario_control' -and
         $Storage.Class -ne 'isolated_working_directory_v1') {
-        throw 'Scenario control requires managed isolated storage. Use .\java-play.ps1 scenario create-combat instead of interactive launch.'
+        throw 'Scenario control requires managed isolated storage. Use .\scripts\java-play.ps1 scenario create-combat instead of interactive launch.'
     }
     Assert-LiveBridgeFresh
     Assert-GameClosed
@@ -992,7 +992,7 @@ function Invoke-JavaPlayLaunch([string[]] $CommandArguments) {
     if ($profile -eq 'accelerated') {
         Write-Output "SuperFastMode delta_multiplier=$($plan.Acceleration.settings.values.delta_multiplier) instant_lerp=$($plan.Acceleration.settings.values.is_instant_lerp)"
     }
-    Write-Output 'Run .\java-play.ps1 status at the next typed stable decision.'
+    Write-Output 'Run .\scripts\java-play.ps1 status at the next typed stable decision.'
 }
 
 function Wait-JavaPlayProbeSession([object] $Launch, [int] $TimeoutSeconds = 30) {
@@ -1415,7 +1415,7 @@ function Invoke-JavaPlayPairedRootResident(
             throw 'Paired-root resident preview requires --resident, --target-root and --action.'
         }
         if (-not (Test-Path -LiteralPath $runPlayWorkbench -PathType Leaf)) {
-            throw 'Run-play workbench is missing. Run .\run-play.ps1 build first.'
+            throw 'Run-play workbench is missing. Run .\scripts\run-play.ps1 build first.'
         }
         $lease = $AcquiredLease
         if ($null -eq $lease) {
@@ -1737,7 +1737,7 @@ function Invoke-JavaPlayPairedRootResident(
     }
     Assert-GameClosed
     if (-not (Test-Path -LiteralPath $runPlayWorkbench -PathType Leaf)) {
-        throw 'Run-play workbench is missing. Run .\run-play.ps1 build first.'
+        throw 'Run-play workbench is missing. Run .\scripts\run-play.ps1 build first.'
     }
     $storePath = Resolve-JavaPlayPairedRootStore $options
     [IO.Directory]::CreateDirectory($pairedRootResidentOutput) | Out-Null
@@ -3220,7 +3220,7 @@ function Assert-JavaPlayPairedRootActionObservation(
 
 function Invoke-JavaPlayPairedRootActions([hashtable] $Options) {
     if (-not (Test-Path -LiteralPath $runPlayWorkbench -PathType Leaf)) {
-        throw 'Run-play workbench is missing. Run .\run-play.ps1 build first.'
+        throw 'Run-play workbench is missing. Run .\scripts\run-play.ps1 build first.'
     }
     $storePath = Resolve-JavaPlayPairedRootStore $Options
     [IO.Directory]::CreateDirectory($pairedRootOutput) | Out-Null
@@ -3415,7 +3415,7 @@ function Invoke-JavaPlayPairedRootResidentBatch(
 function Invoke-JavaPlayPairedRootResumePreview([hashtable] $Options, [string[]] $ActionIds) {
     Assert-LiveBridgeFresh
     if (-not (Test-Path -LiteralPath $runPlayWorkbench -PathType Leaf)) {
-        throw 'Run-play workbench is missing. Run .\run-play.ps1 build first.'
+        throw 'Run-play workbench is missing. Run .\scripts\run-play.ps1 build first.'
     }
     if ($ActionIds.Count -lt 1 -or $ActionIds.Count -gt 64) {
         throw 'Paired-root resume-preview requires between one and sixty-four actions.'
@@ -3475,7 +3475,7 @@ function Invoke-JavaPlayPairedRootResumePreview([hashtable] $Options, [string[]]
 function Invoke-JavaPlayPairedRootResumeWitness([hashtable] $Options) {
     Assert-LiveBridgeFresh
     if (-not (Test-Path -LiteralPath $runPlayWorkbench -PathType Leaf)) {
-        throw 'Run-play workbench is missing. Run .\run-play.ps1 build first.'
+        throw 'Run-play workbench is missing. Run .\scripts\run-play.ps1 build first.'
     }
     $planPath = [IO.Path]::GetFullPath($(if ([IO.Path]::IsPathRooted([string]$Options['--witness-plan'])) {
         [string]$Options['--witness-plan']
@@ -3722,7 +3722,7 @@ function Invoke-JavaPlayPairedRoot([string[]] $CommandArguments) {
     }
     if ($CommandArguments.Count -lt 1 -or $CommandArguments[0] -notin @('actions','prepare','preview','resume-preview','resume-witness') -or
         (($CommandArguments.Count - 1) % 2) -ne 0) {
-        throw 'Usage: .\java-play.ps1 paired-root actions --root <root-id> [--store <artifact-store>]; prepare --checkpoint <checkpoint.json> --plan <mirror-plan.json> --session <run-play-session> --at <retained-selector> [--store <artifact-store>]; preview with the same source inputs plus one --action <paired-action-id>; resume-preview --target-root <root-id> --action <paired-action-id> [--action <paired-action-id> ...] [--store <artifact-store>] [--output text|json]; or resume-witness --target-root <root-id> --witness-plan <typed-plan.json> [--store <artifact-store>] [--output text|json]'
+        throw 'Usage: .\scripts\java-play.ps1 paired-root actions --root <root-id> [--store <artifact-store>]; prepare --checkpoint <checkpoint.json> --plan <mirror-plan.json> --session <run-play-session> --at <retained-selector> [--store <artifact-store>]; preview with the same source inputs plus one --action <paired-action-id>; resume-preview --target-root <root-id> --action <paired-action-id> [--action <paired-action-id> ...] [--store <artifact-store>] [--output text|json]; or resume-witness --target-root <root-id> --witness-plan <typed-plan.json> [--store <artifact-store>] [--output text|json]'
     }
     $operation = $CommandArguments[0]
     $options = @{}
@@ -3803,7 +3803,7 @@ function Invoke-JavaPlayPairedRoot([string[]] $CommandArguments) {
     Assert-LiveBridgeFresh
     Assert-GameClosed
     if (-not (Test-Path -LiteralPath $runPlayWorkbench -PathType Leaf)) {
-        throw 'Run-play workbench is missing. Run .\run-play.ps1 build first.'
+        throw 'Run-play workbench is missing. Run .\scripts\run-play.ps1 build first.'
     }
     $checkpoint = Read-JavaPlayNativeCheckpoint $options['--checkpoint']
     $planPath = [IO.Path]::GetFullPath($(if ([IO.Path]::IsPathRooted($options['--plan'])) {
@@ -4172,7 +4172,7 @@ function Invoke-JavaPlayMirror([string[]] $CommandArguments) {
         Invoke-JavaPlayMirrorCheckpointBatch -CheckpointArgument $CommandArguments[2] -PlanArguments $planArguments.ToArray() -InvocationMode 'batch'
         return
     }
-    throw 'Usage: .\java-play.ps1 mirror plan ... | .\java-play.ps1 mirror run --plan <plan> | .\java-play.ps1 mirror checkpoint --plan <plan> | .\java-play.ps1 mirror suffix --checkpoint <checkpoint.json> --plan <extended-plan> | .\java-play.ps1 mirror batch --checkpoint <checkpoint.json> --plan <extended-plan> --plan <extended-plan> [...]'
+    throw 'Usage: .\scripts\java-play.ps1 mirror plan ... | .\scripts\java-play.ps1 mirror run --plan <plan> | .\scripts\java-play.ps1 mirror checkpoint --plan <plan> | .\scripts\java-play.ps1 mirror suffix --checkpoint <checkpoint.json> --plan <extended-plan> | .\scripts\java-play.ps1 mirror batch --checkpoint <checkpoint.json> --plan <extended-plan> --plan <extended-plan> [...]'
 }
 
 if ($Arguments.Count -eq 0 -or $Arguments[0] -in @('help','--help','-h')) {

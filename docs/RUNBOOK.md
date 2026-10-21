@@ -1,5 +1,7 @@
 # 运行入口
 
+源码开发命令统一位于 [`scripts/`](../scripts/README.md)，下文命令可直接从仓库根目录运行。本地如需继续使用 `./py.ps1`、`./run-play.ps1`、`node ./p` 等短命令，可执行一次 `./scripts/setup-local.ps1` 创建不纳入 Git 的转发入口。
+
 Java ↔ Rust 的逐动作执行与原始采集由 `sts_parity_lockstep_runner` 拥有；完整任务用
 `replay --suite` 离线复验。跨端职责见 [ARCHITECTURE](ARCHITECTURE.md)，验收范围见
 [TESTING](TESTING.md) 与[环境验收](architecture/environment-acceptance.md)。
@@ -11,9 +13,9 @@ Java ↔ Rust 的逐动作执行与原始采集由 `sts_parity_lockstep_runner` 
 | Rust 单机跑局 | `run-play.ps1`；状态、动作、分支与现存战斗搜索 |
 | 对象式交互 | [tools/run_play](../tools/run_play/README.md)；直连同一 Rust 控制器 |
 | dsh 原生跑局 | [dsh 插件](../tools/dsh_player/README.md)；官方插件页安装，选择“杀戮尖塔 A20H”预设 |
-| 观察与介入原生 dsh 玩家 | 聊天标题旁的“对局”工作台；可暂停、返回保留点或回到刚才。维护者也可用 `node .\p observe` 汇总，`observe N` 定位调用，`observe live` 核对游戏 |
+| 观察与介入原生 dsh 玩家 | 聊天标题旁的“对局”工作台；可暂停、返回保留点或回到刚才。维护者也可用 `node .\scripts\p.mjs observe` 汇总，`observe N` 定位调用，`observe live` 核对游戏 |
 | 本机 dsh 服务 | 配置 `.oracle-lab/dsh-web.json` 后用 `dsh.ps1` 启动；前端热更新和后端重启的范围见插件维护入口；聊天标题旁的“地图”查看当前幕 |
-| 脚本复核玩家 | 同一插件的诊断入口；`node .\p player` 查看，`player next` 调查，`player accept/replace` 复核后执行 |
+| 脚本复核玩家 | 同一插件的诊断入口；`node .\scripts\p.mjs player` 查看，`player next` 调查，`player accept/replace` 复核后执行 |
 | Java 控制或机制诊断 | `java-play.ps1`；CommunicationMod、原游戏观察与 typed 动作 |
 | Run + RNG 差分 | `sts_parity_lockstep_runner`；逐动作对齐、自然轨迹采集与离线复验 |
 | 定向战斗证据 | `ol.ps1`、`cs.ps1`；见 [combat evidence](runbooks/combat-evidence.md) |
@@ -36,7 +38,7 @@ PairedRoot 与 Rust workbench 保留为实验组件。使用前检查其当前�
 ## Rust 交互
 
 ```powershell
-.\run-play.ps1 --help
+.\scripts\run-play.ps1 --help
 ```
 
 `run_play new --session PATH --seed N --character silent --ascension 20 --goal heart-victory`
@@ -95,10 +97,10 @@ PairedRoot 与 Rust workbench 保留为实验组件。使用前检查其当前�
 ## Java 与实验组件
 
 在非战斗决策时，`p.ps1 deck-lab` 从当前精确局面做小型遭遇实验；先用
-`.\p.ps1 deck-lab --list` 查看本幕诊断遭遇及显式 Heart 试验，选择要检查的怪，再给每场转换、时间和情景数：
+`.\scripts\p.ps1 deck-lab --list` 查看本幕诊断遭遇及显式 Heart 试验，选择要检查的怪，再给每场转换、时间和情景数：
 
 ```powershell
-.\p.ps1 deck-lab --encounter TheHeart --scenarios 3 `
+.\scripts\p.ps1 deck-lab --encounter TheHeart --scenarios 3 `
   --work 200000 --ms 8000 --output .oracle-lab/strategic/<new-result>.json
 ```
 
@@ -157,15 +159,14 @@ PairedRoot 与 Rust workbench 保留为实验组件。使用前检查其当前�
 `ironclad`。bootstrap、卡池和原生存档选择都绑定该角色。需要替换当前实验局时显式使用
 `--replace-active`。各角色的实际机制范围由 adapter 合同和原始轨迹记录给出。
 
-项目 [Codex 配置](../.codex/config.toml) 只关闭继承的 `runpod` MCP。
-旧资料和 workbench MCP 前端已由 Git 历史保留；当前资料 CLI 与跑局 CLI 不需要重启客户端。
+个人 Codex 配置留在本机的 `.codex/`，不随源码发布；项目的资料 CLI 与跑局 CLI 不依赖该配置。
 
 ## 构建与检查
 
 ```powershell
 cargo test --locked -p <owner-package> <filter>
 cargo fmt --all -- --check
-.\py.ps1 -m pytest <test-path> -q
+.\scripts\py.ps1 -m pytest <test-path> -q
 git diff --check
 ```
 

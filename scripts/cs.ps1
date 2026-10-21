@@ -6,7 +6,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$repository = $PSScriptRoot
+$repository = Split-Path -Parent $PSScriptRoot
 $frontend = Join-Path $repository 'target\debug\combat_search_v2.exe'
 $worker = Join-Path $repository 'target\release\combat_search_v2_worker.exe'
 . (Join-Path $repository 'tools\cargo_artifact_contract.ps1')
@@ -39,19 +39,19 @@ try {
     $helpRequest = -not $Arguments -or $Arguments.Count -eq 0 -or $Arguments[0] -in @('--help', '-h')
     if ($helpRequest) {
         if (-not (Test-Path -LiteralPath $frontend -PathType Leaf)) {
-            throw 'Combat-search help frontend is not built. Run: .\cs.ps1 build frontend'
+            throw 'Combat-search help frontend is not built. Run: .\scripts\cs.ps1 build frontend'
         }
         Assert-CargoArtifactFresh -Executable $frontend -Repository $repository `
-            -Label 'Combat-search help frontend' -RebuildCommand '.\cs.ps1 build frontend' `
+            -Label 'Combat-search help frontend' -RebuildCommand '.\scripts\cs.ps1 build frontend' `
             -AdditionalInputs @('crates/sts_combat_search_driver/Cargo.toml')
         Invoke-Checked $frontend $Arguments
         exit 0
     }
     if (-not (Test-Path -LiteralPath $worker -PathType Leaf)) {
-        throw 'Combat-search worker is not built. Run: .\cs.ps1 build worker'
+        throw 'Combat-search worker is not built. Run: .\scripts\cs.ps1 build worker'
     }
     Assert-CargoArtifactFresh -Executable $worker -Repository $repository `
-        -Label 'Combat-search worker' -RebuildCommand '.\cs.ps1 build worker' `
+        -Label 'Combat-search worker' -RebuildCommand '.\scripts\cs.ps1 build worker' `
         -AdditionalInputs @('crates/sts_combat_search_driver/Cargo.toml')
     Invoke-Checked $worker $Arguments
 }

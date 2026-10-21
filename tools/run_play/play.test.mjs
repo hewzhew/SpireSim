@@ -8,12 +8,12 @@ import { fileURLToPath } from 'node:url';
 import { actTrimmingEndedCombat, applyPotionSkin, decisionDocumentFromObservation, expandRepeatSugar, freshRecordDirectory, mapGraphFromObservation, normalizeActionTokens, parseChoiceToken, parseDecisionPotions, renderMapGrid, resolvePotionToken, resolveSession, summarizeDecisionJson } from './play.mjs';
 
 test('CLI help prints usage without opening a game connection', () => {
-  const entry = fileURLToPath(new URL('../../p', import.meta.url));
+  const entry = fileURLToPath(new URL('../../scripts/p.mjs', import.meta.url));
   for (const flag of ['help', '--help', '-h']) {
     const result = spawnSync(process.execPath, [entry, flag],
       { encoding: 'utf8', windowsHide: true });
     assert.equal(result.status, 0, result.stderr);
-    assert.match(result.stdout, /usage: \.\/p/);
+    assert.match(result.stdout, /usage: node scripts\/p\.mjs/);
     assert.match(result.stdout, /research \[ms\] \[work transitions\]/);
     assert.match(result.stdout, /research <effort> \[ms\]/);
     assert.match(result.stdout, /accept \[--continue\]/);

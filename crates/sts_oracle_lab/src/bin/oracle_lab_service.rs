@@ -58,7 +58,7 @@ fn absolute_from_repository(path: &Path) -> PathBuf {
 fn validate_canonical_launch(canonical_oracle: bool) -> Result<(), String> {
     if !canonical_oracle {
         return Err(
-            "oracle_lab_service is an internal resident host; start it with `.\\ol-live.ps1 start`"
+            "oracle_lab_service is an internal resident host; start it with `.\\scripts\\ol-live.ps1 start`"
                 .to_string(),
         );
     }

@@ -7,6 +7,7 @@
 | 首次安装、完整复验与接入策略 | [Getting started](getting-started.md) |
 | 整理可独立使用的发布候选 | [发布候选](runbooks/release.md) |
 | 选择运行工具、构建与测试 | [RUNBOOK](RUNBOOK.md) |
+| 开发脚本与本地短命令 | [scripts](../scripts/README.md) |
 | Java ↔ Rust 职责与对齐设计 | [ARCHITECTURE](ARCHITECTURE.md)、[TESTING](TESTING.md) |
 | 完整任务验收与覆盖组织 | [环境验收](architecture/environment-acceptance.md) |
 | Python 训练环境、安装包与批量接口 | [Python bridge](../bindings/python_learning/README.md) |
@@ -16,7 +17,7 @@
 | 战斗搜索实现 | [搜索 owner](architecture/combat-search.md) |
 | 本地网络与搜索实验 | [实验索引](../tools/guided_search/README.md) |
 | 学习目标与评测 | [策略研究边界](architecture/strategic-agent.md) |
-| 自主玩家的信息权限与研究图谱 | [研究路线图](../RESEARCH_ROADMAP.md) |
+| 自主玩家的信息权限与研究图谱 | [研究路线图](research-roadmap.md) |
 | 阅读机制和高手资料 | [本地资料入口](../reference/README.md) |
 | 性能定位 | [性能工具](runbooks/performance.md) |
 

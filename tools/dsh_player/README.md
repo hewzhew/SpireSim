@@ -129,9 +129,9 @@ API 密钥使用 dsh 自己的模型配置。
 已配置的工作区可以在仓库根目录运行：
 
 ```powershell
-.\dsh.ps1
-.\dsh.ps1 status
-.\dsh.ps1 restart
+.\scripts\dsh.ps1
+.\scripts\dsh.ps1 status
+.\scripts\dsh.ps1 restart
 ```
 
 启动器在后台运行服务，并打印可直接打开的地址。要重新试跑，新建聊天；重启服务保留聊天和游戏。
@@ -187,18 +187,18 @@ API 密钥使用 dsh 自己的模型配置。
 数据目录和会话；`--home` 可用相对路径，`--chat` 可用唯一的会话 ID 片段：
 
 ```powershell
-node .\p observe list --home <dsh 数据目录>
-node .\p observe --home <dsh 数据目录> --chat <会话 ID 片段>
+node .\scripts\p.mjs observe list --home <dsh 数据目录>
+node .\scripts\p.mjs observe --home <dsh 数据目录> --chat <会话 ID 片段>
 ```
 
 选定后只需以下短命令。这份观察来源单独保存，不切换命令行的默认游戏。
 
 | 要看什么 | 命令 |
 | --- | --- |
-| 最近一轮的停点、错误和 token 用量 | `node .\p observe` |
-| 第 28 步的输出、命令、完整返回及紧接着的模型回应 | `node .\p observe 28` |
-| 还原第 28 步的模型输入 | `node .\p observe 28 input` |
-| 核对当前游戏和完整库存 | `node .\p observe live` |
+| 最近一轮的停点、错误和 token 用量 | `node .\scripts\p.mjs observe` |
+| 第 28 步的输出、命令、完整返回及紧接着的模型回应 | `node .\scripts\p.mjs observe 28` |
+| 还原第 28 步的模型输入 | `node .\scripts\p.mjs observe 28 input` |
+| 核对当前游戏和完整库存 | `node .\scripts\p.mjs observe live` |
 
 默认查询和逐步展开只读日志，不连接游戏、不调用模型，也不推进游戏。
 预设要求模型在影响决策的事实或命令含义不清时，先简述疑问，再查询并使用答案。
@@ -230,8 +230,8 @@ npm --prefix ./tools/dsh_player ci --ignore-scripts --no-audit --no-fund
 查看当前局面，再继续运行复核玩家：
 
 ```powershell
-node .\p player
-node .\p player next
+node .\scripts\p.mjs player
+node .\scripts\p.mjs player next
 ```
 
 `player` 显示局面、卡组和待执行操作。`player next` 启动或恢复模型的工具调用循环，
@@ -249,18 +249,18 @@ Pending proposal (not executed): take:Disarm#0
 这表示模型计划领取 Disarm，正在等待复核。确认选择合适后执行：
 
 ```powershell
-node .\p player accept
+node .\scripts\p.mjs player accept
 ```
 
-`accept` 执行后保持暂停。要执行后接着运行，使用 `node .\p player accept --continue`；
+`accept` 执行后保持暂停。要执行后接着运行，使用 `node .\scripts\p.mjs player accept --continue`；
 玩家会运行到下一复核停点或本次运行结束。改选或补充指导的命令如下：
 
 | 想做什么 | 命令 |
 | --- | --- |
-| 换成自己选的动作 | `node .\p player replace <命令>` |
-| 改选后继续运行 | `node .\p player replace --continue <命令>` |
-| 让玩家根据纠正重新决策 | `node .\p player reject <指导>` |
-| 为当前选择补充指导 | `node .\p player coach <指导>` |
+| 换成自己选的动作 | `node .\scripts\p.mjs player replace <命令>` |
+| 改选后继续运行 | `node .\scripts\p.mjs player replace --continue <命令>` |
+| 让玩家根据纠正重新决策 | `node .\scripts\p.mjs player reject <指导>` |
+| 为当前选择补充指导 | `node .\scripts\p.mjs player coach <指导>` |
 
 `replace` 会执行改选的动作；`reject` 和 `coach` 保存指导。指导作用于当前商店、战斗或其他正在处理的选择。
 已有待复核操作时，先接受、改选或拒绝，再继续运行。
@@ -269,14 +269,14 @@ node .\p player accept
 `--continue` 在执行成功并关闭执行连接后恢复玩家；执行出错时停下供审阅者检查。
 复核停点的粒度会决定高级模型需要介入的频率。
 
-要换一局，可以用 `node .\p <游戏短名> player` 选中它，之后继续使用上面的短命令。
+要换一局，可以用 `node .\scripts\p.mjs <游戏短名> player` 选中它，之后继续使用上面的短命令。
 
 ## 查看最近一次调用
 
 ```powershell
-node .\p player inspect
-node .\p player inspect 1
-node .\p player inspect 1 input
+node .\scripts\p.mjs player inspect
+node .\scripts\p.mjs player inspect 1
+node .\scripts\p.mjs player inspect 1 input
 ```
 
 `inspect` 汇总最近一次运行的供应局面、工具调用、返回和记录中的最终停点，合并没有变化的输入。
@@ -293,7 +293,7 @@ node .\p player inspect 1 input
 
 ## 出错后怎样继续
 
-先用 `node .\p player` 查看实际局面，再决定下一步。组合命令逐项执行，前面已经完成的动作会保留。
+先用 `node .\scripts\p.mjs player` 查看实际局面，再决定下一步。组合命令逐项执行，前面已经完成的动作会保留。
 确认哪些动作已经生效后，用 `player reject <纠正>` 说明该如何接续，再继续运行。
 如果玩家仍在运行，先等它停下。
 

@@ -74,14 +74,14 @@ To verify the installed package against recorded original-game play, run from
 the repository root:
 
 ```powershell
-.\py.ps1 bindings/python_learning/tests/trajectory.py --evidence <java-evidence> --output <new-artifact-directory>
+.\scripts\py.ps1 bindings/python_learning/tests/trajectory.py --evidence <java-evidence> --output <new-artifact-directory>
 ```
 
 For a manual session that includes native recovery or combat retries, select
 its source explicitly:
 
 ```powershell
-.\py.ps1 bindings/python_learning/tests/trajectory.py --session <manual-session-id> --output <new-artifact-directory>
+.\scripts\py.ps1 bindings/python_learning/tests/trajectory.py --session <manual-session-id> --output <new-artifact-directory>
 ```
 
 `--repository` selects the owning checkout when needed. This uses the native
@@ -712,7 +712,7 @@ silently restoring as the ordinary `all` surface.
 A fresh batch may instead start from exact later-run combat boundaries via
 `LearningBatchEnv.from_combat_root_artifact_bytes(payload,
 expected_roots=..., max_bytes=...)`. The payload is the versioned opaque batch
-written by `.\ol.ps1 learning-root export`; Rust checks its byte bound,
+written by `.\scripts\ol.ps1 learning-root export`; Rust checks its byte bound,
 exact root count, canonical encoding, unique root identities, recomputed root
 identity/context, and active combat boundary before exposing any slot. Python
 never parses a production continuation or simulator checkpoint. Private branch

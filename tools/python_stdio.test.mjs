@@ -8,7 +8,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 const repository = fileURLToPath(new URL('../', import.meta.url));
-const wrapper = fileURLToPath(new URL('../py.ps1', import.meta.url));
+const wrapper = fileURLToPath(new URL('../scripts/py.ps1', import.meta.url));
 const quote = (value) => `'${value.replaceAll("'", "''")}'`;
 
 function worker(args, t) {

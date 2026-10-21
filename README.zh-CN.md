@@ -1,58 +1,32 @@
 # sts_simulator
 
-`sts_simulator` 是一个非官方的 Rust《杀戮尖塔》模拟器，也是 Java 原游戏对齐、精确搜索和
-typed 决策证据的研究工作区。它还不是已经打磨完成的通用库或完整应用。
+[English](README.md) | 简体中文
 
-## 当前方向
+一个非官方的 Rust《杀戮尖塔》模拟器和训练环境，提供原游戏比较工具，以及可选的规划与搜索能力。
 
-项目当前希望同时达到两个长期目标：
+模拟器支持铁甲战士、静默猎手、故障机器人与观者，包括进阶 20 和心脏目标。Python 包提供批量对局、公开观察、合法决策候选、checkpoint、奖励和终局结果。Rust 负责游戏状态与执行，Python 调用方负责选择动作。训练运行不依赖 Java、Steam 或原游戏安装。
 
-- Rust 保留高速搜索和可分叉模拟能力；
-- Java 原游戏只跟随真正采用的路线，作为逐步 oracle 和未来直播画面。
+## 从这里开始
 
-为避免 Rust 先走完一局、Java 通宵重放后才发现早期 RNG 或机制分歧，下一条候选主线是
-**提交路线的锁步差分运行器**：Rust 可以私下搜索许多分支，但每个真正采用的语义动作都在
-Java 与 Rust 两侧执行，并在下一个稳定边界立即比较。
+先看[安装与完整轨迹复验指南](docs/getting-started.md)，其中说明了预编译 wheel、可下载的比较记录，以及如何把自己的策略接到公开批量接口。
 
-这是一项已经共同讨论清楚的方向，不是现有能力声明。当前尚无权威的端到端 parity runner；
-在它通过自然 Act 1 以前，不把任何旧入口重新包装成“已经完成的新工作流”。
-
-## 当前工具定位
-
-| 表面 | 当前定位 |
+| 任务 | 入口 |
 | --- | --- |
-| `run-play` | Rust 单机完整跑局、搜索和策略实验；不证明 Java parity |
-| `java-play` | Java bridge、原游戏控制和定向诊断；旧 mirror 不是默认验收路线 |
-| PairedRoot / workbench | 可复用的投影、比较、证据与生命周期实验；不是当前权威跑局工作流 |
-| 资料 CLI | 按精确实体和 typed 决策读取本地资料；不接管游戏状态 |
-| `ol.ps1`、`cs.ps1` | 定向 exact combat 与离线实验工具 |
+| 安装和使用 Python 环境 | [Python bridge](bindings/python_learning/README.md) |
+| 在 Rust 中跑局、观察和规划 | [Run-play 客户端](tools/run_play/README.md) |
+| 与原游戏比较执行结果 | [架构](docs/ARCHITECTURE.md)、[运行手册](docs/RUNBOOK.md) |
+| 复验完整轨迹和已安装包 | [环境验收](docs/architecture/environment-acceptance.md) |
+| 使用源码开发命令与本地快捷方式 | [开发脚本](scripts/README.md) |
+| 查阅开发文档 | [文档导航](docs/README.md) |
 
-“代码仍存在”不等于“可以自动选择”。需要某一组件时，应从当前任务出发定向调用它，不能
-根据旧聊天、旧文档或命令名称拼装一条历史工作流。
+## 与原游戏比较
 
-## 文档入口
+`sts_parity_lockstep_runner` 负责共享的 Java/Rust 执行和重放流程。两端适配器解析同一语义动作，在稳定决策边界比较状态与随机数。采集记录保留原始 Java 观察、动作收据和生产者版本，使当前 Rust 实现及投影变更可以离线复查。
 
-- [当前文档索引](docs/README.md)
-- [Java ↔ Rust 当前架构方向](docs/ARCHITECTURE.md)
-- [当前运行与工具边界](docs/RUNBOOK.md)
-- [测试与验收原则](docs/TESTING.md)
+训练接口验收沿同一条已采用轨迹，通过已安装 Python 包实际调用 `choose` 和 `step`，检查选牌前缀、真实状态转换、公开观察、奖励、checkpoint 恢复和正式终局。完整轨迹、补充覆盖与回归用例的合同见环境验收文档。
 
-Card Lineage、原版存档和战斗搜索的实现事实保留为定向技术参考，不进入默认阅读序列。已经
-退出当前方向的长设计和迁移日记由 Git 历史保存；当前文档树不建立 archive，也不允许在普通
-任务中自动考古恢复。
+## 许可证与游戏声明
 
-## 稳定原则
-
-- Java 与 Rust 内部实现不要求相同，只在共同的语义动作和可比较投影上对齐。
-- Java UUID 与 Rust CardLineage 只通过 typed 来源证据绑定，不追求裸数值相等。
-- Rust 搜索只探索；只有被选择的 committed trajectory 需要 Java 跟随。
-- 真实 mismatch、动作无法对应和关键确定性状态不可观察是停止线。
-- “以前没有认证过”本身不是探索运行的停止理由。
-- 磁盘证据可以使用完整结构化格式；模型默认界面保持短小，不显示 SHA、路径或大段 JSON。
-- 一次自然 Act 的验收终点是下一幕入口，不以途中某个事件或单步收据冒充整幕完成。
-
-## License 与游戏声明
-
-仓库尚未声明 license。
+项目代码采用 [MIT 许可证](LICENSE)，引入组件的署名见[第三方声明](THIRD_PARTY_NOTICES.md)。
 
 这是非官方研究项目，与 Mega Crit 没有隶属或背书关系。

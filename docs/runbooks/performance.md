@@ -104,7 +104,7 @@ acceptance; use the ordinary panel for before/after timing.
 ## Build Boundaries
 
 Oracle work uses one canonical incremental `release` artifact. The narrow
-`.\ol-contract.ps1` surface excludes the run explorer and resident runtime, so
+`.\scripts\ol-contract.ps1` surface excludes the run explorer and resident runtime, so
 planner changes do not require linking the full oracle host. Use
 `release-final` only for a deliberately requested fully optimized deployment
 artifact.

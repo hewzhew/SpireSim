@@ -42,7 +42,7 @@ use super::workspace_policy_audits::{
     about = "Inspect and steer exact oracle-run variations without editing checkpoints"
 )]
 struct Cli {
-    /// Proves that the canonical `.\ol.ps1` surface launched this process.
+    /// Proves that the canonical `.\scripts\ol.ps1` surface launched this process.
     /// Direct execution is intentionally rejected so that a stale or
     /// wrongly-profiled oracle laboratory cannot silently produce evidence.
     #[arg(long, hide = true, global = true)]

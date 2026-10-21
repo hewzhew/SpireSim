@@ -2,26 +2,26 @@
 // Node workbench over client.mjs and the run_play executable: one short
 // command per decision during manual or search-assisted play.
 //
-//   ./p                                 reading (current session)
-//   ./p Disarm                          choose an option by its name
-//   ./p take Disarm                     same choice with the verb spelled
-//   ./p 0                              one current choice by row number
-//   ./p claim:BagOfPreparation#0        named reward (rows can move)
-//   ./p go [x,y]                       route by coordinate, or sole map exit
-//   ./p act <action...>                 combat line: play:X potion:X end
-//   ./p preview <action...>             same line, private engine branch
-//   ./p board                           combat table (incoming vs block)
-//   ./p map [full|flip|set flip|normal] current-map routes; full expands grid
-//   ./p loot / info / cancel            claim / mechanics / back into room
-//   ./p use <session>                   switch the default session
-//   ./p undo                            roll back the last public action
-//   ./p back [steps]                    restore a retained earlier decision
-//   ./p jump [nNODE|source:hN|target:hN] show a return point, or jump to one
-//   ./p refresh <fresh-session>         verify old state, create new root, select it
-//   ./p research|plans|review|commit    search, then inspect/adopt saved results
-//   ./p exe <args...>                   executable passthrough
-//   ./p new <session> <seed> [--ascension N] [--goal g]
-//   ./p <cmd> , <cmd> ...               several commands, one connection
+//   node scripts/p.mjs                                 reading (current session)
+//   node scripts/p.mjs Disarm                          choose an option by its name
+//   node scripts/p.mjs take Disarm                     same choice with the verb spelled
+//   node scripts/p.mjs 0                              one current choice by row number
+//   node scripts/p.mjs claim:BagOfPreparation#0        named reward (rows can move)
+//   node scripts/p.mjs go [x,y]                       route by coordinate, or sole map exit
+//   node scripts/p.mjs act <action...>                 combat line: play:X potion:X end
+//   node scripts/p.mjs preview <action...>             same line, private engine branch
+//   node scripts/p.mjs board                           combat table (incoming vs block)
+//   node scripts/p.mjs map [full|flip|set flip|normal] current-map routes; full expands grid
+//   node scripts/p.mjs loot / info / cancel            claim / mechanics / back into room
+//   node scripts/p.mjs use <session>                   switch the default session
+//   node scripts/p.mjs undo                            roll back the last public action
+//   node scripts/p.mjs back [steps]                    restore a retained earlier decision
+//   node scripts/p.mjs jump [nNODE|source:hN|target:hN] show a return point, or jump to one
+//   node scripts/p.mjs refresh <fresh-session>         verify old state, create new root, select it
+//   node scripts/p.mjs research|plans|review|commit    search, then inspect/adopt saved results
+//   node scripts/p.mjs exe <args...>                   executable passthrough
+//   node scripts/p.mjs new <session> <seed> [--ascension N] [--goal g]
+//   node scripts/p.mjs <cmd> , <cmd> ...               several commands, one connection
 //
 // The mental model is three verbs: choose what you see (a bare name, an
 // optional verb prefix, or the row number — the display brackets the
@@ -58,27 +58,27 @@ const binary = join(repository, 'target', 'dev-opt', 'run_play.exe');
 function usage(code = 1) {
   const output = code === 0 ? process.stdout : process.stderr;
   output.write(
-    'usage: ./p                          reading (current session)\n' +
-    '       ./p <session> [command...]    exact name, unique fragment, or path\n' +
-    '       ./p <name> | <verb> <name> | <index>   choose what you see\n' +
-    '       ./p claim:BagOfPreparation#0  reward by name; reward rows reject numbers\n' +
-    '       ./p go [x,y]                  sole map exit, or coordinate\n' +
-    '       ./p act <actions...>         combat line (play:X potion:X end)\n' +
-    '       ./p preview <actions...>     try a line without moving the current position\n' +
-    '       ./p piles                    public unordered draw, discard and exhaust piles\n' +
-    '       ./p piles sl                 current exact combat piles (SL internal information)\n' +
-    '       ./p board | map [full|flip|set flip|normal|elites|route X Y] | loot | options | cancel\n' +
-    '       ./p read [brief|full] | back [steps | floor N | mark NAME | list]\n' +
-    '       ./p mark [NAME | drop NAME]   save/list/release exact return points\n' +
-    '       ./p info [power/enemy/card name | card <name> | M0 | player | powers | transition <HP> | help]\n' +
-    '       ./p undo | exe <args...> | use <session>\n' +
-    '       ./p player [status|next|accept [--continue]|replace [--continue] <command>|reject <guidance>|coach <guidance>]\n' +
-    '       ./p player inspect [STEP[.ATTEMPT] [input]] [--run RUN_DIRECTORY_NAME]\n' +
-    '       ./p observe [STEP [input] | live | list] [--home DSH_HOME] [--chat ID_FRAGMENT] [--turn N]\n' +
-    '       ./p jump [nNODE | source:hN | target:hN]   show a return point, or jump to one\n' +
-    '       ./p refresh <fresh-session>   verify old exact state into a new session and select it\n' +
-    '       ./p research [ms] [work transitions] | research <effort> [ms] | plans [full] | review <plan ID> [turn] | commit <plan ID> [expected effort]\n' +
-    '       ./p new <session> <seed> [--ascension N] [--goal heart-victory|act-three-victory]\n' +
+    'usage: node scripts/p.mjs                          reading (current session)\n' +
+    '       node scripts/p.mjs <session> [command...]    exact name, unique fragment, or path\n' +
+    '       node scripts/p.mjs <name> | <verb> <name> | <index>   choose what you see\n' +
+    '       node scripts/p.mjs claim:BagOfPreparation#0  reward by name; reward rows reject numbers\n' +
+    '       node scripts/p.mjs go [x,y]                  sole map exit, or coordinate\n' +
+    '       node scripts/p.mjs act <actions...>         combat line (play:X potion:X end)\n' +
+    '       node scripts/p.mjs preview <actions...>     try a line without moving the current position\n' +
+    '       node scripts/p.mjs piles                    public unordered draw, discard and exhaust piles\n' +
+    '       node scripts/p.mjs piles sl                 current exact combat piles (SL internal information)\n' +
+    '       node scripts/p.mjs board | map [full|flip|set flip|normal|elites|route X Y] | loot | options | cancel\n' +
+    '       node scripts/p.mjs read [brief|full] | back [steps | floor N | mark NAME | list]\n' +
+    '       node scripts/p.mjs mark [NAME | drop NAME]   save/list/release exact return points\n' +
+    '       node scripts/p.mjs info [power/enemy/card name | card <name> | M0 | player | powers | transition <HP> | help]\n' +
+    '       node scripts/p.mjs undo | exe <args...> | use <session>\n' +
+    '       node scripts/p.mjs player [status|next|accept [--continue]|replace [--continue] <command>|reject <guidance>|coach <guidance>]\n' +
+    '       node scripts/p.mjs player inspect [STEP[.ATTEMPT] [input]] [--run RUN_DIRECTORY_NAME]\n' +
+    '       node scripts/p.mjs observe [STEP [input] | live | list] [--home DSH_HOME] [--chat ID_FRAGMENT] [--turn N]\n' +
+    '       node scripts/p.mjs jump [nNODE | source:hN | target:hN]   show a return point, or jump to one\n' +
+    '       node scripts/p.mjs refresh <fresh-session>   verify old exact state into a new session and select it\n' +
+    '       node scripts/p.mjs research [ms] [work transitions] | research <effort> [ms] | plans [full] | review <plan ID> [turn] | commit <plan ID> [expected effort]\n' +
+    '       node scripts/p.mjs new <session> <seed> [--ascension N] [--goal heart-victory|act-three-victory]\n' +
     '       act/preview actions: spaces or comma-space; an explicit command starts a new group\n' +
     '       other command groups: comma-space, or \';\' to always start a new group\n');
   process.exit(code);
@@ -128,7 +128,7 @@ export async function main() {
     } finally {
       await newGame.close();
     }
-    // A fresh run becomes the current one: the next bare ./p or index
+    // A fresh run becomes the current one: the next bare node scripts/p.mjs or index
     // choice must land on it, not on whatever ran before.
     const { writeFile: writeState } = await import('node:fs/promises');
     await writeState(stateFile, resolvedSession).catch(() => {});
@@ -197,7 +197,7 @@ export async function main() {
     runExecutable([parameters[0], '--session', session, ...parameters.slice(1)]);
   }
   if (command === 'pick') {
-    throw new Error('pick was retired — what you see is what you type: ./p <name> (e.g. ./p Disarm), ./p <verb> <name>, or the row number');
+    throw new Error('pick was retired — what you see is what you type: node scripts/p.mjs <name> (e.g. node scripts/p.mjs Disarm), node scripts/p.mjs <verb> <name>, or the row number');
   }
 
   // Info already runs the read-only executable directly. Opening an unused

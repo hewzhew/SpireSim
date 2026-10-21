@@ -54,12 +54,12 @@ V1 选牌包保留单个 `decision_site`，两种范围格式不能混用。
 以下命令在仓库根运行，复用现有专家工具 CLI。空读取只给短目录，不要求自然语言问题。
 
 ```powershell
-.\py.ps1 -Python .oracle-lab/reference-service-venv/Scripts/python.exe -m tools.expert.cli curated
-.\py.ps1 -Python .oracle-lab/reference-service-venv/Scripts/python.exe -m tools.expert.cli curated --entry future-value --entry skip-density
-.\py.ps1 -Python .oracle-lab/reference-service-venv/Scripts/python.exe -m tools.expert.cli curated --entry future-value --detail reasoning
-.\py.ps1 -Python .oracle-lab/reference-service-venv/Scripts/python.exe -m tools.expert.cli curated --entry future-value --detail provenance --json
-.\py.ps1 -Python .oracle-lab/reference-service-venv/Scripts/python.exe -m tools.expert.cli curated --package reference/expert/curated/ironclad-run-planning.json
-.\py.ps1 -Python .oracle-lab/reference-service-venv/Scripts/python.exe -m tools.expert.cli curated --package reference/expert/curated/ironclad-run-planning.json --entry route-options --entry potion-reserve
+.\scripts\py.ps1 -Python .oracle-lab/reference-service-venv/Scripts/python.exe -m tools.expert.cli curated
+.\scripts\py.ps1 -Python .oracle-lab/reference-service-venv/Scripts/python.exe -m tools.expert.cli curated --entry future-value --entry skip-density
+.\scripts\py.ps1 -Python .oracle-lab/reference-service-venv/Scripts/python.exe -m tools.expert.cli curated --entry future-value --detail reasoning
+.\scripts\py.ps1 -Python .oracle-lab/reference-service-venv/Scripts/python.exe -m tools.expert.cli curated --entry future-value --detail provenance --json
+.\scripts\py.ps1 -Python .oracle-lab/reference-service-venv/Scripts/python.exe -m tools.expert.cli curated --package reference/expert/curated/ironclad-run-planning.json
+.\scripts\py.ps1 -Python .oracle-lab/reference-service-venv/Scripts/python.exe -m tools.expert.cli curated --package reference/expert/curated/ironclad-run-planning.json --entry route-options --entry potion-reserve
 ```
 
 `brief`、`reasoning`、`provenance` 是同一个核心的不同展开程度。来源展开返回固定记录位置和
@@ -78,16 +78,16 @@ Rust `run-play` 的现有 `show` 可以把当前战略决策导出一次，之�
 
 ```powershell
 cargo run --locked -p sts_run_play --bin run_play -- show --session <session> --public-output <decision.json>
-.\py.ps1 -Python .oracle-lab/reference-service-venv/Scripts/python.exe -m tools.expert.cli curated --decision <decision.json>
-.\py.ps1 -Python .oracle-lab/reference-service-venv/Scripts/python.exe -m tools.expert.cli curated --decision <decision.json> --view deck
-.\py.ps1 -Python .oracle-lab/reference-service-venv/Scripts/python.exe -m tools.expert.cli curated --decision <decision.json> --view context
-.\py.ps1 -Python .oracle-lab/reference-service-venv/Scripts/python.exe -m tools.expert.cli curated --decision <decision.json> --view candidates --candidate 0
-.\py.ps1 -Python .oracle-lab/reference-service-venv/Scripts/python.exe -m tools.expert.cli curated --decision <decision.json> --view mechanics --candidate 0 --candidate 2
-.\py.ps1 -Python .oracle-lab/reference-service-venv/Scripts/python.exe -m tools.expert.cli curated --decision <decision.json> --view mechanics --card 0 --card 3
-.\py.ps1 -Python .oracle-lab/reference-service-venv/Scripts/python.exe -m tools.expert.cli curated --decision <decision.json> --view relics
-.\py.ps1 -Python .oracle-lab/reference-service-venv/Scripts/python.exe -m tools.expert.cli curated --decision <decision.json> --view mechanics --relic 0 --relic 2
-.\py.ps1 -Python .oracle-lab/reference-service-venv/Scripts/python.exe -m tools.expert.cli curated --decision <decision.json> --view map --entry near-threat
-.\py.ps1 -Python .oracle-lab/reference-service-venv/Scripts/python.exe -m tools.expert.cli curated --decision <decision.json> --entry future-value --entry skip-density
+.\scripts\py.ps1 -Python .oracle-lab/reference-service-venv/Scripts/python.exe -m tools.expert.cli curated --decision <decision.json>
+.\scripts\py.ps1 -Python .oracle-lab/reference-service-venv/Scripts/python.exe -m tools.expert.cli curated --decision <decision.json> --view deck
+.\scripts\py.ps1 -Python .oracle-lab/reference-service-venv/Scripts/python.exe -m tools.expert.cli curated --decision <decision.json> --view context
+.\scripts\py.ps1 -Python .oracle-lab/reference-service-venv/Scripts/python.exe -m tools.expert.cli curated --decision <decision.json> --view candidates --candidate 0
+.\scripts\py.ps1 -Python .oracle-lab/reference-service-venv/Scripts/python.exe -m tools.expert.cli curated --decision <decision.json> --view mechanics --candidate 0 --candidate 2
+.\scripts\py.ps1 -Python .oracle-lab/reference-service-venv/Scripts/python.exe -m tools.expert.cli curated --decision <decision.json> --view mechanics --card 0 --card 3
+.\scripts\py.ps1 -Python .oracle-lab/reference-service-venv/Scripts/python.exe -m tools.expert.cli curated --decision <decision.json> --view relics
+.\scripts\py.ps1 -Python .oracle-lab/reference-service-venv/Scripts/python.exe -m tools.expert.cli curated --decision <decision.json> --view mechanics --relic 0 --relic 2
+.\scripts\py.ps1 -Python .oracle-lab/reference-service-venv/Scripts/python.exe -m tools.expert.cli curated --decision <decision.json> --view map --entry near-threat
+.\scripts\py.ps1 -Python .oracle-lab/reference-service-venv/Scripts/python.exe -m tools.expert.cli curated --decision <decision.json> --entry future-value --entry skip-density
 ```
 
 V3 导出支持战略决策的公开读取，包括选牌、奖励、地图、事件与 Neow、商店、篝火、Boss 遗物、
@@ -117,7 +117,7 @@ Boss 到胜利页的地图边。用于跨端比较的原始房间与绘图连线
 被过滤或改写。旧公开导出仍保留其记录时的地图与来源，不用于恢复当前执行。
 
 ```powershell
-.\py.ps1 -Python .oracle-lab/reference-service-venv/Scripts/python.exe -m tools.expert.cli curated --decision <decision.json> --view candidates --candidate 0
+.\scripts\py.ps1 -Python .oracle-lab/reference-service-venv/Scripts/python.exe -m tools.expert.cli curated --decision <decision.json> --view candidates --candidate 0
 ```
 
 选牌默认附送选牌包的短目录，其他页面默认只读公开事实；整局规划包由分析者显式选择。
@@ -130,7 +130,7 @@ Boss 到胜利页的地图边。用于跨端比较的原始房间与绘图连线
 例如在已导出的地图上，只读取路线退路与血量规划，不重复附送整张地图：
 
 ```powershell
-.\py.ps1 -Python .oracle-lab/reference-service-venv/Scripts/python.exe -m tools.expert.cli curated --decision <decision.json> --package reference/expert/curated/ironclad-run-planning.json --entry route-options --entry hp-recovery
+.\scripts\py.ps1 -Python .oracle-lab/reference-service-venv/Scripts/python.exe -m tools.expert.cli curated --decision <decision.json> --package reference/expert/curated/ironclad-run-planning.json --entry route-options --entry hp-recovery
 ```
 
 导出调用现有 `TaskPublicDecisionV1` 校验；完整 public observation、candidate IDs、snapshot、
@@ -254,8 +254,8 @@ V3 的可选 `sts-owned-card-reading-v1` 从公开牌组实例生成机制与下
 ## 阅读检查
 
 ```powershell
-.\py.ps1 -Python .oracle-lab/reference-service-venv/Scripts/python.exe -m pytest tools/expert/tests/test_curated.py -q
-.\py.ps1 -Python .oracle-lab/reference-service-venv/Scripts/python.exe -m pytest tools/expert/tests/test_run_planning_curated.py -q
+.\scripts\py.ps1 -Python .oracle-lab/reference-service-venv/Scripts/python.exe -m pytest tools/expert/tests/test_curated.py -q
+.\scripts\py.ps1 -Python .oracle-lab/reference-service-venv/Scripts/python.exe -m pytest tools/expert/tests/test_run_planning_curated.py -q
 ```
 
 原文或整理条目更新后，直接重读相关段落和条目。原始资料不在 Git 中时，整理条目仍可阅读；

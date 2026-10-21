@@ -73,11 +73,11 @@ pinned packages in [requirements.txt](requirements.txt), with PyTorch already
 available in that environment:
 
 ```powershell
-.\py.ps1 -Python <reference-python.exe> -m pip install -r tools/rl_reference/requirements.txt
-.\py.ps1 -Python <reference-python.exe> -m unittest tools.rl_reference.test_reference -v
-.\py.ps1 -Python <reference-python.exe> -u -m tools.rl_reference.trial <fresh-output-directory> --wall-seconds 600
-.\py.ps1 -Python <reference-python.exe> -m tools.rl_reference.plot <trial-directory>
-.\py.ps1 -Python <reference-python.exe> -m tools.rl_reference.verify <trial-directory>
+.\scripts\py.ps1 -Python <reference-python.exe> -m pip install -r tools/rl_reference/requirements.txt
+.\scripts\py.ps1 -Python <reference-python.exe> -m unittest tools.rl_reference.test_reference -v
+.\scripts\py.ps1 -Python <reference-python.exe> -u -m tools.rl_reference.trial <fresh-output-directory> --wall-seconds 600
+.\scripts\py.ps1 -Python <reference-python.exe> -m tools.rl_reference.plot <trial-directory>
+.\scripts\py.ps1 -Python <reference-python.exe> -m tools.rl_reference.verify <trial-directory>
 ```
 
 The runner writes its entire task/budget/seed/criterion plan before model creation,

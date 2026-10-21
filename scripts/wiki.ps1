@@ -6,7 +6,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$repository = $PSScriptRoot
+$repository = Split-Path -Parent $PSScriptRoot
 $python = (Get-Command python -ErrorAction Stop).Source
 $utf8WithoutBom = [System.Text.UTF8Encoding]::new($false)
 $previousConsoleOutputEncoding = [Console]::OutputEncoding

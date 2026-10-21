@@ -9,13 +9,13 @@ Inspect the current closed recipe and capability dependencies before adding or
 editing a case:
 
 ```powershell
-.\java-play.ps1 scenario registry
+.\scripts\java-play.ps1 scenario registry
 ```
 
 Validate and list this catalog without launching the game:
 
 ```powershell
-.\java-play.ps1 scenario cases
+.\scripts\java-play.ps1 scenario cases
 ```
 
 Each JSON filename must be exactly `<case_id>.json`. IDs are lowercase exact
@@ -25,21 +25,21 @@ validates every draft and reports its SHA-256.
 Run the smoke case through isolated game storage:
 
 ```powershell
-.\java-play.ps1 scenario create-combat --case cultist-base-root-smoke --profile accelerated
+.\scripts\java-play.ps1 scenario create-combat --case cultist-base-root-smoke --profile accelerated
 ```
 
 Post-root actions live in the separate exact-ID probe-case catalog. Capture its
 registered end-turn transition without claiming simulator parity:
 
 ```powershell
-.\java-play.ps1 scenario probe --probe-case cultist-base-end-turn --profile accelerated
+.\scripts\java-play.ps1 scenario probe --probe-case cultist-base-end-turn --profile accelerated
 ```
 
 Run the complete root/capture/comparison workflow through the maintained
 high-level command:
 
 ```powershell
-.\java-play.ps1 scenario verify --probe-case cultist-base-end-turn --profile accelerated
+.\scripts\java-play.ps1 scenario verify --probe-case cultist-base-end-turn --profile accelerated
 ```
 
 `cultist-base-root-smoke` intentionally exercises Java's oversized-draw empty

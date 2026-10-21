@@ -87,5 +87,5 @@ uses new seed groups and reports actual enemy composition and resources; neither
 collection success nor in-sample fitting proves mechanism understanding.
 
 ```powershell
-.\py.ps1 -m pytest tools/guided_search/test_constructed_demonstrations.py -q
+.\scripts\py.ps1 -m pytest tools/guided_search/test_constructed_demonstrations.py -q
 ```

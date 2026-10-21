@@ -623,7 +623,7 @@ fn render_shop_status_v1(
         writeln!(output, "Boss: {}", gameplay_display_label_v1(boss)).expect("string write");
     }
 
-    writeln!(output, "Cards for sale (.\\p.ps1 <action>):").expect("string write");
+    writeln!(output, "Cards for sale (.\\scripts\\p.ps1 <action>):").expect("string write");
     for offer in &inventory.cards {
         let action = TaskStrategicActionV1::BuyCard {
             shop_slot: offer.slot,
@@ -724,7 +724,7 @@ fn render_shop_status_v1(
         ) {
             writeln!(
                 output,
-                "  Other targets: remove <CardId> (see .\\p.ps1 inventory)."
+                "  Other targets: remove <CardId> (see .\\scripts\\p.ps1 inventory)."
             )
             .expect("string write");
         }
@@ -775,7 +775,7 @@ fn render_shop_status_v1(
     } else {
         writeln!(
             output,
-            "Deck: {} cards (see .\\p.ps1 inventory)",
+            "Deck: {} cards (see .\\scripts\\p.ps1 inventory)",
             observation.cards.len()
         )
         .expect("string write");
@@ -802,8 +802,11 @@ fn wrap_status_lists_v1(
             if let Some(change) = deck_change {
                 writeln!(output, "Deck change: {change}").expect("string write");
             } else if let Some(size) = deck_size {
-                writeln!(output, "Deck: {size} cards (see .\\p.ps1 inventory)")
-                    .expect("string write");
+                writeln!(
+                    output,
+                    "Deck: {size} cards (see .\\scripts\\p.ps1 inventory)"
+                )
+                .expect("string write");
             }
         } else if let Some(relics) = line.strip_prefix("Relics: ") {
             let relics = relics.split(", ").map(str::to_owned).collect::<Vec<_>>();

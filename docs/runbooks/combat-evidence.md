@@ -13,7 +13,7 @@ revision cannot silently stale this recipe.
 Index local combat artifacts and replay exact case/action relationships:
 
 ```powershell
-.\ol.ps1 combat-evidence-audit
+.\scripts\ol.ps1 combat-evidence-audit
 ```
 
 The root defaults to `.oracle-lab`; omitting `--output` creates a fresh ignored
@@ -50,8 +50,8 @@ statuses.
 Supply one `CombatEvidenceQueryBatchV1` document from a path or stdin:
 
 ```powershell
-.\ol.ps1 combat-evidence-audit --query-batch <query.json>
-Get-Content -Raw -LiteralPath <query.json> | .\ol.ps1 combat-evidence-audit --query-batch -
+.\scripts\ol.ps1 combat-evidence-audit --query-batch <query.json>
+Get-Content -Raw -LiteralPath <query.json> | .\scripts\ol.ps1 combat-evidence-audit --query-batch -
 ```
 
 Queries filter typed record outcome, current and previous same-turn card
@@ -66,7 +66,7 @@ Compare no-potion, each initial potion, and optionally small combinations from
 one unchanged exact combat root:
 
 ```powershell
-.\ol.ps1 combat-case-potion-expenditure-audit `
+.\scripts\ol.ps1 combat-case-potion-expenditure-audit `
   --case <case.json> `
   --max-combination-size 2 `
   --export-witness-actions-dir <fresh-output-directory> `
@@ -115,7 +115,7 @@ fresh isolated case instead of editing JSON or pretending that the result is a
 replayable run continuation:
 
 ```powershell
-.\ol.ps1 combat-case-loadout-counterfactual --case <source.case.json> --output <fresh-counterfactual.case.json> --remove-card-uuid <uuid> --add-relic BronzeScales
+.\scripts\ol.ps1 combat-case-loadout-counterfactual --case <source.case.json> --output <fresh-counterfactual.case.json> --remove-card-uuid <uuid> --add-relic BronzeScales
 ```
 
 The current typed scope is deliberately narrow: one exact master-deck card is
@@ -133,7 +133,7 @@ shop branch would have reached the same run state or RNG.
 Export a complete policy-discrepancy win with:
 
 ```powershell
-.\ol.ps1 combat-case-policy-discrepancy `
+.\scripts\ol.ps1 combat-case-policy-discrepancy `
   --case <case.json> `
   --export-witness-actions <fresh-output>.actions.json
 ```
@@ -151,7 +151,7 @@ descendant and receives no manifest from this producer.
 
 ## Local-Graph Complete Wins
 
-`.\ol.ps1 contract combat` is the maintained complete-win surface. It admits
+`.\scripts\ol.ps1 contract combat` is the maintained complete-win surface. It admits
 the exact root to the explicit V2 case catalog, runs one typed bounded request,
 and atomically publishes `manifest.json`, `report.json`, and
 `witness.actions.json` when any replay-exact candidate exists. The compact
@@ -197,7 +197,7 @@ The Combat Laboratory is an offline mode of the dedicated fixed-root
 Run the maintained seed006-derived Reptomancer pilot with:
 
 ```powershell
-.\cs.ps1 --lab-spec fixtures/combat_lab/seed006_reptomancer_8x2.lab.json --lab-output artifacts/runs/combat-lab-seed006-pilot --lab-samples 8
+.\scripts\cs.ps1 --lab-spec fixtures/combat_lab/seed006_reptomancer_8x2.lab.json --lab-output artifacts/runs/combat-lab-seed006-pilot --lab-samples 8
 ```
 
 Rerun the same command and output directory to resume journaled cells. Increase
@@ -224,7 +224,7 @@ declared public encounter pool with matched analysis RNG and shuffle samples.
 It never reads the live hidden encounter queue or changes Campfire policy.
 
 ```powershell
-.\cs.ps1 --threat-panel-spec fixtures/campfire_threat_panel/seed006_pre_transient_reconstructed.panel.json --threat-panel-output artifacts/runs/campfire-threat-panel-seed006-pilot --threat-panel-samples 1
+.\scripts\cs.ps1 --threat-panel-spec fixtures/campfire_threat_panel/seed006_pre_transient_reconstructed.panel.json --threat-panel-output artifacts/runs/campfire-threat-panel-seed006-pilot --threat-panel-samples 1
 ```
 
 The fixture is reconstructed from recorded public deck and resource state. It

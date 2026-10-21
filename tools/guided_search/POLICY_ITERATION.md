@@ -12,7 +12,7 @@ chosen artifact directory; this document defines the executable contract.
 
 ```powershell
 .\learning\dev.ps1 refresh-bridge
-.\py.ps1 tools/guided_search/policy_iteration.py artifacts/new-policy-run --cases 64 --simulations 16 --updates 320 --iterations 3
+.\scripts\py.ps1 tools/guided_search/policy_iteration.py artifacts/new-policy-run --cases 64 --simulations 16 --updates 320 --iterations 3
 ```
 
 The declared population is constructed A20 Ironclad against Jaw Worm, Gremlin

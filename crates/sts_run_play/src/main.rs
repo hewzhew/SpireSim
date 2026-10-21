@@ -1531,7 +1531,7 @@ fn ensure_current_run_play_is_fresh_v1() -> Result<(), String> {
             repository.join("crates/sts_run_play/Cargo.toml"),
         ],
         "run-play workbench",
-        r"pwsh -File .\run-play.ps1 build",
+        r"pwsh -File .\scripts\run-play.ps1 build",
     )
 }
 

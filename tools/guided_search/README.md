@@ -21,7 +21,7 @@ Rust 的 `sts_guided_search` 共享真实转换、合法动作、数值编码与
 
 ```powershell
 cargo build --locked --profile dev-opt -p sts_guided_search --example continuation_value
-.\py.ps1 tools/guided_search/entity_continuation_trial.py --output <fresh-directory>
+.\scripts\py.ps1 tools/guided_search/entity_continuation_trial.py --output <fresh-directory>
 ```
 
 ## 独立候选续打资源试点
@@ -34,7 +34,7 @@ cargo build --locked --profile dev-opt -p sts_guided_search --example continuati
 及当前血量的前两个候选；这是离线预算分配试点，不接入生产 beam，不代表完整原搜索。
 原生编码、推理、采集、训练与续搜成本分别记录，选择结果保留具体资源，不兑换金币与血量。
 
-运行：`.\py.ps1 tools/guided_search/entity_resource_pilot.py --output <fresh-directory>`。
+运行：`.\scripts\py.ps1 tools/guided_search/entity_resource_pilot.py --output <fresh-directory>`。
 范围、来源、权重、预测和实际结果保存在新 artifact；普通战后奖励不在此金币目标内。
 
 ## 策略与价值的实际出牌循环
@@ -94,7 +94,7 @@ Schema 4 逐张保存最多十张手牌的身份、当前费用、可用性、�
 ```powershell
 cargo run --release --locked -p sts_guided_search --example combat_solver -- --input <training-cases.json> --output <new-collection-directory> --work 50000 --value-data-work 1800 --value-continuation-work 2000
 $valueInputs = (Get-ChildItem -LiteralPath <collection-directory> -Filter '*-value.json').FullName
-.\py.ps1 tools/guided_search/retention_learning.py --input $valueInputs --output <new-model-directory>
+.\scripts\py.ps1 tools/guided_search/retention_learning.py --input $valueInputs --output <new-model-directory>
 cargo run --release --locked -p sts_guided_search --example combat_solver -- --input <evaluation-cases.json> --output <new-results-directory> --work 50000 --resource-model <model-directory>/model.json
 ```
 
@@ -234,7 +234,7 @@ cargo run --release --locked -p sts_guided_search --example continuation_value -
 cargo run --release --locked -p sts_guided_search --example continuation_value -- --input <eval-cases.json> --output <fresh-eval-directory>
 $trainingInputs = (Get-ChildItem -LiteralPath <train-directory> -Filter '*.json').FullName
 $evaluationInputs = (Get-ChildItem -LiteralPath <eval-directory> -Filter '*.json').FullName
-.\py.ps1 tools/guided_search/continuation_learning.py --train $trainingInputs --eval $evaluationInputs --output <fresh-model-directory>
+.\scripts\py.ps1 tools/guided_search/continuation_learning.py --train $trainingInputs --eval $evaluationInputs --output <fresh-model-directory>
 ```
 
 [`continuation_iteration.py`](continuation_iteration.py) 顺序连接采集、资源曲线拟合与下一轮
@@ -245,7 +245,7 @@ $evaluationInputs = (Get-ChildItem -LiteralPath <eval-directory> -Filter '*.json
 
 ```powershell
 cargo build --release --locked -p sts_guided_search --example continuation_value --example combat_solver
-.\py.ps1 tools/guided_search/continuation_iteration.py --train <train-cases.json> --validation <validation-cases.json> --combat <combat-cases.json> --output <fresh-iteration-directory> --collector target/release/examples/continuation_value.exe --solver target/release/examples/combat_solver.exe --rounds 2 --solver-work 10000 --seconds 0.6
+.\scripts\py.ps1 tools/guided_search/continuation_iteration.py --train <train-cases.json> --validation <validation-cases.json> --combat <combat-cases.json> --output <fresh-iteration-directory> --collector target/release/examples/continuation_value.exe --solver target/release/examples/combat_solver.exe --rounds 2 --solver-work 10000 --seconds 0.6
 ```
 
 `--bootstrap-model` 可指定初始教师模型；默认首轮无模型。`iteration.json` 记录命令、来源摘要、
@@ -284,7 +284,7 @@ CardLineage 绑定源卡；卡牌数值、所在区域和位置均冻结在方�
 
 ```powershell
 cargo run --release --locked -p sts_guided_search --example plan_consequence_data -- --input <continuation-case-files...> --output <fresh-data-directory>
-.\py.ps1 tools/guided_search/plan_consequence_learning.py --train <train-data-files...> --eval <eval-data-files...> --output <fresh-model-directory>
+.\scripts\py.ps1 tools/guided_search/plan_consequence_learning.py --train <train-data-files...> --eval <eval-data-files...> --output <fresh-model-directory>
 ```
 
 精确模拟耗时只计给定起点的局部方案；网络同时记录单方案与 128 批量推理的成本。
@@ -930,7 +930,7 @@ Unknown；已找到的完整胜线也只说明当前完整状态已知条件下�
 离线样本入口：
 
 ```powershell
-.\py.ps1 tools/guided_search/solver_cases.py --seeds 73 211 --output .oracle-lab/solver/cases.json
+.\scripts\py.ps1 tools/guided_search/solver_cases.py --seeds 73 211 --output .oracle-lab/solver/cases.json
 cargo run --release --locked -p sts_guided_search --example combat_solver -- --input .oracle-lab/solver/cases.json --output .oracle-lab/solver/results --work 2000,10000,50000 --seconds 12
 ```
 
@@ -1006,7 +1006,7 @@ fact 是否不同于源值；里程碑值 0 表示源上已存在，空值表示
 [`potion_timing_trial.py`](potion_timing_trial.py) 从明确输入重新采集、训练并评测：
 
 ```powershell
-.\py.ps1 tools/guided_search/potion_timing_trial.py --input <fresh-triples.json> --solver target/dev-opt/examples/combat_solver.exe --output <fresh-directory> --work 8000 --seconds 0.5
+.\scripts\py.ps1 tools/guided_search/potion_timing_trial.py --input <fresh-triples.json> --solver target/dev-opt/examples/combat_solver.exe --output <fresh-directory> --work 8000 --seconds 0.5
 ```
 
 输入是 `snapshot` case 三元组，依次命名为 `train/SEED/never`、`train/SEED/now`、
@@ -1392,7 +1392,7 @@ encoder 复用实体 schema 4 的事实和引用，增加最低终局 HP、起�
 完整路径概率是全部语法步骤概率的乘积，强制步骤仍计深度但不增加选择不确定性。
 
 ```powershell
-.\py.ps1 tools/guided_search/path_learning.py --index .oracle-lab/path-search/routes/features.json --output .oracle-lab/path-search/training --steps 120 --learning-rate 0.01
+.\scripts\py.ps1 tools/guided_search/path_learning.py --index .oracle-lab/path-search/routes/features.json --output .oracle-lab/path-search/training --steps 120 --learning-rate 0.01
 cargo run --release --locked -p sts_guided_search --example continuation_tasks -- path --roots roots.json --output .oracle-lab/path-search/learned --model .oracle-lab/path-search/training/model.json
 ```
 
@@ -1421,7 +1421,7 @@ Rust 要求比较双方完整根（含 RNG、实例）和查询相等，沿用�
 `goal_satisfied`，即使两条都未达标也可比较，但不能由此标记中间动作错误或状态无解。
 
 ```powershell
-.\py.ps1 tools/guided_search/path_learning.py --objective preference --index .oracle-lab/path-search/compared/preferences.json --initial-model baseline/model.json --output .oracle-lab/path-search/preference-training --steps 60 --learning-rate 0.001
+.\scripts\py.ps1 tools/guided_search/path_learning.py --objective preference --index .oracle-lab/path-search/compared/preferences.json --initial-model baseline/model.json --output .oracle-lab/path-search/preference-training --steps 60 --learning-rate 0.001
 ```
 
 偏好目标是 `mean_root mean_query mean_pair softplus(C(better) - C(worse))`，
@@ -1449,7 +1449,7 @@ Rust 要求比较双方完整根（含 RNG、实例）和查询相等，沿用�
 的平均名次选择，损失只用于同名次比较。名次遵循实际代价、深度、入队顺序。
 
 ```powershell
-.\py.ps1 tools/guided_search/path_learning.py --objective queue --index sampled/index.json --initial-model baseline/model.json --output .oracle-lab/path-search/queue-training --steps 60 --learning-rate 0.001
+.\scripts\py.ps1 tools/guided_search/path_learning.py --objective queue --index sampled/index.json --initial-model baseline/model.json --output .oracle-lab/path-search/queue-training --steps 60 --learning-rate 0.001
 ```
 
 索引使用 `{"schema":1,"label":"witnessed_queue","features":["sample.json"]}`，旁置

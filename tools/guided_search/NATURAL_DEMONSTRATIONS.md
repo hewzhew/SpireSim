@@ -129,7 +129,7 @@ on the verified combat choices, then assesses complete **supplied combats** with
 new seed groups. It does not train strategic choices or run Neow-to-elite autonomously.
 
 ```powershell
-.\py.ps1 -m tools.guided_search.natural_imitation <plan.json> <fresh-output-directory>
+.\scripts\py.ps1 -m tools.guided_search.natural_imitation <plan.json> <fresh-output-directory>
 ```
 
 The plan fixes demonstration directories and file hashes, producing source manifests,
@@ -192,6 +192,6 @@ evidence and are not automatically admitted as new training targets.
 
 ```powershell
 cargo test -p sts_guided_search --lib natural::tests
-.\py.ps1 -m pytest tools/guided_search/test_natural_demonstrations.py -q
-.\py.ps1 -m pytest tools/guided_search/test_natural_imitation.py -q
+.\scripts\py.ps1 -m pytest tools/guided_search/test_natural_demonstrations.py -q
+.\scripts\py.ps1 -m pytest tools/guided_search/test_natural_imitation.py -q
 ```

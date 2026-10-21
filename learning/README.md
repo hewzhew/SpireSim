@@ -9,7 +9,7 @@ library, not a qualified autonomous A20H player.
 
 ```powershell
 .\learning\dev.ps1 doctor
-.\py.ps1 -m pytest learning/tests -q
+.\scripts\py.ps1 -m pytest learning/tests -q
 ```
 
 `py.ps1` uses the configured learning interpreter unless `-Python` or
@@ -105,7 +105,7 @@ model-only play and search-assisted play separately.
 `sts_learning.strategic_rollout` first exercises continuous play without training:
 
 ```powershell
-.\py.ps1 -m sts_learning.strategic_rollout --seed 123 --output artifacts/fresh-strategic-run
+.\scripts\py.ps1 -m sts_learning.strategic_rollout --seed 123 --output artifacts/fresh-strategic-run
 ```
 
 `StrategicRunController` uses the public deterministic baseline and remembers
@@ -293,7 +293,7 @@ Origin and permission descriptions are the named author's source assessment;
 hash agreement does not establish natural reachability or NoSL provenance.
 
 ```powershell
-.\py.ps1 -m sts_learning.strategic_behavior_cloning --decisions <overlay.json> `
+.\scripts\py.ps1 -m sts_learning.strategic_behavior_cloning --decisions <overlay.json> `
   --output <fresh-directory> --max-updates 256 --learning-rate 0.003 `
   --check-every 16 --fit-margin 0.5 --evaluation-role development
 ```
@@ -594,7 +594,7 @@ separate; a card-reward model cannot simultaneously own this prototype's site.
 No residual model comparison or ordinary-run coverage is implemented yet.
 
 ```powershell
-.\py.ps1 -m sts_learning.strategic_rollout --seed <fresh-seed> --output <fresh-directory> `
+.\scripts\py.ps1 -m sts_learning.strategic_rollout --seed <fresh-seed> --output <fresh-directory> `
   --card-reward-guide act1-first-attack-v1 --max-steps 12 --capture-samples
 ```
 
@@ -667,13 +667,13 @@ Act completion is a coarse learning signal, not a deck-strength or resource
 evaluation; inspect the saved card choices, HP and potions alongside it.
 
 ```powershell
-.\py.ps1 -m sts_learning.strategic_study --help
+.\scripts\py.ps1 -m sts_learning.strategic_study --help
 ```
 
 For a bounded A0 whole-run learning probe, use the maintained preset:
 
 ```powershell
-.\py.ps1 -u -m sts_learning.strategic_study --preset a0-rollout --output <fresh-directory>
+.\scripts\py.ps1 -u -m sts_learning.strategic_study --preset a0-rollout --output <fresh-directory>
 ```
 
 This explicitly selects Act 3, floor-progress returns, two initializations and

@@ -24,7 +24,7 @@ Rust 拥有状态、来源检查、真实执行和提交；客户端只保存返
 （命令开始、完成或失败、返回内容、耗时和分支变化），以及各连接的原始传输记录。
 失败和回退保留在同一记录中；这里的耗时是工具执行耗时，不包括玩家思考时间。
 
-指导 dsh 玩家时，`node .\p player` 显示当前局面和未执行提议，`player next` 调查到下一次提议，
+指导 dsh 玩家时，`node .\scripts\p.mjs player` 显示当前局面和未执行提议，`player next` 调查到下一次提议，
 `player accept` 或 `player replace <命令>` 由维护者复核后执行。玩家绑定保存在当前游戏目录，
 无需反复写玩家 ID 和 home。安装、纠正与恢复合同见 [dsh 插件](../dsh_player/README.md)。
 执行后接续到下一复核停点可用 `player accept --continue` 或 `player replace --continue <命令>`。
@@ -98,48 +98,47 @@ await game.close();
 
 ## 单命令工作台
 
-[`play.mjs`](play.mjs) 把上面的连接封装成每次决策一条短命令，仓库根的 [`p`](../../p)
-是它的两字符入口；自动创建全新的传输记录目录：
+[`play.mjs`](play.mjs) 把上面的连接封装成每次决策一条短命令，[`scripts/p.mjs`](../../scripts/p.mjs) 是命令行入口；自动创建全新的传输记录目录。本地也可按[开发脚本说明](../../scripts/README.md#optional-local-shortcuts)创建根目录短命令。
 
 ```bash
-./p <会话短名或路径>           # 开工时选中会话并读取状态，此后成为默认会话
-./p                           # 重读默认会话，默认简洁读数
-./p help                      # 显示短命令帮助，不连接游戏或检查构建
-./p read full                 # 展开背景机制、钥匙教程与准备路线示例
-./p read brief                # 与 read 相同：当前资源、选择和候选效果
-./p 0                         # 选择一个当帧选项（奖励页使用下面的名称命令）
-./p 0 1                       # 仅用于同一张选牌界面内的多选，不跨页面链选
-./p claim:BagOfPreparation#0   # 领取指定遗物；直接复制奖励页显示的命令
-./p claim:SapphireKey#0        # 选择蓝钥匙，不受金币领取后的行号变化影响
-./p act <动作...>              # act CLI 同款语义动作串
-./p preview <动作...>          # 私有分支预演，不移动正式进度
-./p loot                      # 领金币；药水全能装下时自动领，容量冲突留给玩家选；其余奖励处理完才打开选卡
-./p map                       # 从当前出口到 Boss/公开端点的压缩路线样例
-./p map route 5 8             # 从指定房间离开后的路线样例与后续岔口取舍
-./p map full                  # 全部公开节点和连接
-./p info                      # 当前决定的 mechanics 详情（事件收益不再靠猜）
-./p info SporeCloud            # 按完整状态名或 ID 查定义，战斗外也可查
-./p info FungiBeast            # 当前难度下的敌人招式定义，不预测未来随机招式
-./p info M0                   # 当前敌人的可见意图、状态、机制
-./p info player               # 玩家当前状态的含义与剩余量
-./p info powers               # 展开玩家和场上敌人的状态说明
-./p info transition 25        # 假设幕间恢复前存活血量为 25，按当前上限和难度计算恢复后血量
-./p piles sl                  # 显式读取当前战斗的精确牌堆；SL 内部信息
-./p info card Dazed           # 卡牌基础属性与已覆盖的效果说明
-./p info card Uppercut        # 明确查询卡牌，避免与同名状态混淆
-./p exe history --journey --last 1           # 最近一段正式轨迹的事实摘要
-./p exe history --journey --last 1 --detail  # 逐动作展开记录中的血量、格挡和状态变化
-./p options                   # 展开当前页面的全部选项，包括战斗外用药、弃药和移除
-./p research [毫秒] [work 转换次数]  # 默认 whole_combat；也可显式写档位
-./p plans [full]              # 重读保存的报告；full 展开诊断，不重新搜索
-./p commit <方案ID> [预期档位]
-./p review <方案ID> [回合]
-./p undo                      # 回退最后一次公开动作，显示简洁后继读数
-./p jump                      # 只读当前局面，并打印可复制的返回命令
-./p jump nNODE                # 直接跳到本会话已保留的决策点；复制实际返回命令
-./p refresh <新会话名>        # 来源变化时核验当前精确状态，建立并选中新会话；不写中间胶囊
-./p exe <参数...>             # exe 子命令透传（status/history/...）
-./p new <会话> <seed> [--ascension N] [--goal heart-victory]
+node scripts/p.mjs <会话短名或路径>           # 开工时选中会话并读取状态，此后成为默认会话
+node scripts/p.mjs                           # 重读默认会话，默认简洁读数
+node scripts/p.mjs help                      # 显示短命令帮助，不连接游戏或检查构建
+node scripts/p.mjs read full                 # 展开背景机制、钥匙教程与准备路线示例
+node scripts/p.mjs read brief                # 与 read 相同：当前资源、选择和候选效果
+node scripts/p.mjs 0                         # 选择一个当帧选项（奖励页使用下面的名称命令）
+node scripts/p.mjs 0 1                       # 仅用于同一张选牌界面内的多选，不跨页面链选
+node scripts/p.mjs claim:BagOfPreparation#0   # 领取指定遗物；直接复制奖励页显示的命令
+node scripts/p.mjs claim:SapphireKey#0        # 选择蓝钥匙，不受金币领取后的行号变化影响
+node scripts/p.mjs act <动作...>              # act CLI 同款语义动作串
+node scripts/p.mjs preview <动作...>          # 私有分支预演，不移动正式进度
+node scripts/p.mjs loot                      # 领金币；药水全能装下时自动领，容量冲突留给玩家选；其余奖励处理完才打开选卡
+node scripts/p.mjs map                       # 从当前出口到 Boss/公开端点的压缩路线样例
+node scripts/p.mjs map route 5 8             # 从指定房间离开后的路线样例与后续岔口取舍
+node scripts/p.mjs map full                  # 全部公开节点和连接
+node scripts/p.mjs info                      # 当前决定的 mechanics 详情（事件收益不再靠猜）
+node scripts/p.mjs info SporeCloud            # 按完整状态名或 ID 查定义，战斗外也可查
+node scripts/p.mjs info FungiBeast            # 当前难度下的敌人招式定义，不预测未来随机招式
+node scripts/p.mjs info M0                   # 当前敌人的可见意图、状态、机制
+node scripts/p.mjs info player               # 玩家当前状态的含义与剩余量
+node scripts/p.mjs info powers               # 展开玩家和场上敌人的状态说明
+node scripts/p.mjs info transition 25        # 假设幕间恢复前存活血量为 25，按当前上限和难度计算恢复后血量
+node scripts/p.mjs piles sl                  # 显式读取当前战斗的精确牌堆；SL 内部信息
+node scripts/p.mjs info card Dazed           # 卡牌基础属性与已覆盖的效果说明
+node scripts/p.mjs info card Uppercut        # 明确查询卡牌，避免与同名状态混淆
+node scripts/p.mjs exe history --journey --last 1           # 最近一段正式轨迹的事实摘要
+node scripts/p.mjs exe history --journey --last 1 --detail  # 逐动作展开记录中的血量、格挡和状态变化
+node scripts/p.mjs options                   # 展开当前页面的全部选项，包括战斗外用药、弃药和移除
+node scripts/p.mjs research [毫秒] [work 转换次数]  # 默认 whole_combat；也可显式写档位
+node scripts/p.mjs plans [full]              # 重读保存的报告；full 展开诊断，不重新搜索
+node scripts/p.mjs commit <方案ID> [预期档位]
+node scripts/p.mjs review <方案ID> [回合]
+node scripts/p.mjs undo                      # 回退最后一次公开动作，显示简洁后继读数
+node scripts/p.mjs jump                      # 只读当前局面，并打印可复制的返回命令
+node scripts/p.mjs jump nNODE                # 直接跳到本会话已保留的决策点；复制实际返回命令
+node scripts/p.mjs refresh <新会话名>        # 来源变化时核验当前精确状态，建立并选中新会话；不写中间胶囊
+node scripts/p.mjs exe <参数...>             # exe 子命令透传（status/history/...）
+node scripts/p.mjs new <会话> <seed> [--ascension N] [--goal heart-victory]
 ```
 
 `research` 和 `plans` 默认只标出搜索起点的回合、血量、完整候选数与停止原因。
@@ -175,7 +174,7 @@ await game.close();
 `preview` 的假设后继沿用正式决策读数：发现、消耗或弃牌的附带选择与牌面规则同时展示，
 原局仍停在预演之前。可把后续选择接进更长的预演动作串，也可采用动作后在正式页完成选择。
 
-在 PowerShell 中用 `node .\p ...` 调用这个无扩展名的 Node 入口；`./p` 适用于支持 shebang 的 shell。
+在 PowerShell 中用 `node .\scripts\p.mjs ...` 调用这个无扩展名的 Node 入口；`node scripts/p.mjs` 适用于支持 shebang 的 shell。
 `act`/`preview` 内的动作可用空格或逗号加空格分隔。例如
 `preview play:Inflame#0, play:ShrugItOff#0` 会一起预演两张牌，不执行第二张。
 `read`、`info`、`inventory` 等明确的新命令会结束动作串；
@@ -203,8 +202,8 @@ await game.close();
 或任务时重新核对，同一时段由一个操作者推进。任何命令仍可显式传会话以指定目标。
 省略会话时使用默认会话；已有默认会话也可以显式传短名。会话完整名称优先于唯一片段匹配，
 多个匹配会报错。固定命令和选项编号优先作用于默认会话，其余参数优先匹配已有会话，再作为
-选项名称。遇到重名，用会话路径明确区分，例如 `./p ./路径/map` 读取名为 map 的会话，
-`./p ./路径/当前会话 Bash` 选择该会话中的 Bash，不受另一个名为 Bash 的会话影响。
+选项名称。遇到重名，用会话路径明确区分，例如 `node scripts/p.mjs ./路径/map` 读取名为 map 的会话，
+`node scripts/p.mjs ./路径/当前会话 Bash` 选择该会话中的 Bash，不受另一个名为 Bash 的会话影响。
 
 act 的糖：`play:X@1*3` 展开为三张同名连打，Rust 逐后继解析等价副本和唯一合法目标，
 客户端不猜 `#0` 或 `@0`。费用不足、牌不在手中或真实歧义会原样报错，不改写动作重试。
@@ -236,26 +235,26 @@ act 的糖：`play:X@1*3` 展开为三张同名连打，Rust 逐后继解析等�
 需要房间情报时用 `map`/`info` 只看公开状态。`exe`/`undo`/`new` 直接运行
 `target/dev-opt/run_play.exe`（含其自带的新鲜度校验），与 `run-play.ps1` 指向同一 owner。
 普通编号一次只选当前一项，多编号仅用于同一选牌界面的多选。奖励页不接受裸编号，
-而是显示 Rust 返回的语义动作短命令，例如 `./p claim:BagOfPreparation#0`、`./p open-card#0`、
-`./p proceed`。领金币、领遗物和选钥匙后即使行号变化，名称也不会被解释为另一个奖励。
+而是显示 Rust 返回的语义动作短命令，例如 `node scripts/p.mjs claim:BagOfPreparation#0`、`node scripts/p.mjs open-card#0`、
+`node scripts/p.mjs proceed`。领金币、领遗物和选钥匙后即使行号变化，名称也不会被解释为另一个奖励。
 `#0` 是同名选项的实例序号，不是页面行号；命令不存在时原样报错，不猜另一个选项。
-既有唯一名称选择如 `./p "Bag of Preparation"` 仍可用。串联操作时使用名称命令，不预写后继编号。
+既有唯一名称选择如 `node scripts/p.mjs "Bag of Preparation"` 仍可用。串联操作时使用名称命令，不预写后继编号。
 选牌页的 `skip-card` 返回奖励页，保留重新打开选牌的机会。决定离开时用 `proceed`，
 或 `go 4,2` 离开奖励页并前往指定坐标，尚未领取的奖励随之放弃。
 从商店或显式放弃奖励后前往指定坐标时，离开和旅行由 Rust 一起准备、一次提交；
 目的地不合法时整条线不提交，保留当前房间和奖励。
 
-`node .\p exe compare --artifact <新文件.json> '<动作/动作/...>'` 可保存只读试演。
+`node .\scripts\p.mjs exe compare --artifact <新文件.json> '<动作/动作/...>'` 可保存只读试演。
 若所有动作都属于战斗，磁盘 artifact 另含 `combat_replay`：精确根状态、已解析的输入与
 后继状态，供离线工具直接重放；其中包含隐藏信息，不是公开玩家观察。普通返回读数不展开
 该数据。含战斗外动作的轨迹只保留原有公开投影；旧 artifact 不会自动补写私有重放数据。
 
 选卡、发现、移除和升级的普通选项行直接显示可复制的准确命令，例如
-`./p take:Armaments#0`；战斗选牌显示 `./p act select:<卡牌>`，发现牌显示 `choose:<卡牌>`。
+`node scripts/p.mjs take:Armaments#0`；战斗选牌显示 `node scripts/p.mjs act select:<卡牌>`，发现牌显示 `choose:<卡牌>`。
 战斗外多选（例如 Empty Cage 移除两张牌）同样使用 `act select:`，按当页 `Input` 一次提交所需卡牌，
-例如 `./p act select:Parasite+0#0,Strike+0#0`；卡牌 token 之间的逗号不加空格。
+例如 `node scripts/p.mjs act select:Parasite+0#0,Strike+0#0`；卡牌 token 之间的逗号不加空格。
 这些语义动作也能接在同一条 `preview` 或 `act` 的中途。原有同页编号选择仍可用。
-命令替换原有选项行，不附加第二套列表。较长的营火升级列表默认按牌名汇总，`./p options`
+命令替换原有选项行，不附加第二套列表。较长的营火升级列表默认按牌名汇总，`node scripts/p.mjs options`
 展开每个实例的命令。战斗默认读数仅为费用、升级等属性不同的同名手牌补充当前合法的准确命令
 及费用；等价副本不重复列出。战斗默认读数同时列出合法用药、弃药命令及对应槽位，
 药水命令里的 `#序号` 是同名药水的出现序号，槽位 `P1` 可以对应 `PowerPotion#0`。
@@ -291,7 +290,7 @@ act 的糖：`play:X@1*3` 展开为三张同名连打，Rust 逐后继解析等�
 可以明确调用 `open-card` 延后其他奖励；一旦进入选牌页，需拿牌或跳过才能回到剩余奖励。
 
 `exe status` 是诊断面；旧证据会话可见来源信息，日常 scratch 只显示当前局面。
-不要用诊断面的**引擎**候选编号调用 `./p N`。
+不要用诊断面的**引擎**候选编号调用 `node scripts/p.mjs N`。
 其中 `Route via ordinary connections` 只表示下一个岔路前的普通连线路段，不锁定路线计划。
 飞行靴的实际可选节点仍以当前地图选择为准，单一路段摘要不排除飞行。
 `hN` 是会话修订号，`n...` 是历史节点摘要，`last ... anchor-line` 表示上次提交了多步动作；
@@ -366,11 +365,11 @@ Rust 返回的命令错误以 `RunPlayCommandError` 保留 `code`、`command`、
 请求与已确认收据写入该工作台的记录目录；恢复已提交后重连失败时，错误对象仍携带收据和 `branchChanged`。
 调用者负责按任务取得修改权；这个接口本身不会取消模型，也不会改写 dsh 历史。
 
-决策历史由执行过程保留，**不需要先调用 `jump` 才能保存**。需要多步试打时可执行 `./p jump`，
+决策历史由执行过程保留，**不需要先调用 `jump` 才能保存**。需要多步试打时可执行 `node scripts/p.mjs jump`，
 记下它打印的 `Return point` 命令；这一步只读，不创建另一个存档。试打到 A 的终点后再记一个返回命令，就可以一条命令回起点试 B，再直接切回
 保留的 A 或 B 终点继续，无需数 undo 次数或重新执行整条 A。只做局部计算时仍可用 `preview`。
 
-`./p jump <选择器>` 直接调用 Rust 现有的 jump owner，关闭旧连接语义，恢复后从新连接读取
+`node scripts/p.mjs jump <选择器>` 直接调用 Rust 现有的 jump owner，关闭旧连接语义，恢复后从新连接读取
 当前手牌、能量、HP、状态与选项；不会自动出牌。可用引擎给出的 `nNODE`，或显式
 `source:hN`（该次操作前）、`target:hN`（该次操作记录的目标）。裸 `hN` 含义不明确，会报错。
 无参数时从 `status` 获取节点，并与新读数的公开快照核对后显示返回命令；正常战斗没有选择
@@ -378,8 +377,8 @@ Rust 返回的命令错误以 `RunPlayCommandError` 保留 `code`、`command`、
 
 跳转只限当前会话已有且可恢复的公开决策，包括被撤销的分支；不能跳到未走过的未来或私下
 preview 的假想终点。终局自身没有可返回的决策点，但此前保留的决策仍可使用。
-若没记下返回命令，用 `./p exe history --limit 20 --combat-detail` 核对历史动作与 `from=n...` 节点，
-再在本轮授权范围内 `./p jump n...`；忘记复制命令不等于丢失存档，找不到明确节点时也不能猜。
+若没记下返回命令，用 `node scripts/p.mjs exe history --limit 20 --combat-detail` 核对历史动作与 `from=n...` 节点，
+再在本轮授权范围内 `node scripts/p.mjs jump n...`；忘记复制命令不等于丢失存档，找不到明确节点时也不能猜。
 每次跳转增加 `h` 修订号，保留原轨迹与跳转事件；它不会把已看过的未来信息变回未知。
 旧选项和搜索对象失效，采用路径的 `history --journey` 不代替被撤销尝试的记录。
 

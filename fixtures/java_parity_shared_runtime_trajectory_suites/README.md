@@ -16,8 +16,8 @@ prefix; string-only comparator errors remain Unknown. The suite keeps natural
 reachability, strategy evidence, and training eligibility false.
 
 ```powershell
-.\java-play.ps1 scenario shared-trajectory-suites
-.\java-play.ps1 scenario shared-trajectory-suite --suite cultist-shared-runtime-trajectories
+.\scripts\java-play.ps1 scenario shared-trajectory-suites
+.\scripts\java-play.ps1 scenario shared-trajectory-suite --suite cultist-shared-runtime-trajectories
 ```
 
 The tracked suite pairs the two-step duplicate-Strike sentinel with the

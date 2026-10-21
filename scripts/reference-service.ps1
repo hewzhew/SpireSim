@@ -3,13 +3,13 @@
 Runs the local reference CLI from this repository.
 
 .EXAMPLE
-PS D:\rust\sts_simulator> .\reference-service.ps1 entity --kind card --id BattleTrance
+PS D:\rust\sts_simulator> .\scripts\reference-service.ps1 entity --kind card --id BattleTrance
 #>
 #requires -Version 7.0
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$repositoryRoot = (Resolve-Path -LiteralPath $PSScriptRoot).Path
+$repositoryRoot = Split-Path -Parent $PSScriptRoot
 $python = Join-Path $repositoryRoot '.oracle-lab\reference-service-venv\Scripts\python.exe'
 $forwarded = @($args)
 
@@ -19,7 +19,7 @@ if (-not (Test-Path -LiteralPath $python -PathType Leaf)) {
 
 Push-Location -LiteralPath $repositoryRoot
 try {
-    & (Join-Path $repositoryRoot 'py.ps1') -Python $python -m sts_reference.cli @forwarded
+    & (Join-Path $repositoryRoot 'scripts/py.ps1') -Python $python -m sts_reference.cli @forwarded
     exit $LASTEXITCODE
 }
 finally {

@@ -136,7 +136,7 @@ The full resolved configuration is saved before execution.
 Set `task` to `draw_select` for the broader constructed task; the default is `starter`.
 
 ```powershell
-.\py.ps1 -u -m tools.guided_search.local_train --config <config.json> --output <new-study-directory>
+.\scripts\py.ps1 -u -m tools.guided_search.local_train --config <config.json> --output <new-study-directory>
 ```
 
 The default study uses multiple model initializations and disjoint training/final
@@ -172,7 +172,7 @@ default. An explicitly named `--regression-baseline` can admit a new binary only
 after the fresh direct controls pass the checks described below.
 
 ```powershell
-.\py.ps1 -u -m tools.guided_search.local_compare --training <completed-development-study> --output <new-comparison-directory>
+.\scripts\py.ps1 -u -m tools.guided_search.local_compare --training <completed-development-study> --output <new-comparison-directory>
 ```
 
 ### New evaluation seeds
@@ -327,7 +327,7 @@ real full-episode return and behavior-probability checks. Incomplete direct
 cohorts or execution faults stop the study with evidence.
 
 ```powershell
-.\py.ps1 -u -m tools.guided_search.local_improve --training <completed-local-development-study> --config <improvement.json> --output <new-study-directory> --regression-baseline <original-binary-comparison>
+.\scripts\py.ps1 -u -m tools.guided_search.local_improve --training <completed-local-development-study> --config <improvement.json> --output <new-study-directory> --regression-baseline <original-binary-comparison>
 ```
 
 All training finishes before evaluating initial and last-generation arms on the
@@ -417,7 +417,7 @@ nor validate a value model inside search.
 
 ```powershell
 cargo test -p sts_guided_search --lib
-.\py.ps1 -m pytest tools/guided_search -q
+.\scripts\py.ps1 -m pytest tools/guided_search -q
 ```
 
 The checks cover source binding, distinct duplicate actions, actual enemy turns,

@@ -11,5 +11,5 @@ $arguments = @('-m', 'tools.strategy_reader.cli', '--repository', $repository)
 if ($List) { $arguments += '--list' }
 if ($Subject) { $arguments += $Subject }
 if ($Json) { $arguments += '--json' }
-& (Join-Path $repository 'py.ps1') @arguments
+& (Join-Path $repository 'scripts/py.ps1') @arguments
 exit $LASTEXITCODE

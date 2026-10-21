@@ -19,13 +19,13 @@ forwarded to Python stdin so typed workers can be exercised through this same
 interpreter boundary.
 
 .EXAMPLE
-.\py.ps1 -m unittest discover -s tools/wiki/tests -p 'test_*.py'
+.\scripts\py.ps1 -m unittest discover -s tools/wiki/tests -p 'test_*.py'
 
 .EXAMPLE
-.\py.ps1 -m pytest tools/wiki/tests -q
+.\scripts\py.ps1 -m pytest tools/wiki/tests -q
 
 .EXAMPLE
-.\py.ps1 -Python .oracle-lab/reference-service-venv/Scripts/python.exe -m pytest reference_service/tests -q
+.\scripts\py.ps1 -Python .oracle-lab/reference-service-venv/Scripts/python.exe -m pytest reference_service/tests -q
 
 #>
 #requires -Version 7.0
@@ -73,7 +73,7 @@ elseif ($pythonArguments.Count -gt 0 -and $pythonArguments[0] -ieq '-Environment
 # scalar and splatting would forward it one character at a time.
 $pythonArguments = @($pythonArguments)
 
-$repositoryRoot = (Resolve-Path -LiteralPath $PSScriptRoot).Path
+$repositoryRoot = Split-Path -Parent $PSScriptRoot
 $configuredPythonFile = if ($environmentSelectorSupplied) {
     Join-Path $repositoryRoot ".oracle-lab\hosts\$selectedEnvironment-python.txt"
 }

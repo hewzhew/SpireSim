@@ -13,7 +13,7 @@
 `tools/release/build_candidate.py` 要求工作树干净，显式接收导出目录和 wheel：
 
 ```powershell
-.\py.ps1 tools/release/build_candidate.py --study <verified-export-directory> `
+.\scripts\py.ps1 tools/release/build_candidate.py --study <verified-export-directory> `
   --wheel <windows-wheel> --wheel <linux-wheel> --output <new-candidate-directory>
 ```
 

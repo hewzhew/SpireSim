@@ -41,8 +41,8 @@ Use the repository's isolated Python environment. No separate Neow database
 build is required:
 
 ```text
-.\py.ps1 -Python <python-3.12.exe> -m venv .oracle-lab/reference-service-venv
-.\py.ps1 -Python .oracle-lab/reference-service-venv/Scripts/python.exe -m pip install -e "reference_service[test]"
+.\scripts\py.ps1 -Python <python-3.12.exe> -m venv .oracle-lab/reference-service-venv
+.\scripts\py.ps1 -Python .oracle-lab/reference-service-venv/Scripts/python.exe -m pip install -e "reference_service[test]"
 ```
 
 The retriever and its request types live in this package; there is no LLM
@@ -73,7 +73,7 @@ records require fresh entity research, not a silently rebound old citation.
 Research one entity:
 
 ```text
-.\py.ps1 -Python .oracle-lab/reference-service-venv/Scripts/python.exe -m sts_reference.cli entity --kind card --id BattleTrance
+.\scripts\py.ps1 -Python .oracle-lab/reference-service-venv/Scripts/python.exe -m sts_reference.cli entity --kind card --id BattleTrance
 ```
 
 Export a complete request from a durable strategic head without changing it:
@@ -85,7 +85,7 @@ target/dev-opt/run_play.exe reference-request --session .oracle-lab/run-play/<se
 Run the maintained narrow suite:
 
 ```text
-.\py.ps1 -Python .oracle-lab/reference-service-venv/Scripts/python.exe -m pytest reference_service/tests -q
+.\scripts\py.ps1 -Python .oracle-lab/reference-service-venv/Scripts/python.exe -m pytest reference_service/tests -q
 ```
 
 Acquisition remains deliberate and provenance-preserving. Add or refresh raw

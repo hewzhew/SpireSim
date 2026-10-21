@@ -11,13 +11,13 @@ parameters.
 Inspect the catalog without launching the game:
 
 ```powershell
-.\java-play.ps1 scenario probe-cases
+.\scripts\java-play.ps1 scenario probe-cases
 ```
 
 Run a complete comparison by exact probe-case ID:
 
 ```powershell
-.\java-play.ps1 scenario verify --probe-case cultist-second-strike --profile accelerated
+.\scripts\java-play.ps1 scenario verify --probe-case cultist-second-strike --profile accelerated
 ```
 
 These fixtures are `constructed_validated` mechanics evidence only. They are

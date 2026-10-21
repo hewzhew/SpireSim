@@ -41,7 +41,7 @@ rg -n 'path|potion|ACT 2' .oracle-lab/external-research/sources/reddit-ironclad-
 [五个决策问题](expert/notes/decision-questions.md)把几篇攻略的取舍和原文位置放在同一页。
 
 Wiki 适合核对机制和官方中文名称。灰机的“铁甲战士”页还有单核、防战、力量、消耗等
-构筑概览，可用 `.\wiki.ps1 page --source-id slay-the-spire-huiji-zh --title 铁甲战士`
+构筑概览，可用 `.\scripts\wiki.ps1 page --source-id slay-the-spire-huiji-zh --title 铁甲战士`
 阅读。wiki.gg 抓取还含二代专用命名空间；查一代文章时给 `wiki.ps1 search` 加
 `--namespace 0`。资料来源、查询命令与更新流程分别见
 [Wiki 目录](wiki/README.md)和[来源目录](expert/sources.jsonl)。

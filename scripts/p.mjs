@@ -1,10 +1,10 @@
 #!/usr/bin/env node
-// Two-character entry to tools/run_play/play.mjs for interactive sessions:
-//   ./p <session> act play:Strike+0@1*3
+// Node entry to tools/run_play/play.mjs for interactive sessions:
+//   node scripts/p.mjs <session> act play:Strike+0@1*3
 // The workbench remains the single owner; this file only forwards argv.
 // Errors print as one friendly block; P_DEBUG=1 keeps the stack for
 // tooling work.
-import { main } from './tools/run_play/play.mjs';
+import { main } from '../tools/run_play/play.mjs';
 try {
   await main();
 } catch (error) {

@@ -21,12 +21,12 @@ compared.
 List and validate the tracked drafts without launching the game:
 
 ```powershell
-.\java-play.ps1 scenario trajectories
-.\java-play.ps1 scenario trajectory --trajectory-case cultist-two-strikes --profile accelerated
-.\java-play.ps1 scenario trajectory --trajectory-case cultist-power-through-second-wind --profile accelerated
-.\java-play.ps1 scenario trajectory --trajectory-case cultist-corruption-power-through-second-wind --profile accelerated
-.\java-play.ps1 scenario trajectory --trajectory-case cultist-feed-crosses-meat-threshold --profile accelerated --step-index 3
-.\java-play.ps1 scenario recompare-trajectory --trajectory-report .oracle-lab/java-scenarios/<trajectory>/trajectory-report.json --step-index 3
+.\scripts\java-play.ps1 scenario trajectories
+.\scripts\java-play.ps1 scenario trajectory --trajectory-case cultist-two-strikes --profile accelerated
+.\scripts\java-play.ps1 scenario trajectory --trajectory-case cultist-power-through-second-wind --profile accelerated
+.\scripts\java-play.ps1 scenario trajectory --trajectory-case cultist-corruption-power-through-second-wind --profile accelerated
+.\scripts\java-play.ps1 scenario trajectory --trajectory-case cultist-feed-crosses-meat-threshold --profile accelerated --step-index 3
+.\scripts\java-play.ps1 scenario recompare-trajectory --trajectory-report .oracle-lab/java-scenarios/<trajectory>/trajectory-report.json --step-index 3
 ```
 
 `cultist-two-strikes` is the smallest successor-selector sentinel: after the

@@ -25,7 +25,7 @@ use resident_process::spawn_resident_service;
 #[command(
     name = "oracle_lab",
     about = "Fast client for a resident oracle laboratory",
-    after_help = "Use `start` and `live` for routine work. Deliberately invoke heavyweight offline commands through `.\\ol.ps1`, for example `.\\ol.ps1 combat-case ...`."
+    after_help = "Use `start` and `live` for routine work. Deliberately invoke heavyweight offline commands through `.\\scripts\\ol.ps1`, for example `.\\scripts\\ol.ps1 combat-case ...`."
 )]
 struct Cli {
     #[arg(long, hide = true, global = true)]
@@ -1673,12 +1673,13 @@ fn heavy_executable() -> Result<PathBuf, String> {
         });
     if !executable.is_file() {
         return Err(format!(
-            "heavy oracle laboratory is missing at {}; run `.\\ol.ps1 build oracle`",
+            "heavy oracle laboratory is missing at {}; run `.\\scripts\\ol.ps1 build oracle`",
             executable.display()
         ));
     }
-    ensure_heavy_artifact_fresh(&executable)
-        .map_err(|error| format!("{error}; rebuild explicitly with `.\\ol.ps1 build oracle`"))?;
+    ensure_heavy_artifact_fresh(&executable).map_err(|error| {
+        format!("{error}; rebuild explicitly with `.\\scripts\\ol.ps1 build oracle`")
+    })?;
     Ok(executable)
 }
 
@@ -1693,12 +1694,13 @@ fn service_executable() -> Result<PathBuf, String> {
         });
     if !canonical.is_file() {
         return Err(format!(
-            "resident oracle host is missing at {}; run `.\\ol-live.ps1 build host`",
+            "resident oracle host is missing at {}; run `.\\scripts\\ol-live.ps1 build host`",
             canonical.display()
         ));
     }
-    ensure_service_artifact_fresh(&canonical)
-        .map_err(|error| format!("{error}; rebuild explicitly with `.\\ol-live.ps1 build host`"))?;
+    ensure_service_artifact_fresh(&canonical).map_err(|error| {
+        format!("{error}; rebuild explicitly with `.\\scripts\\ol-live.ps1 build host`")
+    })?;
     materialize_service_runtime(&canonical)
 }
 
@@ -1819,7 +1821,7 @@ fn ensure_heavy_artifact_fresh(executable: &Path) -> Result<(), String> {
         &repository_root(),
         CanonicalArtifact::OracleHost,
         "heavy oracle laboratory",
-        ".\\ol.ps1 build oracle",
+        ".\\scripts\\ol.ps1 build oracle",
     )
 }
 
@@ -1829,7 +1831,7 @@ fn ensure_service_artifact_fresh(executable: &Path) -> Result<(), String> {
         &repository_root(),
         CanonicalArtifact::OracleHost,
         "resident oracle host",
-        ".\\ol-live.ps1 build host",
+        ".\\scripts\\ol-live.ps1 build host",
     )
 }
 
@@ -1938,7 +1940,7 @@ fn validate_session_name(session: &str) -> Result<(), String> {
 fn validate_canonical_launch(canonical_oracle: bool) -> Result<(), String> {
     if !canonical_oracle {
         return Err(
-            "oracle_lab client refuses direct execution; run `.\\ol-live.ps1 <command> ...`"
+            "oracle_lab client refuses direct execution; run `.\\scripts\\ol-live.ps1 <command> ...`"
                 .to_string(),
         );
     }
@@ -1955,7 +1957,7 @@ fn validate_canonical_launch(canonical_oracle: bool) -> Result<(), String> {
         .map_err(|error| format!("failed to identify running oracle_lab client: {error}"))?;
     let expected = expected.canonicalize().map_err(|error| {
         format!(
-            "canonical oracle_lab client is missing at {}: {error}; run `.\\ol-live.ps1 build client`",
+            "canonical oracle_lab client is missing at {}: {error}; run `.\\scripts\\ol-live.ps1 build client`",
             expected.display()
         )
     })?;

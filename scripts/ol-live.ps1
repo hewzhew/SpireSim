@@ -6,7 +6,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$repository = $PSScriptRoot
+$repository = Split-Path -Parent $PSScriptRoot
 $client = Join-Path $repository 'target\release\oracle_lab_client.exe'
 . (Join-Path $repository 'tools\cargo_artifact_contract.ps1')
 
@@ -35,10 +35,10 @@ try {
         exit 0
     }
     if (-not (Test-Path -LiteralPath $client -PathType Leaf)) {
-        throw 'Canonical resident client is not built. Run: .\ol-live.ps1 build client'
+        throw 'Canonical resident client is not built. Run: .\scripts\ol-live.ps1 build client'
     }
     Assert-CargoArtifactFresh -Executable $client -Repository $repository `
-        -Label 'Canonical resident client' -RebuildCommand '.\ol-live.ps1 build client' `
+        -Label 'Canonical resident client' -RebuildCommand '.\scripts\ol-live.ps1 build client' `
         -AdditionalInputs @('crates/oracle_lab_client/Cargo.toml') `
         -SelfGuardInputs @(
             'crates/oracle_lab_client/src/main.rs',

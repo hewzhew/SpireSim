@@ -103,10 +103,10 @@ Use the dedicated reference Python environment with the current Rust learning
 bridge available. No Java launch or additional model provider is required.
 
 ```powershell
-.\py.ps1 -Python <reference-python.exe> -m pytest tools/rl_reference/test_combat.py tools/rl_reference/test_combat_deviations.py -q
-.\py.ps1 -Python <reference-python.exe> -u -m tools.rl_reference.combat_trial <fresh-output-directory> --wall-seconds 1200
-.\py.ps1 -Python <reference-python.exe> -u -m tools.rl_reference.combat_verify <trial-directory>
-.\py.ps1 -Python <reference-python.exe> -u -m tools.rl_reference.combat_deviations <trial-directory> <fresh-audit-directory> --wall-seconds 300
+.\scripts\py.ps1 -Python <reference-python.exe> -m pytest tools/rl_reference/test_combat.py tools/rl_reference/test_combat_deviations.py -q
+.\scripts\py.ps1 -Python <reference-python.exe> -u -m tools.rl_reference.combat_trial <fresh-output-directory> --wall-seconds 1200
+.\scripts\py.ps1 -Python <reference-python.exe> -u -m tools.rl_reference.combat_verify <trial-directory>
+.\scripts\py.ps1 -Python <reference-python.exe> -u -m tools.rl_reference.combat_deviations <trial-directory> <fresh-audit-directory> --wall-seconds 300
 ```
 
 This runner does not choose a final architecture or automatically promote a

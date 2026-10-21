@@ -6,7 +6,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$repository = $PSScriptRoot
+$repository = Split-Path -Parent $PSScriptRoot
 $worker = Join-Path $repository 'target\release\combat_contract.exe'
 . (Join-Path $repository 'tools\cargo_artifact_contract.ps1')
 
@@ -17,10 +17,10 @@ try {
         exit $LASTEXITCODE
     }
     if (-not (Test-Path -LiteralPath $worker -PathType Leaf)) {
-        throw 'Narrow combat-contract worker is not built. Run: .\ol-contract.ps1 build'
+        throw 'Narrow combat-contract worker is not built. Run: .\scripts\ol-contract.ps1 build'
     }
     Assert-CargoArtifactFresh -Executable $worker -Repository $repository `
-        -Label 'Combat-contract worker' -RebuildCommand '.\ol-contract.ps1 build' `
+        -Label 'Combat-contract worker' -RebuildCommand '.\scripts\ol-contract.ps1 build' `
         -AdditionalInputs @('crates/sts_combat_contract/Cargo.toml')
     & $worker @Arguments
     exit $LASTEXITCODE
