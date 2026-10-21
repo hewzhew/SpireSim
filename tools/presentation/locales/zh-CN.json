@@ -1,0 +1,45 @@
+{
+  "game": {
+    "character": { "ironclad": "铁甲战士", "silent": "静默猎手", "defect": "故障机器人", "watcher": "观者" },
+    "card": {
+      "Strike": "打击", "StrikeG": "打击", "StrikeB": "打击", "StrikeP": "打击",
+      "Defend": "防御", "DefendG": "防御", "DefendB": "防御", "DefendP": "防御",
+      "Bash": "痛击", "AscendersBane": "进阶之灾", "ShrugItOff": "耸肩无视", "Entrench": "巩固", "SwordBoomerang": "飞剑回旋"
+    },
+    "enemy": { "JawWorm": "大颚虫" },
+    "encounter": {
+      "JawWorm": "大颚虫", "SlimeBoss": "史莱姆老大", "Hexaghost": "六火亡魂", "TheGuardian": "守护者",
+      "TheChamp": "冠军", "Collector": "收藏家", "Automaton": "铜制自动机",
+      "AwakenedOne": "觉醒者", "TimeEater": "时间吞噬者", "DonuAndDeca": "甜圈与八体", "TheHeart": "腐化之心"
+    },
+    "event": { "Neow": "涅奥" },
+    "relic": { "BurningBlood": "燃烧之血" },
+    "power": { "Vulnerable": "易伤", "Weak": "虚弱", "Frail": "脆弱" },
+    "room": { "monster": "敌人", "elite": "精英", "rest": "休息", "shop": "商人", "treasure": "财宝", "question_mark": "不明", "boss": "首领" },
+    "cardType": { "attack": "攻击", "skill": "技能", "curse": "诅咒" },
+    "effect": {
+      "damage": "造成 {{damage}} 点伤害",
+      "block": "获得 {{block}} 点格挡",
+      "apply": "施加 {{amount}} 层{{power}}",
+      "draw_one": "抽 {{count}} 张牌",
+      "draw_other": "抽 {{count}} 张牌",
+      "unplayable": "无法打出",
+      "ethereal": "虚无",
+      "doubleBlock": "使当前格挡翻倍",
+      "randomDamage_one": "造成 {{damage}} 点伤害 {{count}} 次，每次随机选择一名敌人",
+      "randomDamage_other": "造成 {{damage}} 点伤害 {{count}} 次，每次随机选择一名敌人"
+    }
+  },
+  "replay": {
+    "nav": { "label": "对局导航", "timeline": "对局过程", "previous": "上一个场景", "next": "下一个场景", "language": "显示语言" },
+    "scene": { "act": "第 {{act}} 幕", "floor": "第 {{floor}} 层", "turn": "第 {{turn}} 回合", "start": "起点", "initialReward": "初始奖励", "rewards": "战后奖励" },
+    "combat": {
+      "hand": "手牌", "energy": "能量 {{energy}}", "plays": "本回合",
+      "attack": "攻击 {{damage}}", "attackDefend": "攻击 {{damage}}，获得格挡", "defendBuff": "格挡并强化",
+      "power": "{{power}} {{amount}}", "block": "格挡 {{block}}", "defeated": "击败{{enemy}}", "heal": "恢复 {{amount}} 点生命"
+    },
+    "event": { "removeCard": "移除一张牌", "maxHp": "最大生命 +{{amount}}", "loseHp": "失去 {{amount}} 点生命", "bossRelic": "随机 Boss 遗物", "loseRelic": "失去{{relic}}" },
+    "reward": { "chosen": "已加入卡组" },
+    "raw": { "summary": "原始记录", "calls": "调用与返回", "input": "模型输入", "output": "模型输出", "request": "请求 {{step}}", "noText": "本回合无文本输出", "json": "JSON", "system": "系统", "user": "用户", "assistant": "模型", "tool": "工具" }
+  }
+}

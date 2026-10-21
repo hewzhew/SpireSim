@@ -1,0 +1,19 @@
+{
+  "name": "@sts-simulator/presentation",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "description": "Shared display names and localized messages, independent of game state",
+  "exports": {
+    ".": "./index.mjs",
+    "./locales/*.json": "./locales/*.json"
+  },
+  "files": ["index.mjs", "locales/*.json", "replay/*", "README.md"],
+  "scripts": {
+    "test": "node --test localization.test.mjs"
+  },
+  "engines": { "node": ">=22" },
+  "dependencies": { "i18next": "26.5.4" },
+  "devDependencies": { "esbuild": "0.28.2" }
+}

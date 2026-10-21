@@ -14,6 +14,7 @@
 | Python 训练环境、安装包与批量接口 | [Python bridge](../bindings/python_learning/README.md) |
 | Rust 跑局与对象交互 | [管道客户端](../tools/run_play/README.md) |
 | dsh 原生游戏插件与脚本复核 | [dsh 游戏插件](../tools/dsh_player/README.md) |
+| 展示语言、共用名称与离线词典 | [展示本地化](../tools/presentation/README.md) |
 | 原生玩家介入与回溯的候选设计 | [对局工作台](architecture/native-player-workspace.md) |
 | 战斗搜索实现 | [搜索 owner](architecture/combat-search.md) |
 | 本地网络与搜索实验 | [实验索引](../tools/guided_search/README.md) |

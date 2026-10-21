@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self' 'unsafe-inline'; script-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'none'">
+  <title>sts-sim</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="vendor/tabler.min.css">
+  <link rel="stylesheet" href="demo.css">
+</head>
+<body>
+<svg class="icon-definitions" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs>__ICON_SYMBOLS__</defs></svg>
+<div class="page">
+  <aside class="navbar navbar-vertical navbar-expand-lg sidebar" data-aria="nav.label">
+    <div class="container-fluid">
+      <div class="brand"><span class="brand-mark" id="brand-mark"></span>sts-sim</div>
+      <div class="run-name"><span id="run-icon"></span><strong data-character></strong><span class="ascension">A20</span></div>
+      <div class="act-label" data-act></div>
+      <nav class="timeline" id="timeline" data-aria="nav.timeline"></nav>
+      <div class="sidebar-bottom">deepseek-flash</div>
+    </div>
+  </aside>
+  <div class="page-wrapper">
+    <div class="app-bar"><span data-character></span><span id="crumb-arrow"></span><span data-act></span><select id="language" class="form-select form-select-sm language-select" data-aria="nav.language"><option value="zh-CN">中文</option><option value="en">English</option></select></div>
+    <header class="page-header">
+      <div class="container-xl"><div class="row align-items-center">
+        <div class="col"><div class="title-row"><h1 class="page-title" id="heading"></h1><span class="turn-label" id="turn-label"></span></div></div>
+        <div class="col-auto nav-buttons"><button class="btn btn-icon" id="previous" type="button" data-aria="nav.previous"></button><button class="btn btn-icon" id="next" type="button" data-aria="nav.next"></button></div>
+      </div></div>
+    </header>
+    <main class="page-body"><div class="container-xl">
+      <section id="stage" aria-labelledby="heading"></section>
+      <details class="raw-record" id="raw-record">
+        <summary id="raw-summary"></summary>
+        <div class="raw-inner">
+          <div class="raw-tabs" role="tablist" data-aria="raw.summary"><button id="tab-calls" data-tab="calls" role="tab" aria-controls="raw-calls" data-message="raw.calls"></button><button id="tab-input" data-tab="input" role="tab" aria-controls="raw-input" data-message="raw.input"></button><button id="tab-output" data-tab="output" role="tab" aria-controls="raw-output" data-message="raw.output"></button></div>
+          <div class="raw-panel" id="raw-calls" role="tabpanel" aria-labelledby="tab-calls"></div><div class="raw-panel" id="raw-input" role="tabpanel" aria-labelledby="tab-input" hidden></div><div class="raw-panel" id="raw-output" role="tabpanel" aria-labelledby="tab-output" hidden></div>
+        </div>
+      </details>
+    </div></main>
+  </div>
+</div>
+<script type="application/json" id="data">__DEMO_DATA__</script>
+<script type="application/json" id="story">__STORY_DATA__</script>
+<script src="demo.js"></script>
+</body>
+</html>

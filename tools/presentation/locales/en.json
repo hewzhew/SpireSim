@@ -1,0 +1,45 @@
+{
+  "game": {
+    "character": { "ironclad": "Ironclad", "silent": "Silent", "defect": "Defect", "watcher": "Watcher" },
+    "card": {
+      "Strike": "Strike", "StrikeG": "Strike", "StrikeB": "Strike", "StrikeP": "Strike",
+      "Defend": "Defend", "DefendG": "Defend", "DefendB": "Defend", "DefendP": "Defend",
+      "Bash": "Bash", "AscendersBane": "Ascender's Bane", "ShrugItOff": "Shrug It Off", "Entrench": "Entrench", "SwordBoomerang": "Sword Boomerang"
+    },
+    "enemy": { "JawWorm": "Jaw Worm" },
+    "encounter": {
+      "JawWorm": "Jaw Worm", "SlimeBoss": "Slime Boss", "Hexaghost": "Hexaghost", "TheGuardian": "The Guardian",
+      "TheChamp": "The Champ", "Collector": "The Collector", "Automaton": "Bronze Automaton",
+      "AwakenedOne": "Awakened One", "TimeEater": "Time Eater", "DonuAndDeca": "Donu and Deca", "TheHeart": "Corrupt Heart"
+    },
+    "event": { "Neow": "Neow" },
+    "relic": { "BurningBlood": "Burning Blood" },
+    "power": { "Vulnerable": "Vulnerable", "Weak": "Weak", "Frail": "Frail" },
+    "room": { "monster": "Enemy", "elite": "Elite", "rest": "Rest", "shop": "Merchant", "treasure": "Treasure", "question_mark": "Unknown", "boss": "Boss" },
+    "cardType": { "attack": "Attack", "skill": "Skill", "curse": "Curse" },
+    "effect": {
+      "damage": "Deal {{damage}} damage.",
+      "block": "Gain {{block}} Block.",
+      "apply": "Apply {{amount}} {{power}}.",
+      "draw_one": "Draw {{count}} card.",
+      "draw_other": "Draw {{count}} cards.",
+      "unplayable": "Unplayable.",
+      "ethereal": "Ethereal.",
+      "doubleBlock": "Double your Block.",
+      "randomDamage_one": "Deal {{damage}} damage {{count}} time, choosing a random enemy for each hit.",
+      "randomDamage_other": "Deal {{damage}} damage {{count}} times, choosing a random enemy for each hit."
+    }
+  },
+  "replay": {
+    "nav": { "label": "Run navigation", "timeline": "Run timeline", "previous": "Previous scene", "next": "Next scene", "language": "Display language" },
+    "scene": { "act": "Act {{act}}", "floor": "Floor {{floor}}", "turn": "Turn {{turn}}", "start": "Start", "initialReward": "Starting bonus", "rewards": "Rewards" },
+    "combat": {
+      "hand": "Hand", "energy": "Energy {{energy}}", "plays": "This turn",
+      "attack": "Attack {{damage}}", "attackDefend": "Attack {{damage}}, gain Block", "defendBuff": "Block and buff",
+      "power": "{{power}} {{amount}}", "block": "Block {{block}}", "defeated": "Defeated {{enemy}}", "heal": "Heal {{amount}} HP"
+    },
+    "event": { "removeCard": "Remove a card", "maxHp": "Max HP +{{amount}}", "loseHp": "Lose {{amount}} HP", "bossRelic": "Random Boss Relic", "loseRelic": "Lose {{relic}}" },
+    "reward": { "chosen": "Added to deck" },
+    "raw": { "summary": "Original records", "calls": "Calls and results", "input": "Model input", "output": "Model output", "request": "Request {{step}}", "noText": "No text output this turn", "json": "JSON", "system": "System", "user": "User", "assistant": "Model", "tool": "Tool" }
+  }
+}
