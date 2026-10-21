@@ -1322,6 +1322,7 @@ pub struct AgentCombatResearchCandidateV1 {
 #[serde(deny_unknown_fields)]
 pub struct AgentLiveCombatResearchCandidateV1 {
     pub candidate_ref: String,
+    pub plan_id: String,
     pub candidate_id: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub report_candidate_index: Option<usize>,
@@ -1338,12 +1339,14 @@ pub struct AgentLiveCombatResearchCandidateV1 {
 
 fn project_live_combat_research_candidates_v1(
     candidates: &[AgentCombatResearchCandidateV1],
+    report_id: &str,
 ) -> Vec<AgentLiveCombatResearchCandidateV1> {
     candidates
         .iter()
         .enumerate()
         .map(|(index, candidate)| AgentLiveCombatResearchCandidateV1 {
             candidate_ref: format!("c{index}"),
+            plan_id: crate::combat_reading::plan_id(report_id, &format!("c{index}")),
             candidate_id: candidate.candidate_id.clone(),
             report_candidate_index: candidate.report_candidate_index,
             supporting_provenances: candidate.supporting_provenances.clone(),
@@ -5471,14 +5474,16 @@ fn handle_valid_request_v1(
             else {
                 return Err("combat research requires a combat decision".into());
             };
+            let report_id = combat_research_cache
+                .as_ref()
+                .and_then(|c| c.report_id.clone())
+                .ok_or("research report was not saved")?;
             Ok((
                 AgentShellResultV1::CombatResearch {
-                    report_id: combat_research_cache
-                        .as_ref()
-                        .and_then(|c| c.report_id.clone())
-                        .ok_or("research report was not saved")?,
+                    report_id: report_id.clone(),
                     view: {
                         let mut view = crate::combat_reading::research(
+                            &report_id,
                             root,
                             &candidates,
                             &bounded_progress,
@@ -5504,7 +5509,7 @@ fn handle_valid_request_v1(
                     reused_cached_frontier,
                     lanes,
                     bounded_progress,
-                    candidates: project_live_combat_research_candidates_v1(&candidates),
+                    candidates: project_live_combat_research_candidates_v1(&candidates, &report_id),
                     milestone_candidates,
                     milestone_successor_preview_count,
                     milestone_successor_previews_included: *include_milestone_successor_previews,
@@ -5515,13 +5520,15 @@ fn handle_valid_request_v1(
         }
         AgentShellRequestV1::CombatPlans { diagnostics, .. } => {
             let saved = SavedPlans::load(controller, None)?;
+            let report_id = saved.id()?;
             Ok((
                 AgentShellResultV1::CombatPlans {
-                    report_id: saved.id()?,
+                    report_id: report_id.clone(),
                     effort: saved.artifact.effort,
                     view: saved.view(controller, *diagnostics)?,
                     candidates: project_live_combat_research_candidates_v1(
                         &saved.artifact.candidates,
+                        &report_id,
                     ),
                 },
                 false,
@@ -5555,7 +5562,11 @@ fn handle_valid_request_v1(
                     &saved.artifact,
                     &indices,
                 )?;
-                let view = crate::combat_reading::review(&trace, candidate_refs, *turn, *compact)?;
+                let display_refs = candidate_refs
+                    .iter()
+                    .map(|reference| crate::combat_reading::plan_id(id, reference))
+                    .collect::<Vec<_>>();
+                let view = crate::combat_reading::review(&trace, &display_refs, *turn, *compact)?;
                 trace.set_steps_included_v1(*include_steps);
                 return Ok((
                     AgentShellResultV1::CombatReview {
@@ -5587,7 +5598,15 @@ fn handle_valid_request_v1(
                 &candidate_ids,
                 format!("agent-shell:{effort:?}"),
             )?;
-            let view = crate::combat_reading::review(&trace, candidate_refs, *turn, *compact)?;
+            let id = cached
+                .report_id
+                .as_deref()
+                .ok_or("research report was not saved")?;
+            let display_refs = candidate_refs
+                .iter()
+                .map(|reference| crate::combat_reading::plan_id(id, reference))
+                .collect::<Vec<_>>();
+            let view = crate::combat_reading::review(&trace, &display_refs, *turn, *compact)?;
             trace.set_steps_included_v1(*include_steps);
             if controller.head().head_revision != root_head_revision {
                 return Err("agent-shell combat review changed the durable head".to_string());
@@ -6971,8 +6990,12 @@ mod tests {
             },
             action_line: vec!["end".to_string()],
         };
-        let live = project_live_combat_research_candidates_v1(std::slice::from_ref(&candidate));
+        let live = project_live_combat_research_candidates_v1(
+            std::slice::from_ref(&candidate),
+            "test-report",
+        );
         assert_eq!(live[0].candidate_ref, "c0");
+        assert_eq!(live[0].plan_id, "c0@4bf5ca407322");
         assert_eq!(live[0].candidate_id, "candidate-fixture");
         assert!(!live[0].meets_requested_satisfaction);
         assert_eq!(live[0].minimum_observed_hp, Some(7));

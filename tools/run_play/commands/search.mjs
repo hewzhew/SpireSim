@@ -1,22 +1,11 @@
 // Explicit search; inspection and adoption use the saved Rust report.
 import { writeText } from '../render.mjs';
-import { createHash } from 'node:crypto';
 const EFFORTS = ['whole_combat', 'fast_witness', 'standard', 'expanded'];
 
 export function planId(plans, index) {
-  const identity = plans.raw?.report_id;
-  if (typeof identity !== 'string' || !identity) throw new Error('saved plans have no report identity');
-  const stamp = createHash('sha256').update(identity).digest('hex').slice(0, 12);
-  return `c${index}@${stamp}`;
-}
-
-// The report's display order and candidate indexes can change on research.
-// Expose its existing identity in the CLI selector, then use the same bound
-// candidate object for adoption. No registry, extra report copy or retry.
-export function scopedPlanView(view, plans) {
-  if (!/\bc\d+\b|\b(?:commit|review) \d+\b/.test(view)) return view;
-  return view.replace(/\bc(\d+)\b/g, (_match, index) => planId(plans, index))
-    .replace(/\b(commit|review) (\d+)\b/g, (_match, verb, index) => `${verb} ${planId(plans, index)}`);
+  const id = plans.candidates[index]?.planId;
+  if (typeof id !== 'string') throw new Error(`candidate ${index} is not in the saved report`);
+  return id;
 }
 function index(value, what) {
   if (!/^\d+$/.test(value ?? '') || !Number.isSafeInteger(Number(value))) {
@@ -53,14 +42,14 @@ export async function researchOrCommitOrReview(ctx, command, parameters) {
     await requireCombat(ctx, command);
     const plans = await game.research({ effort, maxSearchMs,
       ...(maxGenerationWork === undefined ? {} : { maxGenerationWork }) });
-    (ctx.write ?? writeText)(`${scopedPlanView(plans.view, plans).trimEnd()}\n`);
+    (ctx.write ?? writeText)(`${plans.view.trimEnd()}\n`);
     return;
   }
   if (command === 'plans') {
     if (parameters.length > 1 || (parameters.length && parameters[0] !== 'full')) throw new Error('plans [full]');
     await requireCombat(ctx, command);
     const plans = await game.plans(parameters.length ? { diagnostics: true } : undefined);
-    (ctx.write ?? writeText)(`${scopedPlanView(plans.view, plans).trimEnd()}\n`);
+    (ctx.write ?? writeText)(`${plans.view.trimEnd()}\n`);
     return;
   }
   const selected = parameters[0];
@@ -88,20 +77,5 @@ export async function researchOrCommitOrReview(ctx, command, parameters) {
     ? await candidate.commit()
     : await candidate.review({ ...(turn === undefined ? { compact: true } : { turn }) });
   if (command === 'commit') ctx.recordAction?.(`commit ${selected} (${plans.effort})`);
-  let view = scopedPlanView(reading.view, plans);
-  if (command === 'review' && turn === undefined) {
-    const turns = reading.raw?.trace?.candidates?.find(c => c.candidate_index === chosen)?.turn_reviews;
-    if (turns?.length) {
-      const visible = turns.slice(0, 8);
-      const next = turns[8];
-      const hints = [
-        `Expand a turn: review ${selected} ${visible[0].turn + 1}`,
-        ...(next ? [`Continue: review ${selected} ${next.turn + 1}`] : []),
-      ];
-      view = view.replace(/^\d+ more turns; select a turn to expand\n?/m, '');
-      view = `${view.trimEnd()}\n${hints.join('\n')}\n`;
-    }
-  }
-  await (command === 'commit' ? (ctx.showSuccessor ?? printCurrentReading) : printCurrentReading)(
-    command === 'commit' ? reading : { ...reading, raw: reading.raw, view });
+  await (command === 'commit' ? (ctx.showSuccessor ?? printCurrentReading) : printCurrentReading)(reading);
 }

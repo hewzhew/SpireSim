@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { researchOrCommitOrReview, planId, scopedPlanView } from './commands/search.mjs';
+import { researchOrCommitOrReview, planId } from './commands/search.mjs';
 import { actOrPreview } from './commands/combat.mjs';
 import { choose } from './commands/choose.mjs';
 import { go, info, loot, mapView } from './commands/travel.mjs';
@@ -840,7 +840,7 @@ test('info forwards complete queries to the Rust owner and preserves ordinary pa
   await info(ctx, ['Spore', 'Cloud']);
   await info(ctx);
   assert.deepEqual(calls, [
-    ['run_play', ['info', '--session', 'selected', 'Spore', 'Cloud']],
+    ['run_play', ['info', '--session', 'selected', '--locale', 'en', 'Spore', 'Cloud']],
     ['run_play', ['show', '--session', 'selected']],
   ]);
   assert.equal(output, 'Power: Spore Cloud\ncandidates=page mechanics\n');
@@ -899,6 +899,7 @@ test('review and commit use saved objects and never request research', async () 
   const calls = [];
   let output = '';
   const candidate = {
+    planId: 'c0@d3cba96a1bf6',
     async review(options) { calls.push(['review', options]); return { view: 'saved' }; },
     async commit() { calls.push(['commit']); return { view: 'adopted' }; },
   };
@@ -917,27 +918,24 @@ test('review and commit use saved objects and never request research', async () 
   assert.equal(output, '');
 });
 
-test('compact review gives report-bound commands using actual trace turn numbers', async () => {
+test('review preserves source-rendered commands and localized text without decoding traces', async () => {
   let shown;
   const report = { raw: { report_id: 'long-plan' }, candidates: [{
-    async review() { return { view: 'c0 | turns\n2 more turns; select a turn to expand\n',
-      raw: { trace: { candidates: [{ candidate_index: 0,
-        turn_reviews: Array.from({ length: 10 }, (_, i) => ({ turn: i + 3 })) }] } } }; },
+    planId: 'c0@da48e39c9f43',
+    async review() { return { view: 'c0@da48e39c9f43 | 回合记录\n查看回合: review c0@da48e39c9f43 4\n继续: review c0@da48e39c9f43 12\n' }; },
   }] };
   const ctx = { game: { async decision() { return { control: 'combat' }; }, async plans() { return report; } },
     async printCurrentReading(reading) { shown = reading.view; } };
   const id = planId(report, 0);
   await researchOrCommitOrReview(ctx, 'review', [id]);
-  assert.ok(shown.includes(`Expand a turn: review ${id} 4`));
-  assert.ok(shown.includes(`Continue: review ${id} 12`));
-  assert.doesNotMatch(shown, /select a turn to expand/);
+  assert.equal(shown, `${id} | 回合记录\n查看回合: review ${id} 4\n继续: review ${id} 12\n`);
 });
 
 test('a replaced report cannot silently rebind the same candidate index', async () => {
   let commits = 0, reviews = 0;
-  const oldReport = { raw: { report_id: 'report-without-potion' } };
+  const oldReport = { candidates: [{ planId: 'c0@3f47cdc4f90a' }] };
   const current = { raw: { report_id: 'report-spending-a-potion' }, effort: 'whole_combat',
-    candidates: [{ async commit() { commits++; return { view: 'Actual win' }; },
+    candidates: [{ planId: 'c0@0642f52fde72', async commit() { commits++; return { view: 'Actual win' }; },
       async review() { reviews++; return { view: 'c0 | Current route' }; } }] };
   const ctx = { game: { async decision() { return { control: 'combat' }; }, async plans() { return current; } },
     async printCurrentReading() {} };
@@ -948,10 +946,6 @@ test('a replaced report cannot silently rebind the same candidate index', async 
   }
   assert.equal(commits, 0); assert.equal(reviews, 0);
   const id = planId(current, 0);
-  const rendered = scopedPlanView('c0: HP 28 | HP +2 vs c4 | ./p commit 0\n', current);
-  assert.match(rendered, /^c0@[a-f0-9]{12}: HP 28/);
-  assert.ok(rendered.includes(`vs ${planId(current, 4)}`));
-  assert.ok(rendered.includes(`./p commit ${id}`));
   await researchOrCommitOrReview(ctx, 'review', [id]);
   await researchOrCommitOrReview(ctx, 'commit', [id]);
   assert.equal(reviews, 1); assert.equal(commits, 1);

@@ -126,6 +126,7 @@ impl SavedPlans {
             return Err("combat plans require a combat decision".into());
         };
         Ok(crate::combat_reading::research(
+            &self.id()?,
             root,
             &self.artifact.candidates,
             &self.artifact.bounded_progress,

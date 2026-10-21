@@ -19,7 +19,7 @@ lines.on('line', line => {
     else revision++;
   }
   if (r.command === 'commit_combat_plan') revision++;
-  if (r.command === 'combat_research') result = { report_id:'test-report', view: 'c0: HP 70/75\\n', candidates: [{candidate_ref:'c0'}] };
+  if (r.command === 'combat_research') result = { report_id:'test-report', view: 'c0: HP 70/75\\n', candidates: [{candidate_ref:'c0',plan_id:'c0@4bf5ca407322'}] };
   else if (r.command === 'combat_review') result = {view:'Turn '+(r.turn ?? 1)+' | Strike @M0\\n'};
   else result = {reading:{view:'Decision '+revision+'\\n', control:'strategic', source:{revision},
     context:{deck:'retained-deck'}, options:[{label:'Pick',choice:{ordinal_path:[3]}}],
@@ -252,7 +252,7 @@ test('saved report identity and effort survive binding; preview sends only probe
     const r=JSON.parse(line);
     let result={view:'Reviewed',received:r};
     if (r.command==='combat_plans') result={view:'Saved plans',report_id:'saved-report',effort:'expanded',
-      candidates:[{candidate_ref:'c0',plan_steps:2}]};
+      candidates:[{candidate_ref:'c0',plan_id:'c0@79128061adc3',plan_steps:2}]};
     if (r.command==='probe') result={durable_head_unchanged:true,
       lines:[{view:'HP 70/75',endpoint:{kind:'decision'},stop:{kind:'complete'}}]};
     if (r.command==='combat_research' || r.command==='act') throw new Error('unexpected execution');
@@ -260,6 +260,7 @@ test('saved report identity and effort survive binding; preview sends only probe
   });`;
   const {client,root}=await fixture(t,5000,{server:scripted});
   const plans=await client.plans();
+  assert.equal(plans.candidates[0].planId, 'c0@79128061adc3');
   const line=['play:Bash+@0','play:Strike@0','end','play:Defend','play:Strike@1','play:Strike@1','end','play:PerfectedStrike@1','play:Anger@1'];
   const preview=await client.preview(line);
   assert.equal(preview.view,'HP 70/75');
@@ -286,7 +287,7 @@ test('full plans reads the same saved report without research and validates befo
     if (!['combat_plans','combat_review'].includes(r.command)) throw new Error('unexpected execution');
     const result=r.command==='combat_plans'
       ? {view:r.diagnostics?'Full plans':'Plans',report_id:'saved-report',effort:'whole_combat',
-        candidates:[{candidate_ref:'c0',plan_steps:2}]}
+        candidates:[{candidate_ref:'c0',plan_id:'c0@79128061adc3',plan_steps:2}]}
       : {view:'Reviewed',received:r};
     process.stdout.write(JSON.stringify({schema:'sts-run-play-agent-response-v1',request_id:r.request_id,status:'ok',result})+'\\n');
   });`;
@@ -314,13 +315,27 @@ test('missing report identity and malformed preview do not grant executable plan
     const r=JSON.parse(line);
     const result=r.command==='probe'
       ? {durable_head_unchanged:false,lines:[{view:'Untrusted'}]}
-      : {view:'Unbound plans',candidates:[{candidate_ref:'c0'}]};
+      : {view:'Unbound plans',candidates:[{candidate_ref:'c0',plan_id:'c0@4bf5ca407322'}]};
     process.stdout.write(JSON.stringify({schema:'sts-run-play-agent-response-v1',request_id:r.request_id,status:'ok',result})+'\\n');
   });`;
   const {client}=await fixture(t,5000,{server:scripted});
   await assert.rejects(client.research(), /report identity/);
   await assert.rejects(client.plans(), /report identity/);
   await assert.rejects(client.preview(['end']), /non-publishing preview/);
+});
+
+test('plans require a complete source-owned plan ID matching the wire candidate', async t => {
+  const scripted = `
+  const ids = [null, 'c1@4bf5ca407322', 'c0', 'c0@ABCDEF012345'];
+  require('node:readline').createInterface({input:process.stdin}).on('line', line => {
+    const r=JSON.parse(line);
+    if (r.command!=='combat_plans') throw new Error('unexpected operation');
+    const result={report_id:'test-report',view:'已保存方案',effort:'whole_combat',
+      candidates:[{candidate_ref:'c0',plan_id:ids.shift()}]};
+    process.stdout.write(JSON.stringify({schema:'sts-run-play-agent-response-v1',request_id:r.request_id,status:'ok',result})+'\\n');
+  });`;
+  const {client}=await fixture(t,5000,{server:scripted});
+  for (let i=0; i<4; i++) await assert.rejects(client.plans(), /matching report-bound plan ID/);
 });
 
 test('combat outcomes support local filtering and one source-bound review of selected plans', async t => {
@@ -330,9 +345,9 @@ test('combat outcomes support local filtering and one source-bound review of sel
     const r=JSON.parse(line);
     let result={view:'Reviewed\\n',received:r};
     if (r.command==='combat_research') result={report_id:'test-report',view:'Combat plans\\n',candidates:[
-      {candidate_ref:'c0',plan_steps:12,minimum_observed_hp:12,next_incense_turn:2,meets_requested_satisfaction:false,outcome:{final_hp:60,
+      {candidate_ref:'c0',plan_id:'c0@4bf5ca407322',plan_steps:12,minimum_observed_hp:12,next_incense_turn:2,meets_requested_satisfaction:false,outcome:{final_hp:60,
         total_potions_consumed:0,consumed_entry_potion_slots:[],pending_rewards:[{kind:'gold',amount:20}]}},
-      {candidate_ref:'c3',plan_steps:9,meets_requested_satisfaction:true,outcome:{final_hp:72,
+      {candidate_ref:'c3',plan_id:'c3@4bf5ca407322',plan_steps:9,meets_requested_satisfaction:true,outcome:{final_hp:72,
         total_potions_consumed:1,consumed_entry_potion_slots:[1],generated_potions:[{slot:0,potion_id:'FirePotion'}]}},
     ]};
     if (r.command==='commit_combat_plan') result={reading:{view:'Rewards\\n',control:'strategic',options:[]}};
@@ -474,7 +489,7 @@ test('draft objects bind sparse options, undo invalidates restored frames and on
     const r = JSON.parse(line);
     let result;
     if (r.command === 'combat_draft_inspect') result = {view:'Checked '+r.option_ref+'\\n'};
-    else if (r.command === 'combat_research') result = { report_id:'test-report',view:'Search\\n', candidates:[{candidate_ref:'c0'}]};
+    else if (r.command === 'combat_research') result = { report_id:'test-report',view:'Search\\n', candidates:[{candidate_ref:'c0',plan_id:'c0@4bf5ca407322'}]};
     else if (r.command === 'commit_combat_plan') result = {reading:{view:'Rewards\\n',control:'strategic',options:[]},effort:r.effort};
     else {
       if (r.command === 'combat_draft_advance') started = true;
@@ -562,7 +577,7 @@ test('candidate draft opens preserve source and effort; rejected replacement lea
   lines.on('line', line => {
     const r=JSON.parse(line);
     let status='ok', result={view:'Draft turn 1\\n',frame_ref:'F1',root_head_revision:0,options:[{option_ref:'T0',label:'Strike'}]};
-    if (r.command==='combat_research') result={report_id:'test-report',view:'Plans\\n',candidates:[{candidate_ref:'c3'}]};
+    if (r.command==='combat_research') result={report_id:'test-report',view:'Plans\\n',candidates:[{candidate_ref:'c3',plan_id:'c3@4bf5ca407322'}]};
     if (r.command==='combat_draft_open') {
       if (!r.replace) status='error';
       else result={view:'Draft turn '+r.turn+'\\n',frame_ref:'F2',root_head_revision:0,options:[],received:r};

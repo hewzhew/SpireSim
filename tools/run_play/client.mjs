@@ -396,14 +396,19 @@ async function connectRunPlay({ repository, session, recordDirectory, binary, ma
       }));
     }
     const candidates = Object.freeze(result.candidates.map(candidate => {
+      if (typeof candidate.plan_id !== 'string' || !/^c(?:0|[1-9]\d*)@[a-f0-9]{12}$/.test(candidate.plan_id)
+          || candidate.plan_id.split('@')[0] !== candidate.candidate_ref) {
+        throw new Error('Combat candidate has no matching report-bound plan ID; update the client and binary together');
+      }
       const option = {
         ref: candidate.candidate_ref,
+        planId: candidate.plan_id,
         actionCount: candidate.plan_steps,
         minimumObservedHp: candidate.minimum_observed_hp,
         nextIncenseTurn: candidate.next_incense_turn,
         outcome: candidate.outcome,
         meetsRequestedSatisfaction: candidate.meets_requested_satisfaction,
-        [inspect.custom]: () => candidate.candidate_ref,
+        [inspect.custom]: () => candidate.plan_id,
         async review(options) {
           return review([option], options);
         },

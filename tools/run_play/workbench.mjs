@@ -11,7 +11,7 @@ import { readingOptionCommands, expandedCombatCommands, distinctCombatCommands,
 import { actOrPreview, board, publicPiles } from './commands/combat.mjs';
 import { go, mapView, loot, info, cancel, use } from './commands/travel.mjs';
 import { choose } from './commands/choose.mjs';
-import { researchOrCommitOrReview, scopedPlanView } from './commands/search.mjs';
+import { researchOrCommitOrReview } from './commands/search.mjs';
 import { engineOutput, runEngine, showJumpPoint } from './commands/navigation.mjs';
 
 export function createWorkbenchContext(options) {
@@ -24,10 +24,6 @@ export function createWorkbenchContext(options) {
     const doc = reading.control === 'combat' || reading.options?.length
       ? await ctx.decisionDocument(reading) : null;
     if (doc) assertCurrentDecision(reading, doc);
-    if (reading.view.includes('\nSaved combat wins')) {
-      const plans = await ctx.game.plans();
-      reading = { ...reading, raw: reading.raw, view: scopedPlanView(reading.view, plans) };
-    }
     printReading(reading, {
       write: ctx.write, expanded, selectionCommands: true,
       commandHeading: ctx.commandPrefix === '',

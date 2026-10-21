@@ -4234,7 +4234,10 @@ fn combat_commit_returns_usable_successor_choices_without_an_extra_read() {
     assert_eq!(responses[1]["result"]["durable_head_unchanged"], true);
     let research_view = responses[1]["result"]["view"].as_str().unwrap();
     let review_view = responses[2]["result"]["view"].as_str().unwrap();
-    assert!(research_view.contains("c0: HP 74/75 after combat"));
+    let plan_id = responses[1]["result"]["candidates"][0]["plan_id"]
+        .as_str()
+        .unwrap();
+    assert!(research_view.contains(&format!("{plan_id}: HP 74/75 after combat")));
     assert!(research_view.contains("min observed 68"));
     assert_eq!(
         responses[1]["result"]["candidates"][0]["minimum_observed_hp"],
@@ -4249,7 +4252,7 @@ fn combat_commit_returns_usable_successor_choices_without_an_extra_read() {
     assert!(expanded.contains("Hand: Strike[1c]"));
     assert!(expanded.contains("M0 Jaw Worm: HP 1/42"));
     assert!(research_view.contains("from T1 HP 68/75"));
-    assert!(research_view.contains("./p commit 0"));
+    assert!(research_view.contains(&format!("./p commit {plan_id}")));
     assert!(!research_view.contains("Next actions:"));
     assert!(!research_view.contains("Cards played this turn"));
     assert!(!review_view.contains("play:Strike"));

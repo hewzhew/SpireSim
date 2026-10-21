@@ -9,6 +9,18 @@ import { commandTokens, commandGroups } from './session.mjs';
 import { info } from './commands/travel.mjs';
 import { runEngine } from './commands/navigation.mjs';
 
+test('printing a reading does not query plans based on an English or localized heading', async () => {
+  for (const heading of ['Saved combat wins', '已保存的战斗方案']) {
+    let text = '';
+    const view = `当前局面\n${heading}\nc0@4bf5ca407322 | review c0@4bf5ca407322 4\n`;
+    const ctx = createWorkbenchContext({ write(chunk) { text += chunk; },
+      game: new Proxy({}, { get() { assert.fail('rendering must not request another reading'); } }),
+    });
+    await ctx.printCurrentReading({ view });
+    assert.equal(text, view);
+  }
+});
+
 for (const prefix of [false, true]) test(`cancelling a running diagnosis ${prefix ? 'after an applied action' : 'without a prefix'} waits for its child and preserves serialization`, { timeout: 8000 }, async t => {
   let plays = 0, observed = false, launches = 0;
   const controller = new AbortController();

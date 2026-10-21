@@ -121,6 +121,11 @@ fn ordinary_read_exposes_current_saved_wins_without_search_or_publication() {
         "{view}"
     );
     assert!(view.contains(plans["result"]["view"].as_str().unwrap()));
+    let selector = plans["result"]["candidates"][0]["plan_id"]
+        .as_str()
+        .unwrap();
+    assert!(view.contains(&format!("./p commit {selector}")));
+    assert!(selector.starts_with("c0@") && selector.len() == 15);
     assert_eq!(*game.head(), before);
     assert_eq!(fs::read(&path).unwrap(), bytes);
     let mut public_permission = AgentPermissionEnvelopeV1::a20_first_unrestricted_v1(None);
@@ -490,10 +495,13 @@ fn saved_plans_survive_reopen_and_commit_the_reviewed_execution_without_research
         .as_str()
         .unwrap()
         .starts_with("CombatSolver | from T1 HP 68/75"));
+    let selector = searched["result"]["candidates"][0]["plan_id"]
+        .as_str()
+        .unwrap();
     assert!(searched["result"]["view"]
         .as_str()
         .unwrap()
-        .contains("./p commit 0"));
+        .contains(&format!("./p commit {selector}")));
     let report_id = searched["result"]["report_id"].clone();
     let outcome = searched["result"]["candidates"][0]["outcome"].clone();
     assert!(report_id.is_string() && outcome.is_object());
@@ -538,6 +546,34 @@ fn saved_plans_survive_reopen_and_commit_the_reviewed_execution_without_research
         fs::read(paths.root().join("combat-plans.json")).unwrap(),
         saved_bytes
     );
+    // Pagination uses the trace's actual turn numbers, including a trace that
+    // begins after T1. This is a rendering fixture, not a second played combat.
+    let saved: Value = serde_json::from_slice(&saved_bytes).unwrap();
+    let artifact: crate::agent_protocol::RunPlayCombatResearchArtifactV1 =
+        serde_json::from_value(saved["artifact"].clone()).unwrap();
+    let mut trace = crate::combat_trace::trace_combat_research_artifact_v1(
+        paths.clone(),
+        &artifact,
+        &[artifact.candidates[0].report_candidate_index.unwrap()],
+    )
+    .unwrap();
+    let sample = trace.candidates[0].turn_reviews[0].clone();
+    trace.candidates[0].turn_reviews = (3..13)
+        .map(|turn| {
+            let mut sample = sample.clone();
+            sample.turn = turn;
+            sample
+        })
+        .collect();
+    let pagination =
+        crate::combat_reading::review(&trace, &[selector.to_owned()], None, true).unwrap();
+    assert!(pagination.contains(&format!("Expand a turn: review {selector} 4")));
+    assert!(pagination.contains(&format!("Continue: review {selector} 12")));
+    assert!(!pagination.contains("T12 |"));
+    let expanded =
+        crate::combat_reading::review(&trace, &[selector.to_owned()], Some(12), false).unwrap();
+    assert!(expanded.contains("Turn 12 |"));
+    assert!(!expanded.contains("Continue:"));
     let bad = exchange(
         &mut game,
         json!({"command":"commit_combat_plan","candidate_ref":"c0",

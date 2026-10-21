@@ -1,6 +1,8 @@
 //! Compact projections of existing search evidence. No ranking or execution.
 use std::fmt::Write as _;
 
+use sha2::{Digest, Sha256};
+
 use sts_oracle_learning::agent::information::state::PublicCombatStateV1;
 use sts_oracle_learning::agent::task::{
     TaskResearchPlanAttemptExitV1, TaskResearchPlanMetaChangeV1, TaskResearchPlanPendingRewardV1,
@@ -17,7 +19,15 @@ use crate::agent_protocol::{AgentCombatResearchBoundedProgressV1, AgentCombatRes
 use crate::combat_trace::RunPlayCombatTraceV1;
 use crate::render::format_card;
 
+/// Display selectors bind a candidate to the report that produced it. Wire
+/// references remain separate and travel with the complete report identity.
+pub(crate) fn plan_id(report_id: &str, reference: &str) -> String {
+    let stamp = format!("{:x}", Sha256::digest(report_id.as_bytes()));
+    format!("{reference}@{}", &stamp[..12])
+}
+
 pub(crate) fn research(
+    report_id: &str,
     root: &PublicCombatStateV1,
     candidates: &[AgentCombatResearchCandidateV1],
     progress: &[AgentCombatResearchBoundedProgressV1],
@@ -260,16 +270,18 @@ pub(crate) fn research(
         let comparison = if grouped && o.total_potions_consumed > 0 && !o.combat_mugged {
             no_spend.map_or_else(String::new, |(reference, baseline)| {
                 format!(
-                    " | HP {:+} vs c{reference}",
-                    i64::from(o.final_hp) - i64::from(baseline.outcome.final_hp)
+                    " | HP {:+} vs {}",
+                    i64::from(o.final_hp) - i64::from(baseline.outcome.final_hp),
+                    plan_id(report_id, &format!("c{reference}")),
                 )
             })
         } else {
             String::new()
         };
+        let selector = plan_id(report_id, &format!("c{index}"));
         writeln!(
             out,
-            "c{index}: HP {}/{} after combat | min observed {}{spending}{comparison} | ./p commit {index}{details}",
+            "{selector}: HP {}/{} after combat | min observed {}{spending}{comparison} | ./p commit {selector}{details}",
             o.final_hp,
             o.persistent.max_hp,
             candidate
@@ -645,6 +657,7 @@ mod tests {
 
     fn render_candidates(candidates: &[super::AgentCombatResearchCandidateV1]) -> String {
         super::research(
+            "test-report",
             &root(),
             candidates,
             &[],
@@ -666,24 +679,24 @@ mod tests {
         ];
         let view = render_candidates(&candidates);
         assert!(
-            view.find("c1:").unwrap() < view.find("c0:").unwrap(),
+            view.find("c1@4bf5ca407322:").unwrap() < view.find("c0@4bf5ca407322:").unwrap(),
             "{view}"
         );
         assert!(
-            view.find("c3:").unwrap() < view.find("c0:").unwrap(),
+            view.find("c3@4bf5ca407322:").unwrap() < view.find("c0@4bf5ca407322:").unwrap(),
             "{view}"
         );
         assert_eq!(view.matches("Additional potions 0").count(), 2, "{view}");
         assert_eq!(view.matches("Additional potions 1").count(), 2, "{view}");
         assert!(
             view.contains(
-                "c0: HP 70/80 after combat | min observed 70 | Additional potions 1 (P0 Unknown) | HP +2 vs c1 | ./p commit 0"
+                "c0@4bf5ca407322: HP 70/80 after combat | min observed 70 | Additional potions 1 (P0 Unknown) | HP +2 vs c1@4bf5ca407322 | ./p commit c0@4bf5ca407322"
             ),
             "{view}"
         );
         assert!(
             view.contains(
-                "c2: HP 69/80 after combat | min observed 69 | Additional potions 1 (P1 Unknown) | HP +1 vs c1 | ./p commit 2"
+                "c2@4bf5ca407322: HP 69/80 after combat | min observed 69 | Additional potions 1 (P1 Unknown) | HP +1 vs c1@4bf5ca407322 | ./p commit c2@4bf5ca407322"
             ),
             "{view}"
         );
@@ -697,7 +710,7 @@ mod tests {
         // A spent potion can accompany less HP; differences are signed outcome
         // comparisons, not a potion price or a promise that spending helps.
         let negative = render_candidates(&[candidate(65, vec![0]), candidate(68, vec![])]);
-        assert!(negative.contains("HP -3 vs c1"), "{negative}");
+        assert!(negative.contains("HP -3 vs c1@4bf5ca407322"), "{negative}");
     }
 
     #[test]
@@ -718,7 +731,7 @@ mod tests {
         assert!(!only_spending.contains(" vs c"), "{only_spending}");
         let one_group = render_candidates(&[candidate(68, vec![])]);
         assert!(
-            one_group.contains("Additional potions 0 | ./p commit 0"),
+            one_group.contains("Additional potions 0 | ./p commit c0@4bf5ca407322"),
             "{one_group}"
         );
         assert!(!one_group.contains("No potion-free"), "{one_group}");
@@ -788,6 +801,7 @@ mod tests {
         alternative.outcome.consumed_entry_potion_slots = vec![0];
         alternative.outcome.total_potions_consumed = 1;
         let view = super::research(
+            "test-report",
             &root,
             &[candidate.clone(), alternative.clone()],
             &[],
@@ -805,10 +819,10 @@ mod tests {
         assert!(view.contains("Additional potions 0"), "{view}");
         assert!(
             view.contains("Additional potions 1 (P0 Cultist Potion)")
-                && view.contains("HP +0 vs c0 | ./p commit 1"),
+                && view.contains("HP +0 vs c0@4bf5ca407322 | ./p commit c1@4bf5ca407322"),
             "{view}"
         );
-        let first = view.split("c1:").next().unwrap();
+        let first = view.split("c1@4bf5ca407322:").next().unwrap();
         assert!(
             first.contains("Post-combat counters: Incense Burner [4] (next combat Turn 2)"),
             "{view}"
@@ -817,7 +831,7 @@ mod tests {
             first.contains("Permanent card values (sum across copies): Ritual Dagger 50"),
             "{view}"
         );
-        let second = view.split("c1:").nth(1).unwrap();
+        let second = view.split("c1@4bf5ca407322:").nth(1).unwrap();
         assert!(
             second.contains("Post-combat counters: Incense Burner [0] (next combat Turn 6)"),
             "{view}"
@@ -849,6 +863,7 @@ mod tests {
         robbed.outcome.combat_mugged = true;
         let render = |candidates: &[super::AgentCombatResearchCandidateV1], diagnostics| {
             super::research(
+                "test-report",
                 &root,
                 candidates,
                 &[],
@@ -888,6 +903,7 @@ mod tests {
         assert_eq!(different.matches("Pending rewards:").count(), 2);
         assert!(different.contains("emerald key"));
         let full = super::research(
+            "test-report",
             &root,
             &[candidate, alternative],
             &[],
@@ -931,6 +947,7 @@ mod tests {
             exit: super::TaskResearchPlanAttemptExitV1::WallTimeExhausted,
         };
         let view = super::research(
+            "test-report",
             &root(),
             &[],
             &[progress.clone()],
@@ -952,6 +969,7 @@ mod tests {
         let mut work_lane = lane.clone();
         work_lane.exit = super::TaskResearchPlanAttemptExitV1::GenerationWorkExhausted;
         let work_view = super::research(
+            "test-report",
             &root(),
             &[],
             &[],
@@ -964,6 +982,7 @@ mod tests {
         assert!(work_view.contains("work limit"), "{work_view}");
         assert!(!work_view.contains("time limit"), "{work_view}");
         let full = super::research(
+            "test-report",
             &root(),
             &[],
             &[progress],
@@ -988,6 +1007,7 @@ mod tests {
             assert!(super::exit_description(exit).contains("not"));
         }
         let view = super::research(
+            "test-report",
             &root(),
             &[],
             &[],
@@ -1096,6 +1116,7 @@ mod tests {
     #[test]
     fn a_bounded_miss_stays_unknown() {
         let view = super::research(
+            "test-report",
             &root(),
             &[],
             &[],
@@ -1252,13 +1273,21 @@ pub(crate) fn review(
             .unwrap();
             render_turn_changes(&mut out, r);
         }
-        if turn.is_none() && turns.len() > 8 {
+        if turn.is_none() {
             writeln!(
                 out,
-                "{} more turns; select a turn to expand",
-                turns.len() - 8
+                "Expand a turn: review {reference} {}",
+                turns[0].turn.saturating_add(1)
             )
             .unwrap();
+            if let Some(next) = turns.get(8) {
+                writeln!(
+                    out,
+                    "Continue: review {reference} {}",
+                    next.turn.saturating_add(1)
+                )
+                .unwrap();
+            }
         }
     }
     Ok(out)
