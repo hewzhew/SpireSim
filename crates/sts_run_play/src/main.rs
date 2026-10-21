@@ -539,6 +539,8 @@ enum Command {
     Info {
         #[arg(long)]
         session: PathBuf,
+        #[arg(long, default_value = "en")]
+        locale: sts_presentation::Locale,
         #[arg(required = true, num_args = 1..)]
         query: Vec<String>,
     },
@@ -2364,7 +2366,11 @@ fn run(cli: Cli) -> Result<(), String> {
             print!("{}{}", preparation_text, deck_lab::render(&report, details));
             println!("Full cases: {}", output.display());
         }
-        Command::Info { session, query } => {
+        Command::Info {
+            session,
+            query,
+            locale,
+        } => {
             let paths = RunPlayPathsV1::new(session);
             let head = paths.load_head()?;
             let head = if head.scratch && head.current_decision.is_some() {
@@ -2384,7 +2390,7 @@ fn run(cli: Cli) -> Result<(), String> {
                 .transpose()?;
             print!(
                 "{}",
-                mechanics_info::render(decision.as_ref(), &query.join(" "))?
+                mechanics_info::render(decision.as_ref(), &query.join(" "), locale)?
             );
         }
         Command::Options { session } => {
@@ -4883,7 +4889,11 @@ fn run_shell_v1(session: PathBuf) -> Result<(), String> {
                         .as_ref()
                         .map(|inventory| inventory.public_decision_v1())
                         .transpose()?;
-                    print_shell_view_v1(&mechanics_info::render(decision.as_ref(), &query)?);
+                    print_shell_view_v1(&mechanics_info::render(
+                        decision.as_ref(),
+                        &query,
+                        sts_presentation::Locale::En,
+                    )?);
                 }
                 "advice" => {
                     let advice = controller.advise_v1()?;

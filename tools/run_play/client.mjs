@@ -433,11 +433,12 @@ async function connectRunPlay({ repository, session, recordDirectory, binary, ma
   }
 
   return Object.freeze({
-    async info(query) {
+    async info(query, { locale = 'en' } = {}) {
       if (typeof query !== 'string' || !query.trim()) {
         throw new Error('Info requires a mechanics query such as card Dropkick or M0');
       }
-      return frame(await request('info', { query }));
+      if (!['en', 'zh-CN'].includes(locale)) throw new Error('Unsupported text locale; use en or zh-CN');
+      return frame(await request('info', { query, locale }));
     },
     async slPiles() {
       return frame(await request('sl_piles'));

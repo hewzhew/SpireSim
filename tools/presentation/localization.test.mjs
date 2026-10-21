@@ -61,6 +61,7 @@ test('entity keys match the existing simulator vocabularies', async () => {
     relic: '../../src/content/relics/identity_v1.json',
     power: '../../src/content/powers/mod.rs',
     potion: '../../src/content/potions/mod.rs',
+    potionRule: '../../src/content/potions/mod.rs',
     event: '../../src/state/events/mod.rs',
   };
   for (const [kind, owner] of Object.entries(owners)) {
@@ -68,7 +69,7 @@ test('entity keys match the existing simulator vocabularies', async () => {
     const ids = kind === 'relic' ? JSON.parse(source).entries.map(entry => entry.stable_id)
       : [...source.matchAll(/=>\s*\("([^\"]+)",\s*\d+\)/g)].map(match => match[1]);
     for (const id of Object.keys(catalogs.en.game[kind])) assert.ok(ids.includes(id), `${kind}.${id} missing from ${owner}`);
-    if (kind === 'potion') assert.deepEqual(Object.keys(catalogs.en.game.potion).sort(), ids.sort(), 'return points can contain any potion');
+    if (kind === 'potion' || kind === 'potionRule') assert.deepEqual(Object.keys(catalogs.en.game[kind]).sort(), ids.sort(), 'all potion names and rules are required');
   }
 });
 

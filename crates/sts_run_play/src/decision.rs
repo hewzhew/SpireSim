@@ -1176,7 +1176,7 @@ fn write_choice_mechanics(out: &mut String, action: &TaskStrategicActionV1, brie
             }
             return;
         }
-        let mechanics = crate::mechanics_info::render(None, query)
+        let mechanics = crate::mechanics_info::render(None, query, sts_presentation::Locale::En)
             .expect("key choices have shared mechanics definitions");
         for line in mechanics.lines() {
             writeln!(out, "  {line}").unwrap();

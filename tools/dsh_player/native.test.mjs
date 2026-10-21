@@ -43,12 +43,17 @@ test('chat binding creates once, survives reopen, and refuses another chat or an
   const run = async (exe, args) => { calls.push([exe, args]); await mkdir(args[2], { recursive: true }); };
   const first = await Native.nativeBinding(agent, { binary }, { run });
   assert.equal(first.ascension, 20); assert.equal(first.goal, 'heart-victory');
+  assert.equal(first.agentLocale, 'en');
   assert.deepEqual(await Native.nativeBinding(agent, { binary }, { run }), first);
   assert.equal(calls.length, 1);
-  const other = await Native.nativeBinding({ ...agent, id: 'chat-b' }, { binary, manual: true }, { run });
+  const other = await Native.nativeBinding({ ...agent, id: 'chat-b' }, { binary, manual: true, agentLocale: 'zh-CN' }, { run });
   assert.notEqual(other.session, first.session);
   assert.equal(other.manual, true);
+  assert.equal(other.agentLocale, 'zh-CN');
   assert.equal((await Native.nativeBinding({ ...agent, id: 'chat-b' }, { binary }, { run })).manual, true);
+  assert.equal((await Native.nativeBinding({ ...agent, id: 'chat-b' }, { binary }, { run })).agentLocale, 'zh-CN');
+  await assert.rejects(Native.nativeBinding({ ...agent, id: 'chat-b' }, { binary, agentLocale: 'en' }, { run }), /different agent language/);
+  await assert.rejects(Native.nativeBinding({ ...agent, id: 'invalid-locale' }, { binary, agentLocale: 'fr' }, { run }), /Unsupported agentLocale/);
   await assert.rejects(Native.nativeBinding({ ...agent, id: 'chat-b' }, { binary, manual: false }, { run }), /different play mode/);
   assert.equal(calls.length, 2);
   const file = join(first.session, 'dsh-native.json');
@@ -188,7 +193,7 @@ test('native workspace returns and restores its prior endpoint through the same 
     const presetKey = {}, preset = createScope(ctx, presetKey);
     await preset.ctx.plugin(Native, { binary: realBinary });
     await Native.nativeBinding({ id: 'real-native-return', session: { header: { cwd: repository } } },
-      { binary: realBinary, manual: true });
+      { binary: realBinary, manual: true, agentLocale: 'zh-CN' });
     handle = await ctx.agents.create({ sessionId: SessionId('real-native-return'), meta: { cwd: repository },
       agentOptions: { provider: 'unused', model: 'unused' },
       setup: scoped => { bindScopeParent(scopeOf(scoped), presetKey); } });
@@ -196,6 +201,9 @@ test('native workspace returns and restores its prior endpoint through the same 
       signal: new AbortController().signal, callId: ToolCallId(randomUUID()) });
     const initial = textOf(await execute('read'));
     const control = Native.nativeGameControl(handle.agent);
+    const beforeInfo = (await control.points()).points.source;
+    assert.match(textOf(await execute('info potion SteroidPotion')), /药水定义：类固醇药水 \| ID：SteroidPotion/);
+    assert.deepEqual((await control.points()).points.source, beforeInfo);
     const prompt = await ctx.systemPrompt.assemble({ scope: scopeOf(handle.agent.ctx) });
     assert.deepEqual(prompt.sections.map(section => section.text), [Native.nativeGuide(true)]);
     assert.doesNotMatch(prompt.sections[0].text, /research whole_combat|deck-lab|piles sl|preview play:/);
@@ -230,5 +238,8 @@ test('native workspace returns and restores its prior endpoint through the same 
     assert.equal(resumedOwner.status().queued, 0, 'official Agent disposal explicitly clears its inbox; the plugin does not recreate discarded input');
     assert.equal(resumedOwner.workbench, undefined, 'restoring the official chat does not open Rust or run a model');
     assert.equal(await resumedOwner.live(), endpoint);
+    assert.equal(resumedOwner.binding.agentLocale, 'zh-CN');
+    const reopenedInfo = await resumedOwner.serial(async () => (await resumedOwner.game(false)).execute('info potion FairyPotion'));
+    assert.match(reopenedInfo.text, /绽放印记会阻止此次复活/);
     assert.equal(handle.agent.session.snapshotEvents().filter(event => event.type === 'step/start').length, 0);
   });

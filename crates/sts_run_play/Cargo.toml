@@ -7,6 +7,7 @@ autobins = false
 autotests = false
 
 [dependencies]
+sts_presentation = { path = "../../tools/presentation" }
 clap = { version = "4.0", features = ["derive"] }
 oracle_artifact_contract = { path = "../oracle_artifact_contract" }
 rmp-serde = "1.3"

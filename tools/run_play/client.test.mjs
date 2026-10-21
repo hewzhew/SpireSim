@@ -133,8 +133,15 @@ test('game facts reuse the resident connection and preserve typed effects', asyn
   const reading = await client.info('card Dropkick');
   assert.equal(reading.view,'Dropkick: conditional Energy and draw\n');
   assert.equal(reading.options,undefined);
+  const infoRequest = JSON.parse((await readFile(join(root,'wire','exchange-001.jsonl'),'utf8')).split('\n')[0]);
+  assert.equal(infoRequest.locale, 'en');
   await assert.rejects(client.info(' '),/mechanics query/);
+  await assert.rejects(client.info('potion FirePotion', { locale: 'fr' }), /Unsupported text locale/);
   assert.equal((await readdir(join(root,'wire'))).length,2);
+  await client.info('potion FirePotion', { locale: 'zh-CN' });
+  const localized = JSON.parse((await readFile(join(root,'wire','exchange-002.jsonl'),'utf8')).split('\n')[0]);
+  assert.equal(localized.locale, 'zh-CN');
+  assert.equal(localized.query, 'potion FirePotion');
 });
 
 test('process failure includes the Rust diagnostic and preserves full stderr', async t => {

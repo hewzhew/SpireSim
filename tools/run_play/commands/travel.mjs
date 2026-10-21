@@ -215,12 +215,12 @@ export async function loot(ctx) {
 export async function info(ctx, parameters = []) {
   const write = ctx.write ?? writeText;
   if (parameters.length && ctx.game) {
-    write((await ctx.game.info(parameters.join(' '))).view);
+    write((await ctx.game.info(parameters.join(' '), { locale: ctx.agentLocale ?? 'en' })).view);
     return;
   }
   // Mechanics of the current decision straight from the executable's
   // detailed view, so event outcomes never have to be guessed.
-  const show = await engineOutput(ctx, parameters.length ? ['info', ...parameters] : ['show']);
+  const show = await engineOutput(ctx, parameters.length ? ['info', '--locale', ctx.agentLocale ?? 'en', ...parameters] : ['show']);
   if (parameters.length) {
     write(show);
     return;

@@ -42,6 +42,7 @@ members = [
     "crates/sts_run_play",
     "crates/sts_run_checkpoint",
     "crates/sts_content_bundle",
+    "tools/presentation",
     "crates/sts_paired_root",
     "crates/sts_workbench_artifact_store",
     "crates/sts_workbench_engine_protocol",
@@ -70,6 +71,7 @@ exclude = ["bindings/python_learning"]
 resolver = "2"
 
 [dependencies]
+sts_presentation = { path = "tools/presentation" }
 blake2 = "0.10"
 flate2 = "1.0"
 rustc-hash = { version = "2.1", default-features = false }

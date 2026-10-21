@@ -8,6 +8,8 @@ on:
       - 'tools/run_play/**'
       - 'src/content/**'
       - 'src/state/events/mod.rs'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
       - '.github/workflows/presentation.yml'
   pull_request:
     paths:
@@ -16,6 +18,8 @@ on:
       - 'tools/run_play/**'
       - 'src/content/**'
       - 'src/state/events/mod.rs'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
       - '.github/workflows/presentation.yml'
 
 permissions:
@@ -39,3 +43,11 @@ jobs:
         working-directory: tools/dsh_player
       - run: npm run test:client
         working-directory: tools/dsh_player
+      - run: node --test tools/run_play/client.test.mjs tools/run_play/workbench.test.mjs tools/dsh_player/native-control.test.mjs
+      - run: node --test --test-name-pattern='chat binding|bundle distribution' tools/dsh_player/native.test.mjs
+  native-catalogs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo test --locked -p sts_presentation

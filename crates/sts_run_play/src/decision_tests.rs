@@ -2138,7 +2138,9 @@ fn key_status_is_available_in_combat_readings_and_bound_mechanics_queries() {
                 .decision_reading_v1(&[DecisionDetailV1::State], None)
                 .unwrap();
             let decision = reading.state.as_ref().unwrap();
-            let info = crate::mechanics_info::render(Some(decision), "keys").unwrap();
+            let info =
+                crate::mechanics_info::render(Some(decision), "keys", sts_presentation::Locale::En)
+                    .unwrap();
             for view in [&reading.view, &info] {
                 assert!(view.contains(status), "{kind}: {view}");
                 if let Some(missing) = missing {
@@ -2161,7 +2163,12 @@ fn key_status_is_available_in_combat_readings_and_bound_mechanics_queries() {
                 *run_context = PublicCombatRunContextV1::Unavailable {
                     reason: PublicCombatRunContextGapV1::DetachedExactCombatPosition,
                 };
-                let info = crate::mechanics_info::render(Some(&detached), "keys").unwrap();
+                let info = crate::mechanics_info::render(
+                    Some(&detached),
+                    "keys",
+                    sts_presentation::Locale::En,
+                )
+                .unwrap();
                 assert!(info.contains("Current key status unavailable"));
                 assert!(
                     !info.contains("Keys:"),
@@ -2170,6 +2177,53 @@ fn key_status_is_available_in_combat_readings_and_bound_mechanics_queries() {
             }
         }
     }
+}
+
+#[test]
+fn potion_info_locales_change_only_text_and_reject_unsupported_languages() {
+    use crate::agent_protocol::{
+        run_agent_jsonl_v1, AgentCapabilitiesV1, AgentPermissionEnvelopeV1,
+    };
+    let directory = TestDirectory::new();
+    let mut game = controller(&directory.0, "combat_multiturn");
+    let before = game.head().clone();
+    let checkpoint = game.current_external_exact_checkpoint_v1().unwrap();
+    let input = [Some("en"), Some("zh-CN"), None, Some("fr")].into_iter().enumerate().map(|(i, locale)| {
+        let mut request = serde_json::json!({"schema":"sts-run-play-agent-request-v1", "request_id":format!("locale-{i}"), "command":"info", "query":"potion SteroidPotion"});
+        if let Some(locale) = locale { request["locale"] = locale.into(); }
+        format!("{request}\n")
+    }).collect::<String>();
+    let mut output = Vec::new();
+    run_agent_jsonl_v1(
+        &mut game,
+        AgentCapabilitiesV1::new(AgentPermissionEnvelopeV1::public_manual_v1(None)),
+        std::io::Cursor::new(input),
+        &mut output,
+    )
+    .unwrap();
+    let responses: Vec<serde_json::Value> = std::str::from_utf8(&output)
+        .unwrap()
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect();
+    assert!(responses[0]["result"]["view"]
+        .as_str()
+        .unwrap()
+        .contains("Flex Potion | ID: SteroidPotion"));
+    assert!(responses[1]["result"]["view"]
+        .as_str()
+        .unwrap()
+        .contains("类固醇药水 | ID：SteroidPotion"));
+    assert_eq!(
+        responses[0]["result"]["view"],
+        responses[2]["result"]["view"]
+    );
+    assert_eq!(responses[3]["status"], "error");
+    assert_eq!(game.head(), &before);
+    assert_eq!(
+        serde_json::to_value(game.current_external_exact_checkpoint_v1().unwrap()).unwrap(),
+        serde_json::to_value(checkpoint).unwrap()
+    );
 }
 
 #[test]
@@ -3186,7 +3240,8 @@ fn key_choices_expose_shared_opportunities_without_changing_the_decision() {
         let mut game = controller_with_session(&dir.0, name, &session);
         let before = game.head().clone();
         let reading = game.decision_reading_v1(&[], None).unwrap();
-        let mechanics = crate::mechanics_info::render(None, query).unwrap();
+        let mechanics =
+            crate::mechanics_info::render(None, query, sts_presentation::Locale::En).unwrap();
         for line in mechanics.lines() {
             assert!(
                 reading.view.contains(&format!("  {line}")),
@@ -3215,7 +3270,7 @@ fn key_choices_expose_shared_opportunities_without_changing_the_decision() {
     let mut game = controller_with_session(&dir.0, "ruby-opportunities", &session);
     let before = game.head().clone();
     let reading = game.decision_reading_v1(&[], None).unwrap();
-    for line in crate::mechanics_info::render(None, "RubyKey")
+    for line in crate::mechanics_info::render(None, "RubyKey", sts_presentation::Locale::En)
         .unwrap()
         .lines()
     {

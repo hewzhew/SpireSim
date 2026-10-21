@@ -1048,6 +1048,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "sts_presentation"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "sts_run_checkpoint"
 version = "0.1.0"
 dependencies = [
@@ -1082,6 +1090,7 @@ dependencies = [
  "sts_java_parity_protocol",
  "sts_oracle_learning",
  "sts_paired_root",
+ "sts_presentation",
  "zip",
 ]
 
@@ -1108,6 +1117,7 @@ dependencies = [
  "serde",
  "serde_json",
  "smallvec",
+ "sts_presentation",
  "windows-sys",
 ]
 

@@ -193,6 +193,8 @@ pub enum AgentShellRequestV1 {
         schema: String,
         request_id: String,
         query: String,
+        #[serde(default)]
+        locale: sts_presentation::Locale,
     },
     SlPiles {
         schema: String,
@@ -5226,7 +5228,7 @@ fn handle_valid_request_v1(
             },
             false,
         )),
-        AgentShellRequestV1::Info { query, .. } => {
+        AgentShellRequestV1::Info { query, locale, .. } => {
             // Refresh from the published head just as ordinary reading does;
             // queries never evaluate an action or consume game RNG.
             controller.decision_reading_v1(&[], None)?;
@@ -5238,7 +5240,7 @@ fn handle_valid_request_v1(
                 .transpose()?;
             Ok((
                 AgentShellResultV1::Info {
-                    view: crate::mechanics_info::render(decision.as_ref(), &query)?,
+                    view: crate::mechanics_info::render(decision.as_ref(), &query, *locale)?,
                 },
                 false,
             ))
@@ -6302,9 +6304,9 @@ pub fn run_terminal_agent_jsonl_v1(
             },
             false,
         )),
-        AgentShellRequestV1::Info { query, .. } => Ok((
+        AgentShellRequestV1::Info { query, locale, .. } => Ok((
             AgentShellResultV1::Info {
-                view: crate::mechanics_info::render(None, &query)?,
+                view: crate::mechanics_info::render(None, &query, *locale)?,
             },
             false,
         )),

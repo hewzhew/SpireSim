@@ -10,51 +10,7 @@ use serde::{Deserialize, Serialize};
 use smallvec::{smallvec, SmallVec};
 
 pub fn explanation(potion: PotionId) -> Option<&'static str> {
-    // Exhaustive over PotionId: a newly introduced potion must supply its rule.
-    Some(match potion {
-        PotionId::ExplosivePotion => "Deal damage equal to potency to all enemies (base 10).",
-        PotionId::SwiftPotion => "Draw cards equal to potency (base 3).",
-        PotionId::Elixir => "Choose any number of cards in your hand to Exhaust.",
-        PotionId::AttackPotion => "Choose one of three generated Attack cards. Add potency copies of the chosen card to your hand (base 1); they cost 0 this turn. You may skip the choice.",
-        PotionId::SkillPotion => "Choose one of three generated Skill cards. Add potency copies of the chosen card to your hand (base 1); they cost 0 this turn. You may skip the choice.",
-        PotionId::PowerPotion => "Choose one of three generated Power cards. Add potency copies of the chosen card to your hand (base 1); they cost 0 this turn. You may skip the choice.",
-        PotionId::ColorlessPotion => "Choose one of three generated Colorless cards. Add potency copies of the chosen card to your hand (base 1); the chosen card costs 0 this turn. This choice cannot be skipped.",
-        PotionId::StrengthPotion => "Gain Strength equal to potency for this combat (base 2).",
-        PotionId::BloodPotion => "Heal for potency percent of max HP (base 20%), rounded down when used; actual healing cannot exceed missing HP.",
-        PotionId::HeartOfIron => "Gain Metallicize equal to potency for this combat (base 6).",
-        PotionId::DuplicationPotion => "This turn, each of the next potency cards you play is played twice (base 1). Applies to any card type, not only Attacks; unused charges expire at turn end.",
-        PotionId::BlessingOfTheForge => "Upgrade all cards currently in your hand for this combat.",
-        PotionId::FirePotion => "Deal damage equal to potency to one enemy (base 20).",
-        PotionId::PoisonPotion => "Apply Poison equal to potency to one enemy (base 6). Artifact can block it.",
-        PotionId::WeakenPotion => "Apply Weak equal to potency to one enemy (base 3). Artifact can block it.",
-        PotionId::FearPotion => "Apply Vulnerable equal to potency to one enemy (base 3). Artifact can block it.",
-        PotionId::BlockPotion => "Gain Block equal to potency (base 12).",
-        PotionId::EnergyPotion => "Gain Energy equal to potency this turn (base 2).",
-        PotionId::DexterityPotion => "Gain Dexterity equal to potency for this combat (base 2).",
-        PotionId::SpeedPotion => "Gain Dexterity equal to potency (base 5), then apply an equal Dexterity Down debuff that removes it at the end of this turn. Artifact can block the removal debuff.",
-        PotionId::SteroidPotion => "Gain Strength equal to potency (base 5), then apply an equal Lose Strength debuff that removes it at the end of this turn. Artifact can block the removal debuff.",
-        PotionId::FocusPotion => "Gain Focus equal to potency for this combat (base 2).",
-        PotionId::BottledMiracle => "Add Miracles equal to potency to your hand (base 2). A Miracle costs 0, gives 1 Energy and Exhausts; hand capacity applies.",
-        PotionId::AncientPotion => "Gain Artifact equal to potency (base 1). Each charge blocks one incoming debuff, including a temporary buff's removal debuff if it is applied afterward.",
-        PotionId::RegenPotion => "Gain Regeneration equal to potency (base 5). At each player turn end, heal for the current stacks, then lose 1 stack; healing restrictions and the HP cap apply.",
-        PotionId::EssenceOfSteel => "Gain Plated Armor equal to potency (base 4). It grants that much Block at player turn end and loses 1 stack when an enemy Attack causes unblocked HP loss.",
-        PotionId::LiquidBronze => "Gain Thorns equal to potency for this combat (base 3). It damages an attacker for that amount whenever you are attacked, even if the hit is blocked.",
-        PotionId::DistilledChaosPotion => "Play the next potency cards from the top of your draw pile without paying their energy costs (base 3). Enemy targets are random; normal card effects and play restrictions still apply.",
-        PotionId::CunningPotion => "Add upgraded Shivs equal to potency to your hand (base 3). Each Shiv+ costs 0, deals 6 base damage and Exhausts; hand capacity applies.",
-        PotionId::PotionOfCapacity => "Gain Orb slots equal to potency (base 2).",
-        PotionId::LiquidMemories => "Choose potency cards from your discard pile to return to your hand (base 1); they cost 0 this turn. If fewer cards are available, return the available cards; hand capacity applies.",
-        PotionId::GamblersBrew => "Choose any number of cards from your hand to discard, then draw that many cards. You may choose none; draw prevention and hand capacity still apply.",
-        PotionId::StancePotion => "Choose to enter Wrath or Calm. Wrath doubles Attack damage dealt and received; leaving Calm grants Energy under the current stance rules.",
-        PotionId::FairyPotion => "Passive: when lethal HP loss occurs, consume this potion and heal for 30% of Max HP (60% with Sacred Bark), rounded down with a minimum request of 1 HP. Cannot be used manually. Mark of the Bloom prevents this revival.",
-        PotionId::SmokeBomb => "Escape the current non-boss combat instead of winning it; no combat rewards are earned. Cannot be used against bosses or while the Spire Shield and Spire Spear surround you.",
-        PotionId::FruitJuice => "Gain Max HP equal to potency and request the same amount of healing (base 5). May be used outside combat; healing restrictions still apply.",
-        PotionId::EntropicBrew => "Consume this potion, then generate random potions to fill empty slots, including its freed slot. Potions already held remain. Sozu prevents obtaining the generated potions.",
-        PotionId::SneckoOil => "Draw cards equal to potency (base 5), then randomize eligible costs of all cards in your hand to 0-3. X-cost and negative unplayable costs are excluded.",
-        PotionId::GhostInAJar => "Gain Intangible equal to potency (base 1), reducing incoming damage and HP loss to 1 per instance while active.",
-        PotionId::CultistPotion => "Gain Ritual equal to potency (base 1). Gain that much Strength at the end of each player turn, including the turn it is used; it does not grant Strength immediately on use.",
-        PotionId::Ambrosia => "Enter Divinity this turn: gain 3 Energy and triple Attack damage. Return to Neutral at the start of the next turn.",
-        PotionId::EssenceOfDarkness => "Channel potency Dark orbs for each current Orb slot (base 1 per slot). Normal channel and evoke rules apply.",
-    })
+    sts_presentation::Locale::En.entry("game", &format!("potionRule.{}", potion.stable_id()))
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
@@ -124,6 +80,28 @@ impl ReviewedPotionUseV1 {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn every_potion_has_a_shared_name_and_rule_in_both_locales() {
+        for id in PotionId::STABLE_IDS {
+            let potion = PotionId::from_stable_id(id).unwrap();
+            assert_eq!(
+                explanation(potion),
+                sts_presentation::Locale::En.entry("game", &format!("potionRule.{id}"))
+            );
+            for locale in [sts_presentation::Locale::En, sts_presentation::Locale::ZhCn] {
+                assert!(
+                    locale.entry("game", &format!("potion.{id}")).is_some(),
+                    "{locale}:{id}"
+                );
+                assert!(!locale
+                    .entry("game", &format!("potionRule.{id}"))
+                    .unwrap()
+                    .trim()
+                    .is_empty());
+            }
+        }
+    }
 
     #[test]
     fn reviewed_requests_keep_percentage_units_targets_and_optional_exhaust() {

@@ -19,6 +19,7 @@ use sts_oracle_learning::content::{cards, monsters, potions, powers, relics};
 use sts_oracle_learning::runtime::monster_move::{
     CardDestination, MoveStep, MoveTarget, SpawnHpValue, UtilityStep,
 };
+use sts_presentation::Locale;
 
 mod deck_links;
 pub(crate) use deck_links::write_owned_card_links;
@@ -288,6 +289,7 @@ pub(crate) fn write_card_fixed_requests(out: &mut String, card: cards::CardId, u
 pub(crate) fn render(
     decision: Option<&TaskPublicDecisionV1>,
     query: &str,
+    locale: Locale,
 ) -> Result<String, String> {
     let combat = decision.and_then(|d| match &d.observation {
         TaskPublicObservationV1::Combat { observation, .. } => Some(observation),
@@ -297,7 +299,13 @@ pub(crate) fn render(
         TaskPublicObservationV1::Combat { observation, .. } => observation.player.ascension_level,
         TaskPublicObservationV1::Strategic { observation } => observation.run.ascension_level,
     });
-    render_query(combat, ascension, decision.map(|d| &d.observation), query)
+    render_query(
+        combat,
+        ascension,
+        decision.map(|d| &d.observation),
+        query,
+        locale,
+    )
 }
 
 fn render_query(
@@ -305,6 +313,7 @@ fn render_query(
     ascension: Option<u8>,
     current_observation: Option<&TaskPublicObservationV1>,
     query: &str,
+    locale: Locale,
 ) -> Result<String, String> {
     let query = query.trim();
     let lower = query.to_ascii_lowercase();
@@ -565,9 +574,11 @@ fn render_query(
     if lower.starts_with("potion ") {
         let name = query[7..].trim();
         let potion = resolve::<potions::PotionId>(name).ok_or_else(|| {
-            format!("Unknown potion name: {name}. Use the full displayed name or stable ID.")
+            locale
+                .text("mechanics", "potion.unknown", &[("name", name)])
+                .expect("potion error message")
         })?;
-        write_potion(&mut out, potion);
+        write_potion(&mut out, potion, locale);
         return Ok(out);
     }
     if lower == "player" || lower == "powers" {
@@ -660,7 +671,7 @@ fn render_query(
         return Ok(out);
     }
     if let Some(potion) = resolve::<potions::PotionId>(query) {
-        write_potion(&mut out, potion);
+        write_potion(&mut out, potion, locale);
         return Ok(out);
     }
     if let Some(encounter) = resolve::<EncounterId>(query) {
@@ -704,21 +715,53 @@ fn write_power_matches(
     }
 }
 
-fn write_potion(out: &mut String, potion: potions::PotionId) {
+fn write_potion(out: &mut String, potion: potions::PotionId, locale: Locale) {
     let definition = potions::get_potion_definition(potion);
+    let rarity = match definition.rarity {
+        potions::PotionRarity::Common => "Common",
+        potions::PotionRarity::Uncommon => "Uncommon",
+        potions::PotionRarity::Rare => "Rare",
+    };
+    let target = if definition.target_required {
+        "true"
+    } else {
+        "false"
+    };
+    let header = locale
+        .text(
+            "mechanics",
+            "potion.definition",
+            &[
+                ("name", locale.entity("potion", potion.stable_id())),
+                ("id", potion.stable_id()),
+                (
+                    "rarity",
+                    locale
+                        .entry("mechanics", &format!("potion.rarity.{rarity}"))
+                        .expect("potion rarity"),
+                ),
+                ("potency", &definition.base_potency.to_string()),
+                (
+                    "target",
+                    locale
+                        .entry("mechanics", &format!("potion.boolean.{target}"))
+                        .expect("potion target flag"),
+                ),
+            ],
+        )
+        .expect("potion definition message");
+    writeln!(out, "{header}").unwrap();
+    let effect = locale
+        .entry("game", &format!("potionRule.{}", potion.stable_id()))
+        .expect("reviewed potion rule");
     writeln!(
         out,
-        "Potion definition: {} | {:?} | Base potency: {} | Target required: {}",
-        label(potion),
-        definition.rarity,
-        definition.base_potency,
-        definition.target_required
+        "{}",
+        locale
+            .text("mechanics", "potion.effect", &[("effect", effect)])
+            .expect("potion effect message")
     )
     .unwrap();
-    match potions::mechanics::explanation(potion) {
-        Some(effect) => writeln!(out, "  Effect: {effect}").unwrap(),
-        None => writeln!(out, "  Unknown: effect explanation not yet covered.").unwrap(),
-    }
 }
 
 fn write_relic(
@@ -1204,7 +1247,8 @@ mod tests {
         observation.run.max_hp = 80;
         observation.run.pending_act_entry = Some(2);
         observation.public_map.boss = Some(EncounterId::Hexaghost);
-        let text = super::render_query(None, Some(20), Some(&strategic), "rules").unwrap();
+        let text =
+            super::render_query(None, Some(20), Some(&strategic), "rules", Locale::En).unwrap();
         assert!(text.contains("Completed Act 1 Boss: Hexaghost"));
         assert!(text.contains("transition recovery gives 68/80 HP"));
         assert!(text.contains("Preparation Act 2 elite encounter pool"));
@@ -1219,7 +1263,8 @@ mod tests {
             sts_oracle_learning::ai::planner_core::PlannerDecisionContext::RunTransition {
                 stage: sts_oracle_learning::ai::planner_core::PlannerRunTransitionV1::SecondBoss,
             };
-        let text = super::render_query(None, Some(20), Some(&strategic), "rules").unwrap();
+        let text =
+            super::render_query(None, Some(20), Some(&strategic), "rules", Locale::En).unwrap();
         assert!(text.contains("Current HP carries into that fight"));
         assert!(!text.contains("transition recovery gives"));
     }
@@ -1459,7 +1504,28 @@ mod tests {
         ascension: Option<u8>,
         query: &str,
     ) -> Result<String, String> {
-        super::render_query(combat, ascension, None, query)
+        super::render_query(combat, ascension, None, query, Locale::En)
+    }
+
+    #[test]
+    fn every_potion_query_uses_shared_rules_and_keeps_a_copyable_stable_id() {
+        for id in potions::PotionId::STABLE_IDS {
+            for locale in [Locale::En, Locale::ZhCn] {
+                let reading = super::render(None, &format!("potion {id}"), locale).unwrap();
+                assert!(reading.contains(id));
+                assert!(reading.contains(locale.entity("potion", id)));
+                assert!(
+                    reading.contains(locale.entry("game", &format!("potionRule.{id}")).unwrap())
+                );
+                assert_eq!(reading, super::render(None, id, locale).unwrap());
+                assert_eq!(reading.lines().count(), 2);
+            }
+        }
+        let failure = super::render(None, "potion 未知 {{keep}}", Locale::ZhCn).unwrap_err();
+        assert_eq!(
+            failure,
+            "未知药水：未知 {{keep}}。请使用完整英文名称或稳定 ID。"
+        );
     }
 
     #[test]
@@ -1694,6 +1760,7 @@ mod tests {
                 Some(20),
                 Some(&observation),
                 "relic Centennial Puzzle",
+                Locale::En,
             )
             .unwrap();
             assert!(absent.contains("Currently held: no"), "{absent}");
@@ -1717,8 +1784,14 @@ mod tests {
                     observation.player.relics.push(relic);
                 }
             }
-            let held = super::render_query(None, Some(20), Some(&observation), "Centennial Puzzle")
-                .unwrap();
+            let held = super::render_query(
+                None,
+                Some(20),
+                Some(&observation),
+                "Centennial Puzzle",
+                Locale::En,
+            )
+            .unwrap();
             assert!(
                 held.contains("Currently held: yes | Counter: 0 | draw trigger spent this combat"),
                 "{held}"
@@ -2209,8 +2282,14 @@ mod tests {
             },
             observation: public,
         };
-        let active =
-            super::render_query(None, Some(20), Some(&observation), "relic Red Skull").unwrap();
+        let active = super::render_query(
+            None,
+            Some(20),
+            Some(&observation),
+            "relic Red Skull",
+            Locale::En,
+        )
+        .unwrap();
         assert!(active.contains("low-HP Strength bonus active"), "{active}");
         assert!(active.contains("removed when healing crosses above it"));
         assert!(!active.contains("used up"));
@@ -2618,9 +2697,16 @@ mod tests {
         state.run.act = 2;
         state.run.keys = [true, false, true];
         state.public_map.boss = Some(EncounterId::TheChamp);
-        let full = super::render_query(None, Some(20), Some(&observation), "rules").unwrap();
-        let brief =
-            super::render_query(None, Some(20), Some(&observation), "rules preparation").unwrap();
+        let full =
+            super::render_query(None, Some(20), Some(&observation), "rules", Locale::En).unwrap();
+        let brief = super::render_query(
+            None,
+            Some(20),
+            Some(&observation),
+            "rules preparation",
+            Locale::En,
+        )
+        .unwrap();
         for fact in [
             "heal 75% of missing HP",
             SHOP_REMOVAL_RULES,
@@ -2680,6 +2766,7 @@ mod tests {
                 Some(asc),
                 Some(&observation),
                 &format!("transition {assumed_hp}"),
+                Locale::En,
             )
             .unwrap();
             assert!(
@@ -2702,12 +2789,16 @@ mod tests {
             "transition 25 42",
         ] {
             assert!(
-                super::render_query(None, Some(20), Some(&observation), invalid).is_err(),
+                super::render_query(None, Some(20), Some(&observation), invalid, Locale::En)
+                    .is_err(),
                 "{invalid}"
             );
         }
         assert!(render_query(None, Some(20), "transition 25").is_err());
-        assert!(super::render_query(None, None, Some(&observation), "transition 25").is_err());
+        assert!(
+            super::render_query(None, None, Some(&observation), "transition 25", Locale::En)
+                .is_err()
+        );
 
         let mut combat = sts_oracle_learning::test_support::blank_test_combat();
         combat.entities.player.max_hp = 82;
@@ -2719,8 +2810,14 @@ mod tests {
                 &combat,
             ),
         };
-        let text = super::render_query(None, Some(20), Some(&combat_observation), "transition 25")
-            .unwrap();
+        let text = super::render_query(
+            None,
+            Some(20),
+            Some(&combat_observation),
+            "transition 25",
+            Locale::En,
+        )
+        .unwrap();
         assert!(text.contains("+43 HP -> 68/82"));
     }
 
@@ -2756,7 +2853,8 @@ mod tests {
             observation: public_combat_state_v1(&combat_state),
         };
         for observation in [&strategic, &combat] {
-            let view = super::render_query(None, Some(20), Some(observation), "rules").unwrap();
+            let view = super::render_query(None, Some(20), Some(observation), "rules", Locale::En)
+                .unwrap();
             assert!(view.contains("Objective encounter definition"));
             assert!(
                 view.contains("fixed route Rest site -> Shop -> Elite -> Boss -> Victory"),
@@ -2794,7 +2892,9 @@ mod tests {
             };
             *held = keys;
             for observation in [&strategic, &combat] {
-                let view = super::render_query(None, Some(20), Some(observation), "rules").unwrap();
+                let view =
+                    super::render_query(None, Some(20), Some(observation), "rules", Locale::En)
+                        .unwrap();
                 assert_eq!(view.contains(KEY_COLLECTION_TIMING), keys.contains(&false));
                 for (held, opportunities) in keys.into_iter().zip([
                     RUBY_KEY_OPPORTUNITIES,
@@ -2804,7 +2904,9 @@ mod tests {
                     assert_eq!(view.contains(opportunities), !held, "{view}");
                 }
                 // A deliberate query retains the complete rule catalogue.
-                let full = super::render_query(None, Some(20), Some(observation), "keys").unwrap();
+                let full =
+                    super::render_query(None, Some(20), Some(observation), "keys", Locale::En)
+                        .unwrap();
                 assert!(full.contains(RUBY_KEY_OPPORTUNITIES));
                 assert!(full.contains(CHEST_KEY_OPPORTUNITIES));
                 assert!(full.contains(EMERALD_KEY_OPPORTUNITIES));
@@ -2815,7 +2917,7 @@ mod tests {
         };
         observation.run_goal = PlannerRunGoal::ActThreeVictory;
         assert!(
-            !super::render_query(None, Some(20), Some(&strategic), "rules")
+            !super::render_query(None, Some(20), Some(&strategic), "rules", Locale::En)
                 .unwrap()
                 .contains("Objective encounter definition")
         );
@@ -2866,7 +2968,9 @@ mod tests {
             let mut expected = String::new();
             write_encounter(&mut expected, boss, 20).unwrap();
             for observation in [&strategic, &combat] {
-                let view = super::render_query(None, Some(20), Some(observation), "rules").unwrap();
+                let view =
+                    super::render_query(None, Some(20), Some(observation), "rules", Locale::En)
+                        .unwrap();
                 assert!(view.contains(&format!("Public map Boss definition | Act {act}:")));
                 assert!(view.contains(&format!("Current Act {act} deck-lab encounters:")));
                 assert!(view.contains("The catalogue updates with the Act and public Boss"));
@@ -2912,12 +3016,12 @@ mod tests {
         };
         observation.public_map.boss = None;
         assert!(
-            super::render_query(None, Some(20), Some(&strategic), "rules")
+            super::render_query(None, Some(20), Some(&strategic), "rules", Locale::En)
                 .unwrap()
                 .contains("Current Act 1 elite encounter pool")
         );
         assert!(
-            !super::render_query(None, Some(20), Some(&strategic), "rules")
+            !super::render_query(None, Some(20), Some(&strategic), "rules", Locale::En)
                 .unwrap()
                 .contains("Public map Boss definition")
         );

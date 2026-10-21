@@ -98,6 +98,24 @@ test('manual workbench blocks assistance before grouped actions and retains the 
   assert.ok(last.elapsedMs >= 0);
 });
 
+test('agent text language belongs to the workbench and survives reconnects without changing a query', async t => {
+  const queries = [];
+  const wb = await fixture(t, async () => ({
+    async info(query, options) { queries.push({ query, ...options }); return { view: '药水机制原文\n' }; },
+    async decision() { return { view: 'Reopened game\n', control: 'terminal' }; },
+    async close() {},
+  }), () => ({ status: 0, stdout: 'restored' }), { agentLocale: 'zh-CN' });
+  assert.equal((await wb.execute('info potion SteroidPotion')).text, '药水机制原文\n');
+  await wb.execute('back 1');
+  await wb.execute('info potion SteroidPotion');
+  assert.deepEqual(queries, [
+    { query: 'potion SteroidPotion', locale: 'zh-CN' },
+    { query: 'potion SteroidPotion', locale: 'zh-CN' },
+  ]);
+  const metadata = JSON.parse(await readFile(join(wb.recordDirectory, 'workbench.json'), 'utf8'));
+  assert.equal(metadata.agentLocale, 'zh-CN');
+});
+
 test('text tokens preserve card selectors and literal shell syntax without evaluation', () => {
   assert.deepEqual(commandTokens('info "card Dropkick" , act play:Strike#0@1*2 end'),
     ['info', 'card Dropkick', ',', 'act', 'play:Strike#0@1*2', 'end']);

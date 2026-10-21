@@ -346,6 +346,12 @@ Rust 返回的命令错误以 `RunPlayCommandError` 保留 `code`、`command`、
 回血单独列出，不凭摘要归因。`--detail` 的状态变化明确标注 `1 -> absent` 等差异，
 只说明记录中发生的变化，不推断触发原因。历史节点只用于定位，日常复盘无需复制它们。
 
+## 模型工具读数语言
+
+`openWorkbench({ ..., agentLocale: 'zh-CN' })` 为该工作台选择文字语言，默认 `en`，重连保持不变。直连客户端可使用 `game.info('potion SteroidPotion', { locale: 'zh-CN' })`；CLI 使用 `run_play info --session <path> --locale zh-CN potion SteroidPotion`。原生协议的 `info.locale` 使用相同的两个明确值，省略时为英语。
+
+当前药水机制查询支持全部 42 种药水的中英文名称、规则、基础药效、稀有度和目标要求；其他读数仍使用各自原有渲染。命令与查询中的稳定 ID 保持原样，语言不参与游戏状态、动作、RNG、训练词表或 parity 比较。记录保存实际查询时的语言和返回原文。
+
 ## 返回决策点与比较分支
 
 供界面和驻留调用者使用的结构化返回接口沿同一 Rust owner：

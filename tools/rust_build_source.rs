@@ -9,7 +9,7 @@ use std::path::{Path, PathBuf};
 
 use sha2::{Digest, Sha256};
 
-pub const INPUT_SCOPE: &str = "workspace-rust-source-v2";
+pub const INPUT_SCOPE: &str = "workspace-rust-source-v3";
 const INPUTS: &[&str] = &[
     "Cargo.toml",
     "Cargo.lock",
@@ -47,7 +47,16 @@ fn collect(root: &Path, relative: &Path, files: &mut Vec<PathBuf>) -> std::io::R
     ) {
         // tools owns build-time Rust helpers; Python/NLP/reference artifacts
         // there are not inputs to this Rust source identity.
-        if !relative.starts_with("tools") || path.extension().is_some_and(|value| value == "rs") {
+        if !relative.starts_with("tools")
+            || path.extension().is_some_and(|value| value == "rs")
+            || [
+                "tools/presentation/Cargo.toml",
+                "tools/presentation/locales/en.json",
+                "tools/presentation/locales/zh-CN.json",
+            ]
+            .iter()
+            .any(|input| relative == Path::new(input))
+        {
             files.push(relative.to_path_buf());
         }
     }
@@ -204,6 +213,31 @@ mod tests {
         assert_eq!(first.identity(), second.identity());
         second.write("tools/contract.rs", "build-time helper");
         assert_ne!(first.identity(), second.identity());
+    }
+
+    #[test]
+    fn embedded_catalogues_and_their_cargo_manifest_are_native_build_inputs() {
+        let tree = Tree::new();
+        fs::create_dir_all(tree.0.join("tools/presentation/locales")).unwrap();
+        let mut previous = tree.identity();
+        for input in [
+            "tools/presentation/Cargo.toml",
+            "tools/presentation/locales/en.json",
+            "tools/presentation/locales/zh-CN.json",
+        ] {
+            tree.write(input, "compiled resource");
+            let current = tree.identity();
+            assert_ne!(
+                current["source_sha256"], previous["source_sha256"],
+                "{input}"
+            );
+            previous = current;
+        }
+        tree.write(
+            "tools/presentation/package-lock.json",
+            "JavaScript dependency",
+        );
+        assert_eq!(tree.identity(), previous);
     }
 
     #[test]

@@ -19,6 +19,7 @@ export const Config = z.object({
   repository: z.string().required(false),
   binary: z.string().required(false),
   manual: z.boolean().required(false),
+  agentLocale: z.union(['en', 'zh-CN']).required(false),
 });
 
 export function nativeGuide(manual = false) {
@@ -58,7 +59,8 @@ async function readBinding({ repository, id, session, file }) {
   catch (error) { if (error.code !== 'ENOENT') throw error; }
   if (saved) {
     if (saved.schema !== bindingSchema || saved.agent !== id || resolve(saved.repository) !== repository
-        || resolve(saved.session) !== session || (saved.manual !== undefined && typeof saved.manual !== 'boolean')) {
+        || resolve(saved.session) !== session || (saved.manual !== undefined && typeof saved.manual !== 'boolean')
+        || (saved.agentLocale !== undefined && !['en', 'zh-CN'].includes(saved.agentLocale))) {
       throw new Error('This chat game binding is invalid; the existing game was not changed.');
     }
   }
@@ -71,11 +73,15 @@ export async function readNativeBinding(agent, config = {}) {
 }
 
 export async function nativeBinding(agent, config = {}, { run = executeFile, create = true } = {}) {
+  if (config.agentLocale !== undefined && !['en', 'zh-CN'].includes(config.agentLocale)) throw new Error('Unsupported agentLocale; use en or zh-CN');
   const location = await bindingLocation(agent, config);
   const { repository, id, session, file } = location;
   const saved = await readBinding(location);
   if (saved && config.manual !== undefined && config.manual !== (saved.manual ?? false)) {
     throw new Error('This chat has a different play mode. Create a new chat for the requested mode.');
+  }
+  if (saved && config.agentLocale !== undefined && config.agentLocale !== (saved.agentLocale ?? 'en')) {
+    throw new Error('This chat has a different agent language. Create a new chat for the requested language.');
   }
   if (!saved && !create) return null;
   if (config.binary && !isAbsolute(config.binary)) throw new Error('Configured game binary must be an absolute path.');
@@ -87,7 +93,7 @@ export async function nativeBinding(agent, config = {}, { run = executeFile, cre
   await mkdir(join(repository, '.oracle-lab/run-play'), { recursive: true });
   await run(binary, ['new', '--session', session, '--seed', seed, '--ascension', '20', '--goal', 'heart-victory'],
     { cwd: repository, windowsHide: true, timeout: 20000, maxBuffer: 1024 * 1024 });
-  const binding = { schema: bindingSchema, agent: id, repository, session, seed, ascension: 20, goal: 'heart-victory', manual: config.manual ?? false };
+  const binding = { schema: bindingSchema, agent: id, repository, session, seed, ascension: 20, goal: 'heart-victory', manual: config.manual ?? false, agentLocale: config.agentLocale ?? 'en' };
   await writeFile(file, JSON.stringify(binding, null, 2) + '\n', { flag: 'wx' });
   return { ...binding, binary };
 }
@@ -265,7 +271,8 @@ export class NativeGameControl {
       this.binding = await this.bind(this.agent, this.config, { create });
       if (!this.binding) throw new Error('This chat has no game.');
       const { repository, session, binary } = this.binding;
-      this.workbench = await this.openWorkbench({ repository, session, binary, manual: this.binding.manual ?? this.config.manual ?? false, commandPrefix: '' });
+      this.workbench = await this.openWorkbench({ repository, session, binary, manual: this.binding.manual ?? this.config.manual ?? false,
+        agentLocale: this.binding.agentLocale ?? this.config.agentLocale ?? 'en', commandPrefix: '' });
       return this.workbench;
     })();
     try { return await this.opening; }

@@ -194,18 +194,19 @@ export function navigationArguments(command, parameters) {
 // A fixed session, with serial commands and an owned text sink. Every reconnect
 // gets a fresh transport transcript; it never changes the shared CLI focus.
 export async function openWorkbench({ repository, session, binary = join(repository, 'target/dev-opt/run_play.exe'),
-  recordDirectory, commandPrefix = './p', manual = false, ...options }, { connect = openRunPlay, run = runEngine } = {}) {
+  recordDirectory, commandPrefix = './p', manual = false, agentLocale = 'en', ...options }, { connect = openRunPlay, run = runEngine } = {}) {
   if (typeof manual !== 'boolean') throw new Error('manual must be a boolean');
+  if (!['en', 'zh-CN'].includes(agentLocale)) throw new Error('Unsupported agentLocale; use en or zh-CN');
   const sessionLabel = session.split(/[\\/]/).at(-1);
   const records = recordDirectory ?? freshRecordDirectory(repository, sessionLabel, 'resident');
   await mkdir(dirname(records), { recursive: true });
   await mkdir(records); // A resident's recording scope is new, not an old session log.
-  await writeFile(join(records, 'workbench.json'), JSON.stringify({ repository, session, binary, manual,
+  await writeFile(join(records, 'workbench.json'), JSON.stringify({ repository, session, binary, manual, agentLocale,
     openedAt: new Date().toISOString() }, null, 2) + '\n', { flag: 'wx' });
   let connectionNumber = 0, game, closed = false, closing = false, tail = Promise.resolve(), chunks;
   const formatOutput = text => commandPrefix === './p' ? text
     : text.replaceAll('./p ', commandPrefix ? `${commandPrefix} ` : '');
-  const ctx = createWorkbenchContext({ repository, session, binary, sessionLabel, recordDirectory: records, runEngine: run, commandPrefix,
+  const ctx = createWorkbenchContext({ repository, session, binary, sessionLabel, recordDirectory: records, runEngine: run, commandPrefix, agentLocale,
     write: text => chunks.push(formatOutput(text)),
   });
   async function reconnect() {
