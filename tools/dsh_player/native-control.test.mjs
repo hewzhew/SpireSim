@@ -35,7 +35,7 @@ async function fixture(t, { inFlight = false, noGame = false, usage, actOnFirst 
   let version = 2, previous = null, opens = 0, failRead = false, active = 0;
   const binding = { agent: String(handle.agent.id), session: 'fixture-game', repository: 'fixture', seed: '1' };
   const source = () => ({ session_path: binding.session, session_id: 'fixture', identity: identity(version) });
-  const points = () => ({ schema: 'run-play-return-points-v1', source: source(), current: point(version),
+  const points = () => ({ schema: 'run-play-return-points-v2', source: source(), current: point(version),
     targets: [point(1, [{ kind: 'floor', floor: 1 }]), ...(previous === null ? [] : [point(previous, [{ kind: 'previous_endpoint' }])])] });
   const workbench = {
     observe: async () => ({ head_revision: version, state_revision: version, position: { public_snapshot_id: 's' + version } }),

@@ -353,6 +353,8 @@ Rust 返回的命令错误以 `RunPlayCommandError` 保留 `code`、`command`、
 同一个状态的多个来源合并展示。列表携带会话、读取时的 head，以及各目标的精确身份；
 不会从文字摘要或模型步骤号推算目标。
 
+列表使用 `run-play-return-points-v2`：`resources.potions` 按槽位提供 `PotionId` 稳定 ID 或 `null`，终局的 `location.outcome` 原样提供 `TaskEpisodeOutcomeV1`。调用者在显示时取词，不从药水显示名或终局句子反推身份。Rust 程序与插件一起更新，工作台拒绝不同版本的列表。
+
 `run_play back --session <path> --request <request.json>` 读取 `run-play-return-request-v1`：
 `source` 原样取自列表，`target` 原样取自所选目标的 `identity`。位置变化、会话不同、目标失效
 或身份不匹配时不发布恢复。正常恢复在同一次 head 发布中保留一个被离开的终点，返回结构化收据；

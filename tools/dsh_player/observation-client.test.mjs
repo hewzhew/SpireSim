@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { runInNewContext } from 'node:vm';
 import { createHostLocale } from './client/test-support.mjs';
-import { workbenchNamespace, workbenchDictionaries, validateHostDictionaries } from './client/locale.mjs';
+import { workbenchNamespace, workbenchDictionaries, validateHostDictionaries, returnOutcomeText } from './client/locale.mjs';
 
 const walk = node => !node || typeof node !== 'object' ? [] : Array.isArray(node) ? node.flatMap(walk) : [node, ...node.children.flatMap(walk)];
 const text = node => node == null ? '' : Array.isArray(node) ? node.map(text).join('') : typeof node === 'object' ? text(node.children) : String(node);
@@ -12,7 +12,7 @@ const row = (tree, step) => walk(tree).find(node => node.type === 'button' && no
 const item = (step, command, outcome = 'completed') => ({ step, seq: step * 10, revision: step * 10 + 9,
   label: command, outcome, durationMs: 100, usage: null, calls: [{ name: 'sts', command, outcome }] });
 
-async function fixture({ usage = null, inputs = [], messages = [] } = {}) {
+async function fixture({ usage = null, inputs = [], messages = [], returnPoints = null } = {}) {
   let definition, panel, cursor = 0, effectCursor = 0, tick = 1;
   const states = [], dependencies = [], effects = [], cleanups = [], calls = [], copies = [];
   const react = { Fragment: 'fragment', createElement: (type, props, ...children) => ({ type, props, children }),
@@ -34,7 +34,7 @@ async function fixture({ usage = null, inputs = [], messages = [] } = {}) {
   const identity = revision => ({ head_revision: revision, state_revision: revision, archive_node_id: 'n' + revision, public_snapshot_id: 's' + revision });
   const point = (revision, origins) => ({ identity: identity(revision), origins,
     location: { kind: 'strategic', act: 1, floor: revision, site: 'map' }, resources: { hp: 65, max_hp: 75, gold: 30, potions: [null, null] } });
-  let points = { schema: 'run-play-return-points-v1', source: { session_path: 'selected-game', session_id: 'same', identity: identity(7) },
+  let points = returnPoints ?? { schema: 'run-play-return-points-v2', source: { session_path: 'selected-game', session_id: 'same', identity: identity(7) },
     current: point(7, []), targets: [point(6, [{ kind: 'floor', floor: 6 }])] }, failRestore = false;
   const ctx = { locale: await createHostLocale(), effect: fn => fn(), sidebarRightTabs: { register: () => () => {} },
     slots: { inject: (_name, fn) => fn(), register: (entry, component) => { if (entry.key === 'sts-observe') panel = component; return () => {}; } },
@@ -219,4 +219,59 @@ test('translated return controls keep exact source and target identities and nev
   f.locale.setLocale('zh'); f.render();
   assert.ok(button(f.render(), '继续运行')); assert.ok(button(f.render(), '回到刚才'));
   assert.equal(f.calls.length, after);
+});
+
+test('return-point potion identities and structured terminal outcomes translate without changing data or requests', async () => {
+  const identity = revision => ({ head_revision: revision, state_revision: revision, archive_node_id: 'n' + revision, public_snapshot_id: 's' + revision });
+  const points = { schema: 'run-play-return-points-v2', source: { session_path: 'selected-game', session_id: 'same', identity: identity(7) },
+    current: { identity: identity(7), origins: [], location: { kind: 'terminal', outcome: { status: 'success', game_outcome: 'heart_victory' } }, resources: null },
+    targets: [{ identity: identity(6), origins: [{ kind: 'mark', name: '保留原文 keep exact' }], location: { kind: 'strategic', act: 4, floor: 54, site: 'map' },
+      resources: { hp: 42, max_hp: 75, gold: 123, potions: [null, 'SteroidPotion', 'Elixir', 'FuturePotion'] } },
+    { identity: identity(5), origins: [], location: { kind: 'combat', act: 4, floor: 56, encounter: 'TheHeart', turn: 1 },
+      resources: { hp: 42, max_hp: 75, gold: 123, potions: ['WeakenPotion', null] } }] };
+  const original = JSON.stringify(points), f = await fixture({ returnPoints: points });
+  f.render(); await f.settle(); f.render(); await f.settle();
+  button(f.render(), '返回点').props.onClick(); f.render(); await f.settle();
+  assert.match(text(f.render()), /当前：击败心脏/);
+  assert.match(text(f.render()), /类固醇药水 \/ 万灵药水 \/ FuturePotion/);
+  assert.match(text(f.render()), /虚弱药水/);
+  assert.match(text(f.render()), /保留原文 keep exact/);
+  const calls = f.calls.length;
+  f.locale.setLocale('en'); f.render(); await f.settle();
+  assert.match(text(f.render()), /Current: Heart victory/);
+  assert.match(text(f.render()), /Flex Potion \/ Elixir \/ FuturePotion/);
+  assert.match(text(f.render()), /Weak Potion/);
+  assert.equal(f.calls.length, calls);
+  assert.equal(JSON.stringify(points), original);
+  await button(f.render(), 'Return here').props.onClick();
+  assert.deepEqual(f.calls.find(call => call.endpoint.endsWith('/restore')).args.request,
+    { schema: 'run-play-return-request-v1', source: points.source, target: points.targets[0].identity });
+});
+
+test('all native outcome categories keep their meaning in both languages and preserve diagnostics verbatim', async () => {
+  const locale = await createHostLocale('en'); locale.register(workbenchNamespace, workbenchDictionaries);
+  const t = locale.bind(workbenchNamespace);
+  const cases = [
+    [{ status: 'success', game_outcome: 'heart_victory' }, 'Heart victory', '击败心脏'],
+    [{ status: 'success', game_outcome: 'act_three_victory' }, 'Act 3 victory', '第三幕通关'],
+    [{ status: 'success', game_outcome: 'defeat' }, 'Run ended', '对局结束'],
+    [{ status: 'paused', reason: { kind: 'public_decision_control_yield', site: 'map' } }, 'Paused at a decision', '停在决策点'],
+    ...[
+      ['committed_defeat', 'Defeat', '战败', 'defeat'],
+      ['committed_terminal_without_objective', 'Run ended before the objective', '对局结束，未完成目标', 'act_three_victory'],
+      ['retry_budget_exhausted', 'Stopped: retry budget exhausted', '已停止：重试次数耗尽'],
+      ['transition_budget_exhausted', 'Stopped: transition budget exhausted', '已停止：转换次数耗尽'],
+      ['unsupported_decision_surface', 'Stopped: unsupported decision', '已停止：不支持的决策'],
+    ].map(([kind, en, zh, game_outcome = null]) => [{ status: 'failure', reason: { kind }, game_outcome }, en, zh]),
+    [{ status: 'failure', reason: { kind: 'mechanics_or_protocol_error', message: 'Original diagnostic 原始诊断 {keep}' }, game_outcome: null },
+      'Stopped: Original diagnostic 原始诊断 {keep}', '已停止：Original diagnostic 原始诊断 {keep}'],
+  ];
+  const original = JSON.stringify(cases);
+  for (const [language, index] of [['en', 1], ['zh', 2]]) {
+    locale.setLocale(language);
+    for (const entry of cases) assert.equal(returnOutcomeText(entry[0], t), entry[index]);
+    assert.equal(returnOutcomeText({ status: 'failure', reason: { kind: 'future_reason' } }, t), 'future_reason');
+    assert.equal(returnOutcomeText({ status: 'future_status' }, t), '{"status":"future_status"}');
+  }
+  assert.equal(JSON.stringify(cases), original);
 });

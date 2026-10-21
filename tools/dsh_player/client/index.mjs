@@ -1,5 +1,5 @@
 // Same client module and sidebar extension contracts as the shipped dsh viewers.
-import { mapNamespace, gameNamespace, workbenchNamespace, mapDictionaries, gameDictionaries, workbenchDictionaries, mapTokenTitle, codeText } from './locale.mjs';
+import { mapNamespace, gameNamespace, workbenchNamespace, mapDictionaries, gameDictionaries, workbenchDictionaries, mapTokenTitle, codeText, returnOutcomeText } from './locale.mjs';
 
 window.__ModuleLoader__.load({ id: '@sts-simulator/dsh-player', factory(require) {
   const React = require('react');
@@ -56,15 +56,15 @@ window.__ModuleLoader__.load({ id: '@sts-simulator/dsh-player', factory(require)
   function returnLocation(point, t, gameText) {
     const location = point?.location;
     if (!location) return t('point.missingLocation');
-    if (location.kind === 'terminal') return location.label;
+    if (location.kind === 'terminal') return returnOutcomeText(location.outcome, t);
     const fields = { act: location.act ?? '?', floor: location.floor ?? '?' };
     return location.kind === 'combat' ? t('point.combatLocation', { ...fields, turn: location.turn,
       encounter: location.encounter ? codeText(gameText, 'encounter', location.encounter) : t('point.combat') })
       : t('point.strategic', { ...fields, site: codeText(t, 'site', location.site) });
   }
-  const returnResources = (point, t, language) => point.resources ? t('point.resources', {
+  const returnResources = (point, t, gameText, language) => point.resources ? t('point.resources', {
     hp: formatNumber(point.resources.hp, language), maxHp: formatNumber(point.resources.max_hp, language),
-    gold: formatNumber(point.resources.gold, language), potions: point.resources.potions.filter(Boolean).join(' / ') || t('point.noPotions'),
+    gold: formatNumber(point.resources.gold, language), potions: point.resources.potions.filter(Boolean).map(id => codeText(gameText, 'potion', id)).join(' / ') || t('point.noPotions'),
   }) : '';
   const pointOrigins = (point, t, language) => new Intl.ListFormat(language, { style: 'short', type: 'unit' }).format(point.origins.map(origin =>
     origin.kind === 'recent' ? t('point.recent', { count: formatNumber(origin.steps, language) })
@@ -321,11 +321,11 @@ window.__ModuleLoader__.load({ id: '@sts-simulator/dsh-player', factory(require)
                     !currentReturns ? h('p', null, t('points.loading')) : currentReturns.status !== 'ready' ? h('p', { role: 'alert' }, observationMessage(currentReturns, t))
                       : h(React.Fragment, null,
                         h('p', null, t('points.current', { location: returnLocation(currentReturns.points.current, t, gameText) })),
-                        h('p', { className: 'observe-muted' }, returnResources(currentReturns.points.current, t, language)),
+                        h('p', { className: 'observe-muted' }, returnResources(currentReturns.points.current, t, gameText, language)),
                         !currentReturns.points.targets.length ? h('p', null, t('points.empty')) : null,
                         currentReturns.points.targets.map(point => h('article', { className: 'return-point', key: point.identity.head_revision },
                           h('div', null, h('strong', null, returnLocation(point, t, gameText)),
-                            h('small', null, pointOrigins(point, t, language)), h('small', null, returnResources(point, t, language))),
+                            h('small', null, pointOrigins(point, t, language)), h('small', null, returnResources(point, t, gameText, language))),
                           h('button', { type: 'button', disabled: busy || control?.available === false, onClick: () => operate('restore', point) },
                             point.origins.some(origin => origin.kind === 'previous_endpoint') ? t('points.previous') : t('points.restore'))))),
                     actionResult?.receipt ? h('p', { role: 'status' }, t('points.submitted')) : null,

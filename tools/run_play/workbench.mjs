@@ -251,6 +251,11 @@ export async function openWorkbench({ repository, session, binary = join(reposit
     if (navigationError) throw navigationError;
     return result;
   }
+  async function readReturnPoints() {
+    const points = JSON.parse(await engineOutput(ctx, ['back', '--list', '--json']));
+    if (points.schema !== 'run-play-return-points-v2') throw new Error('Unsupported return points schema. Update the run-play binary and plugin together.');
+    return points;
+  }
   return Object.freeze({
     recordDirectory: records,
     manual,
@@ -333,7 +338,7 @@ export async function openWorkbench({ repository, session, binary = join(reposit
     },
     returnPoints() {
       if (closing || closed) return Promise.reject(new Error('workbench is closed'));
-      return serial(async () => JSON.parse(await engineOutput(ctx, ['back', '--list', '--json'])));
+      return serial(readReturnPoints);
     },
     restorePoint(request) {
       if (closing || closed) return Promise.reject(new Error('workbench is closed'));
@@ -347,7 +352,7 @@ export async function openWorkbench({ repository, session, binary = join(reposit
             receipt = JSON.parse(await engineOutput(ctx, ['back', '--request', requestFile]));
             await writeFile(join(records, `${operation}-receipt.json`), JSON.stringify(receipt), { flag: 'wx' });
           });
-          const points = JSON.parse(await engineOutput(ctx, ['back', '--list', '--json']));
+          const points = await readReturnPoints();
           return { receipt, points };
         } catch (error) {
           if (receipt) Object.assign(error, { receipt, branchChanged: true });

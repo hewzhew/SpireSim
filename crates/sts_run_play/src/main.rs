@@ -4194,7 +4194,7 @@ fn run(cli: Cli) -> Result<(), String> {
                 if json {
                     println!(
                         "{}",
-                        serde_json::to_string_pretty(&return_points::return_points_v1(&paths)?)
+                        serde_json::to_string_pretty(&return_points::return_points_v2(&paths)?)
                             .map_err(|error| error.to_string())?
                     );
                 } else {

@@ -257,7 +257,7 @@ test('cold return-point inspection queries only Rust and manual returns make old
   const captured = [];
   const view = new StsObservationView(ctx, { inspectSession: () => Promise.resolve(f.log),
     resolveAgent: () => assert.fail('read-only return points must not activate an Agent'),
-    execute: async (_binary, args) => { captured.push(args); return { stdout: '{"schema":"run-play-return-points-v1","targets":[]}' }; } });
+    execute: async (_binary, args) => { captured.push(args); return { stdout: '{"schema":"run-play-return-points-v2","targets":[]}' }; } });
   assert.equal((await view.points(f.id)).status, 'ready');
   assert.deepEqual(captured, [['back', '--session', f.session, '--list', '--json']]);
   assert.equal(f.requests.length, 5);

@@ -60,6 +60,7 @@ test('entity keys match the existing simulator vocabularies', async () => {
     enemy: '../../src/content/monsters/mod.rs',
     relic: '../../src/content/relics/identity_v1.json',
     power: '../../src/content/powers/mod.rs',
+    potion: '../../src/content/potions/mod.rs',
     event: '../../src/state/events/mod.rs',
   };
   for (const [kind, owner] of Object.entries(owners)) {
@@ -67,5 +68,17 @@ test('entity keys match the existing simulator vocabularies', async () => {
     const ids = kind === 'relic' ? JSON.parse(source).entries.map(entry => entry.stable_id)
       : [...source.matchAll(/=>\s*\("([^\"]+)",\s*\d+\)/g)].map(match => match[1]);
     for (const id of Object.keys(catalogs.en.game[kind])) assert.ok(ids.includes(id), `${kind}.${id} missing from ${owner}`);
+    if (kind === 'potion') assert.deepEqual(Object.keys(catalogs.en.game.potion).sort(), ids.sort(), 'return points can contain any potion');
   }
+});
+
+test('potion names use the simulator identity when it differs from a displayed or original-game name', async () => {
+  const display = await createPresentation({ locale: 'en' });
+  assert.equal(display.entity('potion', 'SteroidPotion'), 'Flex Potion');
+  assert.equal(display.entity('potion', 'WeakenPotion'), 'Weak Potion');
+  assert.equal(display.entity('potion', 'Elixir'), 'Elixir');
+  await display.setLocale('zh-CN');
+  assert.equal(display.entity('potion', 'SteroidPotion'), '类固醇药水');
+  assert.equal(display.entity('potion', 'WeakenPotion'), '虚弱药水');
+  assert.equal(display.entity('potion', 'Elixir'), '万灵药水');
 });

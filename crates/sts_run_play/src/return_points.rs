@@ -4,13 +4,15 @@ use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
 use sts_oracle_learning::agent::information::run::PublicCombatRunContextV1;
-use sts_oracle_learning::agent::task::{TaskDecisionSiteV1, TaskPublicObservationV1};
-use sts_oracle_learning::content::identity::gameplay_display_label_v1;
+use sts_oracle_learning::agent::task::{
+    TaskDecisionSiteV1, TaskEpisodeOutcomeV1, TaskPublicObservationV1,
+};
+use sts_oracle_learning::content::potions::PotionId;
 
 use crate::model::RunPlayHeadV1;
 use crate::storage::RunPlayPathsV1;
 
-const POINTS_SCHEMA: &str = "run-play-return-points-v1";
+const POINTS_SCHEMA: &str = "run-play-return-points-v2";
 const REQUEST_SCHEMA: &str = "run-play-return-request-v1";
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
@@ -71,7 +73,7 @@ pub enum ReturnOriginV1 {
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
-pub enum ReturnLocationV1 {
+pub enum ReturnLocationV2 {
     Strategic {
         act: u8,
         floor: i32,
@@ -84,33 +86,33 @@ pub enum ReturnLocationV1 {
         turn: usize,
     },
     Terminal {
-        label: String,
+        outcome: TaskEpisodeOutcomeV1,
     },
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
-pub struct ReturnResourcesV1 {
+pub struct ReturnResourcesV2 {
     pub hp: i32,
     pub max_hp: i32,
     pub gold: i32,
-    pub potions: Vec<Option<String>>,
+    pub potions: Vec<Option<PotionId>>,
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
-pub struct ReturnPointV1 {
+pub struct ReturnPointV2 {
     pub identity: ReturnIdentityV1,
     pub origins: Vec<ReturnOriginV1>,
-    pub location: ReturnLocationV1,
-    pub resources: Option<ReturnResourcesV1>,
+    pub location: ReturnLocationV2,
+    pub resources: Option<ReturnResourcesV2>,
 }
 
-fn point(head: &RunPlayHeadV1, origins: Vec<ReturnOriginV1>) -> Result<ReturnPointV1, String> {
+fn point(head: &RunPlayHeadV1, origins: Vec<ReturnOriginV1>) -> Result<ReturnPointV2, String> {
     let (location, resources) = match &head.position {
         crate::model::RunPlayPositionV1::Terminal { outcome, .. } => (
-            ReturnLocationV1::Terminal {
-                label: crate::compact::render_outcome_compact(outcome),
+            ReturnLocationV2::Terminal {
+                outcome: outcome.clone(),
             },
             None,
         ),
@@ -121,23 +123,19 @@ fn point(head: &RunPlayHeadV1, origins: Vec<ReturnOriginV1>) -> Result<ReturnPoi
                 .ok_or("return point has no cached decision")?;
             match &decision.observation {
                 TaskPublicObservationV1::Strategic { observation } => (
-                    ReturnLocationV1::Strategic {
+                    ReturnLocationV2::Strategic {
                         act: observation.run.act,
                         floor: observation.run.floor,
                         site: observation.decision_site.into(),
                     },
-                    Some(ReturnResourcesV1 {
+                    Some(ReturnResourcesV2 {
                         hp: observation.run.current_hp,
                         max_hp: observation.run.max_hp,
                         gold: observation.run.gold,
                         potions: observation
                             .potions
                             .iter()
-                            .map(|slot| {
-                                slot.potion.as_ref().map(|potion| {
-                                    gameplay_display_label_v1(potion.potion).to_string()
-                                })
-                            })
+                            .map(|slot| slot.potion.as_ref().map(|potion| potion.potion))
                             .collect(),
                     }),
                 ),
@@ -159,24 +157,20 @@ fn point(head: &RunPlayHeadV1, origins: Vec<ReturnOriginV1>) -> Result<ReturnPoi
                         PublicCombatRunContextV1::Unavailable { .. } => (None, None, None),
                     };
                     (
-                        ReturnLocationV1::Combat {
+                        ReturnLocationV2::Combat {
                             act,
                             floor,
                             encounter,
                             turn: observation.turn.turn_count.saturating_add(1) as usize,
                         },
-                        Some(ReturnResourcesV1 {
+                        Some(ReturnResourcesV2 {
                             hp: observation.player.hp,
                             max_hp: observation.player.max_hp,
                             gold: observation.player.gold,
                             potions: observation
                                 .potions
                                 .iter()
-                                .map(|slot| {
-                                    slot.as_ref().map(|potion| {
-                                        gameplay_display_label_v1(potion.potion_id).to_string()
-                                    })
-                                })
+                                .map(|slot| slot.as_ref().map(|potion| potion.potion_id))
                                 .collect(),
                         }),
                     )
@@ -184,7 +178,7 @@ fn point(head: &RunPlayHeadV1, origins: Vec<ReturnOriginV1>) -> Result<ReturnPoi
             }
         }
     };
-    Ok(ReturnPointV1 {
+    Ok(ReturnPointV2 {
         identity: ReturnIdentityV1::from_head(head),
         origins,
         location,
@@ -194,19 +188,19 @@ fn point(head: &RunPlayHeadV1, origins: Vec<ReturnOriginV1>) -> Result<ReturnPoi
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
-pub struct ReturnPointsV1 {
+pub struct ReturnPointsV2 {
     pub schema: String,
     pub source: ReturnSourceV1,
-    pub current: ReturnPointV1,
-    pub targets: Vec<ReturnPointV1>,
+    pub current: ReturnPointV2,
+    pub targets: Vec<ReturnPointV2>,
 }
 
-pub fn return_points_v1(paths: &RunPlayPathsV1) -> Result<ReturnPointsV1, String> {
+pub fn return_points_v2(paths: &RunPlayPathsV1) -> Result<ReturnPointsV2, String> {
     let current = paths.load_head()?;
     if !current.scratch {
         return Err("return points require a scratch session".into());
     }
-    let mut targets: Vec<ReturnPointV1> = Vec::new();
+    let mut targets: Vec<ReturnPointV2> = Vec::new();
     let mut current_origins = Vec::new();
     let mut add = |head: RunPlayHeadV1, origin: ReturnOriginV1| -> Result<(), String> {
         paths.scratch_head_revision_v1(&current, head.head_revision)?;
@@ -252,7 +246,7 @@ pub fn return_points_v1(paths: &RunPlayPathsV1) -> Result<ReturnPointsV1, String
             ReturnOriginV1::PreviousEndpoint,
         )?;
     }
-    let result = ReturnPointsV1 {
+    let result = ReturnPointsV2 {
         schema: POINTS_SCHEMA.to_string(),
         source: source(paths, &current)?,
         current: point(&current, current_origins)?,
@@ -287,7 +281,7 @@ pub fn restore_return_point_v1(
     if request.schema != REQUEST_SCHEMA {
         return Err("unsupported return request schema".into());
     }
-    let points = return_points_v1(paths)?;
+    let points = return_points_v2(paths)?;
     if request.source != points.source {
         return Err("return request source expired or belongs to another session".into());
     }
@@ -324,7 +318,11 @@ mod tests {
     use crate::driver::{
         create_scratch_natural_session_v1, save_scratch_mark_v1, RunPlayControllerV1,
     };
-    use sts_oracle_learning::agent::task::TaskBudgetV1;
+    use sts_oracle_learning::agent::information::state::CombatLearningPotionV1;
+    use sts_oracle_learning::agent::task::{
+        GameOutcomeV1, TaskBudgetV1, TaskEpisodeFailureV1, TaskEpisodePauseV1,
+        TaskStrategicPotionSlotV1, TaskStrategicPotionV1,
+    };
     use sts_oracle_learning::eval::run_control::CombatResearchPlanOptionsV1;
 
     fn prepare(root: &std::path::Path) -> RunPlayPathsV1 {
@@ -358,7 +356,7 @@ mod tests {
             )
             .unwrap();
     }
-    fn request(points: &ReturnPointsV1, target: &ReturnPointV1) -> ReturnRequestV1 {
+    fn request(points: &ReturnPointsV2, target: &ReturnPointV2) -> ReturnRequestV1 {
         ReturnRequestV1 {
             schema: REQUEST_SCHEMA.into(),
             source: points.source.clone(),
@@ -367,11 +365,149 @@ mod tests {
     }
 
     #[test]
+    fn return_resources_preserve_potion_identities_slots_and_point_identity() {
+        let directory = TestDirectory::new();
+        let paths = prepare(&directory.0.join("potions"));
+        let mut strategic = paths.load_head().unwrap();
+        let original = strategic.clone();
+        let TaskPublicObservationV1::Strategic { observation } =
+            &mut strategic.current_decision.as_mut().unwrap().observation
+        else {
+            panic!("expected strategic fixture");
+        };
+        observation.potions = vec![
+            TaskStrategicPotionSlotV1 {
+                slot: 0,
+                potion: None,
+            },
+            TaskStrategicPotionSlotV1 {
+                slot: 1,
+                potion: Some(TaskStrategicPotionV1 {
+                    potion: PotionId::SteroidPotion,
+                    can_use: false,
+                    can_discard: true,
+                    requires_target: false,
+                }),
+            },
+        ];
+        let session = crate::decision_tests::fixture("combat_multiturn");
+        let game = crate::decision_tests::controller_with_session(
+            &directory.0,
+            "combat_potions",
+            &session,
+        );
+        let mut combat = game.head().clone();
+        let TaskPublicObservationV1::Combat { observation, .. } =
+            &mut combat.current_decision.as_mut().unwrap().observation
+        else {
+            panic!("expected combat fixture");
+        };
+        observation.potions = vec![
+            Some(CombatLearningPotionV1 {
+                potion_id: PotionId::Elixir,
+                can_use: true,
+                can_discard: true,
+                requires_target: false,
+            }),
+            None,
+            Some(CombatLearningPotionV1 {
+                potion_id: PotionId::WeakenPotion,
+                can_use: true,
+                can_discard: true,
+                requires_target: true,
+            }),
+        ];
+        for (head, expected) in [
+            (&strategic, serde_json::json!([null, "SteroidPotion"])),
+            (&combat, serde_json::json!(["Elixir", null, "WeakenPotion"])),
+        ] {
+            let projected = point(head, vec![]).unwrap();
+            assert_eq!(projected.identity, ReturnIdentityV1::from_head(head));
+            let json = serde_json::to_value(&projected).unwrap();
+            assert_eq!(json["resources"]["potions"], expected);
+            assert_eq!(
+                serde_json::from_value::<ReturnPointV2>(json).unwrap(),
+                projected
+            );
+        }
+        assert_eq!(return_points_v2(&paths).unwrap().schema, POINTS_SCHEMA);
+        assert_eq!(paths.load_head().unwrap(), original);
+    }
+
+    #[test]
+    fn terminal_points_carry_the_existing_structured_outcome_and_raw_diagnostic() {
+        let directory = TestDirectory::new();
+        let paths = prepare(&directory.0.join("terminal"));
+        let mut head = paths.load_head().unwrap();
+        let identity = ReturnIdentityV1::from_head(&head);
+        let mut outcomes = vec![
+            TaskEpisodeOutcomeV1::Success {
+                game_outcome: GameOutcomeV1::HeartVictory,
+            },
+            TaskEpisodeOutcomeV1::Success {
+                game_outcome: GameOutcomeV1::ActThreeVictory,
+            },
+            TaskEpisodeOutcomeV1::Success {
+                game_outcome: GameOutcomeV1::Defeat,
+            },
+            TaskEpisodeOutcomeV1::Paused {
+                reason: TaskEpisodePauseV1::PublicDecisionControlYield {
+                    site: TaskDecisionSiteV1::Map,
+                },
+            },
+        ];
+        outcomes.extend(
+            [
+                (
+                    TaskEpisodeFailureV1::CommittedDefeat,
+                    Some(GameOutcomeV1::Defeat),
+                ),
+                (
+                    TaskEpisodeFailureV1::CommittedTerminalWithoutObjective,
+                    Some(GameOutcomeV1::ActThreeVictory),
+                ),
+                (TaskEpisodeFailureV1::RetryBudgetExhausted, None),
+                (TaskEpisodeFailureV1::TransitionBudgetExhausted, None),
+                (TaskEpisodeFailureV1::UnsupportedDecisionSurface, None),
+                (
+                    TaskEpisodeFailureV1::MechanicsOrProtocolError {
+                        message: "Original diagnostic 原始诊断 {keep}".into(),
+                    },
+                    None,
+                ),
+            ]
+            .into_iter()
+            .map(|(reason, game_outcome)| TaskEpisodeOutcomeV1::Failure {
+                reason,
+                game_outcome,
+            }),
+        );
+        for outcome in outcomes {
+            head.position = crate::model::RunPlayPositionV1::Terminal {
+                archive_node_id: identity.archive_node_id.clone(),
+                outcome: outcome.clone(),
+            };
+            let projected = point(&head, vec![]).unwrap();
+            let json = serde_json::to_value(&projected).unwrap();
+            assert_eq!(
+                json["location"],
+                serde_json::json!({"kind": "terminal", "outcome": outcome})
+            );
+            assert!(projected.resources.is_none());
+            assert_eq!(projected.identity, identity);
+            assert_eq!(
+                serde_json::from_value::<ReturnPointV2>(json).unwrap(),
+                projected
+            );
+        }
+    }
+
+    #[test]
     fn return_points_are_read_only_and_merge_metadata_only_generations() {
         let directory = TestDirectory::new();
         let paths = prepare(&directory.0.join("read"));
         let before = paths.load().unwrap();
-        let points = return_points_v1(&paths).unwrap();
+        let points = return_points_v2(&paths).unwrap();
         assert!(
             points.targets.is_empty(),
             "saving a mark does not create another game state"
@@ -381,7 +517,7 @@ mod tests {
         }));
         advance(&paths);
         let current = paths.load().unwrap();
-        let points = return_points_v1(&paths).unwrap();
+        let points = return_points_v2(&paths).unwrap();
         assert_eq!(points.targets.len(), 1);
         assert!(points.targets[0].origins.contains(&ReturnOriginV1::Mark {
             name: "start".into()
@@ -405,7 +541,7 @@ mod tests {
         let initial = paths.load().unwrap();
         advance(&paths);
         let branch = paths.load().unwrap();
-        let points = return_points_v1(&paths).unwrap();
+        let points = return_points_v2(&paths).unwrap();
         let receipt =
             restore_return_point_v1(&paths, &request(&points, &points.targets[0])).unwrap();
         let restored = paths.load().unwrap();
@@ -426,7 +562,7 @@ mod tests {
             receipt.previous_endpoint,
             ReturnIdentityV1::from_head(&branch.head)
         );
-        let points = return_points_v1(&paths).unwrap();
+        let points = return_points_v2(&paths).unwrap();
         let last = points
             .targets
             .iter()
@@ -445,7 +581,7 @@ mod tests {
             Some(restored.head.head_revision)
         );
         assert_eq!(
-            return_points_v1(&paths)
+            return_points_v2(&paths)
                 .unwrap()
                 .targets
                 .iter()
@@ -461,7 +597,7 @@ mod tests {
         let directory = TestDirectory::new();
         let paths = prepare(&directory.0.join("one"));
         advance(&paths);
-        let points = return_points_v1(&paths).unwrap();
+        let points = return_points_v2(&paths).unwrap();
         let valid = request(&points, &points.targets[0]);
         let mut forged = valid.clone();
         forged.target.public_snapshot_id = Some("other snapshot".into());

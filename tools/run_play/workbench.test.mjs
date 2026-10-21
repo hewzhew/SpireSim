@@ -553,7 +553,7 @@ test('typed return points stay read-only and restore the issued request after cl
     if (args.includes('--list')) {
       assert.deepEqual(args.slice(3), ['--list', '--json']);
       events.push('list');
-      return { status: 0, stdout: JSON.stringify({ schema: 'run-play-return-points-v1', restored }) };
+      return { status: 0, stdout: JSON.stringify({ schema: 'run-play-return-points-v2', restored }) };
     }
     assert.equal(events.at(-1), 'close 1');
     assert.equal(args[3], '--request');
@@ -574,7 +574,7 @@ test('a rejected typed return reconnects without retrying the restore', async t 
     const id = ++connection; events.push('open ' + id);
     return { async close() { events.push('close ' + id); } };
   }, (_binary, args) => {
-    if (args.includes('--list')) return { status: 0, stdout: JSON.stringify({ current: 'unchanged' }) };
+    if (args.includes('--list')) return { status: 0, stdout: JSON.stringify({ schema: 'run-play-return-points-v2', current: 'unchanged' }) };
     assert.equal(events.at(-1), 'close 1'); restores++;
     return { status: 1, stderr: 'return request source expired' };
   });
@@ -582,6 +582,12 @@ test('a rejected typed return reconnects without retrying the restore', async t 
   assert.deepEqual(events, ['open 1', 'close 1', 'open 2']);
   assert.equal(restores, 1);
   assert.equal((await wb.returnPoints()).current, 'unchanged');
+});
+
+test('return points reject an incompatible response before presentation', async t => {
+  const wb = await fixture(t, async () => ({ async close() {} }),
+    () => ({ status: 0, stdout: JSON.stringify({ schema: 'run-play-return-points-v1' }) }));
+  await assert.rejects(wb.returnPoints(), /Unsupported return points schema/);
 });
 
 test('a committed typed return retains its receipt when reconnecting fails', async t => {
