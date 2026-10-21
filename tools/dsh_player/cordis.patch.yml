@@ -4,28 +4,60 @@
     - id: sts-tool-updates
       name: '@sts-simulator/dsh-player/updates'
     - id: preset-sts-a20h
-      name: '@deepseek-ai/dsh-agent-preset'
+      name: cordis:group
+      group: true
       config:
-        id: sts-a20h
-        name: 杀戮尖塔 A20H
-        description: 每个会话独立跑局，直接查看 Flash 的操作和游戏返回。
-        order: 10
-        plugins:
-          - id: persona
-            name: '@deepseek-ai/dsh-persona'
-            config:
-              prefix: You play Slay the Spire through the bound game tools.
-              suffix: ''
-              includeRuntimeContext: false
-          - id: compaction
-            name: cordis:group
-            group: true
-            isolate:
-              compaction: true
-            config:
-              - id: compaction-basic
-                name: '@deepseek-ai/dsh-compaction-basic'
-              - id: compaction-command
-                name: '@deepseek-ai/dsh-command-compact'
-          - id: sts-game
-            name: '@sts-simulator/dsh-player/native'
+        - id: sts-public-manual
+          name: '@deepseek-ai/dsh-agent-preset'
+          config:
+            id: sts-a20h-manual
+            name: 杀戮尖塔 A20H · 公开信息
+            description: 根据公开局面手动决策；可观察、暂停与回退，不开放搜索或隐藏牌序。
+            order: 10
+            plugins:
+              - id: persona
+                name: '@deepseek-ai/dsh-persona'
+                config:
+                  prefix: You play Slay the Spire through the bound game tools.
+                  suffix: ''
+                  includeRuntimeContext: false
+              - id: compaction
+                name: cordis:group
+                group: true
+                isolate:
+                  compaction: true
+                config:
+                  - id: compaction-basic
+                    name: '@deepseek-ai/dsh-compaction-basic'
+                  - id: compaction-command
+                    name: '@deepseek-ai/dsh-command-compact'
+              - id: sts-game
+                name: '@sts-simulator/dsh-player/native'
+                config:
+                  manual: true
+        - id: sts-search-assisted
+          name: '@deepseek-ai/dsh-agent-preset'
+          config:
+            id: sts-a20h
+            name: 杀戮尖塔 A20H · 搜索辅助
+            description: 使用固定实际状态的搜索与预演；可观察、暂停与回退。
+            order: 20
+            plugins:
+              - id: persona
+                name: '@deepseek-ai/dsh-persona'
+                config:
+                  prefix: You play Slay the Spire through the bound game tools.
+                  suffix: ''
+                  includeRuntimeContext: false
+              - id: compaction
+                name: cordis:group
+                group: true
+                isolate:
+                  compaction: true
+                config:
+                  - id: compaction-basic
+                    name: '@deepseek-ai/dsh-compaction-basic'
+                  - id: compaction-command
+                    name: '@deepseek-ai/dsh-command-compact'
+              - id: sts-game
+                name: '@sts-simulator/dsh-player/native'

@@ -14,6 +14,7 @@ import * as LlmRetry from '@deepseek-ai/dsh-llm-retry';
 import { NativeGameControl, nativeGameControl, workspaceFacts, registerNativeCommands } from './native.mjs';
 import { StsObservationView, observationTickProjection } from './observation-view.mjs';
 import { mapTickProjection } from './map-view.mjs';
+import { requestFromBoundary } from './inspection.mjs';
 
 const message = text => createUserMessage({ source: { kind: 'user' }, content: [{ type: 'text', text }] });
 const gate = () => Promise.withResolvers();
@@ -127,6 +128,25 @@ test('native experiment stops before a second model request and preserves pause 
   await f.ctx.commands.execute(f.handle.agent, '/sts-budget null', [], new AbortController().signal);
   assert.equal(f.control.budget, null);
   assert.equal(f.control.paused, true, 'clearing a budget never resumes a player');
+});
+
+test('native controls capture exact SDK inputs without provider delivery events or duplicate message snapshots', async t => {
+  const f = await fixture(t);
+  f.handle.agent.followup(message('Play once.'));
+  await f.handle.agent.whenIdle();
+  const log = { meta: f.handle.agent.session.header, events: f.handle.agent.session.snapshotEvents(), inheritedEventCount: 0 };
+  const boundaries = log.events.filter(event => event.type === 'plugin:sts/request-boundary');
+  assert.equal(boundaries.length, f.requests.length);
+  assert.equal(boundaries.length, 2);
+  assert.equal(log.events.some(event => event.type === 'session-log-deepseek/delivery-accepted'), false);
+  boundaries.forEach((event, index) => {
+    assert.equal(event.ignorable, true);
+    assert.equal(event.data.snapshot, undefined);
+    const { signal, ...expected } = f.requests[index];
+    assert.deepEqual(requestFromBoundary(log, event.data), JSON.parse(JSON.stringify(expected)));
+  });
+  assert.throws(() => requestFromBoundary(log, { ...boundaries[0].data, requestHash: 'wrong' }), /input digest/);
+  assert.deepEqual(f.calls.filter(call => call === 'advance'), ['advance']);
 });
 
 test('reported usage threshold rejects the next request, using disjoint official usage buckets', async t => {

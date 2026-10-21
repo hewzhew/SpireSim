@@ -78,8 +78,8 @@ export class StsToolUpdates extends TypertRemoteService {
 
   async initialize() {
     if (!this.watched()) { this.unavailable = '未启用本仓库的源码热重载。请由维护者更新本地服务配置。'; return; }
-    this.packageFile = join(this.root, 'tools/dsh_player/package.json');
-    const packageRevision = await revision([this.packageFile]);
+    this.declarations = ['package.json', 'cordis.patch.yml'].map(file => join(this.root, 'tools/dsh_player', file));
+    const packageRevision = await revision(this.declarations);
     this.files = await this.sources();
     this.loaded = await revision(this.files);
     // The declaring Loader entry survives a UI/service module replacement.
@@ -98,7 +98,7 @@ export class StsToolUpdates extends TypertRemoteService {
     await this.loading;
     if (this.unavailable) return { status: 'unavailable', message: this.unavailable };
     const published = this.entry()[publishedState];
-    if (await revision([this.packageFile]) !== published.packageRevision) {
+    if (await revision(this.declarations) !== published.packageRevision) {
       return { status: 'restart-required', message: '插件声明发生了变化，需要重启服务加载。' };
     }
     let current;
@@ -124,8 +124,10 @@ export class StsToolUpdates extends TypertRemoteService {
         const entry = this.entry();
         await entry.fiber.restart();
         await this.ctx.loader.await();
-        const preset = await this.ctx.agentPresets.resolve('sts-a20h');
-        if (preset.broken) throw new Error(preset.broken);
+        for (const id of ['sts-a20h-manual', 'sts-a20h']) {
+          const preset = await this.ctx.agentPresets.resolve(id);
+          if (preset.broken) throw new Error(preset.broken);
+        }
         if (await revision(files) !== next) return { status: 'loading', message: '发布期间源码又有变化，请等待下一次热重载。' };
         this.files = files;
         this.loaded = next;

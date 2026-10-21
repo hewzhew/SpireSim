@@ -8,7 +8,7 @@ import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { Context } from '@deepseek-ai/cordis';
 import LlmRuntime, { LlmAdapter, createUserMessage } from '@deepseek-ai/dsh-llm';
-import SessionStore, { SessionId } from '@deepseek-ai/dsh-session';
+import SessionStore, { SessionId, appendPluginRecord } from '@deepseek-ai/dsh-session';
 import ProjectionRegistry from '@deepseek-ai/dsh-session-projection';
 import AgentRegistry from '@deepseek-ai/dsh-agent';
 import AgentLoop from '@deepseek-ai/dsh-agent-loop';
@@ -16,11 +16,11 @@ import ToolRuntime, { defineTool } from '@deepseek-ai/dsh-tools';
 import SystemPrompt from '@deepseek-ai/dsh-system-prompt';
 import TokenMeter from '@deepseek-ai/dsh-token-meter';
 import * as SessionPersistence from '@deepseek-ai/dsh-session-persistence-jsonl';
-import { readPlayerJournal } from './inspection.mjs';
+import { readPlayerJournal, recordSessionRequests } from './inspection.mjs';
 import { parseNativeObservation, observeNative, nativeJournalSummary, renderNativeObservation, readLiveGame } from './native-inspection.mjs';
 import { StsObservationView, observationTickProjection } from './observation-view.mjs';
 
-async function fixture(t) {
+async function fixture(t, { capture = false } = {}) {
   const base = await realpath(tmpdir()), repository = await mkdtemp(join(base, 'sts-native-observe-'));
   const home = join(repository, 'dsh'), id = 'session-observe-fixture';
   const session = join(repository, '.oracle-lab/run-play', `dsh-native-${createHash('sha256').update(id).digest('hex').slice(0, 24)}`);
@@ -71,11 +71,15 @@ async function fixture(t) {
   ctx.on('llm/stream', (request, next) => {
     const { signal, ...plain } = request; requests.push(JSON.parse(JSON.stringify(plain)));
     const owner = handle.agent.session;
-    owner.append('session-log-deepseek/delivery-accepted', { sessionId: id, sessionFormatVersion: owner.header.version,
+    if (!capture) owner.append('session-log-deepseek/delivery-accepted', { sessionId: id, sessionFormatVersion: owner.header.version,
       throughSeq: owner.snapshotEvents().length - 1 });
     return next();
   });
   handle = await ctx.agents.create({ sessionId: SessionId(id), meta: { cwd: repository }, agentOptions: { provider: 'fixture', model: 'fixture' } });
+  if (capture) recordSessionRequests(ctx, { id, session: () => handle.agent.session, record: async boundary => {
+    appendPluginRecord(handle.agent.session, 'plugin:sts/request-boundary', { schema: 'sts-native-request-boundary-v1', sessionId: id, ...boundary });
+    await ctx.sessions.flush(handle.agent.session);
+  } });
   for (const task of ['First task.', 'Second task.']) {
     handle.agent.followup(createUserMessage({ source: { kind: 'user' }, content: [{ type: 'text', text: task }] }));
     await handle.agent.whenIdle(); await ctx.sessions.flush(handle.agent.session);
@@ -83,6 +87,21 @@ async function fixture(t) {
   return { ctx, owner: handle.agent.session, repository, home, binding, id, session, focus, executed, requests,
     log: await readPlayerJournal(home, id, { compression: 'zstd' }) };
 }
+
+test('native observer expands digest-checked dispatch inputs and rejects altered or misplaced boundaries', async t => {
+  const f = await fixture(t, { capture: true });
+  const selected = await nativeJournalSummary(f.log, f.binding, { turn: 1, step: 2, input: true });
+  assert.equal(selected.inputs.length, 1);
+  assert.equal(selected.inputs[0].precision, 'digest-checked-journal-at-sdk-dispatch');
+  assert.deepEqual(selected.inputs[0].request, f.requests[1]);
+  const altered = structuredClone(f.log);
+  altered.events.find(event => event.type === 'plugin:sts/request-boundary' && event.data.turn === 1 && event.data.step === 2).data.requestHash = 'wrong';
+  await assert.rejects(nativeJournalSummary(altered, f.binding, { turn: 1, step: 2, input: true }), /input digest/);
+  const misplaced = structuredClone(f.log);
+  misplaced.events.find(event => event.type === 'plugin:sts/request-boundary' && event.data.turn === 1 && event.data.step === 2).data.step = 1;
+  await assert.rejects(nativeJournalSummary(misplaced, f.binding, { turn: 1, step: 2, input: true }), /Invalid captured/);
+  assert.deepEqual(f.executed, ['read', 'broken', 'inventory']);
+});
 
 test('native observer reads official compressed logs, scopes turns and leaves gameplay and history untouched', async t => {
   const f = await fixture(t), neverOpen = () => assert.fail('log inspection must not connect to Rust');

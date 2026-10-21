@@ -14,6 +14,7 @@ Start with the [installation and full-run verification guide](docs/getting-start
 | --- | --- |
 | Install and use the Python environment | [Python bridge](bindings/python_learning/README.md) |
 | Play, inspect, or plan in Rust | [Run-play client](tools/run_play/README.md) |
+| Watch a model play from public information | [Model-play walkthrough](docs/model-play.md) |
 | Compare execution with the original game | [Architecture](docs/ARCHITECTURE.md), [runbook](docs/RUNBOOK.md) |
 | Verify complete trajectories and the installed package | [Environment acceptance](docs/architecture/environment-acceptance.md) |
 | Use source-checkout commands and local shortcuts | [Developer scripts](scripts/README.md) |

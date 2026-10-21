@@ -5,6 +5,7 @@
 | 任务 | 入口 |
 | --- | --- |
 | 首次安装、完整复验与接入策略 | [Getting started](getting-started.md) |
+| 观察模型的公开信息对局与人工返回 | [短段演示](model-play.md) |
 | 整理可独立使用的发布候选 | [发布候选](runbooks/release.md) |
 | 选择运行工具、构建与测试 | [RUNBOOK](RUNBOOK.md) |
 | 开发脚本与本地短命令 | [scripts](../scripts/README.md) |

@@ -104,6 +104,10 @@ slots leave future decision rows, while rewards keep their actual slot
 indices. The script reports actual rewards and whether the episodes terminated
 or reached an explicit choice/commit limit; it supplies no default strategy.
 
+## Watch a language model play
+
+To observe a language model playing through native chat tools, including actual request inputs, results, pause and retained returns, use the [model-play walkthrough](model-play.md). Its dsh plugin controls the Rust workbench; the batched Python callback above remains the training entry point.
+
 ## Report a problem
 
 Open an [issue](https://github.com/hewzhew/sts-sim/issues) with the package

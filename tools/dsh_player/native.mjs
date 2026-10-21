@@ -9,7 +9,9 @@ import { promisify } from 'node:util';
 import z from '@deepseek-ai/schemastery';
 import { defineTool } from '@deepseek-ai/dsh-tools';
 import { createUserMessage } from '@deepseek-ai/dsh-llm';
+import { appendPluginRecord } from '@deepseek-ai/dsh-session';
 import { validateNativeBudget, nativeBudgetRecord, nativeBudgetUsage, nativeBudgetStopReason } from './native-budget.mjs';
+import { recordSessionRequests } from './inspection.mjs';
 
 export const name = 'sts-native-player';
 export const inject = ['tools', 'systemPrompt', 'commands'];
@@ -186,6 +188,12 @@ export class NativeGameControl {
       return this.budget.maxTokensPerRequest ? { ...config,
         maxTokens: this.budget.maxTokensPerRequest } : config;
     });
+    this.unrecord = recordSessionRequests(agent.ctx, { id: String(agent.id), session: () => agent.session,
+      record: async boundary => {
+        appendPluginRecord(agent.session, 'plugin:sts/request-boundary', { schema: 'sts-native-request-boundary-v1',
+          sessionId: String(agent.id), ...boundary });
+        await agent.ctx.sessions.flush(agent.session);
+      } });
     this.scheduleBudgetDeadline();
   }
   status() {
@@ -388,6 +396,7 @@ export class NativeGameControl {
     this.closed = true;
     this.unlisten();
     this.unrequest();
+    this.unrecord();
     clearTimeout(this.budgetTimer);
     await this.tail;
     if (this.workbench) await this.workbench.close();

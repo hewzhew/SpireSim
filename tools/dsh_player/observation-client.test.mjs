@@ -79,7 +79,7 @@ test('native observation uses named args, loads and reuses input on demand, and 
   assert.deepEqual(f.calls.at(-1).args, { sessionId: 'selected-chat', turn: 1, step: 2, input: false });
   button(f.render(), '输入').props.onClick(); f.render(); await f.settle();
   assert.deepEqual(f.calls.at(-1).args, { sessionId: 'selected-chat', turn: 1, step: 2, input: true });
-  assert.match(text(f.render()), /没有记录交付边界/);
+  assert.match(text(f.render()), /本步没有保存请求边界/);
   const count = f.calls.length;
   button(f.render(), '返回').props.onClick(); f.render(); await f.settle();
   button(f.render(), '输入').props.onClick(); f.render(); await f.settle();

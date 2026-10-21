@@ -62,11 +62,12 @@ window.__ModuleLoader__.load({ id: '@sts-simulator/dsh-player', factory(require)
   const pointOrigins = point => point.origins.map(origin => origin.kind === 'recent' ? origin.steps + ' 次提交前'
     : origin.kind === 'floor' ? 'F' + origin.floor + ' 落点' : origin.kind === 'mark' ? origin.name : '刚才的终点').join('，');
   function renderInputs(inputs, copyMessage) {
-    if (!inputs.length) return h('p', { className: 'observe-muted' }, '没有记录交付边界，本步原始输入不可用。');
+    if (!inputs.length) return h('p', { className: 'observe-muted' }, '本步没有保存请求边界，原始输入不可用。');
     const roles = { system: '系统', user: '用户', assistant: '模型', tool: '工具返回' };
-    return h(React.Fragment, null, h('p', { className: 'observe-muted' }, '按日志中的交付记录还原输入。'),
+    return h(React.Fragment, null, h('p', { className: 'observe-muted' }, '按实际请求边界展开输入。'),
       inputs.map((item, index) => h('div', { key: item.eventSeq, className: 'observe-delivery' },
-        h('p', null, '输入记录 ' + (index + 1) + '，' + item.request.messages.length + ' 条消息'),
+        h('p', null, '输入记录 ' + (index + 1) + '，' + item.request.messages.length + ' 条消息 · '
+          + (item.precision === 'journal-derived-at-recorded-delivery' ? '服务端交付记录' : 'SDK 请求记录')),
         item.request.messages.map((message, index) => h('details', { key: index, className: 'observe-input-message' },
           h('summary', null, (index + 1) + '  ' + (roles[message.role] ?? message.role),
             h('span', { className: 'observe-input-preview' }, message.content.find(block => block.type === 'text')?.text.split('\n')[0].slice(0, 120)
@@ -77,7 +78,7 @@ window.__ModuleLoader__.load({ id: '@sts-simulator/dsh-player', factory(require)
           h('button', { type: 'button', onClick: () => copyMessage(JSON.stringify(message, null, 2)) }, '复制消息'))),
         h('details', { className: 'observe-input-extra' }, h('summary', null, '工具定义'),
           h('pre', { className: 'observe-code' }, item.request.tools ? JSON.stringify(item.request.tools, null, 2) : '请求中未提供独立工具定义列表。')),
-        h('details', { className: 'observe-input-extra' }, h('summary', null, '请求 JSON（日志还原）'),
+        h('details', { className: 'observe-input-extra' }, h('summary', null, '请求 JSON'),
           h('pre', { className: 'observe-code' }, JSON.stringify(item.request, null, 2))))));
   }
   function tokenStyle(token, highlighted) {

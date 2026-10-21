@@ -61,7 +61,7 @@ export function journalRequest({ events, meta, inheritedEventCount = 0 }, throug
 // Capture at the official SDK dispatch seam, before any streamed response.
 // An exceptional transformed input is saved explicitly rather than pretending
 // the journal-derived request is identical. Ordinary records contain only refs.
-export function recordPlayerRequests(ctx, { id, session, output }) {
+export function recordSessionRequests(ctx, { id, session, record }) {
   let position;
   const attempts = new Map();
   const closeEvents = ctx.on('session/event', (owner, event) => {
@@ -79,12 +79,22 @@ export function recordPlayerRequests(ctx, { id, session, output }) {
     const attempt = (attempts.get(key) ?? 0) + 1;
     attempts.set(key, attempt);
     await ctx.sessions.flush(current);
-    await appendFile(join(output, 'requests.jsonl'), JSON.stringify({ schema: 'sts-player-request-boundary-v1',
-      ...position, attempt, throughSeq, requestHash,
-      ...(digest(reconstructed) === requestHash ? {} : { snapshot: actual }) }) + '\n');
+    await record({ ...position, attempt, throughSeq, requestHash,
+      ...(digest(reconstructed) === requestHash ? {} : { snapshot: actual }) });
     yield* next();
   });
   return () => { closeRequests(); closeEvents(); };
+}
+
+export function recordPlayerRequests(ctx, { id, session, output }) {
+  return recordSessionRequests(ctx, { id, session, record: boundary => appendFile(join(output, 'requests.jsonl'),
+    JSON.stringify({ schema: 'sts-player-request-boundary-v1', ...boundary }) + '\n') });
+}
+
+export function requestFromBoundary(log, boundary) {
+  const request = boundary.snapshot ?? journalRequest(log, boundary.throughSeq);
+  if (digest(request) !== boundary.requestHash) throw new Error('Captured request does not match its recorded input digest.');
+  return request;
 }
 
 async function optionalJson(path) {

@@ -7,7 +7,7 @@ import { Context } from '@deepseek-ai/cordis';
 import { Session, SessionId } from '@deepseek-ai/dsh-session';
 import Projections from '@deepseek-ai/dsh-session-projection';
 import TokenMeter from '@deepseek-ai/dsh-token-meter';
-import { readPlayerJournal, journalRequest, settlementBlocks, settlementUsage } from './inspection.mjs';
+import { readPlayerJournal, journalRequest, requestFromBoundary, settlementBlocks, settlementUsage } from './inspection.mjs';
 import { workspaceFacts } from './native.mjs';
 
 const usage = 'observe [STEP [input] | live | list] [--home DSH_HOME] [--chat ID_FRAGMENT] [--turn N]';
@@ -132,8 +132,20 @@ export async function nativeJournalSummary(log, binding, { turn: wantedTurn, ste
       && event.seq < step.seq && event.type === 'tool/call' && event.data.name === 'sts') };
     report.following = steps[steps.indexOf(step) + 1] ?? null;
     if (input) {
+      const captured = step.members.filter(event => event.type === 'plugin:sts/request-boundary');
       const deliveries = step.members.filter(event => event.type === 'session-log-deepseek/delivery-accepted');
-      report.inputs = deliveries.map(event => {
+      report.inputs = captured.length ? captured.map(event => {
+        const boundary = event.data;
+        if (boundary.schema !== 'sts-native-request-boundary-v1' || boundary.sessionId !== log.meta.id
+            || boundary.turn !== report.turn || boundary.step !== step.number
+            || !Number.isSafeInteger(boundary.attempt) || boundary.attempt < 1
+            || !Number.isSafeInteger(boundary.throughSeq) || boundary.throughSeq < step.seq || boundary.throughSeq >= event.seq) {
+          throw new Error(`Invalid captured request boundary at event ${event.seq}.`);
+        }
+        return { eventSeq: event.seq, throughSeq: boundary.throughSeq, attempt: boundary.attempt,
+          precision: boundary.snapshot ? 'captured-sdk-request' : 'digest-checked-journal-at-sdk-dispatch',
+          requestHash: boundary.requestHash, request: requestFromBoundary(log, boundary) };
+      }) : deliveries.map(event => {
         const { throughSeq, sessionId, sessionFormatVersion } = event.data;
         if (sessionId !== log.meta.id || sessionFormatVersion !== log.meta.version
             || !Number.isSafeInteger(throughSeq) || throughSeq < step.seq || throughSeq >= event.seq) {

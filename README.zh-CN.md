@@ -14,6 +14,7 @@
 | --- | --- |
 | 安装和使用 Python 环境 | [Python bridge](bindings/python_learning/README.md) |
 | 在 Rust 中跑局、观察和规划 | [Run-play 客户端](tools/run_play/README.md) |
+| 观察模型公开信息手打、暂停与返回 | [短段演示](docs/model-play.md) |
 | 与原游戏比较执行结果 | [架构](docs/ARCHITECTURE.md)、[运行手册](docs/RUNBOOK.md) |
 | 复验完整轨迹和已安装包 | [环境验收](docs/architecture/environment-acceptance.md) |
 | 使用源码开发命令与本地快捷方式 | [开发脚本](scripts/README.md) |
