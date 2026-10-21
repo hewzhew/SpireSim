@@ -1,10 +1,10 @@
 // A human map, using the three-column rooms and one connector row seen in
 // sts_map_oracle's format_map. Draw the supplied public graph, never a seed.
 const letters = { Monster: 'M', Elite: 'E', 'Elite+key': 'E', Rest: 'R', Shop: '$', Treasure: 'T', QuestionMark: '?', Boss: 'B' };
-const names = { Monster: '敌人', Elite: '精英', 'Elite+key': '精英', Rest: '休息', Shop: '商人', Treasure: '财宝', QuestionMark: '不明', Boss: '首领' };
+const roomIds = { Monster: 'monster', Elite: 'elite', 'Elite+key': 'elite', Rest: 'rest', Shop: 'shop', Treasure: 'treasure', QuestionMark: 'question_mark', Boss: 'boss' };
 const point = key => key.split(',').map(Number);
 
-export function renderMapPicture(nodes, current, { bossTitle } = {}) {
+export function renderMapPicture(nodes, current) {
   if (!nodes.size) return { picture: '', lines: [], extraConnections: [] };
   const currentY = nodes.has(current) ? point(current)[1] : -1;
   const reachable = new Set(), pending = nodes.has(current) ? [current] : [];
@@ -29,10 +29,9 @@ export function renderMapPicture(nodes, current, { bossTitle } = {}) {
   const roomAt = (row, x, key) => {
     const node = nodes.get(key), state = stateOf(key);
     const emerald = node.type === 'Elite+key';
-    const title = node.type === 'Boss' ? bossTitle ?? names.Boss : `${names[node.type] ?? node.type} (${key})`;
     row[x] = {
       text: letters[node.type] ?? '?', kind: 'room', state, emerald,
-      title: `${state === 'current' ? '当前位置：' : ''}${title}${emerald ? '，携带绿钥匙' : ''}`,
+      room: roomIds[node.type], coordinate: key,
     };
   };
   const edgeAt = (row, x, glyph, from, to) => {
@@ -41,7 +40,7 @@ export function renderMapPicture(nodes, current, { bossTitle } = {}) {
     const dim = value => ['past', 'unreachable'].includes(value);
     const text = old.kind === 'edge' && (old.text === '+' || glyph === '+') ? '+' : glyph;
     if (old.kind === 'edge' && !dim(old.state) && dim(state)) { row[x] = { ...old, text }; return; }
-    row[x] = { text, kind: 'edge', state, title: `(${from}) -> (${to})` };
+    row[x] = { text, kind: 'edge', state, from, to };
   };
   // Boss coordinates in the engine are a sentinel. A shared rail shows exactly
   // which last-row rooms lead to it, with the Boss centered over the map.
@@ -87,7 +86,8 @@ export function renderMapPicture(nodes, current, { bossTitle } = {}) {
     const tokens = [{ text: row.label.padStart(2, ' ') + '   ', kind: 'axis', state: row.current ? 'current' : 'normal' }];
     for (const cell of cells) {
       const last = tokens.at(-1);
-      if (last.kind === cell.kind && last.state === cell.state && last.title === cell.title && last.emerald === cell.emerald) last.text += cell.text;
+      if (last.kind === cell.kind && last.state === cell.state && last.coordinate === cell.coordinate
+          && last.from === cell.from && last.to === cell.to && last.emerald === cell.emerald) last.text += cell.text;
       else tokens.push({ ...cell });
     }
     return tokens;

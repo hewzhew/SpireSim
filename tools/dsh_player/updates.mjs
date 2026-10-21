@@ -31,7 +31,7 @@ export class StsToolUpdates extends TypertRemoteService {
     this.roots = ['tools/dsh_player/native.mjs', 'tools/dsh_player/map-view.mjs']
       .map(path => pathToFileURL(join(root, path)).href);
     this.files = new Set();
-    this.loading = this.initialize().catch(error => { this.unavailable = error.message; });
+    this.loading = this.initialize().catch(error => { this.unavailable = { reason: 'loadFailed', error: error.message }; });
     const processed = () => {
       // The event is emitted inside HMR's transaction. Only record completed
       // source processing here; publishing is a separate Remote transaction.
@@ -77,7 +77,7 @@ export class StsToolUpdates extends TypertRemoteService {
   }
 
   async initialize() {
-    if (!this.watched()) { this.unavailable = '未启用本仓库的源码热重载。请由维护者更新本地服务配置。'; return; }
+    if (!this.watched()) { this.unavailable = { reason: 'watchDisabled' }; return; }
     this.declarations = ['package.json', 'cordis.patch.yml'].map(file => join(this.root, 'tools/dsh_player', file));
     const packageRevision = await revision(this.declarations);
     this.files = await this.sources();
@@ -96,18 +96,18 @@ export class StsToolUpdates extends TypertRemoteService {
 
   async status() {
     await this.loading;
-    if (this.unavailable) return { status: 'unavailable', message: this.unavailable };
+    if (this.unavailable) return { status: 'unavailable', ...this.unavailable };
     const published = this.entry()[publishedState];
     if (await revision(this.declarations) !== published.packageRevision) {
-      return { status: 'restart-required', message: '插件声明发生了变化，需要重启服务加载。' };
+      return { status: 'restart-required', reason: 'declarationsChanged' };
     }
     let current;
     try { current = await revision(this.files); }
-    catch { return { status: 'restart-required', message: '后端源码文件已移走或无法读取，需要维护者检查后重启。' }; }
-    if (current !== this.loaded) return { status: 'loading', message: '官方热重载尚未完成，请稍后再试。' };
-    if (this.failure) return { status: 'failed', message: `工具更新失败：${this.failure}` };
+    catch { return { status: 'restart-required', reason: 'sourceUnreadable' }; }
+    if (current !== this.loaded) return { status: 'loading', reason: 'loading' };
+    if (this.failure) return { status: 'failed', reason: 'failed', error: this.failure };
     return { status: current === published.revision ? 'ready' : 'available', revision: published.revision,
-      message: current === published.revision ? '当前工具已就绪。新建聊天即可试跑。' : '检测到工具更新。应用后，新建聊天会使用新版工具。' };
+      reason: current === published.revision ? 'ready' : 'available' };
   }
 
   async publish() {
@@ -120,7 +120,7 @@ export class StsToolUpdates extends TypertRemoteService {
         // the previous preset available. HMR owns cache invalidation.
         const files = await this.sources();
         const next = await revision(files);
-        if (await revision(this.files) !== expected) return { status: 'loading', message: '源码仍在变化，请等待热重载完成。' };
+        if (await revision(this.files) !== expected) return { status: 'loading', reason: 'sourceChanging' };
         const entry = this.entry();
         await entry.fiber.restart();
         await this.ctx.loader.await();
@@ -128,15 +128,15 @@ export class StsToolUpdates extends TypertRemoteService {
           const preset = await this.ctx.agentPresets.resolve(id);
           if (preset.broken) throw new Error(preset.broken);
         }
-        if (await revision(files) !== next) return { status: 'loading', message: '发布期间源码又有变化，请等待下一次热重载。' };
+        if (await revision(files) !== next) return { status: 'loading', reason: 'changedDuringPublish' };
         this.files = files;
         this.loaded = next;
         entry[publishedState] = { ...entry[publishedState], revision: next };
         this.failure = null;
-        return { status: 'ready', revision: next, message: '新版工具已就绪。请新建聊天试跑；现有聊天不自动切换预设。' };
+        return { status: 'ready', revision: next, reason: 'published' };
       } catch (error) {
         this.failure = error.message;
-        return { status: 'failed', message: `工具更新失败：${error.message}` };
+        return { status: 'failed', reason: 'failed', error: error.message };
       }
     });
   }

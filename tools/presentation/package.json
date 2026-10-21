@@ -7,9 +7,10 @@
   "description": "Shared display names and localized messages, independent of game state",
   "exports": {
     ".": "./index.mjs",
+    "./catalogs": "./catalogs.mjs",
     "./locales/*.json": "./locales/*.json"
   },
-  "files": ["index.mjs", "locales/*.json", "replay/*", "README.md"],
+  "files": ["index.mjs", "catalogs.mjs", "locales/*.json", "replay/*", "README.md"],
   "scripts": {
     "test": "node --test localization.test.mjs"
   },

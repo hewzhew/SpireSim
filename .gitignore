@@ -10,6 +10,7 @@
 /*.ps1
 /p
 /tools/dsh_player/node_modules/
+/tools/dsh_player/client.js
 /tools/presentation/node_modules/
 
 # Python

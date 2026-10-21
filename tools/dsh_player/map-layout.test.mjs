@@ -18,7 +18,7 @@ test('compact diagram preserves every ordinary edge and Boss approach without ra
   assert.equal(view.picture, view.lines.map(row => row.map(token => token.text).join('')).join('\n'));
   assert.equal(view.lines.length, 8);
   assert.deepEqual(view.extraConnections, []);
-  const shown = new Set(view.lines.flat().filter(token => token.kind === 'edge').map(token => token.title));
+  const shown = new Set(view.lines.flat().filter(token => token.kind === 'edge').map(token => `(${token.from}) -> (${token.to})`));
   const expected = new Set([...nodes].flatMap(([from, node]) => node.edges.map(to => `(${from}) -> (${to})`)));
   assert.deepEqual(shown, expected);
   assert.doesNotMatch(view.lines.slice(2).flat().map(token => token.text).join(''), /[+-]/);
@@ -29,7 +29,7 @@ test('compact diagram preserves every ordinary edge and Boss approach without ra
 test('state shading follows actual reachability and does not invent the path through passed floors', () => {
   const view = renderMapPicture(graph(), '1,1');
   const rooms = view.lines.flat().filter(token => token.kind === 'room');
-  const state = key => rooms.find(token => key === '0,3' ? token.text === 'B' : token.title.includes(`(${key})`)).state;
+  const state = key => rooms.find(token => token.coordinate === key).state;
   assert.equal(state('1,1'), 'current');
   assert.equal(state('0,2'), 'next'); assert.equal(state('2,2'), 'next');
   assert.equal(state('0,3'), 'reachable');
@@ -37,7 +37,8 @@ test('state shading follows actual reachability and does not invent the path thr
   assert.equal(state('0,0'), 'past'); assert.equal(state('2,0'), 'past');
   assert.ok(rooms.every(token => token.text.length === 1));
   assert.equal(rooms.find(token => token.emerald).text, 'E');
-  assert.match(rooms.find(token => token.emerald).title, /携带绿钥匙/);
+  assert.equal(rooms.find(token => token.emerald).room, 'elite');
+  assert.ok(view.lines.flat().every(token => !('title' in token)));
   assert.doesNotMatch(view.picture, /[@K]/);
   assert.equal(renderMapPicture(graph(), '-1,-1').lines.flat().filter(token => token.state === 'current').length, 0);
 });
@@ -46,7 +47,7 @@ test('non-adjacent public connections are explicit instead of becoming false nea
   const nodes = graph(); nodes.get('0,0').edges = ['2,2'];
   const view = renderMapPicture(nodes, '0,0');
   assert.deepEqual(view.extraConnections, ['M(0,0) -> R(2,2)']);
-  assert.equal(view.lines.flat().find(token => token.title === '休息 (2,2)').state, 'next');
+  assert.equal(view.lines.flat().find(token => token.coordinate === '2,2').state, 'next');
   nodes.get('0,0').edges = ['5,5'];
   assert.throws(() => renderMapPicture(nodes, '0,0'), /no published destination/);
 });

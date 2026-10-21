@@ -63,7 +63,9 @@ test('publication waits for official source processing and serializes repeated r
 test('invalid dynamic code is checked before retiring the preset and can recover through hmr/change', async t => {
   const f = await fixture(t);
   await f.change('invalid'); f.invalid(true); f.ctx.emit('hmr/reload', new Map());
-  assert.equal((await f.updates.publish()).status, 'failed'); assert.equal(f.restarts(), 0);
+  const failed = await f.updates.publish();
+  assert.equal(failed.status, 'failed'); assert.equal(failed.reason, 'failed');
+  assert.equal(failed.error, 'invalid dynamic module'); assert.ok(!('message' in failed)); assert.equal(f.restarts(), 0);
   await f.change('fixed'); f.invalid(false);
   f.ctx.emit('hmr/change', pathToFileURL(join(f.root, 'tools/run_play/workbench.mjs')).href);
   assert.equal((await f.updates.publish()).status, 'ready'); assert.equal(f.restarts(), 1);
@@ -97,7 +99,8 @@ test('preset declaration changes require a service reload before publishing code
 test('disk revisions cannot publish a workbench outside the native static module tree', async t => {
   const f = await fixture(t, { linkedWorkbench: false });
   assert.equal((await f.updates.status()).status, 'unavailable');
-  assert.match((await f.updates.status()).message, /静态模块树没有包含共享工作台/);
+  assert.equal((await f.updates.status()).reason, 'loadFailed');
+  assert.match((await f.updates.status()).error, /静态模块树没有包含共享工作台/);
   assert.equal((await f.updates.publish()).status, 'unavailable');
   assert.equal(f.restarts(), 0);
 });

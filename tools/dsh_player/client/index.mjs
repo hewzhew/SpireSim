@@ -1,13 +1,15 @@
 // Same client module and sidebar extension contracts as the shipped dsh viewers.
+import { mapNamespace, gameNamespace, mapDictionaries, gameDictionaries, mapTokenTitle } from './locale.mjs';
+
 window.__ModuleLoader__.load({ id: '@sts-simulator/dsh-player', factory(require) {
   const React = require('react');
   const h = React.createElement;
-  const inject = ['slots', 'sidebarRight', 'sidebarRightTabs', 'connection'];
+  const inject = ['slots', 'sidebarRight', 'sidebarRightTabs', 'connection', 'locale'];
   const tabId = 'sts-map';
   const observeTabId = 'sts-observe';
   const buttonStyle = { padding: '5px 9px', border: '1px solid color-mix(in srgb, currentColor 16%, transparent)',
     borderRadius: 6, background: 'transparent', color: 'inherit', cursor: 'pointer', font: 'inherit', fontSize: 12 };
-  const legend = [['?', '不明'], ['$', '商人'], ['T', '财宝'], ['R', '休息'], ['M', '敌人'], ['E', '精英']];
+  const legend = [['?', 'question_mark'], ['$', 'shop'], ['T', 'treasure'], ['R', 'rest'], ['M', 'monster'], ['E', 'elite']];
   const outcomeNames = { completed: '已返回', error: '报错', unconfirmed: '未确认', model: '模型输出' };
   const phaseNames = { completed: '已结束', cancelled: '已取消', error: '出错',
     'running or interrupted without a recorded end': '尚无结束记录', 'no model turn': '尚无模型运行记录' };
@@ -93,11 +95,14 @@ window.__ModuleLoader__.load({ id: '@sts-simulator/dsh-player', factory(require)
     return { opacity: dim ? 0.4 : 0.6 };
   }
   function apply(ctx) {
-    function MapButton({ sessionId }) {
-      return h('button', { type: 'button', title: '查看当前游戏地图',
+    ctx.effect(() => ctx.locale.register(mapNamespace, mapDictionaries));
+    ctx.effect(() => ctx.locale.register(gameNamespace, gameDictionaries));
+    const mapText = ctx.locale.bind(mapNamespace), gameText = ctx.locale.bind(gameNamespace);
+    function MapButton({ t }) {
+      return h('button', { type: 'button', title: t('open'),
         onClick: () => ctx.sidebarRight.openTab(tabId),
         style: { padding: '4px 8px', border: '1px solid currentColor', borderRadius: 6, background: 'transparent', color: 'inherit', cursor: 'pointer' },
-      }, '地图');
+      }, t('button'));
     }
     function ObserveButton() {
       return h('button', { type: 'button', title: '查看过程、暂停或返回游戏',
@@ -339,7 +344,7 @@ window.__ModuleLoader__.load({ id: '@sts-simulator/dsh-player', factory(require)
               ))
           );
     }
-    function MapPanel({ sessionId, useProjection }) {
+    function MapPanel({ sessionId, useProjection, t }) {
       const tick = useProjection('stsMapTick');
       const [view, setView] = React.useState(null);
       const [error, setError] = React.useState('');
@@ -350,16 +355,16 @@ window.__ModuleLoader__.load({ id: '@sts-simulator/dsh-player', factory(require)
       React.useEffect(() => {
         const abort = new AbortController();
         ctx.connection.rpc.call('/api', 'stsToolUpdates/status', { args: {} }, abort.signal).then(result => {
-          if (!abort.signal.aborted) setUpdate(result.ok ? result.value : { message: result.error.message });
-        }).catch(error => { if (!abort.signal.aborted) setUpdate({ message: error.message }); });
+          if (!abort.signal.aborted) setUpdate(result.ok ? result.value : { reason: 'failed', error: result.error.message });
+        }).catch(error => { if (!abort.signal.aborted) setUpdate({ reason: 'failed', error: error.message }); });
         return () => abort.abort();
       }, [revision]);
       async function publishTools() {
         setUpdating(true);
         try {
           const result = await ctx.connection.rpc.call('/api', 'stsToolUpdates/publish', { args: {} });
-          setUpdate(result.ok ? result.value : { message: result.error.message });
-        } catch (error) { setUpdate({ message: error.message }); }
+          setUpdate(result.ok ? result.value : { reason: 'failed', error: result.error.message });
+        } catch (error) { setUpdate({ reason: 'failed', error: error.message }); }
         finally { setUpdating(false); }
       }
       React.useEffect(() => {
@@ -375,17 +380,17 @@ window.__ModuleLoader__.load({ id: '@sts-simulator/dsh-player', factory(require)
       return h('section', { style: { height: '100%', overflow: 'auto', padding: 16, boxSizing: 'border-box' } },
         h('header', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 } },
           h('div', null,
-            h('strong', { style: { fontSize: 15 } }, current?.status === 'ready' ? `第 ${current.act} 幕` : '尖塔地图'),
-            current?.status === 'ready' ? h('p', { style: { margin: '5px 0 0', opacity: 0.6, fontSize: 12 } }, `F${current.floor}  ${current.note}`) : null),
-          h('button', { type: 'button', style: buttonStyle, onClick: refresh }, '刷新')),
+            h('strong', { style: { fontSize: 15 } }, current?.status === 'ready' ? t('act', { act: current.act }) : t('title')),
+            current?.status === 'ready' ? h('p', { style: { margin: '5px 0 0', opacity: 0.6, fontSize: 12 } }, `F${current.floor}  ${current.current[1] < 0 ? t('beforeStart') : t('position', { position: current.current.join(',') })}`) : null),
+          h('button', { type: 'button', style: buttonStyle, onClick: refresh }, t('refresh'))),
         error ? h('p', { role: 'alert' }, error) : current?.status === 'ready' ? h(React.Fragment, null,
           h('div', { style: { display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', gap: 12, margin: '16px 0 12px' } },
             h('figure', { style: { margin: 0, minWidth: 0, maxWidth: '100%', padding: '12px 6px', boxSizing: 'border-box', borderRadius: 9,
               background: 'color-mix(in srgb, currentColor 3%, transparent)', border: '1px solid color-mix(in srgb, currentColor 9%, transparent)' } },
-              h('pre', { 'aria-label': '当前幕地图，从下向上行进', style: { width: 'max-content', maxWidth: '100%', margin: '0 auto', padding: '2px 5px', boxSizing: 'border-box',
+              h('pre', { 'aria-label': t('diagram'), style: { width: 'max-content', maxWidth: '100%', margin: '0 auto', padding: '2px 5px', boxSizing: 'border-box',
                 overflowX: 'auto', fontFamily: 'Consolas, "Cascadia Mono", monospace', fontSize: 15, lineHeight: 1.2, whiteSpace: 'pre' } },
                 current.lines.flatMap((tokens, row) => [
-                  ...tokens.map((token, column) => h('span', { key: `${row}-${column}`, title: token.title,
+                  ...tokens.map((token, column) => h('span', { key: `${row}-${column}`, title: mapTokenTitle(token, current.boss, t, gameText),
                     'data-state': token.state, style: tokenStyle(token, highlighted) }, token.text,
                     token.kind === 'room' && token.state === 'current' ? h('span', { 'aria-hidden': true, style: {
                       position: 'absolute', width: 18, height: 18, top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
@@ -394,33 +399,37 @@ window.__ModuleLoader__.load({ id: '@sts-simulator/dsh-player', factory(require)
                     } }) : null)),
                   row === current.lines.length - 1 ? '' : '\n',
                 ]))),
-            h('aside', { 'aria-label': '地图图例', style: { display: 'flex', flexDirection: 'column', flexShrink: 0, gap: 11,
-              width: 66, padding: '12px 8px', boxSizing: 'border-box', borderRadius: 9, fontSize: 12,
+            h('aside', { 'aria-label': t('legend'), style: { display: 'flex', flexDirection: 'column', flexShrink: 0, gap: 11,
+              minWidth: 66, padding: '12px 8px', boxSizing: 'border-box', borderRadius: 9, fontSize: 12,
               background: 'color-mix(in srgb, currentColor 3%, transparent)', border: '1px solid color-mix(in srgb, currentColor 9%, transparent)' } },
-              legend.map(([symbol, label]) => h('button', { key: symbol, type: 'button', 'aria-label': `高亮${label}房间`,
+              legend.map(([symbol, room]) => h('button', { key: symbol, type: 'button', 'aria-label': t('highlight', { room: gameText(`room.${room}`) }),
                 onMouseEnter: () => setHighlighted(symbol), onMouseLeave: () => setHighlighted(null),
                 onFocus: () => setHighlighted(symbol), onBlur: () => setHighlighted(null),
                 style: { display: 'flex', alignItems: 'center', gap: 8, margin: 0, padding: 0, border: 0,
                   borderRadius: 3, font: 'inherit', color: 'inherit', textAlign: 'left', cursor: 'default',
                   background: highlighted === symbol ? 'color-mix(in srgb, currentColor 12%, transparent)' : 'transparent' } },
                 h('span', { style: { width: 14, textAlign: 'center', flexShrink: 0, fontFamily: 'Consolas, "Cascadia Mono", monospace', fontSize: 15 } }, symbol),
-                h('span', null, label)))),
+                h('span', null, gameText(`room.${room}`))))),
           ),
-          current.extraConnections.length ? h('p', { style: { fontSize: 12 } }, `其他公开连接：${current.extraConnections.join('；')}`) : null,
-        ) : h('p', null, current?.message ?? '正在读取地图…'),
+          current.extraConnections.length ? h('p', { style: { fontSize: 12 } }, t('extraConnections', { connections: current.extraConnections.join('; ') })) : null,
+        ) : h('p', null, t(current?.status === 'not-started' ? 'notStarted' : current?.status === 'unavailable' ? 'unavailable' : 'loading')),
         h('details', { style: { marginTop: 16, paddingTop: 12, borderTop: '1px solid color-mix(in srgb, currentColor 10%, transparent)', fontSize: 12 } },
-          h('summary', { style: { cursor: 'pointer', opacity: 0.6 } }, '工具更新'),
+          h('summary', { style: { cursor: 'pointer', opacity: 0.6 } }, t('updates.title')),
           h('div', { style: { marginTop: 10 } },
-            h('button', { type: 'button', style: buttonStyle, disabled: updating, onClick: publishTools }, updating ? '正在更新…' : '更新工具'),
-            h('p', { role: 'status', style: { fontSize: 12, lineHeight: 1.6, opacity: 0.7 } }, update?.message ?? '正在检查工具版本…'))));
+            h('button', { type: 'button', style: buttonStyle, disabled: updating, onClick: publishTools }, t(updating ? 'updates.updating' : 'updates.action')),
+            h('p', { role: 'status', style: { fontSize: 12, lineHeight: 1.6, opacity: 0.7 } }, t(`updates.${update?.reason ?? 'checking'}`)),
+            update?.error ? h('pre', { style: { whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' } }, update.error) : null)));
     }
-    ctx.effect(() => ctx.sidebarRightTabs.register({ id: tabId, kind: tabId, title: () => '尖塔地图',
-      guide: [{ id: tabId, order: 20, title: () => '尖塔地图', description: () => '查看这段聊天的当前幕地图和位置。' }] }));
+    ctx.effect(() => ctx.sidebarRightTabs.register({ id: tabId, kind: tabId, title: () => mapText('title'),
+      guide: [{ id: tabId, order: 20, title: () => mapText('title'), description: () => mapText('guide') }] }));
+    ctx.effect(() => ctx.slots.inject('sidebar.right.pane.tab.title', () => ctx.slots.register({
+      name: 'sidebar.right.pane.tab.title', key: tabId, locale: mapNamespace,
+    }, ({ t }) => t('title'))));
     ctx.effect(() => ctx.slots.inject('conversation.session.header.actions', () => ctx.slots.register({
-      name: 'conversation.session.header.actions', id: tabId, order: 20,
+      name: 'conversation.session.header.actions', id: tabId, order: 20, locale: mapNamespace,
     }, MapButton)));
     ctx.effect(() => ctx.slots.inject('sidebar.right.pane.tab', () => ctx.slots.register({
-      name: 'sidebar.right.pane.tab', key: tabId,
+      name: 'sidebar.right.pane.tab', key: tabId, locale: mapNamespace,
     }, MapPanel)));
     ctx.effect(() => ctx.sidebarRightTabs.register({ id: observeTabId, kind: observeTabId, title: () => '对局工作台',
       guide: [{ id: observeTabId, order: 21, title: () => '对局工作台', description: () => '查看过程和当前游戏，暂停或返回保留的决策点。' }] }));

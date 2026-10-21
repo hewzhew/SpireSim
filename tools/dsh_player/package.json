@@ -21,6 +21,7 @@
   "files": [
     "*.mjs",
     "!*.test.mjs",
+    "!build-client.mjs",
     "client.js",
     "cordis.patch.yml",
     "locale/*.json",
@@ -34,6 +35,7 @@
     "client": {
       "platform": "web",
       "inject": [
+        "@deepseek-ai/dsh-client-locale",
         "@deepseek-ai/dsh-client-connection",
         "@deepseek-ai/dsh-client-ui-sidebar-right",
         "@deepseek-ai/dsh-client-ui-conversation",
@@ -43,6 +45,16 @@
   },
   "bin": {
     "sts-dsh-player": "./launch.mjs"
+  },
+  "scripts": {
+    "build:client": "node build-client.mjs",
+    "prepack": "npm run build:client",
+    "test:map": "npm run build:client && node --test map-layout.test.mjs map-view.test.mjs map-locale.test.mjs observation-client.test.mjs native-inspection.test.mjs updates.test.mjs"
+  },
+  "devDependencies": {
+    "@sts-simulator/presentation": "file:../presentation",
+    "@deepseek-ai/dsh-client-locale": "0.2.1-rc.2",
+    "esbuild": "0.28.2"
   },
   "bundledDependencies": ["@sts-simulator/run-play"],
   "dependencies": {

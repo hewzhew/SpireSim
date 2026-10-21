@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, readFile, writeFile, rm, realpath } from 'node:fs/promises';
 import { dirname, join, sep } from 'node:path';
 import { tmpdir } from 'node:os';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { runInNewContext } from 'node:vm';
 import { Context } from '@deepseek-ai/cordis';
 import SessionStore from '@deepseek-ai/dsh-session';
@@ -11,6 +11,8 @@ import ProjectionRegistry from '@deepseek-ai/dsh-session-projection';
 import { nativeBinding } from './native.mjs';
 import { StsMapView, mapViewFromDecision, mapTickProjection } from './map-view.mjs';
 import { validateWebConfig, ownedWebProcess, localHmrPatch } from './web.mjs';
+import { createHostLocale } from './client/test-support.mjs';
+import { mapNamespace } from './client/locale.mjs';
 
 const publicMap = { current_x: 1, current_y: 0, boss: 'Hexaghost', nodes: [
   { x: 1, y: 0, room: 'monster', has_emerald_key: false, edges: [{ destination_x: 0, destination_y: 1 }, { destination_x: 2, destination_y: 1 }] },
@@ -30,7 +32,9 @@ test('map picture retains branches and current position across strategic rooms a
   const rooms = strategic.lines.flat().filter(token => token.kind === 'room');
   assert.equal(rooms.find(token => token.state === 'current').text, 'M');
   assert.equal(rooms.find(token => token.emerald).text, 'E');
-  assert.equal(rooms.find(token => token.text === 'B').title, '六火亡魂');
+  assert.equal(rooms.find(token => token.text === 'B').room, 'boss');
+  assert.equal(strategic.boss, 'Hexaghost');
+  assert.ok(!('note' in strategic) && !('message' in strategic));
   const combat = mapViewFromDecision({ decision: { observation: { domain: 'combat', run_context: {
     status: 'available', act: 1, floor: 1, public_map: publicMap,
   } } } });
@@ -38,7 +42,7 @@ test('map picture retains branches and current position across strategic rooms a
   const start = decision(); start.decision.observation.observation.public_map.current_x = -1;
   start.decision.observation.observation.public_map.current_y = -1;
   assert.doesNotMatch(mapViewFromDecision(start).picture, /@/);
-  assert.match(mapViewFromDecision(start).note, /尚未进入/);
+  assert.deepEqual(mapViewFromDecision(start).current, [-1, -1]);
   assert.equal(mapViewFromDecision({ decision: { observation: { domain: 'combat', run_context: { status: 'unavailable' } } } }).status, 'unavailable');
   const broken = decision(); broken.decision.observation.observation.public_map.nodes.pop();
   assert.throws(() => mapViewFromDecision(broken), /no published destination/);
@@ -87,12 +91,14 @@ test('client registers map and observation controls through official slots, and 
   assert.equal(definition.id, '@sts-simulator/dsh-player');
   const module = definition.factory(name => { assert.equal(name, 'react'); return {}; });
   const entries = [], effects = [], ctx = {
+    locale: await createHostLocale(),
     effect: register => effects.push(register()),
     sidebarRightTabs: { register: entry => { entries.push(entry); return () => entries.pop(); } },
     slots: { inject: (_slot, register) => register(), register: entry => { entries.push(entry); return () => entries.pop(); } },
   };
   module.apply(ctx);
-  assert.deepEqual(entries.map(entry => entry.kind ?? entry.name), ['sts-map', 'conversation.session.header.actions', 'sidebar.right.pane.tab',
+  assert.ok(module.inject.includes('locale'));
+  assert.deepEqual(entries.map(entry => entry.kind ?? entry.name), ['sts-map', 'sidebar.right.pane.tab.title', 'conversation.session.header.actions', 'sidebar.right.pane.tab',
     'sts-observe', 'conversation.session.header.actions', 'sidebar.right.pane.tab']);
   effects.reverse().forEach(dispose => dispose()); assert.equal(entries.length, 0);
 });
@@ -106,16 +112,16 @@ test('map and update controls use named Remote args and only publish on a click'
   runInNewContext(await readFile(new URL('./client.js', import.meta.url), 'utf8'), {
     window: { __ModuleLoader__: { load: value => { definition = value; } } }, AbortController,
   });
-  const ctx = { effect: effect => effect(), sidebarRightTabs: { register: () => () => {} },
+  const ctx = { locale: await createHostLocale(), effect: effect => effect(), sidebarRightTabs: { register: () => () => {} },
     slots: { inject: (_name, register) => register(), register: (entry, component) => {
       if (entry.name === 'sidebar.right.pane.tab' && entry.key === 'sts-map') panel = component;
       return () => {};
     } }, connection: { rpc: { call: async (channel, endpoint, payload) => {
       calls.push({ channel, endpoint, payload: JSON.parse(JSON.stringify(payload)) });
-      return { ok: true, value: { status: 'ready', message: 'published' } };
+      return { ok: true, value: { status: 'ready', reason: 'published' } };
     } } } };
   definition.factory(() => react).apply(ctx);
-  const tree = panel({ sessionId: 'selected-chat', useProjection: () => 1 });
+  const tree = panel({ sessionId: 'selected-chat', useProjection: () => 1, t: ctx.locale.bind(mapNamespace) });
   const cleanups = pendingEffects.map(effect => effect());
   await Promise.resolve();
   assert.deepEqual(calls, [
@@ -129,7 +135,7 @@ test('map and update controls use named Remote args and only publish on a click'
   }
   await find(tree).props.onClick();
   assert.deepEqual(calls.at(-1), { channel: '/api', endpoint: 'stsToolUpdates/publish', payload: { args: {} } });
-  assert.ok(updates.some(value => value?.message === 'published'));
+  assert.ok(updates.some(value => value?.reason === 'published'));
   cleanups.forEach(dispose => dispose());
 });
 
@@ -142,8 +148,8 @@ test('launcher validates local configuration and refuses a foreign listener', ()
   assert.equal(ownedWebProcess({ name: 'node.exe', command: 'node other/server.js' }, cli, 'D:/repo'), false);
   assert.equal(ownedWebProcess({ name: 'other.exe', command: cli }, cli, 'D:/repo'), false);
   assert.throws(() => validateWebConfig({ home: 'home', cli: 'cli', port: 3415, hotReload: 'true' }), /hotReload/);
-  const patch = JSON.parse(localHmrPatch('D:/repo'));
+  const root = join(tmpdir(), 'sts-hmr-root'), patch = JSON.parse(localHmrPatch(root));
   assert.deepEqual(patch.map(row => row.id), ['hmr']);
-  assert.equal(patch[0].config.base, 'file:///D:/repo/');
+  assert.equal(patch[0].config.base, pathToFileURL(root + '/').href);
   assert.deepEqual(patch[0].config.root, ['tools/dsh_player', 'tools/run_play']);
 });

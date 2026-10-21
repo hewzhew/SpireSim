@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { runInNewContext } from 'node:vm';
+import { createHostLocale } from './client/test-support.mjs';
 
 const walk = node => !node || typeof node !== 'object' ? [] : Array.isArray(node) ? node.flatMap(walk) : [node, ...node.children.flatMap(walk)];
 const text = node => node == null ? '' : Array.isArray(node) ? node.map(text).join('') : typeof node === 'object' ? text(node.children) : String(node);
@@ -34,7 +35,7 @@ async function fixture({ usage = null } = {}) {
     location: { kind: 'strategic', act: 1, floor: revision, site: 'map' }, resources: { hp: 65, max_hp: 75, gold: 30, potions: [null, null] } });
   let points = { schema: 'run-play-return-points-v1', source: { session_path: 'selected-game', session_id: 'same', identity: identity(7) },
     current: point(7, []), targets: [point(6, [{ kind: 'floor', floor: 6 }])] }, failRestore = false;
-  const ctx = { effect: fn => fn(), sidebarRightTabs: { register: () => () => {} },
+  const ctx = { locale: await createHostLocale(), effect: fn => fn(), sidebarRightTabs: { register: () => () => {} },
     slots: { inject: (_name, fn) => fn(), register: (entry, component) => { if (entry.key === 'sts-observe') panel = component; return () => {}; } },
     connection: { rpc: { call: async (channel, endpoint, payload) => {
       const args = JSON.parse(JSON.stringify(payload)).args; calls.push({ channel, endpoint, args });

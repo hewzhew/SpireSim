@@ -4,12 +4,16 @@ on:
   push:
     paths:
       - 'tools/presentation/**'
+      - 'tools/dsh_player/**'
+      - 'tools/run_play/**'
       - 'src/content/**'
       - 'src/state/events/mod.rs'
       - '.github/workflows/presentation.yml'
   pull_request:
     paths:
       - 'tools/presentation/**'
+      - 'tools/dsh_player/**'
+      - 'tools/run_play/**'
       - 'src/content/**'
       - 'src/state/events/mod.rs'
       - '.github/workflows/presentation.yml'
@@ -31,3 +35,7 @@ jobs:
         working-directory: tools/presentation
       - run: npm test
         working-directory: tools/presentation
+      - run: npm ci
+        working-directory: tools/dsh_player
+      - run: npm run test:map
+        working-directory: tools/dsh_player

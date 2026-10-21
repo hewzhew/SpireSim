@@ -222,7 +222,7 @@ export function renderNativeObservation(report) {
 }
 
 export async function readLiveGame(binding, repository, open) {
-  open ??= (await import('../run_play/workbench.mjs')).openWorkbench;
+  open ??= (await import('@sts-simulator/run-play')).openWorkbench;
   const game = await open({ repository, session: binding.session, manual: binding.manual ?? false, commandPrefix: '' });
   try {
     const before = await game.observe();
