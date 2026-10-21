@@ -67,7 +67,7 @@ export class StsObservationView extends TypertRemoteService {
     turn ??= null;
     if (turn !== null && !positive(turn)) throw new Error('轮次必须是正整数。');
     const source = await this.journal(sessionId);
-    if (!source) return { status: 'not-started', message: '这段聊天还没有游戏记录。' };
+    if (!source) return { status: 'not-started' };
     const report = await nativeJournalSummary(source.log, source.binding, turn === null ? {} : { turn });
     const owner = this.ctx.agents?.get(SessionId(sessionId)), live = nativeGameControl(owner);
     return { ...observationOverview(report), throughSeq: source.log.events.length - 1,
@@ -79,13 +79,13 @@ export class StsObservationView extends TypertRemoteService {
     input ??= false;
     if (!positive(turn) || !positive(step) || typeof input !== 'boolean') throw new Error('需要指定有效的轮次、步骤和输入展开方式。');
     const source = await this.journal(sessionId);
-    if (!source) return { status: 'not-started', message: '这段聊天还没有游戏记录。' };
+    if (!source) return { status: 'not-started' };
     const report = await nativeJournalSummary(source.log, source.binding, { turn, step, input });
     return { ...observationStep(report), throughSeq: source.log.events.length - 1 };
   }
   async live(sessionId) {
     const source = await this.journal(sessionId);
-    if (!source) return { status: 'not-started', message: '这段聊天还没有游戏。' };
+    if (!source) return { status: 'not-started' };
     const control = nativeGameControl(this.ctx.agents?.get(SessionId(sessionId)));
     if (control) return { status: 'ready', text: await control.live() };
     const binding = await nativeBinding(source.agent, {}, { create: false });
@@ -93,7 +93,7 @@ export class StsObservationView extends TypertRemoteService {
   }
   async points(sessionId) {
     const source = await this.journal(sessionId);
-    if (!source) return { status: 'not-started', message: '这段聊天还没有游戏。' };
+    if (!source) return { status: 'not-started' };
     const control = nativeGameControl(this.ctx.agents?.get(SessionId(sessionId)));
     if (control) return { status: 'ready', ...await control.points() };
     // Cold inspection does not attach an Agent, open a game writer or wake input.

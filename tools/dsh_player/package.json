@@ -49,7 +49,7 @@
   "scripts": {
     "build:client": "node build-client.mjs",
     "prepack": "npm run build:client",
-    "test:map": "npm run build:client && node --test map-layout.test.mjs map-view.test.mjs map-locale.test.mjs observation-client.test.mjs native-inspection.test.mjs updates.test.mjs"
+    "test:client": "npm run build:client && node --test map-layout.test.mjs map-view.test.mjs map-locale.test.mjs observation-client.test.mjs native-inspection.test.mjs updates.test.mjs"
   },
   "devDependencies": {
     "@sts-simulator/presentation": "file:../presentation",

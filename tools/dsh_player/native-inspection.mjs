@@ -103,7 +103,7 @@ export async function nativeJournalSummary(log, binding, { turn: wantedTurn, ste
     accounting = reported ? { totals: projection.totals, last: projection.last?.buckets ?? null } : null;
   } finally { await ctx.fiber.dispose(); }
   const title = events.filter(event => event.type === 'session/title' && event.seq < stop).at(-1)?.data.title ?? binding.agent;
-  const report = { binding, title, turn: start?.data.turn, status: end?.data.reason?.kind ?? (start ? 'running or interrupted without a recorded end' : 'no model turn'),
+  const report = { binding, title, turn: start?.data.turn, status: end?.data.reason?.kind ?? (start ? 'open' : 'empty'),
     steps: steps.length, timeline: steps.map(step => {
       const messages = step.members.filter(event => ['assistant/message', 'assistant/attempt'].includes(event.type));
       const calls = step.calls.map(call => ({ name: call.name, command: commandOf(call),
@@ -113,7 +113,7 @@ export async function nativeJournalSummary(log, binding, { turn: wantedTurn, ste
       const output = messages.flatMap(settlementBlocks).find(block => block.type === 'text')?.text;
       return { step: step.number, seq: step.seq, revision: step.members.at(-1).seq, calls,
         label: calls.length ? calls.map(call => call.name === 'sts' ? call.command : call.name).join(', ')
-          : output?.split('\n')[0].slice(0, 120) || '模型输出',
+          : output?.split('\n')[0].slice(0, 120) || null,
         outcome: calls.some(call => call.outcome === 'error') ? 'error' : calls.some(call => call.outcome === 'unconfirmed') ? 'unconfirmed'
           : calls.length ? 'completed' : messages.some(event => event.type === 'assistant/message') ? 'model' : 'unconfirmed',
         durationMs: ended && ended.time >= begun.time ? ended.time - begun.time : null,
@@ -164,9 +164,10 @@ export function commandOf(call) {
 }
 
 export function renderNativeObservation(report) {
+  const phase = { open: 'running or interrupted without a recorded end', empty: 'no model turn' }[report.status] ?? report.status;
   const { binding } = report;
   const lines = [`${report.title}\nChat ${binding.agent}\nGame ${binding.session}`,
-    `Turn ${report.turn ?? 'none'}: ${report.status} | ${report.steps} model steps | ${report.gameCalls} game calls | ${report.errors.length} errors`];
+    `Turn ${report.turn ?? 'none'}: ${phase} | ${report.steps} model steps | ${report.gameCalls} game calls | ${report.errors.length} errors`];
   if (report.selected) {
     const selected = report.selected;
     lines.push(`\nStep ${selected.number}`);

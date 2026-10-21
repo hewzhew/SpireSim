@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { runInNewContext } from 'node:vm';
 import { createHostLocale } from './client/test-support.mjs';
+import { workbenchNamespace, workbenchDictionaries, validateHostDictionaries } from './client/locale.mjs';
 
 const walk = node => !node || typeof node !== 'object' ? [] : Array.isArray(node) ? node.flatMap(walk) : [node, ...node.children.flatMap(walk)];
 const text = node => node == null ? '' : Array.isArray(node) ? node.map(text).join('') : typeof node === 'object' ? text(node.children) : String(node);
@@ -11,7 +12,7 @@ const row = (tree, step) => walk(tree).find(node => node.type === 'button' && no
 const item = (step, command, outcome = 'completed') => ({ step, seq: step * 10, revision: step * 10 + 9,
   label: command, outcome, durationMs: 100, usage: null, calls: [{ name: 'sts', command, outcome }] });
 
-async function fixture({ usage = null } = {}) {
+async function fixture({ usage = null, inputs = [], messages = [] } = {}) {
   let definition, panel, cursor = 0, effectCursor = 0, tick = 1;
   const states = [], dependencies = [], effects = [], cleanups = [], calls = [], copies = [];
   const react = { Fragment: 'fragment', createElement: (type, props, ...children) => ({ type, props, children }),
@@ -39,11 +40,11 @@ async function fixture({ usage = null } = {}) {
     slots: { inject: (_name, fn) => fn(), register: (entry, component) => { if (entry.key === 'sts-observe') panel = component; return () => {}; } },
     connection: { rpc: { call: async (channel, endpoint, payload) => {
       const args = JSON.parse(JSON.stringify(payload)).args; calls.push({ channel, endpoint, args });
-      if (args.sessionId !== 'selected-chat') return { ok: true, value: { status: 'not-started', message: 'This chat has no game.' } };
+      if (args.sessionId !== 'selected-chat') return { ok: true, value: { status: 'not-started' } };
       if (endpoint === 'stsObservation/read') return { ok: true, value: overview };
-      if (endpoint === 'stsObservation/step') return { ok: true, value: { status: 'ready', turn: 1, step: args.step, throughSeq: 1000, messages: [],
+      if (endpoint === 'stsObservation/step') return { ok: true, value: { status: 'ready', turn: 1, step: args.step, throughSeq: 1000, messages,
         calls: [{ name: 'sts', command: args.step === 1 ? 'deck' : 'read', outcome: args.step === 1 ? 'error' : 'completed', text: 'Full return ' + args.step }],
-        ...(args.input ? { inputs: [] } : {}) } };
+        ...(args.input ? { inputs } : {}) } };
       if (endpoint === 'stsObservation/live') return { ok: true, value: { status: 'ready', text: 'Actual inventory' } };
       if (endpoint === 'stsObservation/points') return { ok: true, value: { status: 'ready', points, control: overview.control } };
       if (endpoint === 'stsObservation/pause' || endpoint === 'stsObservation/restore') {
@@ -65,8 +66,8 @@ async function fixture({ usage = null } = {}) {
       assert.fail('Unexpected endpoint ' + endpoint);
     } } } };
   definition.factory(() => react).apply(ctx);
-  return { calls, copies, failRestore() { failRestore = true; },
-    render(sessionId = 'selected-chat') { cursor = 0; effectCursor = 0; return panel({ sessionId, useProjection: () => tick }); },
+  return { calls, copies, locale: ctx.locale, failRestore() { failRestore = true; },
+    render(sessionId = 'selected-chat') { cursor = 0; effectCursor = 0; return panel({ sessionId, useProjection: () => tick, t: ctx.locale.bind(workbenchNamespace) }); },
     async settle() { effects.splice(0).forEach(({ effect, index }) => { cleanups[index]?.(); cleanups[index] = effect(); }); await Promise.resolve(); await Promise.resolve(); },
     advance() { overview = { ...overview, timeline: [...overview.timeline, item(3, 'inventory')], gameCalls: 3 }; tick++; },
   };
@@ -91,7 +92,7 @@ test('native observation uses named args, loads and reuses input on demand, and 
   await button(f.render(), '复制').props.onClick(); assert.deepEqual(f.copies, ['Actual inventory']);
   f.render('another-chat'); await f.settle();
   const changed = text(f.render('another-chat'));
-  assert.match(changed, /This chat has no game/); assert.doesNotMatch(changed, /Full return|Actual inventory/);
+  assert.match(changed, /这段聊天还没有游戏记录/); assert.doesNotMatch(changed, /Full return|Actual inventory/);
 });
 
 test('step usage separates total input, cache reads and uncached input without calling a model', async () => {
@@ -159,4 +160,63 @@ test('command search and error filtering keep inspected history pinned while new
   assert.equal(f.calls.at(-1).args.step, 3); assert.match(text(f.render()), /Full return 3/);
   walk(f.render()).find(node => node.type === 'input').props.onChange({ target: { value: 'DECK' } });
   assert.ok(row(f.render(), 1)); assert.equal(row(f.render(), 2), undefined); assert.equal(row(f.render(), 3), undefined);
+});
+
+test('workbench dictionaries are complete and use the host template contract', () => {
+  validateHostDictionaries(workbenchDictionaries, 'Workbench');
+  const changed = structuredClone(workbenchDictionaries);
+  changed.en['input.record'] = 'Input record {step}';
+  assert.throws(() => validateHostDictionaries(changed, 'Workbench'), /parameters differ/);
+});
+
+test('language changes preserve pinned input, raw messages, copy status and request count', async () => {
+  const inputs = [{ eventSeq: 18, precision: 'sdk-request', request: {
+    messages: [{ role: 'system', content: [{ type: 'text', text: 'Keep {literal} exactly. 保留原文。' }] },
+      { role: 'user', content: [{ type: 'text', text: 'Try the next room.' }] }],
+    tools: [{ name: 'sts', description: 'Original definition 原始定义', parameters: {} }],
+  } }];
+  const messages = [{ committed: false, blocks: [{ type: 'reasoning', text: 'Original reasoning 原始思考' },
+    { type: 'text', text: 'Original answer 原始回答' }] }];
+  const originals = JSON.stringify({ inputs, messages });
+  const f = await fixture({ inputs, messages, usage: { inputTokens: 8, outputTokens: 3, totalTokens: 31 } });
+  f.render(); await f.settle(); f.render(); await f.settle();
+  row(f.render(), 2).props.onClick(); f.render(); await f.settle();
+  button(f.render(), '输入').props.onClick(); f.render(); await f.settle();
+  await button(f.render(), '复制').props.onClick();
+  assert.equal(f.copies.at(-1), JSON.stringify(inputs, null, 2));
+  const before = f.calls.length;
+  f.locale.setLocale('en'); const english = f.render(); await f.settle();
+  assert.match(text(english), /Run workspace/); assert.match(text(english), /Input record 1, messages: 2 \(SDK request record\)/);
+  assert.match(text(english), /Keep \{literal\} exactly. 保留原文。/);
+  assert.match(text(english), /Copied/); assert.ok(button(english, 'Back to latest'));
+  assert.equal(button(english, 'Input').props['aria-pressed'], true);
+  assert.equal(f.calls.length, before);
+  await button(f.render(), 'Copy').props.onClick();
+  assert.equal(f.copies.at(-1), f.copies[0]);
+  button(f.render(), 'Model output').props.onClick(); f.render(); await f.settle();
+  assert.match(text(f.render()), /Original reasoning 原始思考/);
+  assert.match(text(f.render()), /This model output is incomplete/);
+  f.locale.setLocale('zh'); f.render(); await f.settle();
+  assert.match(text(f.render()), /这份模型输出未完成/);
+  assert.equal(f.calls.length, before);
+  assert.equal(JSON.stringify({ inputs, messages }), originals);
+});
+
+test('translated return controls keep exact source and target identities and never act on a locale switch', async () => {
+  const f = await fixture(); f.render(); await f.settle(); f.render(); await f.settle();
+  button(f.render(), '返回点').props.onClick(); f.render(); await f.settle();
+  const before = f.calls.length;
+  f.locale.setLocale('en'); f.render(); await f.settle();
+  assert.equal(f.calls.length, before);
+  assert.match(text(f.render()), /Act 1 F6 Map/);
+  await button(f.render(), 'Return here').props.onClick();
+  const restore = f.calls.filter(call => call.endpoint.endsWith('/restore'));
+  assert.equal(restore.length, 1);
+  assert.equal(restore[0].args.request.source.identity.state_revision, 7);
+  assert.equal(restore[0].args.request.target.state_revision, 6);
+  assert.ok(button(f.render(), 'Resume')); assert.ok(button(f.render(), 'Back to previous endpoint'));
+  const after = f.calls.length;
+  f.locale.setLocale('zh'); f.render();
+  assert.ok(button(f.render(), '继续运行')); assert.ok(button(f.render(), '回到刚才'));
+  assert.equal(f.calls.length, after);
 });

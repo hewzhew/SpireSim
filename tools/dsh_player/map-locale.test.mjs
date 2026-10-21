@@ -1,17 +1,17 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createHostLocale } from './client/test-support.mjs';
-import { mapNamespace, gameNamespace, mapDictionaries, gameDictionaries, mapTokenTitle, validateMapDictionaries } from './client/locale.mjs';
+import { mapNamespace, gameNamespace, mapDictionaries, gameDictionaries, mapTokenTitle, validateHostDictionaries } from './client/locale.mjs';
 import { renderMapPicture } from './map-layout.mjs';
 
 test('map dictionaries use the host parameter format and complete bilingual keys', () => {
-  validateMapDictionaries();
+  validateHostDictionaries(mapDictionaries, 'Map');
   const missing = structuredClone(mapDictionaries); delete missing.zh.currentRoom;
-  assert.throws(() => validateMapDictionaries(missing), /keys differ/);
+  assert.throws(() => validateHostDictionaries(missing, 'Map'), /keys differ/);
   const wrong = structuredClone(mapDictionaries); wrong.zh.act = '第 {{act}} 幕';
-  assert.throws(() => validateMapDictionaries(wrong), /Invalid host translation/);
+  assert.throws(() => validateHostDictionaries(wrong, 'Map'), /Invalid host translation/);
   wrong.zh.act = '第 {floor} 幕';
-  assert.throws(() => validateMapDictionaries(wrong), /parameters differ/);
+  assert.throws(() => validateHostDictionaries(wrong, 'Map'), /parameters differ/);
 });
 
 test('published dsh locale switches map names and full tooltip sentences over unchanged geometry', async () => {

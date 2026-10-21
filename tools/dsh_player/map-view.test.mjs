@@ -99,7 +99,7 @@ test('client registers map and observation controls through official slots, and 
   module.apply(ctx);
   assert.ok(module.inject.includes('locale'));
   assert.deepEqual(entries.map(entry => entry.kind ?? entry.name), ['sts-map', 'sidebar.right.pane.tab.title', 'conversation.session.header.actions', 'sidebar.right.pane.tab',
-    'sts-observe', 'conversation.session.header.actions', 'sidebar.right.pane.tab']);
+    'sts-observe', 'sidebar.right.pane.tab.title', 'conversation.session.header.actions', 'sidebar.right.pane.tab']);
   effects.reverse().forEach(dispose => dispose()); assert.equal(entries.length, 0);
 });
 

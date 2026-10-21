@@ -1,5 +1,5 @@
 // Same client module and sidebar extension contracts as the shipped dsh viewers.
-import { mapNamespace, gameNamespace, mapDictionaries, gameDictionaries, mapTokenTitle } from './locale.mjs';
+import { mapNamespace, gameNamespace, workbenchNamespace, mapDictionaries, gameDictionaries, workbenchDictionaries, mapTokenTitle, codeText } from './locale.mjs';
 
 window.__ModuleLoader__.load({ id: '@sts-simulator/dsh-player', factory(require) {
   const React = require('react');
@@ -10,24 +10,25 @@ window.__ModuleLoader__.load({ id: '@sts-simulator/dsh-player', factory(require)
   const buttonStyle = { padding: '5px 9px', border: '1px solid color-mix(in srgb, currentColor 16%, transparent)',
     borderRadius: 6, background: 'transparent', color: 'inherit', cursor: 'pointer', font: 'inherit', fontSize: 12 };
   const legend = [['?', 'question_mark'], ['$', 'shop'], ['T', 'treasure'], ['R', 'rest'], ['M', 'monster'], ['E', 'elite']];
-  const outcomeNames = { completed: '已返回', error: '报错', unconfirmed: '未确认', model: '模型输出' };
-  const phaseNames = { completed: '已结束', cancelled: '已取消', error: '出错',
-    'running or interrupted without a recorded end': '尚无结束记录', 'no model turn': '尚无模型运行记录' };
   const inputTokens = buckets => buckets.uncachedInputTokens + buckets.cacheReadTokens + buckets.cacheWriteTokens;
-  const count = value => value.toLocaleString('zh-CN');
-  function requestUsage(usage) {
+  const formatNumber = (value, language) => new Intl.NumberFormat(language).format(value);
+  function observationMessage(value, t) {
+    if (value?.status === 'not-started') return t('notStarted');
+    return value?.reason ? t(value.reason) : value?.message ?? t('readFailed');
+  }
+  function requestUsage(usage, t, language) {
     if (!usage) return null;
     const isCount = value => Number.isSafeInteger(value) && value >= 0;
-    const amount = value => isCount(value) ? count(value) : '未报告';
+    const amount = value => isCount(value) ? formatNumber(value, language) : t('usage.notReported');
     const reportedInput = isCount(usage.totalTokens) && isCount(usage.outputTokens) ? usage.totalTokens - usage.outputTokens : null;
     const buckets = [usage.inputTokens, usage.cacheReadTokens, usage.cacheWriteTokens];
     const total = isCount(reportedInput) ? reportedInput : buckets.every(isCount) ? buckets.reduce((sum, value) => sum + value, 0) : null;
-    return h('div', { className: 'observe-request-usage', 'aria-label': '本步最后一次报告的用量' },
-      h('span', { title: '包括未缓存输入、缓存读取和缓存写入；不代表本步新增内容。' }, '总输入 ' + amount(total)),
-      h('span', null, '未缓存 ' + amount(usage.inputTokens)),
-      h('span', null, '缓存读取 ' + amount(usage.cacheReadTokens)),
-      usage.cacheWriteTokens > 0 ? h('span', null, '缓存写入 ' + amount(usage.cacheWriteTokens)) : null,
-      h('span', null, '输出 ' + amount(usage.outputTokens)));
+    return h('div', { className: 'observe-request-usage', 'aria-label': t('usage.lastLabel') },
+      h('span', { title: t('usage.inputHelp') }, t('usage.totalInput', { count: amount(total) })),
+      h('span', null, t('usage.uncached', { count: amount(usage.inputTokens) })),
+      h('span', null, t('usage.cacheRead', { count: amount(usage.cacheReadTokens) })),
+      usage.cacheWriteTokens > 0 ? h('span', null, t('usage.cacheWrite', { count: amount(usage.cacheWriteTokens) })) : null,
+      h('span', null, t('usage.output', { count: amount(usage.outputTokens) })));
   }
   const observationStyles = `
 .sts-observe{height:100%;box-sizing:border-box;padding:14px;display:flex;flex-direction:column;gap:10px;overflow:auto;container-type:inline-size;font-size:13px;line-height:1.5}
@@ -50,37 +51,41 @@ window.__ModuleLoader__.load({ id: '@sts-simulator/dsh-player', factory(require)
 @container(min-width:640px){.observe-body{display:grid;grid-template-columns:minmax(200px,.85fr) minmax(0,1.5fr)}.observe-history{height:auto;min-height:0}.observe-detail{min-height:0}}
 .observe-header{flex-wrap:wrap}.observe-header>div{flex-wrap:wrap}.workspace-controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.workspace-controls>span{font-size:12px}.return-point{border-top:1px solid color-mix(in srgb,currentColor 12%,transparent);padding:10px 0;display:flex;align-items:center;justify-content:space-between;gap:12px}.return-point>div{min-width:0;overflow-wrap:anywhere}.return-point small{display:block;opacity:.65}.return-point button{flex-shrink:0}.workspace-events summary{cursor:pointer}.workspace-events p{overflow-wrap:anywhere}
 `;
-  const duration = ms => ms < 1000 ? Math.round(ms) + ' ms' : (ms / 1000).toFixed(1) + ' 秒';
-  function returnLocation(point) {
+  const duration = (ms, t, language) => ms < 1000 ? t('duration.ms', { count: formatNumber(Math.round(ms), language) })
+    : t('duration.seconds', { count: new Intl.NumberFormat(language, { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(ms / 1000) });
+  function returnLocation(point, t, gameText) {
     const location = point?.location;
-    if (!location) return '位置未提供';
-    const sites = { map: '地图', reward: '奖励', rewards: '奖励', shop: '商店', event: '事件', campfire: '营火',
-      card_reward: '卡牌奖励', boss_relic: 'Boss 遗物', selection: '选牌', chest: '宝箱' };
-    return location.kind === 'terminal' ? location.label : '第 ' + location.act + ' 幕 F' + location.floor + ' '
-      + (location.kind === 'combat' ? location.encounter + ' T' + location.turn : sites[location.site] ?? location.site);
+    if (!location) return t('point.missingLocation');
+    if (location.kind === 'terminal') return location.label;
+    const fields = { act: location.act ?? '?', floor: location.floor ?? '?' };
+    return location.kind === 'combat' ? t('point.combatLocation', { ...fields, turn: location.turn,
+      encounter: location.encounter ? codeText(gameText, 'encounter', location.encounter) : t('point.combat') })
+      : t('point.strategic', { ...fields, site: codeText(t, 'site', location.site) });
   }
-  const returnResources = point => point.resources ? 'HP ' + point.resources.hp + '/' + point.resources.max_hp
-    + '，' + point.resources.gold + ' 金，药水 ' + (point.resources.potions.filter(Boolean).join(' / ') || '无') : '';
-  const pointOrigins = point => point.origins.map(origin => origin.kind === 'recent' ? origin.steps + ' 次提交前'
-    : origin.kind === 'floor' ? 'F' + origin.floor + ' 落点' : origin.kind === 'mark' ? origin.name : '刚才的终点').join('，');
-  function renderInputs(inputs, copyMessage) {
-    if (!inputs.length) return h('p', { className: 'observe-muted' }, '本步没有保存请求边界，原始输入不可用。');
-    const roles = { system: '系统', user: '用户', assistant: '模型', tool: '工具返回' };
-    return h(React.Fragment, null, h('p', { className: 'observe-muted' }, '按实际请求边界展开输入。'),
+  const returnResources = (point, t, language) => point.resources ? t('point.resources', {
+    hp: formatNumber(point.resources.hp, language), maxHp: formatNumber(point.resources.max_hp, language),
+    gold: formatNumber(point.resources.gold, language), potions: point.resources.potions.filter(Boolean).join(' / ') || t('point.noPotions'),
+  }) : '';
+  const pointOrigins = (point, t, language) => new Intl.ListFormat(language, { style: 'short', type: 'unit' }).format(point.origins.map(origin =>
+    origin.kind === 'recent' ? t('point.recent', { count: formatNumber(origin.steps, language) })
+      : origin.kind === 'floor' ? t('point.floor', { floor: origin.floor }) : origin.kind === 'mark' ? origin.name : t('point.previous')));
+  function renderInputs(inputs, copyMessage, t) {
+    if (!inputs.length) return h('p', { className: 'observe-muted' }, t('input.empty'));
+    return h(React.Fragment, null, h('p', { className: 'observe-muted' }, t('input.help')),
       inputs.map((item, index) => h('div', { key: item.eventSeq, className: 'observe-delivery' },
-        h('p', null, '输入记录 ' + (index + 1) + '，' + item.request.messages.length + ' 条消息 · '
-          + (item.precision === 'journal-derived-at-recorded-delivery' ? '服务端交付记录' : 'SDK 请求记录')),
+        h('p', null, t('input.record', { index: index + 1, count: item.request.messages.length,
+          source: t(item.precision === 'journal-derived-at-recorded-delivery' ? 'input.delivery' : 'input.sdk') })),
         item.request.messages.map((message, index) => h('details', { key: index, className: 'observe-input-message' },
-          h('summary', null, (index + 1) + '  ' + (roles[message.role] ?? message.role),
+          h('summary', null, (index + 1) + '  ' + codeText(t, 'role', message.role),
             h('span', { className: 'observe-input-preview' }, message.content.find(block => block.type === 'text')?.text.split('\n')[0].slice(0, 120)
-              ?? (message.content.some(block => block.type === 'tool-call') ? '工具调用声明' : ''))),
+              ?? (message.content.some(block => block.type === 'tool-call') ? t('input.toolCall') : ''))),
           message.content.map((block, index) => h('div', { key: index },
-            block.type === 'reasoning' ? h('span', { className: 'observe-muted' }, '推理') : null,
+            block.type === 'reasoning' ? h('span', { className: 'observe-muted' }, t('reasoning')) : null,
             h('pre', { className: 'observe-code' }, block.text ?? JSON.stringify(block, null, 2)))),
-          h('button', { type: 'button', onClick: () => copyMessage(JSON.stringify(message, null, 2)) }, '复制消息'))),
-        h('details', { className: 'observe-input-extra' }, h('summary', null, '工具定义'),
-          h('pre', { className: 'observe-code' }, item.request.tools ? JSON.stringify(item.request.tools, null, 2) : '请求中未提供独立工具定义列表。')),
-        h('details', { className: 'observe-input-extra' }, h('summary', null, '请求 JSON'),
+          h('button', { type: 'button', onClick: () => copyMessage(JSON.stringify(message, null, 2)) }, t('input.copyMessage')))),
+        h('details', { className: 'observe-input-extra' }, h('summary', null, t('input.tools')),
+          h('pre', { className: 'observe-code' }, item.request.tools ? JSON.stringify(item.request.tools, null, 2) : t('input.noTools'))),
+        h('details', { className: 'observe-input-extra' }, h('summary', null, t('input.json')),
           h('pre', { className: 'observe-code' }, JSON.stringify(item.request, null, 2))))));
   }
   function tokenStyle(token, highlighted) {
@@ -97,18 +102,21 @@ window.__ModuleLoader__.load({ id: '@sts-simulator/dsh-player', factory(require)
   function apply(ctx) {
     ctx.effect(() => ctx.locale.register(mapNamespace, mapDictionaries));
     ctx.effect(() => ctx.locale.register(gameNamespace, gameDictionaries));
-    const mapText = ctx.locale.bind(mapNamespace), gameText = ctx.locale.bind(gameNamespace);
+    ctx.effect(() => ctx.locale.register(workbenchNamespace, workbenchDictionaries));
+    const mapText = ctx.locale.bind(mapNamespace), gameText = ctx.locale.bind(gameNamespace), workbenchText = ctx.locale.bind(workbenchNamespace);
     function MapButton({ t }) {
       return h('button', { type: 'button', title: t('open'),
         onClick: () => ctx.sidebarRight.openTab(tabId),
         style: { padding: '4px 8px', border: '1px solid currentColor', borderRadius: 6, background: 'transparent', color: 'inherit', cursor: 'pointer' },
       }, t('button'));
     }
-    function ObserveButton() {
-      return h('button', { type: 'button', title: '查看过程、暂停或返回游戏',
-        onClick: () => ctx.sidebarRight.openTab(observeTabId), style: buttonStyle }, '对局');
+    function ObserveButton({ t }) {
+      return h('button', { type: 'button', title: t('open'),
+        onClick: () => ctx.sidebarRight.openTab(observeTabId), style: buttonStyle }, t('button'));
     }
-    function ObservePanel({ sessionId, useProjection }) {
+    function ObservePanel({ sessionId, useProjection, t }) {
+      const language = ctx.locale.getSnapshot().active;
+      const count = value => formatNumber(value, language);
       const tick = useProjection('stsObservationTick'), gameTick = useProjection('stsMapTick');
       const [view, setView] = React.useState(null), [error, setError] = React.useState('');
       const [revision, refresh] = React.useReducer(n => n + 1, 0);
@@ -134,7 +142,7 @@ window.__ModuleLoader__.load({ id: '@sts-simulator/dsh-player', factory(require)
       const selectedDetail = detail?.key === key ? detail : null;
       const modelMessages = selectedDetail?.messages.map(message => ({ ...message, blocks: message.blocks.filter(block => block.text.trim()) }))
         .filter(message => message.blocks.length) ?? [];
-      const selectedError = detailError?.key === key && (!detailError.input || wantsInput) ? detailError.message : null;
+      const selectedError = detailError?.key === key && (!detailError.input || wantsInput) ? observationMessage(detailError, t) : null;
       const currentLive = live?.sessionId === sessionId && live.request === liveRequest ? live : null;
       const readingLive = liveRequest?.sessionId === sessionId && !currentLive;
       const currentReturns = returns?.sessionId === sessionId ? returns : null;
@@ -143,8 +151,9 @@ window.__ModuleLoader__.load({ id: '@sts-simulator/dsh-player', factory(require)
         ? actionResult.control : current?.control;
       const busy = Boolean(working);
       const query = search.trim().toLowerCase();
+      const labelOf = item => item.label || t('outcome.model');
       const visible = timeline.filter(item => (!errorsOnly || item.outcome === 'error')
-        && (!query || (item.label + ' ' + item.calls.map(call => call.name + ' ' + call.command).join(' ')).toLowerCase().includes(query)));
+        && (!query || (labelOf(item) + ' ' + item.calls.map(call => call.name + ' ' + call.command).join(' ')).toLowerCase().includes(query)));
       const previous = visible.findLast(item => item.seq < (selected?.seq ?? Infinity));
       const next = visible.find(item => item.seq > (selected?.seq ?? -1));
       React.useEffect(() => {
@@ -164,9 +173,9 @@ window.__ModuleLoader__.load({ id: '@sts-simulator/dsh-player', factory(require)
         setError('');
         ctx.connection.rpc.call('/api', 'stsObservation/read', { args: { sessionId, turn } }, abort.signal).then(result => {
           if (abort.signal.aborted) return;
-          if (result.ok && result.value.status === 'ready' && !Array.isArray(result.value.timeline)) setError('观察服务尚未更新到这版界面，请更新服务后刷新。');
-          else if (result.ok) setView({ ...result.value, sessionId, requestedTurn: turn }); else setError(result.error.message);
-        }).catch(error => { if (!abort.signal.aborted) setError(error.message); });
+          if (result.ok && result.value.status === 'ready' && !Array.isArray(result.value.timeline)) setError({ reason: 'protocolMismatch' });
+          else if (result.ok) setView({ ...result.value, sessionId, requestedTurn: turn }); else setError({ message: result.error.message });
+        }).catch(error => { if (!abort.signal.aborted) setError({ message: error.message }); });
         return () => abort.abort();
       }, [sessionId, turn, tick, revision]);
       React.useEffect(() => {
@@ -179,7 +188,7 @@ window.__ModuleLoader__.load({ id: '@sts-simulator/dsh-player', factory(require)
         } }, abort.signal).then(result => {
           if (abort.signal.aborted) return;
           if (result.ok && result.value.status === 'ready') setDetail({ ...result.value, key });
-          else setDetailError({ key, input: wantsInput, message: result.ok ? result.value.message : result.error.message });
+          else setDetailError({ ...(result.ok ? result.value : { message: result.error.message }), key, input: wantsInput });
         }).catch(error => { if (!abort.signal.aborted) setDetailError({ key, input: wantsInput, message: error.message }); });
         return () => abort.abort();
       }, [key, selected?.revision, wantsInput, mode === 'live' || mode === 'returns', revision]);
@@ -215,7 +224,7 @@ window.__ModuleLoader__.load({ id: '@sts-simulator/dsh-player', factory(require)
           const value = result.ok ? result.value : { status: 'error', message: result.error.message };
           setControlResult({ ...value, sessionId });
           if (value.points) setReturns({ status: 'ready', points: value.points, control: value.control, sessionId });
-          else if (kind === 'restore') setReturns({ status: 'error', message: value.message ?? '需要重新读取返回点。', sessionId });
+          else if (kind === 'restore') setReturns({ status: 'error', ...(value.message ? { message: value.message } : { reason: 'pointsChanged' }), sessionId });
           if (kind !== 'resume' && value.text) {
             const request = { sessionId, gameTick };
             setLiveRequest(request); setLive({ status: 'ready', text: value.text, sessionId, request, gameTick });
@@ -228,119 +237,119 @@ window.__ModuleLoader__.load({ id: '@sts-simulator/dsh-player', factory(require)
       const totals = current?.accounting?.totals, last = current?.accounting?.last;
       const text = mode === 'returns' ? actionResult?.text : mode === 'live' ? currentLive?.text : mode === 'input' ? selectedDetail?.inputs && JSON.stringify(selectedDetail.inputs, null, 2)
         : mode === 'model' ? selectedDetail?.messages.map(message => message.blocks.map(block => block.text).join('\n')).join('\n\n')
-        : selectedDetail?.calls.map(call => call.name + '\n' + call.command + '\n' + (call.text ?? '尚无返回，执行结果未确认。')).join('\n\n');
+        : selectedDetail?.calls.map(call => call.name + '\n' + call.command + '\n' + (call.text ?? t('noReturn'))).join('\n\n');
       const copyKey = mode === 'live' ? liveRequest : key + ':' + mode;
       async function copyText(value) {
-        try { await navigator.clipboard.writeText(value); setCopyNotice({ key: copyKey, text: '已复制' }); }
-        catch { setCopyNotice({ key: copyKey, text: '复制失败，请在内容中手动选取。' }); }
+        try { await navigator.clipboard.writeText(value); setCopyNotice({ key: copyKey, reason: 'copied' }); }
+        catch { setCopyNotice({ key: copyKey, reason: 'copyFailed' }); }
       }
       const tab = (id, label) => h('button', { type: 'button', 'aria-pressed': mode === id,
         className: mode === id ? 'is-active' : '', onClick: () => setContent({ sessionId, key, mode: id }) }, label);
       return h('section', { className: 'sts-observe', ref: panelRef },
         h('style', null, observationStyles),
-        h('header', { className: 'observe-header' }, h('strong', null, '对局工作台'),
-          h('div', null, h('button', { type: 'button', onClick: inspectLive }, '当前游戏'),
-            h('button', { type: 'button', onClick: () => setContent({ sessionId, mode: 'returns' }) }, '返回点'),
-            h('button', { type: 'button', onClick: refresh }, '刷新'))),
+        h('header', { className: 'observe-header' }, h('strong', null, t('title')),
+          h('div', null, h('button', { type: 'button', onClick: inspectLive }, t('currentGame')),
+            h('button', { type: 'button', onClick: () => setContent({ sessionId, mode: 'returns' }) }, t('returnPoints')),
+            h('button', { type: 'button', onClick: refresh }, t('refresh')))),
         current?.status === 'ready' ? h('div', { className: 'workspace-controls' },
-          h('span', null, busy ? '正在' + ({ pause: '暂停', restore: '返回', resume: '继续' }[working.kind]) + '…'
-            : control?.paused ? '已暂停' : control?.running ? '模型运行中' : '模型已停止'),
-          control?.queued ? h('span', { className: 'observe-muted' }, control.queued + ' 条消息等待处理') : null,
+          h('span', null, busy ? t('control.working.' + working.kind)
+            : control?.paused ? t('control.paused') : control?.running ? t('control.running') : t('control.stopped')),
+          control?.queued ? h('span', { className: 'observe-muted' }, t('control.queued', { count: count(control.queued) })) : null,
           h('button', { type: 'button', disabled: busy || control?.available === false, onClick: () => operate(control?.paused ? 'resume' : 'pause') },
-            control?.paused ? '继续运行' : '暂停'),
-          control?.available === false ? h('span', { className: 'observe-muted' }, '本聊天仍用旧版工具，新建聊天可使用返回功能。') : null,
+            control?.paused ? t('control.resume') : t('control.pause')),
+          control?.available === false ? h('span', { className: 'observe-muted' }, t('control.unavailable')) : null,
           actionResult?.status === 'error' ? h('p', { role: 'alert' },
-            (actionResult.receipt ? '返回已经提交，后续核对失败：' : '') + actionResult.message) : null) : null,
-        error ? h('p', { role: 'alert' }, error) : !current ? h('p', null, '正在读取记录…')
-          : current.status !== 'ready' ? h('p', null, current.message) : h(React.Fragment, null,
+            actionResult.receipt ? t('committedCheckFailed', { error: observationMessage(actionResult, t) }) : observationMessage(actionResult, t)) : null) : null,
+        error ? h('p', { role: 'alert' }, observationMessage(error, t)) : !current ? h('p', null, t('loading'))
+          : current.status !== 'ready' ? h('p', null, observationMessage(current, t)) : h(React.Fragment, null,
             h('div', { className: 'observe-summary' },
-              h('span', { className: 'observe-phase' }, phaseNames[current.phase] ?? current.phase),
-              h('span', null, timeline.length + ' 步'),
-              h('span', null, current.gameCalls + ' 次游戏调用'),
+              h('span', { className: 'observe-phase' }, codeText(t, 'phase', current.phase)),
+              h('span', null, t('steps', { count: count(timeline.length) })),
+              h('span', null, t('calls', { count: count(current.gameCalls) })),
               h('button', { type: 'button', className: current.errors ? 'observe-error-count' : '', 'aria-pressed': errorsOnly,
-                onClick: () => setErrorsOnly(!errorsOnly) }, current.errors + ' 次报错'),
-              h('details', { className: 'observe-usage' }, h('summary', null, '用量'),
+                onClick: () => setErrorsOnly(!errorsOnly) }, t('errors', { count: count(current.errors) })),
+              h('details', { className: 'observe-usage' }, h('summary', null, t('usage.title')),
                 totals ? h('div', null,
-                  h('p', null, '截至这轮累计 ' + count(inputTokens(totals) + totals.outputTokens) + ' tokens'),
-                  h('p', null, last ? '最后一次已报告输入 ' + count(inputTokens(last)) + ' tokens' : '尚无最近一次请求用量'),
-                  h('p', { className: 'observe-muted' }, '未缓存 ' + count(totals.uncachedInputTokens) + '，缓存读取 ' + count(totals.cacheReadTokens)
-                    + '，缓存写入 ' + count(totals.cacheWriteTokens) + '，输出 ' + count(totals.outputTokens) + '。累计量包含历史的反复传入。'))
-                  : h('p', null, '模型尚未报告 token 用量。'))),
-            current.recordedMayBeStale ? h('p', { className: 'observe-notice' }, '日志画面可能已过时，实际进度请查看当前游戏。') : null,
-            current.interventions?.length ? h('details', { className: 'workspace-events' }, h('summary', null, '最近人工操作'),
+                  h('p', null, t('usage.cumulative', { count: count(inputTokens(totals) + totals.outputTokens) })),
+                  h('p', null, last ? t('usage.last', { count: count(inputTokens(last)) }) : t('usage.noLast')),
+                  h('p', { className: 'observe-muted' }, t('usage.breakdown', { uncached: count(totals.uncachedInputTokens), read: count(totals.cacheReadTokens),
+                    write: count(totals.cacheWriteTokens), output: count(totals.outputTokens) })))
+                  : h('p', null, t('usage.none')))),
+            current.recordedMayBeStale ? h('p', { className: 'observe-notice' }, t('staleRecord')) : null,
+            current.interventions?.length ? h('details', { className: 'workspace-events' }, h('summary', null, t('interventions')),
               current.interventions.map(event => h('p', { key: event.seq },
-                ({ 'pause-requested': '请求暂停', 'return-requested': '请求返回', paused: '已暂停', returned: '已返回', resumed: '继续运行', 'pause-failed': '暂停操作报错', 'return-failed': '返回操作报错', 'resume-failed': '继续操作报错' })[event.kind],
-                event.receipt ? '：状态 ' + event.receipt.from.state_revision + ' → ' + event.receipt.to.state_revision : '',
+                codeText(t, 'intervention', event.kind),
+                event.receipt ? ' ' + t('receipt', { from: event.receipt.from.state_revision, to: event.receipt.to.state_revision }) : '',
                 event.message ? ' ' + event.message : ''))) : null,
             h('div', { className: 'observe-toolbar' },
-              h('select', { value: turn ?? '', 'aria-label': '查看轮次', onChange: event => {
+              h('select', { value: turn ?? '', 'aria-label': t('turn.select'), onChange: event => {
                 setRound({ sessionId, turn: event.target.value ? Number(event.target.value) : null }); setFocus(null); setContent(null);
-              } }, h('option', { value: '' }, '最近一轮'),
-                [...current.turns].reverse().map(number => h('option', { key: number, value: number }, '第 ' + number + ' 轮'))),
-              h('button', { type: 'button', 'aria-pressed': errorsOnly, onClick: () => setErrorsOnly(!errorsOnly) }, '仅报错'),
+              } }, h('option', { value: '' }, t('turn.latest')),
+                [...current.turns].reverse().map(number => h('option', { key: number, value: number }, t('turn.number', { turn: number })))),
+              h('button', { type: 'button', 'aria-pressed': errorsOnly, onClick: () => setErrorsOnly(!errorsOnly) }, t('errorsOnly')),
               h('button', { type: 'button', className: !pinned && turn === null ? 'is-active' : '', onClick: follow },
-                !pinned && turn === null ? '跟随最新' : '回到最新')),
-            h('input', { className: 'observe-search', type: 'search', 'aria-label': '搜索命令或工具名', placeholder: '搜索命令或工具名',
+                !pinned && turn === null ? t('following') : t('follow'))),
+            h('input', { className: 'observe-search', type: 'search', 'aria-label': t('search'), placeholder: t('search'),
               value: search, onChange: event => setSearch(event.target.value) }),
             h('div', { className: 'observe-body' },
-              h('div', { className: 'observe-history', 'aria-label': '步骤列表' },
-                !visible.length ? h('p', { className: 'observe-muted' }, timeline.length ? '没有匹配的步骤。' : '这一轮尚无步骤。')
-                  : [...visible].reverse().map(item => h('button', { key: item.seq, type: 'button', title: item.label,
+              h('div', { className: 'observe-history', 'aria-label': t('history') },
+                !visible.length ? h('p', { className: 'observe-muted' }, timeline.length ? t('noMatches') : t('noSteps'))
+                  : [...visible].reverse().map(item => h('button', { key: item.seq, type: 'button', title: labelOf(item),
                     className: 'observe-row' + (selected?.step === item.step ? ' is-selected' : ''),
                     'aria-current': selected?.step === item.step ? 'step' : undefined,
-                    'aria-label': '第 ' + item.step + ' 步 ' + item.label, onClick: () => choose(item) },
-                    h('span', { className: 'observe-row-meta' }, h('span', null, '第 ' + item.step + ' 步'),
-                      h('span', { className: 'observe-outcome ' + item.outcome }, outcomeNames[item.outcome])),
-                    h('span', { className: 'observe-row-label' }, item.label)))),
+                    'aria-label': t('stepLabel', { step: item.step, label: labelOf(item) }), onClick: () => choose(item) },
+                    h('span', { className: 'observe-row-meta' }, h('span', null, t('step', { step: item.step })),
+                      h('span', { className: 'observe-outcome ' + item.outcome }, codeText(t, 'outcome', item.outcome))),
+                    h('span', { className: 'observe-row-label' }, labelOf(item))))),
               h('div', { className: 'observe-detail' },
                 h('div', { className: 'observe-detail-head' },
-                  h('strong', null, mode === 'returns' ? '返回点' : mode === 'live' ? '当前游戏' : selected ? '第 ' + current.turn + ' 轮，第 ' + selected.step + ' 步' : '步骤详情'),
+                  h('strong', null, mode === 'returns' ? t('returnPoints') : mode === 'live' ? t('currentGame') : selected ? t('detailHeading', { turn: current.turn, step: selected.step }) : t('detail')),
                   !['live', 'returns'].includes(mode) ? h('div', { className: 'observe-step-nav' },
-                    h('button', { type: 'button', disabled: !previous, 'aria-label': '上一步', onClick: () => choose(previous) }, '←'),
-                    h('button', { type: 'button', disabled: !next, 'aria-label': '下一步', onClick: () => choose(next) }, '→')) : null),
-                !['live', 'returns'].includes(mode) && selected ? h('nav', { className: 'observe-tabs', 'aria-label': '步骤内容' },
-                  tab('result', '返回'), tab('model', '模型输出'), tab('input', '输入')) : null,
+                    h('button', { type: 'button', disabled: !previous, 'aria-label': t('previous'), onClick: () => choose(previous) }, '←'),
+                    h('button', { type: 'button', disabled: !next, 'aria-label': t('next'), onClick: () => choose(next) }, '→')) : null),
+                !['live', 'returns'].includes(mode) && selected ? h('nav', { className: 'observe-tabs', 'aria-label': t('content') },
+                  tab('result', t('tab.result')), tab('model', t('tab.model')), tab('input', t('tab.input'))) : null,
                 h('div', { className: 'observe-reader-tools' },
-                  h('span', { className: 'observe-muted' }, mode === 'returns' ? '返回后保持暂停' : mode === 'live' ? '只读核对'
-                    : selected?.durationMs !== null && selected ? '本步耗时 ' + duration(selected.durationMs) : '尚无完整耗时'),
-                  h('span', { role: 'status' }, copyNotice?.key === copyKey ? copyNotice.text : ''),
-                  h('button', { type: 'button', disabled: !text, onClick: () => copyText(text) }, '复制')),
-                !['live', 'returns'].includes(mode) ? requestUsage(selected?.usage) : null,
-                h('div', { className: 'observe-reader', 'aria-label': '步骤详情内容' },
+                  h('span', { className: 'observe-muted' }, mode === 'returns' ? t('returnHint') : mode === 'live' ? t('readOnly')
+                    : selected?.durationMs !== null && selected ? t('duration.elapsed', { duration: duration(selected.durationMs, t, language) }) : t('duration.none')),
+                  h('span', { role: 'status' }, copyNotice?.key === copyKey ? t(copyNotice.reason) : ''),
+                  h('button', { type: 'button', disabled: !text, onClick: () => copyText(text) }, t('copy'))),
+                !['live', 'returns'].includes(mode) ? requestUsage(selected?.usage, t, language) : null,
+                h('div', { className: 'observe-reader', 'aria-label': t('reader') },
                   mode === 'returns' ? h(React.Fragment, null,
-                    h('button', { type: 'button', disabled: busy, onClick: refresh }, '重新读取'),
-                    !currentReturns ? h('p', null, '正在读取返回点…') : currentReturns.status !== 'ready' ? h('p', { role: 'alert' }, currentReturns.message)
+                    h('button', { type: 'button', disabled: busy, onClick: refresh }, t('points.reread')),
+                    !currentReturns ? h('p', null, t('points.loading')) : currentReturns.status !== 'ready' ? h('p', { role: 'alert' }, observationMessage(currentReturns, t))
                       : h(React.Fragment, null,
-                        h('p', null, '当前：' + returnLocation(currentReturns.points.current)),
-                        h('p', { className: 'observe-muted' }, returnResources(currentReturns.points.current)),
-                        !currentReturns.points.targets.length ? h('p', null, '还没有保留的返回点。') : null,
+                        h('p', null, t('points.current', { location: returnLocation(currentReturns.points.current, t, gameText) })),
+                        h('p', { className: 'observe-muted' }, returnResources(currentReturns.points.current, t, language)),
+                        !currentReturns.points.targets.length ? h('p', null, t('points.empty')) : null,
                         currentReturns.points.targets.map(point => h('article', { className: 'return-point', key: point.identity.head_revision },
-                          h('div', null, h('strong', null, returnLocation(point)),
-                            h('small', null, pointOrigins(point)), h('small', null, returnResources(point))),
+                          h('div', null, h('strong', null, returnLocation(point, t, gameText)),
+                            h('small', null, pointOrigins(point, t, language)), h('small', null, returnResources(point, t, language))),
                           h('button', { type: 'button', disabled: busy || control?.available === false, onClick: () => operate('restore', point) },
-                            point.origins.some(origin => origin.kind === 'previous_endpoint') ? '回到刚才' : '返回这里')))),
-                    actionResult?.receipt ? h('p', { role: 'status' }, '返回已提交，当前游戏保持暂停。') : null,
-                    actionResult?.text ? h('details', null, h('summary', null, '返回后实际局面与库存'), h('pre', { className: 'observe-code' }, actionResult.text)) : null)
+                            point.origins.some(origin => origin.kind === 'previous_endpoint') ? t('points.previous') : t('points.restore'))))),
+                    actionResult?.receipt ? h('p', { role: 'status' }, t('points.submitted')) : null,
+                    actionResult?.text ? h('details', null, h('summary', null, t('points.actual')), h('pre', { className: 'observe-code' }, actionResult.text)) : null)
                     : mode === 'live' ? h(React.Fragment, null,
-                    h('button', { type: 'button', disabled: readingLive, onClick: inspectLive }, readingLive ? '正在核对…' : '重新核对'),
-                    currentLive?.status === 'error' ? h('p', { role: 'alert' }, currentLive.message) : currentLive ? h(React.Fragment, null,
-                      currentLive.gameTick !== gameTick ? h('p', { className: 'observe-notice' }, '核对后有新的游戏记录，需要时请重新核对。') : null,
-                      h('pre', { className: 'observe-code' }, currentLive.text ?? currentLive.message)) : null)
-                    : !selected ? h('p', null, '请选择一步查看。')
+                    h('button', { type: 'button', disabled: readingLive, onClick: inspectLive }, readingLive ? t('live.checking') : t('live.recheck')),
+                    currentLive?.status === 'error' ? h('p', { role: 'alert' }, observationMessage(currentLive, t)) : currentLive ? h(React.Fragment, null,
+                      currentLive.gameTick !== gameTick ? h('p', { className: 'observe-notice' }, t('live.changed')) : null,
+                      h('pre', { className: 'observe-code' }, currentLive.text ?? observationMessage(currentLive, t))) : null)
+                    : !selected ? h('p', null, t('selectStep'))
                       : h(React.Fragment, null,
                         selectedError ? h('p', { role: 'alert' }, selectedError) : null,
-                        !selectedDetail || (wantsInput && !selectedDetail.inputs) ? !selectedError ? h('p', null, '正在读取…') : null
+                        !selectedDetail || (wantsInput && !selectedDetail.inputs) ? !selectedError ? h('p', null, t('detailLoading')) : null
                           : mode === 'result' ? selectedDetail.calls.length ? selectedDetail.calls.map((call, index) => h('article', { className: 'observe-call', key: index },
                             h('div', { className: 'observe-call-title' }, h('strong', null, call.name),
-                              h('span', { className: 'observe-outcome ' + call.outcome }, outcomeNames[call.outcome])),
+                              h('span', { className: 'observe-outcome ' + call.outcome }, codeText(t, 'outcome', call.outcome))),
                             h('pre', { className: 'observe-command' }, call.command),
-                            h('pre', { className: 'observe-code' }, call.text ?? '尚无返回，执行结果未确认。'))) : h('p', { className: 'observe-muted' }, '这一步没有记录工具调用。')
+                            h('pre', { className: 'observe-code' }, call.text ?? t('noReturn')))) : h('p', { className: 'observe-muted' }, t('noCalls'))
                             : mode === 'model' ? modelMessages.length ? modelMessages.map((message, index) => h('article', { className: 'observe-message', key: index },
-                              !message.committed ? h('p', { className: 'observe-notice' }, '这份模型输出未完成。') : null,
+                              !message.committed ? h('p', { className: 'observe-notice' }, t('partialModel')) : null,
                               message.blocks.map((block, index) => h('div', { key: index },
-                                h('span', { className: 'observe-muted' }, block.type === 'reasoning' ? '推理' : '回答'),
-                                h('pre', { className: 'observe-code' }, block.text))))) : h('p', { className: 'observe-muted' }, '这一步没有模型文字输出记录。')
-                              : renderInputs(selectedDetail.inputs, copyText))))
+                                h('span', { className: 'observe-muted' }, block.type === 'reasoning' ? t('reasoning') : t('answer')),
+                                h('pre', { className: 'observe-code' }, block.text))))) : h('p', { className: 'observe-muted' }, t('noModel'))
+                              : renderInputs(selectedDetail.inputs, copyText, t))))
               ))
           );
     }
@@ -431,13 +440,16 @@ window.__ModuleLoader__.load({ id: '@sts-simulator/dsh-player', factory(require)
     ctx.effect(() => ctx.slots.inject('sidebar.right.pane.tab', () => ctx.slots.register({
       name: 'sidebar.right.pane.tab', key: tabId, locale: mapNamespace,
     }, MapPanel)));
-    ctx.effect(() => ctx.sidebarRightTabs.register({ id: observeTabId, kind: observeTabId, title: () => '对局工作台',
-      guide: [{ id: observeTabId, order: 21, title: () => '对局工作台', description: () => '查看过程和当前游戏，暂停或返回保留的决策点。' }] }));
+    ctx.effect(() => ctx.sidebarRightTabs.register({ id: observeTabId, kind: observeTabId, title: () => workbenchText('title'),
+      guide: [{ id: observeTabId, order: 21, title: () => workbenchText('title'), description: () => workbenchText('guide') }] }));
+    ctx.effect(() => ctx.slots.inject('sidebar.right.pane.tab.title', () => ctx.slots.register({
+      name: 'sidebar.right.pane.tab.title', key: observeTabId, locale: workbenchNamespace,
+    }, ({ t }) => t('title'))));
     ctx.effect(() => ctx.slots.inject('conversation.session.header.actions', () => ctx.slots.register({
-      name: 'conversation.session.header.actions', id: observeTabId, order: 21,
+      name: 'conversation.session.header.actions', id: observeTabId, order: 21, locale: workbenchNamespace,
     }, ObserveButton)));
     ctx.effect(() => ctx.slots.inject('sidebar.right.pane.tab', () => ctx.slots.register({
-      name: 'sidebar.right.pane.tab', key: observeTabId,
+      name: 'sidebar.right.pane.tab', key: observeTabId, locale: workbenchNamespace,
     }, ObservePanel)));
   }
   return { apply, inject };

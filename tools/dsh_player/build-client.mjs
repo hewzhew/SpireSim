@@ -1,10 +1,11 @@
 import { build, context } from 'esbuild';
 import { validateCatalogs } from '@sts-simulator/presentation/catalogs';
 import { fileURLToPath } from 'node:url';
-import { validateMapDictionaries } from './client/locale.mjs';
+import { validateHostDictionaries, mapDictionaries, workbenchDictionaries } from './client/locale.mjs';
 
 validateCatalogs();
-validateMapDictionaries();
+validateHostDictionaries(mapDictionaries, 'Map');
+validateHostDictionaries(workbenchDictionaries, 'Workbench');
 const options = {
   entryPoints: [fileURLToPath(new URL('./client/index.mjs', import.meta.url))],
   outfile: fileURLToPath(new URL('./client.js', import.meta.url)),

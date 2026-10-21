@@ -37,5 +37,5 @@ jobs:
         working-directory: tools/presentation
       - run: npm ci
         working-directory: tools/dsh_player
-      - run: npm run test:map
+      - run: npm run test:client
         working-directory: tools/dsh_player
