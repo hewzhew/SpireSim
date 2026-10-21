@@ -1,0 +1,12 @@
+[package]
+name = "sts_combat_strategy"
+version = "0.1.0"
+edition = "2021"
+publish = false
+autobins = false
+autotests = false
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+sts_card_semantics = { path = "../sts_card_semantics" }
+sts_core = { package = "sts_simulator", path = "../.." }

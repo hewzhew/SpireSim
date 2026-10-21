@@ -1,0 +1,227 @@
+{
+  "schema": "sts-curated-strategy-reading-cases-v1",
+  "provenance": "Constructed offline reading cases; no live state, simulated outcomes, or optimal-action labels.",
+  "cases": [
+    {
+      "id": "fragile-before-elite",
+      "pair": "future-before-elite",
+      "purpose": "近期压力很高时怎样理解未来投资",
+      "public_context": {
+        "act": 1,
+        "hp": 18,
+        "max_hp": 80,
+        "deck": "初始牌组，未获得额外强度",
+        "potions": [],
+        "visible_route": "一场普通战后有可绕行精英"
+      },
+      "candidates": [
+        "DarkEmbrace",
+        "IronWave",
+        "skip"
+      ],
+      "analyst_hypothesis": "当前牌组可能难以承受精英；这是待验证判断。",
+      "reading_ids": [
+        "near-threat",
+        "future-value",
+        "skip-density"
+      ],
+      "application": "先评估铁斩波是否真能补眼前缺口，同时保留绕路；不能因鼓励战未来就默认黑暗之拥值得拿，也不能因迫切需要战力就认定任何攻击牌都够用。",
+      "unknowns": [
+        "精英身份与战斗结果",
+        "各候选能否改变生存局面"
+      ]
+    },
+    {
+      "id": "supported-before-elite",
+      "pair": "future-before-elite",
+      "purpose": "同组奖励在支持与调整空间增加后如何改变关注点",
+      "public_context": {
+        "act": 1,
+        "hp": 67,
+        "max_hp": 80,
+        "deck": "初始牌组另有燔祭、坚毅+、无惧疼痛",
+        "potions": [
+          "FirePotion"
+        ],
+        "visible_route": "下一精英可绕开，前方有休息点"
+      },
+      "candidates": [
+        "DarkEmbrace",
+        "IronWave",
+        "skip"
+      ],
+      "analyst_hypothesis": "比前一个案例有更多现成支持和调整空间，但不能仅凭牌名宣布足够强。",
+      "reading_ids": [
+        "future-value",
+        "exhaust-startup",
+        "skip-density"
+      ],
+      "application": "把注意力转向黑暗之拥的现有消耗支持和兑现速度，再与铁斩波的边际收益比较；仍检查费用、访问和近期风险，不因组件存在就自动选能力牌。",
+      "unknowns": [
+        "实际启动速度",
+        "面对可能精英的准备度"
+      ]
+    },
+    {
+      "id": "draw-rich-energy-poor",
+      "pair": "draw-energy",
+      "purpose": "同组过牌与加费奖励在费用疑似受限时的判断",
+      "public_context": {
+        "act": 2,
+        "hp": 41,
+        "max_hp": 80,
+        "energy": 3,
+        "deck": "有剑柄打击+、燃烧契约+等过牌"
+      },
+      "candidates": [
+        "BattleTrance",
+        "Bloodletting",
+        "skip"
+      ],
+      "analyst_hypothesis": "关键回合可能经常有好牌却无费支付；尚无本例模拟证据。",
+      "reading_ids": [
+        "energy",
+        "draw-access",
+        "skip-density"
+      ],
+      "application": "先核实费用是否真是瓶颈，再评估放血的手牌承接和HP代价；战斗专注免费不表示额外抽牌一定有收益。",
+      "unknowns": [
+        "关键回合的有效费用缺口",
+        "自伤能否换来更少战损"
+      ]
+    },
+    {
+      "id": "energy-rich-access-poor",
+      "pair": "draw-energy",
+      "purpose": "同组奖励在访问疑似受限时的判断",
+      "public_context": {
+        "act": 2,
+        "hp": 41,
+        "max_hp": 80,
+        "energy": 4,
+        "deck": "有放血+，过牌少且低效牌尚多"
+      },
+      "candidates": [
+        "BattleTrance",
+        "Bloodletting",
+        "skip"
+      ],
+      "analyst_hypothesis": "关键回合可能有费没牌可打；这是构造的待检验问题。",
+      "reading_ids": [
+        "draw-access",
+        "energy",
+        "skip-density"
+      ],
+      "application": "转而检查访问与牌组密度，评估战斗专注是否改善关键牌到手时间；也保留删牌或其他后续改善的可能，不能把抽牌张数当成解决程度。",
+      "unknowns": [
+        "抽牌限制对现有顺序的影响",
+        "是否还存在未识别的费用约束"
+      ]
+    },
+    {
+      "id": "extra-transition-late",
+      "purpose": "后期新增过渡牌与跳过",
+      "public_context": {
+        "act": 3,
+        "hp": 56,
+        "max_hp": 80,
+        "deck": "已有能发挥作用的输出与运转；具体性能未验证"
+      },
+      "candidates": [
+        "IronWave",
+        "TwinStrike",
+        "skip"
+      ],
+      "analyst_hypothesis": "新增基础数值可能只产生很小的收益，反而增加访问负担。",
+      "reading_ids": [
+        "transition",
+        "skip-density"
+      ],
+      "application": "要求新增牌说明能解决哪个尚未覆盖的问题；若没有明确收益，跳过应被认真比较。若发现真实生存缺口，则重新评估过渡收益。",
+      "unknowns": [
+        "输出与运转是否足够",
+        "候选是否在具体遭遇中有独特作用"
+      ]
+    },
+    {
+      "id": "upgrade-contested",
+      "purpose": "候选依赖升级而休息点有竞争",
+      "public_context": {
+        "act": 1,
+        "hp": 22,
+        "max_hp": 80,
+        "deck": "痛击未升级，费用3",
+        "visible_route": "Boss前只看到一个休息点"
+      },
+      "candidates": [
+        "BurningPact",
+        "BattleTrance",
+        "skip"
+      ],
+      "analyst_hypothesis": "休息点可能需要回血；升级机会并非已经确定可用。",
+      "reading_ids": [
+        "upgrade",
+        "draw-access",
+        "future-value"
+      ],
+      "application": "比较两张过牌的未升级价值、费用和抽牌限制，把契约的升级与痛击升级、回血放在一起考虑；不能把未来绿契约的收益全记到当前奖励上。",
+      "unknowns": [
+        "是否需要休息",
+        "未升级契约的实际边际收益"
+      ]
+    },
+    {
+      "id": "components-not-readiness",
+      "purpose": "成套消耗组件不等于已经安全",
+      "public_context": {
+        "act": 2,
+        "hp": 38,
+        "max_hp": 80,
+        "energy": 3,
+        "deck": "已有黑暗之拥、重振精神、硬撑，过牌较少"
+      },
+      "candidates": [
+        "BurningPact",
+        "DarkEmbrace",
+        "skip"
+      ],
+      "analyst_hypothesis": "潜力可能很高，但抽到顺序和启动费用可能导致二层受压。",
+      "reading_ids": [
+        "exhaust-startup",
+        "draw-access",
+        "energy"
+      ],
+      "application": "先核实启动过程而不是继续堆相同组件；研究契约是否促进访问也是否挤占当回合动作。未知结果不能被组合标签覆盖。",
+      "unknowns": [
+        "到达安全状态需要几回合",
+        "重复黑暗之拥的边际贡献"
+      ]
+    },
+    {
+      "id": "missing-route",
+      "purpose": "缺少公开信息时保留Unknown",
+      "public_context": {
+        "act": 1,
+        "hp": 45,
+        "max_hp": 80,
+        "deck": "初始牌组",
+        "visible_route": null
+      },
+      "candidates": [
+        "DarkEmbrace",
+        "IronWave",
+        "skip"
+      ],
+      "analyst_hypothesis": "没有足够路线信息判断近期能否承担未来牌。",
+      "reading_ids": [
+        "near-threat",
+        "future-value"
+      ],
+      "application": "先补足本应可见的路线和资源信息，不用作者的总体倾向填补缺失。知识仍可阅读，动作判断保持待定。",
+      "unknowns": [
+        "公开路线与补给",
+        "下一场必须应对的危险"
+      ]
+    }
+  ]
+}

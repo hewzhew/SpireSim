@@ -1,0 +1,1 @@
+{"schema":"sts-recorded-java-action-v1","phase":"committed","action":{"kind":"play_card","card_binding":"natural_run/card_reward/F01X02/0","card_id":"geneticalgorithm","target":null},"receipt":{"status":"completed","request_id":"34b5c3ac-b8b6-4726-89d2-3f4b79db9a86","based_on_frame_id":40,"action_id":"play_card:c609d578-45c4-4e63-8eb3-eb580f867fc7:none","successor_frame_id":41}}

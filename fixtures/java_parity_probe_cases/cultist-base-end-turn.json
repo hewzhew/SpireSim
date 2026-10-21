@@ -1,0 +1,9 @@
+{
+  "schema": "sts_java_play_scenario_probe_draft_v1",
+  "provenance": "constructed_validated",
+  "probe_case_id": "cultist-base-end-turn",
+  "scenario_case_id": "cultist-base-root-smoke",
+  "transition": {
+    "transition_id": "combat.end_turn.v1"
+  }
+}

@@ -1,0 +1,132 @@
+{
+  "scope": "Natural Nilry Codex offer/selection/birth, generated powers and product retirement at A20 double-boss completion",
+  "capture_scope": "accelerated_sts_wrapper_rng_ledger_and_declared_snapshot_domains",
+  "files": {
+    "offers-before.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-867620b4d6ea4407af71713aa734688b/java-evidence/boundaries/00000007-frame-9.json",
+      "sha256": "cee098d3e970da86dad0fd08daa626c8a49867028c3646d4568034a0001ba583",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "DCF1F6CB0B45F4E29ECB2708FC22B0F30E2556354BB153DD3098A8B05CC021B4",
+        "session_epoch": "c74f76ae-42b8-4af3-985d-fe2cebfa9174:cf67063c-7aac-44a2-bcf6-3de6c5fd72ea:38c78cfd-32ef-41be-b983-efcbb3db6fdf"
+      },
+      "capturing_rust_source": "81c736c2c plus Codex and DrawCardNextTurn owner changes",
+      "java_source_commit": "21cd350"
+    },
+    "offers-after.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-867620b4d6ea4407af71713aa734688b/java-evidence/boundaries/00000008-frame-10.json",
+      "sha256": "3248e85de2d89a35ab586272801316465ad6bf159cc2ef6268ef7cc5bf27cac5",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "DCF1F6CB0B45F4E29ECB2708FC22B0F30E2556354BB153DD3098A8B05CC021B4",
+        "session_epoch": "c74f76ae-42b8-4af3-985d-fe2cebfa9174:cf67063c-7aac-44a2-bcf6-3de6c5fd72ea:38c78cfd-32ef-41be-b983-efcbb3db6fdf"
+      },
+      "capturing_rust_source": "81c736c2c plus Codex and DrawCardNextTurn owner changes",
+      "java_source_commit": "21cd350"
+    },
+    "offers-action.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-867620b4d6ea4407af71713aa734688b/java-evidence/actions/00000007-from-frame-9.json",
+      "sha256": "5feca2c53f1ae15ab43818266a44965eee6918107954854e77a83263b0c29477",
+      "capturing_rust_source": "81c736c2c plus Codex and DrawCardNextTurn owner changes",
+      "java_source_commit": "21cd350"
+    },
+    "selected-after.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-867620b4d6ea4407af71713aa734688b/java-evidence/boundaries/00000009-frame-11.json",
+      "sha256": "28d49984859455b1e6b4e8127f154b8a9be7328b7a768443ee8f450e23a019a3",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "DCF1F6CB0B45F4E29ECB2708FC22B0F30E2556354BB153DD3098A8B05CC021B4",
+        "session_epoch": "c74f76ae-42b8-4af3-985d-fe2cebfa9174:cf67063c-7aac-44a2-bcf6-3de6c5fd72ea:38c78cfd-32ef-41be-b983-efcbb3db6fdf"
+      },
+      "capturing_rust_source": "81c736c2c plus Codex and DrawCardNextTurn owner changes",
+      "java_source_commit": "21cd350"
+    },
+    "selection-action.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-867620b4d6ea4407af71713aa734688b/java-evidence/actions/00000008-from-frame-10.json",
+      "sha256": "a44cb45cb01a6fb162d78219dae2693a4a98b2e119ffbd004cbbc6b9efdac2ca",
+      "capturing_rust_source": "81c736c2c plus Codex and DrawCardNextTurn owner changes",
+      "java_source_commit": "21cd350"
+    },
+    "draw-before.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-867620b4d6ea4407af71713aa734688b/java-evidence/boundaries/00000049-frame-51.json",
+      "sha256": "b4595f79c6508eaad54055c885603b208b44ec48b2487ba144a6b42d415f04d5",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "DCF1F6CB0B45F4E29ECB2708FC22B0F30E2556354BB153DD3098A8B05CC021B4",
+        "session_epoch": "c74f76ae-42b8-4af3-985d-fe2cebfa9174:cf67063c-7aac-44a2-bcf6-3de6c5fd72ea:38c78cfd-32ef-41be-b983-efcbb3db6fdf"
+      },
+      "capturing_rust_source": "81c736c2c plus Codex and DrawCardNextTurn owner changes",
+      "java_source_commit": "21cd350"
+    },
+    "draw-after.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-867620b4d6ea4407af71713aa734688b/java-evidence/boundaries/00000050-frame-52.json",
+      "sha256": "1d15ee62a7acfbc9da90df176345193c542dbd26dd1a3d625bdcf4490cc08b78",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "DCF1F6CB0B45F4E29ECB2708FC22B0F30E2556354BB153DD3098A8B05CC021B4",
+        "session_epoch": "c74f76ae-42b8-4af3-985d-fe2cebfa9174:cf67063c-7aac-44a2-bcf6-3de6c5fd72ea:38c78cfd-32ef-41be-b983-efcbb3db6fdf"
+      },
+      "capturing_rust_source": "81c736c2c plus Codex and DrawCardNextTurn owner changes",
+      "java_source_commit": "21cd350"
+    },
+    "draw-action.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-867620b4d6ea4407af71713aa734688b/java-evidence/actions/00000049-from-frame-51.json",
+      "sha256": "24c4adb2463710f8f0a528b1477df2a7c7fabdb0020c3a28d8753cdcf0eacdba",
+      "capturing_rust_source": "81c736c2c plus Codex and DrawCardNextTurn owner changes",
+      "java_source_commit": "21cd350"
+    },
+    "choke-before.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-867620b4d6ea4407af71713aa734688b/java-evidence/boundaries/00000141-frame-143.json",
+      "sha256": "404b4ab8f50053fe613b055358bb0e04436d6c21d30389bde5931ac507bcea67",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "DCF1F6CB0B45F4E29ECB2708FC22B0F30E2556354BB153DD3098A8B05CC021B4",
+        "session_epoch": "c74f76ae-42b8-4af3-985d-fe2cebfa9174:cf67063c-7aac-44a2-bcf6-3de6c5fd72ea:38c78cfd-32ef-41be-b983-efcbb3db6fdf"
+      },
+      "capturing_rust_source": "81c736c2c plus Codex, DrawCardNextTurn and Choked owner changes",
+      "java_source_commit": "21cd350"
+    },
+    "choke-after.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-867620b4d6ea4407af71713aa734688b/java-evidence/boundaries/00000142-frame-144.json",
+      "sha256": "d32829aa1170e3c3f127819f23fcb62f0c1137e40b17eb8e3e421a07ee64f767",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "DCF1F6CB0B45F4E29ECB2708FC22B0F30E2556354BB153DD3098A8B05CC021B4",
+        "session_epoch": "c74f76ae-42b8-4af3-985d-fe2cebfa9174:cf67063c-7aac-44a2-bcf6-3de6c5fd72ea:38c78cfd-32ef-41be-b983-efcbb3db6fdf"
+      },
+      "capturing_rust_source": "81c736c2c plus Codex, DrawCardNextTurn and Choked owner changes",
+      "java_source_commit": "21cd350"
+    },
+    "choke-action.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-867620b4d6ea4407af71713aa734688b/java-evidence/actions/00000141-from-frame-143.json",
+      "sha256": "0939bd58740f0d0208960aea127b4dee2cd705928b1960dbd4935a2ccbdb12ae",
+      "capturing_rust_source": "81c736c2c plus Codex, DrawCardNextTurn and Choked owner changes",
+      "java_source_commit": "21cd350"
+    },
+    "boss-before.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-867620b4d6ea4407af71713aa734688b/java-evidence/boundaries/00000728-frame-730.json",
+      "sha256": "859319d8fee4c3e5ed249090e70007d717d72b9465cdfd55810219cfef99da5e",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "DCF1F6CB0B45F4E29ECB2708FC22B0F30E2556354BB153DD3098A8B05CC021B4",
+        "session_epoch": "c74f76ae-42b8-4af3-985d-fe2cebfa9174:cf67063c-7aac-44a2-bcf6-3de6c5fd72ea:38c78cfd-32ef-41be-b983-efcbb3db6fdf"
+      },
+      "capturing_rust_source": "84d7756e7"
+    },
+    "boss-after.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-867620b4d6ea4407af71713aa734688b/java-evidence/boundaries/00000729-frame-731.json",
+      "sha256": "8b8571ffc38f70eeae79f8b3daf2052b7035e0aa7da0b679f3092c00991f3433",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "DCF1F6CB0B45F4E29ECB2708FC22B0F30E2556354BB153DD3098A8B05CC021B4",
+        "session_epoch": "c74f76ae-42b8-4af3-985d-fe2cebfa9174:cf67063c-7aac-44a2-bcf6-3de6c5fd72ea:38c78cfd-32ef-41be-b983-efcbb3db6fdf"
+      },
+      "capturing_rust_source": "84d7756e7"
+    },
+    "boss-action.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-867620b4d6ea4407af71713aa734688b/java-evidence/actions/00000728-from-frame-730.json",
+      "sha256": "d369c1568ace7270959aa6911693c2ee65ef3682d620351ed3b681c16f0f29ef",
+      "capturing_rust_source": "84d7756e7"
+    }
+  }
+}

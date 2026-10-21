@@ -1,0 +1,4756 @@
+{
+  "schema": "combat_case_v1",
+  "source": {
+    "seed": 20260713007,
+    "ascension": 0,
+    "generation": 181,
+    "branch_id": 1
+  },
+  "gap": {
+    "boundary": "Act 3 Floor 48 historical combat",
+    "reason": "verified_run_witness_extraction",
+    "witness_budget": {"witness_engine": "not_run"}
+  },
+  "run": {
+    "act": 3,
+    "floor": 48,
+    "hp": 45,
+    "max_hp": 80,
+    "gold": 28,
+    "deck_size": 30,
+    "relic_count": 9,
+    "potion_slots": 3
+  },
+  "combat": {
+    "engine_state": "CombatPlayerTurn",
+    "turn": 0,
+    "hp": 45,
+    "max_hp": 80,
+    "block": 0,
+    "energy": 6,
+    "enemies": [
+      "Cultist",
+      "Cultist",
+      "AwakenedOne"
+    ],
+    "hand": [
+      {
+        "id": "DarkEmbrace",
+        "uuid": 10022
+      },
+      {
+        "id": "Evolve",
+        "uuid": 10004
+      },
+      {
+        "id": "WildStrike",
+        "uuid": 10000
+      },
+      {
+        "id": "DemonForm",
+        "uuid": 10008,
+        "upgrades": 1
+      },
+      {
+        "id": "ShrugItOff",
+        "uuid": 10010,
+        "upgrades": 1
+      },
+      {
+        "id": "Strike",
+        "uuid": 4
+      },
+      {
+        "id": "Immolate",
+        "uuid": 10006,
+        "upgrades": 1
+      }
+    ],
+    "draw_count": 23,
+    "discard_count": 0,
+    "exhaust_count": 0
+  },
+  "path": [
+    {
+      "key": null,
+      "label": "Proceed",
+      "state_before": {
+        "location": "Act 1 Floor 0 | HP 80/80 | Gold 99 | Boss Hexaghost",
+        "title": "Neow Intro"
+      },
+      "decision_evidence": {
+        "candidate_id": "0",
+        "candidates": [
+          "Proceed"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Lose all Gold. Obtain a random rare relic.",
+      "state_before": {
+        "location": "Act 1 Floor 0 | HP 80/80 | Gold 99 | Boss Hexaghost",
+        "title": "Neow Bonus"
+      },
+      "decision_evidence": {
+        "candidate_id": "2",
+        "candidates": [
+          "Remove a card.",
+          "Obtain a random common relic.",
+          "Lose all Gold. Obtain a random rare relic.",
+          "Obtain a random Boss Relic. Lose your starter Relic."
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "y=0 Monster",
+      "state_before": {
+        "location": "Act 1 Floor 0 | HP 80/80 | Gold 0 | Boss Hexaghost",
+        "title": "Map"
+      },
+      "decision_evidence": {
+        "candidate_id": "3",
+        "candidates": [
+          "y=0 Monster",
+          "y=0 Monster",
+          "y=0 Monster"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Card reward [Wild Strike, Clash, Havoc]",
+      "state_before": {
+        "location": "Act 1 Floor 1 | HP 75/80 | Gold 0 | Boss Hexaghost",
+        "title": "Reward Screen"
+      },
+      "decision_evidence": {
+        "candidate_id": "1",
+        "candidates": [
+          "11 gold",
+          "Card reward [Wild Strike, Clash, Havoc]",
+          "Open map preview"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Wild Strike",
+      "state_before": {
+        "location": "Act 1 Floor 1 | HP 75/80 | Gold 0 | Boss Hexaghost",
+        "title": "Card Reward"
+      },
+      "decision_evidence": {
+        "candidate_id": "0",
+        "candidates": [
+          "Wild Strike",
+          "Clash",
+          "Havoc",
+          "Skip card reward",
+          "Back to reward screen"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "11 gold",
+      "state_before": {
+        "location": "Act 1 Floor 1 | HP 75/80 | Gold 0 | Boss Hexaghost",
+        "title": "Reward Screen"
+      },
+      "decision_evidence": {
+        "candidate_id": "0",
+        "candidates": [
+          "11 gold",
+          "Open map preview"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "y=1 Monster",
+      "state_before": {
+        "location": "Act 1 Floor 1 | HP 75/80 | Gold 11 | Boss Hexaghost",
+        "title": "Map"
+      },
+      "decision_evidence": {
+        "candidate_id": "4",
+        "candidates": [
+          "y=1 Monster"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Card reward [Havoc, Clash, Heavy Blade]",
+      "state_before": {
+        "location": "Act 1 Floor 2 | HP 80/80 | Gold 11 | Boss Hexaghost",
+        "title": "Reward Screen"
+      },
+      "decision_evidence": {
+        "candidate_id": "1",
+        "candidates": [
+          "19 gold",
+          "Card reward [Havoc, Clash, Heavy Blade]",
+          "Open map preview"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Heavy Blade",
+      "state_before": {
+        "location": "Act 1 Floor 2 | HP 80/80 | Gold 11 | Boss Hexaghost",
+        "title": "Card Reward"
+      },
+      "decision_evidence": {
+        "candidate_id": "2",
+        "candidates": [
+          "Havoc",
+          "Clash",
+          "Heavy Blade",
+          "Skip card reward",
+          "Back to reward screen"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "19 gold",
+      "state_before": {
+        "location": "Act 1 Floor 2 | HP 80/80 | Gold 11 | Boss Hexaghost",
+        "title": "Reward Screen"
+      },
+      "decision_evidence": {
+        "candidate_id": "0",
+        "candidates": [
+          "19 gold",
+          "Open map preview"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "y=2 Monster",
+      "state_before": {
+        "location": "Act 1 Floor 2 | HP 80/80 | Gold 30 | Boss Hexaghost",
+        "title": "Map"
+      },
+      "decision_evidence": {
+        "candidate_id": "4",
+        "candidates": [
+          "y=2 Event",
+          "y=2 Monster"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Card reward [Searing Blow, Flame Barrier, Intimidate]",
+      "state_before": {
+        "location": "Act 1 Floor 3 | HP 80/80 | Gold 30 | Boss Hexaghost",
+        "title": "Reward Screen"
+      },
+      "decision_evidence": {
+        "candidate_id": "1",
+        "candidates": [
+          "11 gold",
+          "Card reward [Searing Blow, Flame Barrier, Intimidate]",
+          "Open map preview"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Flame Barrier",
+      "state_before": {
+        "location": "Act 1 Floor 3 | HP 80/80 | Gold 30 | Boss Hexaghost",
+        "title": "Card Reward"
+      },
+      "decision_evidence": {
+        "candidate_id": "1",
+        "candidates": [
+          "Searing Blow",
+          "Flame Barrier",
+          "Intimidate",
+          "Skip card reward",
+          "Back to reward screen"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "11 gold",
+      "state_before": {
+        "location": "Act 1 Floor 3 | HP 80/80 | Gold 30 | Boss Hexaghost",
+        "title": "Reward Screen"
+      },
+      "decision_evidence": {
+        "candidate_id": "0",
+        "candidates": [
+          "11 gold",
+          "Open map preview"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "y=3 Monster",
+      "state_before": {
+        "location": "Act 1 Floor 3 | HP 80/80 | Gold 41 | Boss Hexaghost",
+        "title": "Map"
+      },
+      "decision_evidence": {
+        "candidate_id": "5",
+        "candidates": [
+          "y=3 Event",
+          "y=3 Monster"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Card reward [Dual Wield, Twin Strike, Feel No Pain]",
+      "state_before": {
+        "location": "Act 1 Floor 4 | HP 80/80 | Gold 41 | Boss Hexaghost",
+        "title": "Reward Screen"
+      },
+      "decision_evidence": {
+        "candidate_id": "2",
+        "candidates": [
+          "11 gold",
+          "Potion ExplosivePotion",
+          "Card reward [Dual Wield, Twin Strike, Feel No Pain]",
+          "Open map preview"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Skip card reward",
+      "state_before": {
+        "location": "Act 1 Floor 4 | HP 80/80 | Gold 41 | Boss Hexaghost",
+        "title": "Card Reward"
+      },
+      "decision_evidence": {
+        "candidate_id": "skip-card-reward",
+        "candidates": [
+          "Dual Wield",
+          "Twin Strike",
+          "Feel No Pain",
+          "Skip card reward",
+          "Back to reward screen"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "11 gold",
+      "state_before": {
+        "location": "Act 1 Floor 4 | HP 80/80 | Gold 41 | Boss Hexaghost",
+        "title": "Reward Screen"
+      },
+      "decision_evidence": {
+        "candidate_id": "0",
+        "candidates": [
+          "11 gold",
+          "Potion ExplosivePotion",
+          "Open map preview"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Potion ExplosivePotion",
+      "state_before": {
+        "location": "Act 1 Floor 4 | HP 80/80 | Gold 52 | Boss Hexaghost",
+        "title": "Reward Screen"
+      },
+      "decision_evidence": {
+        "candidate_id": "0",
+        "candidates": [
+          "Potion ExplosivePotion",
+          "Open map preview"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "y=4 Event",
+      "state_before": {
+        "location": "Act 1 Floor 4 | HP 80/80 | Gold 52 | Boss Hexaghost",
+        "title": "Map"
+      },
+      "decision_evidence": {
+        "candidate_id": "5",
+        "candidates": [
+          "y=4 Event"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Attack",
+      "state_before": {
+        "location": "Act 1 Floor 5 | HP 80/80 | Gold 52 | Boss Hexaghost",
+        "title": "WeMeetAgain"
+      },
+      "decision_evidence": {
+        "candidate_id": "3",
+        "candidates": [
+          "[Give Potion] Give Explosive Potion. Obtain a Relic.",
+          "[Give Gold] Lose 52 Gold. Obtain a Relic.",
+          "[Give Card] Give Heavy Blade. Obtain a Relic.",
+          "Attack"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Leave",
+      "state_before": {
+        "location": "Act 1 Floor 5 | HP 80/80 | Gold 52 | Boss Hexaghost",
+        "title": "WeMeetAgain"
+      },
+      "decision_evidence": {
+        "candidate_id": "0",
+        "candidates": [
+          "Leave"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "y=5 Monster",
+      "state_before": {
+        "location": "Act 1 Floor 5 | HP 80/80 | Gold 52 | Boss Hexaghost",
+        "title": "Map"
+      },
+      "decision_evidence": {
+        "candidate_id": "6",
+        "candidates": [
+          "y=5 Elite",
+          "y=5 Monster"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Card reward [Body Slam, Thunderclap, Pommel Strike]",
+      "state_before": {
+        "location": "Act 1 Floor 6 | HP 80/80 | Gold 52 | Boss Hexaghost",
+        "title": "Reward Screen"
+      },
+      "decision_evidence": {
+        "candidate_id": "2",
+        "candidates": [
+          "14 gold",
+          "Potion ExplosivePotion",
+          "Card reward [Body Slam, Thunderclap, Pommel Strike]",
+          "Open map preview"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Pommel Strike",
+      "state_before": {
+        "location": "Act 1 Floor 6 | HP 80/80 | Gold 52 | Boss Hexaghost",
+        "title": "Card Reward"
+      },
+      "decision_evidence": {
+        "candidate_id": "2",
+        "candidates": [
+          "Body Slam",
+          "Thunderclap",
+          "Pommel Strike",
+          "Skip card reward",
+          "Back to reward screen"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "14 gold",
+      "state_before": {
+        "location": "Act 1 Floor 6 | HP 80/80 | Gold 52 | Boss Hexaghost",
+        "title": "Reward Screen"
+      },
+      "decision_evidence": {
+        "candidate_id": "0",
+        "candidates": [
+          "14 gold",
+          "Potion ExplosivePotion",
+          "Open map preview"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Potion ExplosivePotion",
+      "state_before": {
+        "location": "Act 1 Floor 6 | HP 80/80 | Gold 66 | Boss Hexaghost",
+        "title": "Reward Screen"
+      },
+      "decision_evidence": {
+        "candidate_id": "0",
+        "candidates": [
+          "Potion ExplosivePotion",
+          "Open map preview"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "y=6 Rest",
+      "state_before": {
+        "location": "Act 1 Floor 6 | HP 80/80 | Gold 66 | Boss Hexaghost",
+        "title": "Map"
+      },
+      "decision_evidence": {
+        "candidate_id": "5",
+        "candidates": [
+          "y=6 Rest"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Smith Bash",
+      "state_before": {
+        "location": "Act 1 Floor 7 | HP 80/80 | Gold 66 | Boss Hexaghost",
+        "title": "Campfire"
+      },
+      "decision_evidence": {
+        "candidate_id": "smith-9",
+        "candidates": [
+          "Rest",
+          "Smith Strike",
+          "Smith Strike",
+          "Smith Strike",
+          "Smith Strike",
+          "Smith Strike",
+          "Smith Defend",
+          "Smith Defend",
+          "Smith Defend",
+          "Smith Defend",
+          "Smith Bash",
+          "Smith Wild Strike",
+          "Smith Heavy Blade",
+          "Smith Flame Barrier",
+          "Smith Pommel Strike"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "y=7 Monster",
+      "state_before": {
+        "location": "Act 1 Floor 7 | HP 80/80 | Gold 66 | Boss Hexaghost",
+        "title": "Map"
+      },
+      "decision_evidence": {
+        "candidate_id": "5",
+        "candidates": [
+          "y=7 Monster"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Card reward [Warcry, Seeing Red, Evolve]",
+      "state_before": {
+        "location": "Act 1 Floor 8 | HP 80/80 | Gold 66 | Boss Hexaghost",
+        "title": "Reward Screen"
+      },
+      "decision_evidence": {
+        "candidate_id": "1",
+        "candidates": [
+          "18 gold",
+          "Card reward [Warcry, Seeing Red, Evolve]",
+          "Open map preview"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Evolve",
+      "state_before": {
+        "location": "Act 1 Floor 8 | HP 80/80 | Gold 66 | Boss Hexaghost",
+        "title": "Card Reward"
+      },
+      "decision_evidence": {
+        "candidate_id": "2",
+        "candidates": [
+          "Warcry",
+          "Seeing Red",
+          "Evolve",
+          "Skip card reward",
+          "Back to reward screen"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "18 gold",
+      "state_before": {
+        "location": "Act 1 Floor 8 | HP 80/80 | Gold 66 | Boss Hexaghost",
+        "title": "Reward Screen"
+      },
+      "decision_evidence": {
+        "candidate_id": "0",
+        "candidates": [
+          "18 gold",
+          "Open map preview"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "y=8 Treasure",
+      "state_before": {
+        "location": "Act 1 Floor 8 | HP 80/80 | Gold 84 | Boss Hexaghost",
+        "title": "Map"
+      },
+      "decision_evidence": {
+        "candidate_id": "4",
+        "candidates": [
+          "y=8 Treasure",
+          "y=8 Treasure",
+          "y=8 Treasure"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Open chest",
+      "state_before": {
+        "location": "Act 1 Floor 9 | HP 80/80 | Gold 84 | Boss Hexaghost",
+        "title": "Treasure Room"
+      },
+      "decision_evidence": {
+        "candidate_id": "open",
+        "candidates": [
+          "Open chest"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "46 gold",
+      "state_before": {
+        "location": "Act 1 Floor 9 | HP 80/80 | Gold 84 | Boss Hexaghost",
+        "title": "Reward Screen"
+      },
+      "decision_evidence": {
+        "candidate_id": "0",
+        "candidates": [
+          "46 gold",
+          "Relic Whetstone",
+          "Open map preview"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Relic Whetstone",
+      "state_before": {
+        "location": "Act 1 Floor 9 | HP 80/80 | Gold 130 | Boss Hexaghost",
+        "title": "Reward Screen"
+      },
+      "decision_evidence": {
+        "candidate_id": "0",
+        "candidates": [
+          "Relic Whetstone",
+          "Open map preview"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "y=9 Event",
+      "state_before": {
+        "location": "Act 1 Floor 9 | HP 80/80 | Gold 130 | Boss Hexaghost",
+        "title": "Map"
+      },
+      "decision_evidence": {
+        "candidate_id": "5",
+        "candidates": [
+          "y=9 Event"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Thunderclap | 47 gold",
+      "state_before": {
+        "location": "Act 1 Floor 10 | HP 80/80 | Gold 130 | Boss Hexaghost",
+        "title": "Shop"
+      },
+      "decision_evidence": {
+        "candidate_id": "card-1",
+        "candidates": [
+          "Rampage | 78 gold",
+          "Thunderclap | 47 gold",
+          "Armaments | 52 gold",
+          "True Grit | 47 gold",
+          "Fire Breathing | 36 gold",
+          "Discovery | 93 gold",
+          "Secret Weapon | 195 gold",
+          "Pear | 241 gold",
+          "ToxicEgg | 248 gold",
+          "MedicalKit | 144 gold",
+          "Flex Potion | 49 gold",
+          "Explosive Potion | 52 gold",
+          "Fairy in a Bottle | 103 gold",
+          "Remove Strike+1 | 75 gold",
+          "Remove Strike | 75 gold",
+          "Remove Strike | 75 gold",
+          "Remove Strike+1 | 75 gold",
+          "Remove Strike | 75 gold",
+          "Remove Defend | 75 gold",
+          "Remove Defend | 75 gold",
+          "Remove Defend | 75 gold",
+          "Remove Defend | 75 gold",
+          "Remove Bash+1 | 75 gold",
+          "Remove Wild Strike | 75 gold",
+          "Remove Heavy Blade | 75 gold",
+          "Remove Flame Barrier | 75 gold",
+          "Remove Pommel Strike | 75 gold",
+          "Remove Evolve | 75 gold",
+          "Leave shop"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Flex Potion | 49 gold",
+      "state_before": {
+        "location": "Act 1 Floor 10 | HP 80/80 | Gold 83 | Boss Hexaghost",
+        "title": "Shop"
+      },
+      "decision_evidence": {
+        "candidate_id": "potion-0",
+        "candidates": [
+          "Rampage | 78 gold",
+          "Armaments | 52 gold",
+          "True Grit | 47 gold",
+          "Fire Breathing | 36 gold",
+          "Discovery | 93 gold",
+          "Secret Weapon | 195 gold",
+          "Pear | 241 gold",
+          "ToxicEgg | 248 gold",
+          "MedicalKit | 144 gold",
+          "Flex Potion | 49 gold",
+          "Explosive Potion | 52 gold",
+          "Fairy in a Bottle | 103 gold",
+          "Remove Strike+1 | 75 gold",
+          "Remove Strike | 75 gold",
+          "Remove Strike | 75 gold",
+          "Remove Strike+1 | 75 gold",
+          "Remove Strike | 75 gold",
+          "Remove Defend | 75 gold",
+          "Remove Defend | 75 gold",
+          "Remove Defend | 75 gold",
+          "Remove Defend | 75 gold",
+          "Remove Bash+1 | 75 gold",
+          "Remove Wild Strike | 75 gold",
+          "Remove Heavy Blade | 75 gold",
+          "Remove Flame Barrier | 75 gold",
+          "Remove Pommel Strike | 75 gold",
+          "Remove Evolve | 75 gold",
+          "Remove Thunderclap | 75 gold",
+          "Leave shop"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Leave shop",
+      "state_before": {
+        "location": "Act 1 Floor 10 | HP 80/80 | Gold 34 | Boss Hexaghost",
+        "title": "Shop"
+      },
+      "decision_evidence": {
+        "candidate_id": "leave",
+        "candidates": [
+          "Rampage | 78 gold",
+          "Armaments | 52 gold",
+          "True Grit | 47 gold",
+          "Fire Breathing | 36 gold",
+          "Discovery | 93 gold",
+          "Secret Weapon | 195 gold",
+          "Pear | 241 gold",
+          "ToxicEgg | 248 gold",
+          "MedicalKit | 144 gold",
+          "Explosive Potion | 52 gold",
+          "Fairy in a Bottle | 103 gold",
+          "Remove card | 75 gold",
+          "Leave shop"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "y=10 Rest",
+      "state_before": {
+        "location": "Act 1 Floor 10 | HP 80/80 | Gold 34 | Boss Hexaghost",
+        "title": "Map"
+      },
+      "decision_evidence": {
+        "candidate_id": "4",
+        "candidates": [
+          "y=10 Rest",
+          "y=10 Elite"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Smith Flame Barrier",
+      "state_before": {
+        "location": "Act 1 Floor 11 | HP 80/80 | Gold 34 | Boss Hexaghost",
+        "title": "Campfire"
+      },
+      "decision_evidence": {
+        "candidate_id": "smith-12",
+        "candidates": [
+          "Rest",
+          "Smith Strike",
+          "Smith Strike",
+          "Smith Strike",
+          "Smith Defend",
+          "Smith Defend",
+          "Smith Defend",
+          "Smith Defend",
+          "Smith Wild Strike",
+          "Smith Heavy Blade",
+          "Smith Flame Barrier",
+          "Smith Pommel Strike",
+          "Smith Evolve",
+          "Smith Thunderclap"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "y=11 Monster",
+      "state_before": {
+        "location": "Act 1 Floor 11 | HP 80/80 | Gold 34 | Boss Hexaghost",
+        "title": "Map"
+      },
+      "decision_evidence": {
+        "candidate_id": "5",
+        "candidates": [
+          "y=11 Shop",
+          "y=11 Monster"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Card reward [Seeing Red, Cleave, Immolate]",
+      "state_before": {
+        "location": "Act 1 Floor 12 | HP 80/80 | Gold 34 | Boss Hexaghost",
+        "title": "Reward Screen"
+      },
+      "decision_evidence": {
+        "candidate_id": "1",
+        "candidates": [
+          "16 gold",
+          "Card reward [Seeing Red, Cleave, Immolate]",
+          "Open map preview"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Immolate",
+      "state_before": {
+        "location": "Act 1 Floor 12 | HP 80/80 | Gold 34 | Boss Hexaghost",
+        "title": "Card Reward"
+      },
+      "decision_evidence": {
+        "candidate_id": "2",
+        "candidates": [
+          "Seeing Red",
+          "Cleave",
+          "Immolate",
+          "Skip card reward",
+          "Back to reward screen"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "16 gold",
+      "state_before": {
+        "location": "Act 1 Floor 12 | HP 80/80 | Gold 34 | Boss Hexaghost",
+        "title": "Reward Screen"
+      },
+      "decision_evidence": {
+        "candidate_id": "0",
+        "candidates": [
+          "16 gold",
+          "Open map preview"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "y=12 Rest",
+      "state_before": {
+        "location": "Act 1 Floor 12 | HP 80/80 | Gold 50 | Boss Hexaghost",
+        "title": "Map"
+      },
+      "decision_evidence": {
+        "candidate_id": "5",
+        "candidates": [
+          "y=12 Rest"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Smith Immolate",
+      "state_before": {
+        "location": "Act 1 Floor 13 | HP 80/80 | Gold 50 | Boss Hexaghost",
+        "title": "Campfire"
+      },
+      "decision_evidence": {
+        "candidate_id": "smith-16",
+        "candidates": [
+          "Rest",
+          "Smith Strike",
+          "Smith Strike",
+          "Smith Strike",
+          "Smith Defend",
+          "Smith Defend",
+          "Smith Defend",
+          "Smith Defend",
+          "Smith Wild Strike",
+          "Smith Heavy Blade",
+          "Smith Pommel Strike",
+          "Smith Evolve",
+          "Smith Thunderclap",
+          "Smith Immolate"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "y=13 Monster",
+      "state_before": {
+        "location": "Act 1 Floor 13 | HP 80/80 | Gold 50 | Boss Hexaghost",
+        "title": "Map"
+      },
+      "decision_evidence": {
+        "candidate_id": "5",
+        "candidates": [
+          "y=13 Monster"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Card reward [Metallicize, Second Wind, Fire Breathing]",
+      "state_before": {
+        "location": "Act 1 Floor 14 | HP 80/80 | Gold 50 | Boss Hexaghost",
+        "title": "Reward Screen"
+      },
+      "decision_evidence": {
+        "candidate_id": "2",
+        "candidates": [
+          "19 gold",
+          "Potion WeakenPotion",
+          "Card reward [Metallicize, Second Wind, Fire Breathing]",
+          "Open map preview"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Second Wind",
+      "state_before": {
+        "location": "Act 1 Floor 14 | HP 80/80 | Gold 50 | Boss Hexaghost",
+        "title": "Card Reward"
+      },
+      "decision_evidence": {
+        "candidate_id": "1",
+        "candidates": [
+          "Metallicize",
+          "Second Wind",
+          "Fire Breathing",
+          "Skip card reward",
+          "Back to reward screen"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "19 gold",
+      "state_before": {
+        "location": "Act 1 Floor 14 | HP 80/80 | Gold 50 | Boss Hexaghost",
+        "title": "Reward Screen"
+      },
+      "decision_evidence": {
+        "candidate_id": "0",
+        "candidates": [
+          "19 gold",
+          "Potion WeakenPotion",
+          "Open map preview"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Potion WeakenPotion",
+      "state_before": {
+        "location": "Act 1 Floor 14 | HP 80/80 | Gold 69 | Boss Hexaghost",
+        "title": "Reward Screen"
+      },
+      "decision_evidence": {
+        "candidate_id": "0",
+        "candidates": [
+          "Potion WeakenPotion",
+          "Open map preview"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "y=14 Rest",
+      "state_before": {
+        "location": "Act 1 Floor 14 | HP 80/80 | Gold 69 | Boss Hexaghost",
+        "title": "Map"
+      },
+      "decision_evidence": {
+        "candidate_id": "4",
+        "candidates": [
+          "y=14 Rest",
+          "y=14 Rest",
+          "y=14 Rest"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Smith Pommel Strike",
+      "state_before": {
+        "location": "Act 1 Floor 15 | HP 80/80 | Gold 69 | Boss Hexaghost",
+        "title": "Campfire"
+      },
+      "decision_evidence": {
+        "candidate_id": "smith-13",
+        "candidates": [
+          "Rest",
+          "Smith Strike",
+          "Smith Strike",
+          "Smith Strike",
+          "Smith Defend",
+          "Smith Defend",
+          "Smith Defend",
+          "Smith Defend",
+          "Smith Wild Strike",
+          "Smith Heavy Blade",
+          "Smith Pommel Strike",
+          "Smith Evolve",
+          "Smith Thunderclap",
+          "Smith Second Wind"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Boss room",
+      "state_before": {
+        "location": "Act 1 Floor 15 | HP 80/80 | Gold 69 | Boss Hexaghost",
+        "title": "Map"
+      },
+      "decision_evidence": {
+        "candidate_id": "0",
+        "candidates": [
+          "Boss room"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Card reward [Demon Form, Impervious, Limit Break]",
+      "state_before": {
+        "location": "Act 1 Floor 16 | HP 71/80 | Gold 69 | Boss Hexaghost",
+        "title": "Reward Screen"
+      },
+      "decision_evidence": {
+        "candidate_id": "2",
+        "candidates": [
+          "95 gold",
+          "Potion PowerPotion",
+          "Card reward [Demon Form, Impervious, Limit Break]",
+          "Proceed to boss relic"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Demon Form",
+      "state_before": {
+        "location": "Act 1 Floor 16 | HP 71/80 | Gold 69 | Boss Hexaghost",
+        "title": "Card Reward"
+      },
+      "decision_evidence": {
+        "candidate_id": "0",
+        "candidates": [
+          "Demon Form",
+          "Impervious",
+          "Limit Break",
+          "Skip card reward",
+          "Back to reward screen"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "95 gold",
+      "state_before": {
+        "location": "Act 1 Floor 16 | HP 71/80 | Gold 69 | Boss Hexaghost",
+        "title": "Reward Screen"
+      },
+      "decision_evidence": {
+        "candidate_id": "0",
+        "candidates": [
+          "95 gold",
+          "Potion PowerPotion",
+          "Proceed to boss relic"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Potion PowerPotion",
+      "state_before": {
+        "location": "Act 1 Floor 16 | HP 71/80 | Gold 164 | Boss Hexaghost",
+        "title": "Reward Screen"
+      },
+      "decision_evidence": {
+        "candidate_id": "0",
+        "candidates": [
+          "Potion PowerPotion",
+          "Proceed to boss relic"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Sozu",
+      "state_before": {
+        "location": "Act 1 Floor 16 | HP 71/80 | Gold 164 | Boss Hexaghost",
+        "title": "Boss Relic"
+      },
+      "decision_evidence": {
+        "candidate_id": "0",
+        "candidates": [
+          "Sozu",
+          "PandorasBox",
+          "SneckoEye",
+          "Skip boss relic"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "y=0 Monster",
+      "state_before": {
+        "location": "Act 2 Floor 16 | HP 80/80 | Gold 164 | Boss Collector",
+        "title": "Map"
+      },
+      "decision_evidence": {
+        "candidate_id": "5",
+        "candidates": [
+          "y=0 Monster",
+          "y=0 Monster",
+          "y=0 Monster",
+          "y=0 Monster"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Card reward [Bloodletting+1, Dual Wield+1, Hemokinesis+1]",
+      "state_before": {
+        "location": "Act 2 Floor 17 | HP 80/80 | Gold 164 | Boss Collector",
+        "title": "Reward Screen"
+      },
+      "decision_evidence": {
+        "candidate_id": "1",
+        "candidates": [
+          "11 gold",
+          "Card reward [Bloodletting+1, Dual Wield+1, Hemokinesis+1]",
+          "Open map preview"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Bloodletting+1",
+      "state_before": {
+        "location": "Act 2 Floor 17 | HP 80/80 | Gold 164 | Boss Collector",
+        "title": "Card Reward"
+      },
+      "decision_evidence": {
+        "candidate_id": "0",
+        "candidates": [
+          "Bloodletting+1",
+          "Dual Wield+1",
+          "Hemokinesis+1",
+          "Skip card reward",
+          "Back to reward screen"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "11 gold",
+      "state_before": {
+        "location": "Act 2 Floor 17 | HP 80/80 | Gold 164 | Boss Collector",
+        "title": "Reward Screen"
+      },
+      "decision_evidence": {
+        "candidate_id": "0",
+        "candidates": [
+          "11 gold",
+          "Open map preview"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "y=1 Event",
+      "state_before": {
+        "location": "Act 2 Floor 17 | HP 80/80 | Gold 175 | Boss Collector",
+        "title": "Map"
+      },
+      "decision_evidence": {
+        "candidate_id": "4",
+        "candidates": [
+          "y=1 Event"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "[Forge] Upgrade a card.",
+      "state_before": {
+        "location": "Act 2 Floor 18 | HP 80/80 | Gold 175 | Boss Collector",
+        "title": "AccursedBlacksmith"
+      },
+      "decision_evidence": {
+        "candidate_id": "0",
+        "candidates": [
+          "[Forge] Upgrade a card.",
+          "[Rummage] Obtain Pain and Warped Tongs.",
+          "Leave"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Thunderclap",
+      "state_before": {
+        "location": "Act 2 Floor 18 | HP 80/80 | Gold 175 | Boss Collector",
+        "title": "Run Choice Upgrade"
+      },
+      "decision_evidence": {
+        "candidate_id": "10",
+        "candidates": [
+          "Strike",
+          "Strike",
+          "Strike",
+          "Defend",
+          "Defend",
+          "Defend",
+          "Defend",
+          "Wild Strike",
+          "Heavy Blade",
+          "Evolve",
+          "Thunderclap",
+          "Second Wind",
+          "Demon Form"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Leave",
+      "state_before": {
+        "location": "Act 2 Floor 18 | HP 80/80 | Gold 175 | Boss Collector",
+        "title": "AccursedBlacksmith"
+      },
+      "decision_evidence": {
+        "candidate_id": "0",
+        "candidates": [
+          "Leave"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "y=2 Monster",
+      "state_before": {
+        "location": "Act 2 Floor 18 | HP 80/80 | Gold 175 | Boss Collector",
+        "title": "Map"
+      },
+      "decision_evidence": {
+        "candidate_id": "4",
+        "candidates": [
+          "y=2 Monster"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Card reward [Warcry+1, Anger, Shrug It Off+1]",
+      "state_before": {
+        "location": "Act 2 Floor 19 | HP 72/80 | Gold 175 | Boss Collector",
+        "title": "Reward Screen"
+      },
+      "decision_evidence": {
+        "candidate_id": "2",
+        "candidates": [
+          "15 gold",
+          "Potion EnergyPotion",
+          "Card reward [Warcry+1, Anger, Shrug It Off+1]",
+          "Open map preview"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Shrug It Off+1",
+      "state_before": {
+        "location": "Act 2 Floor 19 | HP 72/80 | Gold 175 | Boss Collector",
+        "title": "Card Reward"
+      },
+      "decision_evidence": {
+        "candidate_id": "2",
+        "candidates": [
+          "Warcry+1",
+          "Anger",
+          "Shrug It Off+1",
+          "Skip card reward",
+          "Back to reward screen"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "15 gold",
+      "state_before": {
+        "location": "Act 2 Floor 19 | HP 72/80 | Gold 175 | Boss Collector",
+        "title": "Reward Screen"
+      },
+      "decision_evidence": {
+        "candidate_id": "0",
+        "candidates": [
+          "15 gold",
+          "Potion EnergyPotion",
+          "Open map preview"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Open map preview",
+      "state_before": {
+        "location": "Act 2 Floor 19 | HP 72/80 | Gold 190 | Boss Collector",
+        "title": "Reward Screen"
+      },
+      "decision_evidence": {
+        "candidate_id": "skip",
+        "candidates": [
+          "Potion EnergyPotion",
+          "Open map preview"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "y=3 Event",
+      "state_before": {
+        "location": "Act 2 Floor 19 | HP 72/80 | Gold 190 | Boss Collector",
+        "title": "Map Preview"
+      },
+      "decision_evidence": {
+        "candidate_id": "4",
+        "candidates": [
+          "y=3 Event",
+          "Back to reward screen"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Remove Strike+1 | 75 gold",
+      "state_before": {
+        "location": "Act 2 Floor 20 | HP 72/80 | Gold 190 | Boss Collector",
+        "title": "Shop"
+      },
+      "decision_evidence": {
+        "candidate_id": "purge-0",
+        "candidates": [
+          "Searing Blow | 81 gold",
+          "Rampage | 72 gold",
+          "Flex | 49 gold",
+          "Intimidate | 35 gold",
+          "Inflame | 77 gold",
+          "Good Instincts | 97 gold",
+          "Chrysalis | 181 gold",
+          "MummifiedHand | 259 gold",
+          "ToyOrnithopter | 149 gold",
+          "StrangeSpoon | 146 gold",
+          "Flex Potion | 50 gold",
+          "Regen Potion | 74 gold",
+          "Explosive Potion | 49 gold",
+          "Remove Strike+1 | 75 gold",
+          "Remove Strike | 75 gold",
+          "Remove Strike | 75 gold",
+          "Remove Strike+1 | 75 gold",
+          "Remove Strike | 75 gold",
+          "Remove Defend | 75 gold",
+          "Remove Defend | 75 gold",
+          "Remove Defend | 75 gold",
+          "Remove Defend | 75 gold",
+          "Remove Bash+1 | 75 gold",
+          "Remove Wild Strike | 75 gold",
+          "Remove Heavy Blade | 75 gold",
+          "Remove Flame Barrier+1 | 75 gold",
+          "Remove Pommel Strike+1 | 75 gold",
+          "Remove Evolve | 75 gold",
+          "Remove Thunderclap+1 | 75 gold",
+          "Remove Immolate+1 | 75 gold",
+          "Remove Second Wind | 75 gold",
+          "Remove Demon Form | 75 gold",
+          "Remove Bloodletting+1 | 75 gold",
+          "Remove Shrug It Off+1 | 75 gold",
+          "Leave shop"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Inflame | 77 gold",
+      "state_before": {
+        "location": "Act 2 Floor 20 | HP 72/80 | Gold 115 | Boss Collector",
+        "title": "Shop"
+      },
+      "decision_evidence": {
+        "candidate_id": "card-4",
+        "candidates": [
+          "Searing Blow | 81 gold",
+          "Rampage | 72 gold",
+          "Flex | 49 gold",
+          "Intimidate | 35 gold",
+          "Inflame | 77 gold",
+          "Good Instincts | 97 gold",
+          "Chrysalis | 181 gold",
+          "MummifiedHand | 259 gold",
+          "ToyOrnithopter | 149 gold",
+          "StrangeSpoon | 146 gold",
+          "Flex Potion | 50 gold",
+          "Regen Potion | 74 gold",
+          "Explosive Potion | 49 gold",
+          "Remove card | 75 gold",
+          "Leave shop"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Leave shop",
+      "state_before": {
+        "location": "Act 2 Floor 20 | HP 72/80 | Gold 38 | Boss Collector",
+        "title": "Shop"
+      },
+      "decision_evidence": {
+        "candidate_id": "leave",
+        "candidates": [
+          "Searing Blow | 81 gold",
+          "Rampage | 72 gold",
+          "Flex | 49 gold",
+          "Intimidate | 35 gold",
+          "Good Instincts | 97 gold",
+          "Chrysalis | 181 gold",
+          "MummifiedHand | 259 gold",
+          "ToyOrnithopter | 149 gold",
+          "StrangeSpoon | 146 gold",
+          "Flex Potion | 50 gold",
+          "Regen Potion | 74 gold",
+          "Explosive Potion | 49 gold",
+          "Remove card | 75 gold",
+          "Leave shop"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "y=4 Monster",
+      "state_before": {
+        "location": "Act 2 Floor 20 | HP 72/80 | Gold 38 | Boss Collector",
+        "title": "Map"
+      },
+      "decision_evidence": {
+        "candidate_id": "5",
+        "candidates": [
+          "y=4 Monster"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Card reward [True Grit+1, Wild Strike, Seeing Red]",
+      "state_before": {
+        "location": "Act 2 Floor 21 | HP 62/80 | Gold 38 | Boss Collector",
+        "title": "Reward Screen"
+      },
+      "decision_evidence": {
+        "candidate_id": "2",
+        "candidates": [
+          "19 gold",
+          "Potion RegenPotion",
+          "Card reward [True Grit+1, Wild Strike, Seeing Red]",
+          "Open map preview"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "True Grit+1",
+      "state_before": {
+        "location": "Act 2 Floor 21 | HP 62/80 | Gold 38 | Boss Collector",
+        "title": "Card Reward"
+      },
+      "decision_evidence": {
+        "candidate_id": "0",
+        "candidates": [
+          "True Grit+1",
+          "Wild Strike",
+          "Seeing Red",
+          "Skip card reward",
+          "Back to reward screen"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "19 gold",
+      "state_before": {
+        "location": "Act 2 Floor 21 | HP 62/80 | Gold 38 | Boss Collector",
+        "title": "Reward Screen"
+      },
+      "decision_evidence": {
+        "candidate_id": "0",
+        "candidates": [
+          "19 gold",
+          "Potion RegenPotion",
+          "Open map preview"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Open map preview",
+      "state_before": {
+        "location": "Act 2 Floor 21 | HP 62/80 | Gold 57 | Boss Collector",
+        "title": "Reward Screen"
+      },
+      "decision_evidence": {
+        "candidate_id": "skip",
+        "candidates": [
+          "Potion RegenPotion",
+          "Open map preview"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "y=5 Rest",
+      "state_before": {
+        "location": "Act 2 Floor 21 | HP 62/80 | Gold 57 | Boss Collector",
+        "title": "Map Preview"
+      },
+      "decision_evidence": {
+        "candidate_id": "6",
+        "candidates": [
+          "y=5 Rest",
+          "Back to reward screen"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Smith Second Wind",
+      "state_before": {
+        "location": "Act 2 Floor 22 | HP 62/80 | Gold 57 | Boss Collector",
+        "title": "Campfire"
+      },
+      "decision_evidence": {
+        "candidate_id": "smith-16",
+        "candidates": [
+          "Rest",
+          "Smith Strike",
+          "Smith Strike",
+          "Smith Strike",
+          "Smith Defend",
+          "Smith Defend",
+          "Smith Defend",
+          "Smith Defend",
+          "Smith Wild Strike",
+          "Smith Heavy Blade",
+          "Smith Evolve",
+          "Smith Second Wind",
+          "Smith Demon Form",
+          "Smith Inflame"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "y=6 Shop",
+      "state_before": {
+        "location": "Act 2 Floor 22 | HP 62/80 | Gold 57 | Boss Collector",
+        "title": "Map"
+      },
+      "decision_evidence": {
+        "candidate_id": "5",
+        "candidates": [
+          "y=6 Shop",
+          "y=6 Monster"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Leave shop",
+      "state_before": {
+        "location": "Act 2 Floor 23 | HP 62/80 | Gold 57 | Boss Collector",
+        "title": "Shop"
+      },
+      "decision_evidence": {
+        "candidate_id": "leave",
+        "candidates": [
+          "Blood for Blood | 73 gold",
+          "Bludgeon | 161 gold",
+          "Havoc | 48 gold",
+          "Rage | 35 gold",
+          "Barricade | 154 gold",
+          "Panacea | 81 gold",
+          "Thinking Ahead | 177 gold",
+          "Mango | 291 gold",
+          "BottledTornado | 252 gold",
+          "DollysMirror | 152 gold",
+          "Colorless Potion | 52 gold",
+          "Attack Potion | 50 gold",
+          "Fire Potion | 50 gold",
+          "Remove card | 100 gold",
+          "Leave shop"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "y=7 Monster",
+      "state_before": {
+        "location": "Act 2 Floor 23 | HP 62/80 | Gold 57 | Boss Collector",
+        "title": "Map"
+      },
+      "decision_evidence": {
+        "candidate_id": "6",
+        "candidates": [
+          "y=7 Monster"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Card reward [Armaments, Infernal Blade, Searing Blow]",
+      "state_before": {
+        "location": "Act 2 Floor 24 | HP 59/80 | Gold 57 | Boss Collector",
+        "title": "Reward Screen"
+      },
+      "decision_evidence": {
+        "candidate_id": "1",
+        "candidates": [
+          "20 gold",
+          "Card reward [Armaments, Infernal Blade, Searing Blow]",
+          "Open map preview"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Armaments",
+      "state_before": {
+        "location": "Act 2 Floor 24 | HP 59/80 | Gold 57 | Boss Collector",
+        "title": "Card Reward"
+      },
+      "decision_evidence": {
+        "candidate_id": "0",
+        "candidates": [
+          "Armaments",
+          "Infernal Blade",
+          "Searing Blow",
+          "Skip card reward",
+          "Back to reward screen"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "20 gold",
+      "state_before": {
+        "location": "Act 2 Floor 24 | HP 59/80 | Gold 57 | Boss Collector",
+        "title": "Reward Screen"
+      },
+      "decision_evidence": {
+        "candidate_id": "0",
+        "candidates": [
+          "20 gold",
+          "Open map preview"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "y=8 Treasure",
+      "state_before": {
+        "location": "Act 2 Floor 24 | HP 59/80 | Gold 77 | Boss Collector",
+        "title": "Map"
+      },
+      "decision_evidence": {
+        "candidate_id": "6",
+        "candidates": [
+          "y=8 Treasure"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Open chest",
+      "state_before": {
+        "location": "Act 2 Floor 25 | HP 59/80 | Gold 77 | Boss Collector",
+        "title": "Treasure Room"
+      },
+      "decision_evidence": {
+        "candidate_id": "open",
+        "candidates": [
+          "Open chest"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "24 gold",
+      "state_before": {
+        "location": "Act 2 Floor 25 | HP 59/80 | Gold 77 | Boss Collector",
+        "title": "Reward Screen"
+      },
+      "decision_evidence": {
+        "candidate_id": "0",
+        "candidates": [
+          "24 gold",
+          "Relic Nunchaku",
+          "Open map preview"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Relic Nunchaku",
+      "state_before": {
+        "location": "Act 2 Floor 25 | HP 59/80 | Gold 101 | Boss Collector",
+        "title": "Reward Screen"
+      },
+      "decision_evidence": {
+        "candidate_id": "0",
+        "candidates": [
+          "Relic Nunchaku",
+          "Open map preview"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "y=9 Monster",
+      "state_before": {
+        "location": "Act 2 Floor 25 | HP 59/80 | Gold 101 | Boss Collector",
+        "title": "Map"
+      },
+      "decision_evidence": {
+        "candidate_id": "6",
+        "candidates": [
+          "y=9 Monster"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Card reward [Hemokinesis+1, Cleave, Perfected Strike]",
+      "state_before": {
+        "location": "Act 2 Floor 26 | HP 51/80 | Gold 101 | Boss Collector",
+        "title": "Reward Screen"
+      },
+      "decision_evidence": {
+        "candidate_id": "1",
+        "candidates": [
+          "19 gold",
+          "Card reward [Hemokinesis+1, Cleave, Perfected Strike]",
+          "Open map preview"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Cleave",
+      "state_before": {
+        "location": "Act 2 Floor 26 | HP 51/80 | Gold 101 | Boss Collector",
+        "title": "Card Reward"
+      },
+      "decision_evidence": {
+        "candidate_id": "1",
+        "candidates": [
+          "Hemokinesis+1",
+          "Cleave",
+          "Perfected Strike",
+          "Skip card reward",
+          "Back to reward screen"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "19 gold",
+      "state_before": {
+        "location": "Act 2 Floor 26 | HP 51/80 | Gold 101 | Boss Collector",
+        "title": "Reward Screen"
+      },
+      "decision_evidence": {
+        "candidate_id": "0",
+        "candidates": [
+          "19 gold",
+          "Open map preview"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "y=10 Rest",
+      "state_before": {
+        "location": "Act 2 Floor 26 | HP 51/80 | Gold 120 | Boss Collector",
+        "title": "Map"
+      },
+      "decision_evidence": {
+        "candidate_id": "6",
+        "candidates": [
+          "y=10 Rest"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Smith Demon Form",
+      "state_before": {
+        "location": "Act 2 Floor 27 | HP 51/80 | Gold 120 | Boss Collector",
+        "title": "Campfire"
+      },
+      "decision_evidence": {
+        "candidate_id": "smith-17",
+        "candidates": [
+          "Rest",
+          "Smith Strike",
+          "Smith Strike",
+          "Smith Strike",
+          "Smith Defend",
+          "Smith Defend",
+          "Smith Defend",
+          "Smith Defend",
+          "Smith Wild Strike",
+          "Smith Heavy Blade",
+          "Smith Evolve",
+          "Smith Demon Form",
+          "Smith Inflame",
+          "Smith Armaments",
+          "Smith Cleave"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "y=11 Event",
+      "state_before": {
+        "location": "Act 2 Floor 27 | HP 51/80 | Gold 120 | Boss Collector",
+        "title": "Map"
+      },
+      "decision_evidence": {
+        "candidate_id": "5",
+        "candidates": [
+          "y=11 Event",
+          "y=11 Monster"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Proceed",
+      "state_before": {
+        "location": "Act 2 Floor 28 | HP 51/80 | Gold 120 | Boss Collector",
+        "title": "Colosseum"
+      },
+      "decision_evidence": {
+        "candidate_id": "0",
+        "candidates": [
+          "Proceed"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Fight!",
+      "state_before": {
+        "location": "Act 2 Floor 28 | HP 51/80 | Gold 120 | Boss Collector",
+        "title": "Colosseum"
+      },
+      "decision_evidence": {
+        "candidate_id": "0",
+        "candidates": [
+          "Fight!"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "[Flee] Leave the Colosseum.",
+      "state_before": {
+        "location": "Act 2 Floor 28 | HP 41/80 | Gold 120 | Boss Collector",
+        "title": "Colosseum"
+      },
+      "decision_evidence": {
+        "candidate_id": "0",
+        "candidates": [
+          "[Flee] Leave the Colosseum.",
+          "[Fight] Challenge the Nobs for riches!"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "y=12 Shop",
+      "state_before": {
+        "location": "Act 2 Floor 28 | HP 41/80 | Gold 120 | Boss Collector",
+        "title": "Map"
+      },
+      "decision_evidence": {
+        "candidate_id": "5",
+        "candidates": [
+          "y=12 Shop"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Remove Strike | 100 gold",
+      "state_before": {
+        "location": "Act 2 Floor 29 | HP 41/80 | Gold 120 | Boss Collector",
+        "title": "Shop"
+      },
+      "decision_evidence": {
+        "candidate_id": "purge-0",
+        "candidates": [
+          "Carnage | 40 gold",
+          "Iron Wave | 46 gold",
+          "Double Tap | 153 gold",
+          "Infernal Blade | 80 gold",
+          "Fire Breathing | 71 gold",
+          "Purity | 83 gold",
+          "Metamorphosis | 192 gold",
+          "HappyFlower | 150 gold",
+          "Vajra | 145 gold",
+          "MembershipCard | 155 gold",
+          "Colorless Potion | 52 gold",
+          "Attack Potion | 49 gold",
+          "Fruit Juice | 101 gold",
+          "Remove Strike | 100 gold",
+          "Remove Strike | 100 gold",
+          "Remove Strike+1 | 100 gold",
+          "Remove Strike | 100 gold",
+          "Remove Defend | 100 gold",
+          "Remove Defend | 100 gold",
+          "Remove Defend | 100 gold",
+          "Remove Defend | 100 gold",
+          "Remove Bash+1 | 100 gold",
+          "Remove Wild Strike | 100 gold",
+          "Remove Heavy Blade | 100 gold",
+          "Remove Flame Barrier+1 | 100 gold",
+          "Remove Pommel Strike+1 | 100 gold",
+          "Remove Evolve | 100 gold",
+          "Remove Thunderclap+1 | 100 gold",
+          "Remove Immolate+1 | 100 gold",
+          "Remove Second Wind+1 | 100 gold",
+          "Remove Demon Form+1 | 100 gold",
+          "Remove Bloodletting+1 | 100 gold",
+          "Remove Shrug It Off+1 | 100 gold",
+          "Remove Inflame | 100 gold",
+          "Remove True Grit+1 | 100 gold",
+          "Remove Armaments | 100 gold",
+          "Remove Cleave | 100 gold",
+          "Leave shop"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Leave shop",
+      "state_before": {
+        "location": "Act 2 Floor 29 | HP 41/80 | Gold 20 | Boss Collector",
+        "title": "Shop"
+      },
+      "decision_evidence": {
+        "candidate_id": "leave",
+        "candidates": [
+          "Carnage | 40 gold",
+          "Iron Wave | 46 gold",
+          "Double Tap | 153 gold",
+          "Infernal Blade | 80 gold",
+          "Fire Breathing | 71 gold",
+          "Purity | 83 gold",
+          "Metamorphosis | 192 gold",
+          "HappyFlower | 150 gold",
+          "Vajra | 145 gold",
+          "MembershipCard | 155 gold",
+          "Colorless Potion | 52 gold",
+          "Attack Potion | 49 gold",
+          "Fruit Juice | 101 gold",
+          "Remove card | 100 gold",
+          "Leave shop"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "y=13 Monster",
+      "state_before": {
+        "location": "Act 2 Floor 29 | HP 41/80 | Gold 20 | Boss Collector",
+        "title": "Map"
+      },
+      "decision_evidence": {
+        "candidate_id": "5",
+        "candidates": [
+          "y=13 Elite",
+          "y=13 Monster"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Card reward [Seeing Red, Perfected Strike, Armaments]",
+      "state_before": {
+        "location": "Act 2 Floor 30 | HP 45/80 | Gold 20 | Boss Collector",
+        "title": "Reward Screen"
+      },
+      "decision_evidence": {
+        "candidate_id": "1",
+        "candidates": [
+          "12 gold",
+          "Card reward [Seeing Red, Perfected Strike, Armaments]",
+          "Open map preview"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Skip card reward",
+      "state_before": {
+        "location": "Act 2 Floor 30 | HP 45/80 | Gold 20 | Boss Collector",
+        "title": "Card Reward"
+      },
+      "decision_evidence": {
+        "candidate_id": "skip-card-reward",
+        "candidates": [
+          "Seeing Red",
+          "Perfected Strike",
+          "Armaments",
+          "Skip card reward",
+          "Back to reward screen"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "12 gold",
+      "state_before": {
+        "location": "Act 2 Floor 30 | HP 45/80 | Gold 20 | Boss Collector",
+        "title": "Reward Screen"
+      },
+      "decision_evidence": {
+        "candidate_id": "0",
+        "candidates": [
+          "12 gold",
+          "Open map preview"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "y=14 Rest",
+      "state_before": {
+        "location": "Act 2 Floor 30 | HP 45/80 | Gold 32 | Boss Collector",
+        "title": "Map"
+      },
+      "decision_evidence": {
+        "candidate_id": "5",
+        "candidates": [
+          "y=14 Rest"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Rest",
+      "state_before": {
+        "location": "Act 2 Floor 31 | HP 45/80 | Gold 32 | Boss Collector",
+        "title": "Campfire"
+      },
+      "decision_evidence": {
+        "candidate_id": "rest",
+        "candidates": [
+          "Rest",
+          "Smith Strike",
+          "Smith Strike",
+          "Smith Defend",
+          "Smith Defend",
+          "Smith Defend",
+          "Smith Defend",
+          "Smith Wild Strike",
+          "Smith Heavy Blade",
+          "Smith Evolve",
+          "Smith Inflame",
+          "Smith Armaments",
+          "Smith Cleave"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Boss room",
+      "state_before": {
+        "location": "Act 2 Floor 31 | HP 69/80 | Gold 32 | Boss Collector",
+        "title": "Map"
+      },
+      "decision_evidence": {
+        "candidate_id": "0",
+        "candidates": [
+          "Boss room"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Card reward [Brutality, Double Tap, Juggernaut]",
+      "state_before": {
+        "location": "Act 2 Floor 32 | HP 7/80 | Gold 32 | Boss Collector",
+        "title": "Reward Screen"
+      },
+      "decision_evidence": {
+        "candidate_id": "1",
+        "candidates": [
+          "101 gold",
+          "Card reward [Brutality, Double Tap, Juggernaut]",
+          "Proceed to boss relic"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Skip card reward",
+      "state_before": {
+        "location": "Act 2 Floor 32 | HP 7/80 | Gold 32 | Boss Collector",
+        "title": "Card Reward"
+      },
+      "decision_evidence": {
+        "candidate_id": "skip-card-reward",
+        "candidates": [
+          "Brutality",
+          "Double Tap",
+          "Juggernaut",
+          "Skip card reward",
+          "Back to reward screen"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "101 gold",
+      "state_before": {
+        "location": "Act 2 Floor 32 | HP 7/80 | Gold 32 | Boss Collector",
+        "title": "Reward Screen"
+      },
+      "decision_evidence": {
+        "candidate_id": "0",
+        "candidates": [
+          "101 gold",
+          "Proceed to boss relic"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "VelvetChoker",
+      "state_before": {
+        "location": "Act 2 Floor 32 | HP 7/80 | Gold 133 | Boss Collector",
+        "title": "Boss Relic"
+      },
+      "decision_evidence": {
+        "candidate_id": "0",
+        "candidates": [
+          "VelvetChoker",
+          "BlackBlood",
+          "BustedCrown",
+          "Skip boss relic"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "y=0 Monster",
+      "state_before": {
+        "location": "Act 3 Floor 32 | HP 80/80 | Gold 133 | Boss Awakened One",
+        "title": "Map"
+      },
+      "decision_evidence": {
+        "candidate_id": "4",
+        "candidates": [
+          "y=0 Monster",
+          "y=0 Monster",
+          "y=0 Monster"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Card reward [Warcry+1, Dual Wield+1, Wild Strike]",
+      "state_before": {
+        "location": "Act 3 Floor 33 | HP 73/80 | Gold 133 | Boss Awakened One",
+        "title": "Reward Screen"
+      },
+      "decision_evidence": {
+        "candidate_id": "2",
+        "candidates": [
+          "16 gold",
+          "Potion LiquidBronze",
+          "Card reward [Warcry+1, Dual Wield+1, Wild Strike]",
+          "Open map preview"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Skip card reward",
+      "state_before": {
+        "location": "Act 3 Floor 33 | HP 73/80 | Gold 133 | Boss Awakened One",
+        "title": "Card Reward"
+      },
+      "decision_evidence": {
+        "candidate_id": "skip-card-reward",
+        "candidates": [
+          "Warcry+1",
+          "Dual Wield+1",
+          "Wild Strike",
+          "Skip card reward",
+          "Back to reward screen"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "16 gold",
+      "state_before": {
+        "location": "Act 3 Floor 33 | HP 73/80 | Gold 133 | Boss Awakened One",
+        "title": "Reward Screen"
+      },
+      "decision_evidence": {
+        "candidate_id": "0",
+        "candidates": [
+          "16 gold",
+          "Potion LiquidBronze",
+          "Open map preview"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Open map preview",
+      "state_before": {
+        "location": "Act 3 Floor 33 | HP 73/80 | Gold 149 | Boss Awakened One",
+        "title": "Reward Screen"
+      },
+      "decision_evidence": {
+        "candidate_id": "skip",
+        "candidates": [
+          "Potion LiquidBronze",
+          "Open map preview"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "y=1 Event",
+      "state_before": {
+        "location": "Act 3 Floor 33 | HP 73/80 | Gold 149 | Boss Awakened One",
+        "title": "Map Preview"
+      },
+      "decision_evidence": {
+        "candidate_id": "4",
+        "candidates": [
+          "y=1 Event",
+          "Back to reward screen"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Leave",
+      "state_before": {
+        "location": "Act 3 Floor 34 | HP 73/80 | Gold 149 | Boss Awakened One",
+        "title": "TombRedMask"
+      },
+      "decision_evidence": {
+        "candidate_id": "2",
+        "candidates": [
+          "[Don the Mask] Requires Red Mask.",
+          "[Pay] Lose all (149) Gold. Obtain Red Mask.",
+          "Leave"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "y=2 Monster",
+      "state_before": {
+        "location": "Act 3 Floor 34 | HP 73/80 | Gold 149 | Boss Awakened One",
+        "title": "Map"
+      },
+      "decision_evidence": {
+        "candidate_id": "4",
+        "candidates": [
+          "y=2 Event",
+          "y=2 Monster",
+          "y=2 Shop"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Card reward [Infernal Blade+1, Evolve, Dropkick+1]",
+      "state_before": {
+        "location": "Act 3 Floor 35 | HP 67/80 | Gold 149 | Boss Awakened One",
+        "title": "Reward Screen"
+      },
+      "decision_evidence": {
+        "candidate_id": "2",
+        "candidates": [
+          "15 gold",
+          "Potion PowerPotion",
+          "Card reward [Infernal Blade+1, Evolve, Dropkick+1]",
+          "Open map preview"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Skip card reward",
+      "state_before": {
+        "location": "Act 3 Floor 35 | HP 67/80 | Gold 149 | Boss Awakened One",
+        "title": "Card Reward"
+      },
+      "decision_evidence": {
+        "candidate_id": "skip-card-reward",
+        "candidates": [
+          "Infernal Blade+1",
+          "Evolve",
+          "Dropkick+1",
+          "Skip card reward",
+          "Back to reward screen"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "15 gold",
+      "state_before": {
+        "location": "Act 3 Floor 35 | HP 67/80 | Gold 149 | Boss Awakened One",
+        "title": "Reward Screen"
+      },
+      "decision_evidence": {
+        "candidate_id": "0",
+        "candidates": [
+          "15 gold",
+          "Potion PowerPotion",
+          "Open map preview"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Open map preview",
+      "state_before": {
+        "location": "Act 3 Floor 35 | HP 67/80 | Gold 164 | Boss Awakened One",
+        "title": "Reward Screen"
+      },
+      "decision_evidence": {
+        "candidate_id": "skip",
+        "candidates": [
+          "Potion PowerPotion",
+          "Open map preview"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "y=3 Event",
+      "state_before": {
+        "location": "Act 3 Floor 35 | HP 67/80 | Gold 164 | Boss Awakened One",
+        "title": "Map Preview"
+      },
+      "decision_evidence": {
+        "candidate_id": "5",
+        "candidates": [
+          "y=3 Monster",
+          "y=3 Event",
+          "Back to reward screen"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "[Fight] Battle a boss for rewards.",
+      "state_before": {
+        "location": "Act 3 Floor 36 | HP 67/80 | Gold 164 | Boss Awakened One",
+        "title": "MindBloom"
+      },
+      "decision_evidence": {
+        "candidate_id": "0",
+        "candidates": [
+          "[Fight] Battle a boss for rewards.",
+          "[Remember] Upgrade all cards. Obtain Mark of the Bloom.",
+          "[Desire] Gain 999 Gold. Obtain 2 Normality."
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Card reward [Ghostly Armor, Body Slam+1, Evolve]",
+      "state_before": {
+        "location": "Act 3 Floor 36 | HP 63/80 | Gold 164 | Boss Awakened One",
+        "title": "Reward Screen"
+      },
+      "decision_evidence": {
+        "candidate_id": "2",
+        "candidates": [
+          "50 gold",
+          "Relic ChampionBelt",
+          "Card reward [Ghostly Armor, Body Slam+1, Evolve]",
+          "Open map preview"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Ghostly Armor",
+      "state_before": {
+        "location": "Act 3 Floor 36 | HP 63/80 | Gold 164 | Boss Awakened One",
+        "title": "Card Reward"
+      },
+      "decision_evidence": {
+        "candidate_id": "0",
+        "candidates": [
+          "Ghostly Armor",
+          "Body Slam+1",
+          "Evolve",
+          "Skip card reward",
+          "Back to reward screen"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "50 gold",
+      "state_before": {
+        "location": "Act 3 Floor 36 | HP 63/80 | Gold 164 | Boss Awakened One",
+        "title": "Reward Screen"
+      },
+      "decision_evidence": {
+        "candidate_id": "0",
+        "candidates": [
+          "50 gold",
+          "Relic ChampionBelt",
+          "Open map preview"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Relic ChampionBelt",
+      "state_before": {
+        "location": "Act 3 Floor 36 | HP 63/80 | Gold 214 | Boss Awakened One",
+        "title": "Reward Screen"
+      },
+      "decision_evidence": {
+        "candidate_id": "0",
+        "candidates": [
+          "Relic ChampionBelt",
+          "Open map preview"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "y=4 Monster",
+      "state_before": {
+        "location": "Act 3 Floor 36 | HP 63/80 | Gold 214 | Boss Awakened One",
+        "title": "Map"
+      },
+      "decision_evidence": {
+        "candidate_id": "6",
+        "candidates": [
+          "y=4 Monster"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Card reward [Combust+1, True Grit+1, Headbutt+1]",
+      "state_before": {
+        "location": "Act 3 Floor 37 | HP 44/80 | Gold 214 | Boss Awakened One",
+        "title": "Reward Screen"
+      },
+      "decision_evidence": {
+        "candidate_id": "1",
+        "candidates": [
+          "18 gold",
+          "Card reward [Combust+1, True Grit+1, Headbutt+1]",
+          "Open map preview"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Skip card reward",
+      "state_before": {
+        "location": "Act 3 Floor 37 | HP 44/80 | Gold 214 | Boss Awakened One",
+        "title": "Card Reward"
+      },
+      "decision_evidence": {
+        "candidate_id": "skip-card-reward",
+        "candidates": [
+          "Combust+1",
+          "True Grit+1",
+          "Headbutt+1",
+          "Skip card reward",
+          "Back to reward screen"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "18 gold",
+      "state_before": {
+        "location": "Act 3 Floor 37 | HP 44/80 | Gold 214 | Boss Awakened One",
+        "title": "Reward Screen"
+      },
+      "decision_evidence": {
+        "candidate_id": "0",
+        "candidates": [
+          "18 gold",
+          "Open map preview"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "y=5 Rest",
+      "state_before": {
+        "location": "Act 3 Floor 37 | HP 44/80 | Gold 232 | Boss Awakened One",
+        "title": "Map"
+      },
+      "decision_evidence": {
+        "candidate_id": "6",
+        "candidates": [
+          "y=5 Rest"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Smith Inflame",
+      "state_before": {
+        "location": "Act 3 Floor 38 | HP 44/80 | Gold 232 | Boss Awakened One",
+        "title": "Campfire"
+      },
+      "decision_evidence": {
+        "candidate_id": "smith-19",
+        "candidates": [
+          "Rest",
+          "Smith Strike",
+          "Smith Strike",
+          "Smith Defend",
+          "Smith Defend",
+          "Smith Defend",
+          "Smith Defend",
+          "Smith Wild Strike",
+          "Smith Heavy Blade",
+          "Smith Evolve",
+          "Smith Inflame",
+          "Smith Armaments",
+          "Smith Cleave",
+          "Smith Ghostly Armor"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "y=6 Monster",
+      "state_before": {
+        "location": "Act 3 Floor 38 | HP 44/80 | Gold 232 | Boss Awakened One",
+        "title": "Map"
+      },
+      "decision_evidence": {
+        "candidate_id": "5",
+        "candidates": [
+          "y=6 Monster"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Card reward [Uppercut, Body Slam, Twin Strike]",
+      "state_before": {
+        "location": "Act 3 Floor 39 | HP 21/80 | Gold 232 | Boss Awakened One",
+        "title": "Reward Screen"
+      },
+      "decision_evidence": {
+        "candidate_id": "1",
+        "candidates": [
+          "17 gold",
+          "Card reward [Uppercut, Body Slam, Twin Strike]",
+          "Open map preview"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Uppercut",
+      "state_before": {
+        "location": "Act 3 Floor 39 | HP 21/80 | Gold 232 | Boss Awakened One",
+        "title": "Card Reward"
+      },
+      "decision_evidence": {
+        "candidate_id": "0",
+        "candidates": [
+          "Uppercut",
+          "Body Slam",
+          "Twin Strike",
+          "Skip card reward",
+          "Back to reward screen"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "17 gold",
+      "state_before": {
+        "location": "Act 3 Floor 39 | HP 21/80 | Gold 232 | Boss Awakened One",
+        "title": "Reward Screen"
+      },
+      "decision_evidence": {
+        "candidate_id": "0",
+        "candidates": [
+          "17 gold",
+          "Open map preview"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "y=7 Monster",
+      "state_before": {
+        "location": "Act 3 Floor 39 | HP 21/80 | Gold 249 | Boss Awakened One",
+        "title": "Map"
+      },
+      "decision_evidence": {
+        "candidate_id": "4",
+        "candidates": [
+          "y=7 Monster",
+          "y=7 Elite"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Card reward [True Grit, Wild Strike, Sentinel+1]",
+      "state_before": {
+        "location": "Act 3 Floor 40 | HP 17/80 | Gold 249 | Boss Awakened One",
+        "title": "Reward Screen"
+      },
+      "decision_evidence": {
+        "candidate_id": "1",
+        "candidates": [
+          "18 gold",
+          "Card reward [True Grit, Wild Strike, Sentinel+1]",
+          "Open map preview"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Sentinel+1",
+      "state_before": {
+        "location": "Act 3 Floor 40 | HP 17/80 | Gold 249 | Boss Awakened One",
+        "title": "Card Reward"
+      },
+      "decision_evidence": {
+        "candidate_id": "2",
+        "candidates": [
+          "True Grit",
+          "Wild Strike",
+          "Sentinel+1",
+          "Skip card reward",
+          "Back to reward screen"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "18 gold",
+      "state_before": {
+        "location": "Act 3 Floor 40 | HP 17/80 | Gold 249 | Boss Awakened One",
+        "title": "Reward Screen"
+      },
+      "decision_evidence": {
+        "candidate_id": "0",
+        "candidates": [
+          "18 gold",
+          "Open map preview"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "y=8 Treasure",
+      "state_before": {
+        "location": "Act 3 Floor 40 | HP 17/80 | Gold 267 | Boss Awakened One",
+        "title": "Map"
+      },
+      "decision_evidence": {
+        "candidate_id": "3",
+        "candidates": [
+          "y=8 Treasure"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Open chest",
+      "state_before": {
+        "location": "Act 3 Floor 41 | HP 17/80 | Gold 267 | Boss Awakened One",
+        "title": "Treasure Room"
+      },
+      "decision_evidence": {
+        "candidate_id": "open",
+        "candidates": [
+          "Open chest"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "25 gold",
+      "state_before": {
+        "location": "Act 3 Floor 41 | HP 17/80 | Gold 267 | Boss Awakened One",
+        "title": "Reward Screen"
+      },
+      "decision_evidence": {
+        "candidate_id": "0",
+        "candidates": [
+          "25 gold",
+          "Relic Lantern",
+          "Open map preview"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Relic Lantern",
+      "state_before": {
+        "location": "Act 3 Floor 41 | HP 17/80 | Gold 292 | Boss Awakened One",
+        "title": "Reward Screen"
+      },
+      "decision_evidence": {
+        "candidate_id": "0",
+        "candidates": [
+          "Relic Lantern",
+          "Open map preview"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "y=9 Monster",
+      "state_before": {
+        "location": "Act 3 Floor 41 | HP 17/80 | Gold 292 | Boss Awakened One",
+        "title": "Map"
+      },
+      "decision_evidence": {
+        "candidate_id": "4",
+        "candidates": [
+          "y=9 Monster"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Card reward [Twin Strike+1, Battle Trance+1, Corruption]",
+      "state_before": {
+        "location": "Act 3 Floor 42 | HP 19/80 | Gold 292 | Boss Awakened One",
+        "title": "Reward Screen"
+      },
+      "decision_evidence": {
+        "candidate_id": "2",
+        "candidates": [
+          "17 gold",
+          "Potion DexterityPotion",
+          "Card reward [Twin Strike+1, Battle Trance+1, Corruption]",
+          "Open map preview"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Corruption",
+      "state_before": {
+        "location": "Act 3 Floor 42 | HP 19/80 | Gold 292 | Boss Awakened One",
+        "title": "Card Reward"
+      },
+      "decision_evidence": {
+        "candidate_id": "2",
+        "candidates": [
+          "Twin Strike+1",
+          "Battle Trance+1",
+          "Corruption",
+          "Skip card reward",
+          "Back to reward screen"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "17 gold",
+      "state_before": {
+        "location": "Act 3 Floor 42 | HP 19/80 | Gold 292 | Boss Awakened One",
+        "title": "Reward Screen"
+      },
+      "decision_evidence": {
+        "candidate_id": "0",
+        "candidates": [
+          "17 gold",
+          "Potion DexterityPotion",
+          "Open map preview"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Open map preview",
+      "state_before": {
+        "location": "Act 3 Floor 42 | HP 19/80 | Gold 309 | Boss Awakened One",
+        "title": "Reward Screen"
+      },
+      "decision_evidence": {
+        "candidate_id": "skip",
+        "candidates": [
+          "Potion DexterityPotion",
+          "Open map preview"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "y=10 Monster",
+      "state_before": {
+        "location": "Act 3 Floor 42 | HP 19/80 | Gold 309 | Boss Awakened One",
+        "title": "Map Preview"
+      },
+      "decision_evidence": {
+        "candidate_id": "3",
+        "candidates": [
+          "y=10 Monster",
+          "Back to reward screen"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Card reward [Thunderclap, Sword Boomerang+1, Intimidate+1]",
+      "state_before": {
+        "location": "Act 3 Floor 43 | HP 20/80 | Gold 309 | Boss Awakened One",
+        "title": "Reward Screen"
+      },
+      "decision_evidence": {
+        "candidate_id": "1",
+        "candidates": [
+          "18 gold",
+          "Card reward [Thunderclap, Sword Boomerang+1, Intimidate+1]",
+          "Open map preview"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Sword Boomerang+1",
+      "state_before": {
+        "location": "Act 3 Floor 43 | HP 20/80 | Gold 309 | Boss Awakened One",
+        "title": "Card Reward"
+      },
+      "decision_evidence": {
+        "candidate_id": "1",
+        "candidates": [
+          "Thunderclap",
+          "Sword Boomerang+1",
+          "Intimidate+1",
+          "Skip card reward",
+          "Back to reward screen"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "18 gold",
+      "state_before": {
+        "location": "Act 3 Floor 43 | HP 20/80 | Gold 309 | Boss Awakened One",
+        "title": "Reward Screen"
+      },
+      "decision_evidence": {
+        "candidate_id": "0",
+        "candidates": [
+          "18 gold",
+          "Open map preview"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "y=11 Event",
+      "state_before": {
+        "location": "Act 3 Floor 43 | HP 20/80 | Gold 327 | Boss Awakened One",
+        "title": "Map"
+      },
+      "decision_evidence": {
+        "candidate_id": "3",
+        "candidates": [
+          "y=11 Event"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Proceed",
+      "state_before": {
+        "location": "Act 3 Floor 44 | HP 20/80 | Gold 327 | Boss Awakened One",
+        "title": "NoteForYourself"
+      },
+      "decision_evidence": {
+        "candidate_id": "0",
+        "candidates": [
+          "Proceed"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Ignore",
+      "state_before": {
+        "location": "Act 3 Floor 44 | HP 20/80 | Gold 327 | Boss Awakened One",
+        "title": "NoteForYourself"
+      },
+      "decision_evidence": {
+        "candidate_id": "1",
+        "candidates": [
+          "[Take Card] Obtain Iron Wave. Remove a card.",
+          "Ignore"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Leave",
+      "state_before": {
+        "location": "Act 3 Floor 44 | HP 20/80 | Gold 327 | Boss Awakened One",
+        "title": "NoteForYourself"
+      },
+      "decision_evidence": {
+        "candidate_id": "0",
+        "candidates": [
+          "Leave"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "y=12 Event",
+      "state_before": {
+        "location": "Act 3 Floor 44 | HP 20/80 | Gold 327 | Boss Awakened One",
+        "title": "Map"
+      },
+      "decision_evidence": {
+        "candidate_id": "4",
+        "candidates": [
+          "y=12 Monster",
+          "y=12 Event"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Card reward [Clothesline, Shrug It Off+1, Fire Breathing]",
+      "state_before": {
+        "location": "Act 3 Floor 45 | HP 21/80 | Gold 327 | Boss Awakened One",
+        "title": "Reward Screen"
+      },
+      "decision_evidence": {
+        "candidate_id": "1",
+        "candidates": [
+          "13 gold",
+          "Card reward [Clothesline, Shrug It Off+1, Fire Breathing]",
+          "Open map preview"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Clothesline",
+      "state_before": {
+        "location": "Act 3 Floor 45 | HP 21/80 | Gold 327 | Boss Awakened One",
+        "title": "Card Reward"
+      },
+      "decision_evidence": {
+        "candidate_id": "0",
+        "candidates": [
+          "Clothesline",
+          "Shrug It Off+1",
+          "Fire Breathing",
+          "Skip card reward",
+          "Back to reward screen"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "13 gold",
+      "state_before": {
+        "location": "Act 3 Floor 45 | HP 21/80 | Gold 327 | Boss Awakened One",
+        "title": "Reward Screen"
+      },
+      "decision_evidence": {
+        "candidate_id": "0",
+        "candidates": [
+          "13 gold",
+          "Open map preview"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "y=13 Shop",
+      "state_before": {
+        "location": "Act 3 Floor 45 | HP 21/80 | Gold 340 | Boss Awakened One",
+        "title": "Map"
+      },
+      "decision_evidence": {
+        "candidate_id": "5",
+        "candidates": [
+          "y=13 Shop"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Remove Strike | 125 gold",
+      "state_before": {
+        "location": "Act 3 Floor 46 | HP 21/80 | Gold 340 | Boss Awakened One",
+        "title": "Shop"
+      },
+      "decision_evidence": {
+        "candidate_id": "purge-0",
+        "candidates": [
+          "Headbutt | 52 gold",
+          "Iron Wave | 48 gold",
+          "Havoc | 48 gold",
+          "Shrug It Off | 53 gold",
+          "Dark Embrace | 40 gold",
+          "Trip | 82 gold",
+          "Thinking Ahead | 173 gold",
+          "MercuryHourglass | 246 gold",
+          "BagOfPreparation | 147 gold",
+          "Orrery | 156 gold",
+          "Weak Potion | 50 gold",
+          "Regen Potion | 75 gold",
+          "Blood Potion | 49 gold",
+          "Remove Strike | 125 gold",
+          "Remove Strike+1 | 125 gold",
+          "Remove Strike | 125 gold",
+          "Remove Defend | 125 gold",
+          "Remove Defend | 125 gold",
+          "Remove Defend | 125 gold",
+          "Remove Defend | 125 gold",
+          "Remove Bash+1 | 125 gold",
+          "Remove Wild Strike | 125 gold",
+          "Remove Heavy Blade | 125 gold",
+          "Remove Flame Barrier+1 | 125 gold",
+          "Remove Pommel Strike+1 | 125 gold",
+          "Remove Evolve | 125 gold",
+          "Remove Thunderclap+1 | 125 gold",
+          "Remove Immolate+1 | 125 gold",
+          "Remove Second Wind+1 | 125 gold",
+          "Remove Demon Form+1 | 125 gold",
+          "Remove Bloodletting+1 | 125 gold",
+          "Remove Shrug It Off+1 | 125 gold",
+          "Remove Inflame+1 | 125 gold",
+          "Remove True Grit+1 | 125 gold",
+          "Remove Armaments | 125 gold",
+          "Remove Cleave | 125 gold",
+          "Remove Ghostly Armor | 125 gold",
+          "Remove Uppercut | 125 gold",
+          "Remove Parasite | 125 gold",
+          "Remove Sentinel+1 | 125 gold",
+          "Remove Corruption | 125 gold",
+          "Remove Sword Boomerang+1 | 125 gold",
+          "Remove Clothesline | 125 gold",
+          "Leave shop"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Dark Embrace | 40 gold",
+      "state_before": {
+        "location": "Act 3 Floor 46 | HP 21/80 | Gold 215 | Boss Awakened One",
+        "title": "Shop"
+      },
+      "decision_evidence": {
+        "candidate_id": "card-4",
+        "candidates": [
+          "Headbutt | 52 gold",
+          "Iron Wave | 48 gold",
+          "Havoc | 48 gold",
+          "Shrug It Off | 53 gold",
+          "Dark Embrace | 40 gold",
+          "Trip | 82 gold",
+          "Thinking Ahead | 173 gold",
+          "MercuryHourglass | 246 gold",
+          "BagOfPreparation | 147 gold",
+          "Orrery | 156 gold",
+          "Weak Potion | 50 gold",
+          "Regen Potion | 75 gold",
+          "Blood Potion | 49 gold",
+          "Remove card | 125 gold",
+          "Leave shop"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "BagOfPreparation | 147 gold",
+      "state_before": {
+        "location": "Act 3 Floor 46 | HP 21/80 | Gold 175 | Boss Awakened One",
+        "title": "Shop"
+      },
+      "decision_evidence": {
+        "candidate_id": "relic-1",
+        "candidates": [
+          "Headbutt | 52 gold",
+          "Iron Wave | 48 gold",
+          "Havoc | 48 gold",
+          "Shrug It Off | 53 gold",
+          "Trip | 82 gold",
+          "Thinking Ahead | 173 gold",
+          "MercuryHourglass | 246 gold",
+          "BagOfPreparation | 147 gold",
+          "Orrery | 156 gold",
+          "Weak Potion | 50 gold",
+          "Regen Potion | 75 gold",
+          "Blood Potion | 49 gold",
+          "Remove card | 125 gold",
+          "Leave shop"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Leave shop",
+      "state_before": {
+        "location": "Act 3 Floor 46 | HP 21/80 | Gold 28 | Boss Awakened One",
+        "title": "Shop"
+      },
+      "decision_evidence": {
+        "candidate_id": "leave",
+        "candidates": [
+          "Headbutt | 52 gold",
+          "Iron Wave | 48 gold",
+          "Havoc | 48 gold",
+          "Shrug It Off | 53 gold",
+          "Trip | 82 gold",
+          "Thinking Ahead | 173 gold",
+          "MercuryHourglass | 246 gold",
+          "Orrery | 156 gold",
+          "Weak Potion | 50 gold",
+          "Regen Potion | 75 gold",
+          "Blood Potion | 49 gold",
+          "Remove card | 125 gold",
+          "Leave shop"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "y=14 Rest",
+      "state_before": {
+        "location": "Act 3 Floor 46 | HP 21/80 | Gold 28 | Boss Awakened One",
+        "title": "Map"
+      },
+      "decision_evidence": {
+        "candidate_id": "5",
+        "candidates": [
+          "y=14 Rest",
+          "y=14 Rest"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Rest",
+      "state_before": {
+        "location": "Act 3 Floor 47 | HP 21/80 | Gold 28 | Boss Awakened One",
+        "title": "Campfire"
+      },
+      "decision_evidence": {
+        "candidate_id": "rest",
+        "candidates": [
+          "Rest",
+          "Smith Strike",
+          "Smith Defend",
+          "Smith Defend",
+          "Smith Defend",
+          "Smith Defend",
+          "Smith Wild Strike",
+          "Smith Heavy Blade",
+          "Smith Evolve",
+          "Smith Armaments",
+          "Smith Cleave",
+          "Smith Ghostly Armor",
+          "Smith Uppercut",
+          "Smith Corruption",
+          "Smith Clothesline",
+          "Smith Dark Embrace"
+        ],
+        "source": "owner_policy"
+      }
+    },
+    {
+      "key": null,
+      "label": "Boss room",
+      "state_before": {
+        "location": "Act 3 Floor 47 | HP 45/80 | Gold 28 | Boss Awakened One",
+        "title": "Map"
+      },
+      "decision_evidence": {
+        "candidate_id": "0",
+        "candidates": [
+          "Boss room"
+        ],
+        "source": "owner_policy"
+      }
+    }
+  ],
+  "run_rng": {
+    "monster_rng": 111,
+    "event_rng": 9,
+    "merchant_rng": 80,
+    "card_rng": 592,
+    "treasure_rng": 31,
+    "relic_rng": 5,
+    "potion_rng": 110,
+    "monster_hp_rng": 55,
+    "ai_rng": 0,
+    "shuffle_rng": 0,
+    "card_random_rng": 0,
+    "misc_rng": 24,
+    "math_rng": 0
+  },
+  "position": {
+    "engine": "CombatPlayerTurn",
+    "combat": {
+      "meta": {
+        "ascension_level": 0,
+        "player_class": "Ironclad",
+        "is_boss_fight": true,
+        "is_elite_fight": false,
+        "master_deck_snapshot": [
+          {
+            "id": "Strike",
+            "uuid": 3,
+            "upgrades": 1
+          },
+          {
+            "id": "Strike",
+            "uuid": 4
+          },
+          {
+            "id": "Defend",
+            "uuid": 5
+          },
+          {
+            "id": "Defend",
+            "uuid": 6
+          },
+          {
+            "id": "Defend",
+            "uuid": 7
+          },
+          {
+            "id": "Defend",
+            "uuid": 8
+          },
+          {
+            "id": "Bash",
+            "uuid": 9,
+            "upgrades": 1
+          },
+          {
+            "id": "WildStrike",
+            "uuid": 10000
+          },
+          {
+            "id": "HeavyBlade",
+            "uuid": 10001
+          },
+          {
+            "id": "FlameBarrier",
+            "uuid": 10002,
+            "upgrades": 1
+          },
+          {
+            "id": "PommelStrike",
+            "uuid": 10003,
+            "upgrades": 1
+          },
+          {
+            "id": "Evolve",
+            "uuid": 10004
+          },
+          {
+            "id": "ThunderClap",
+            "uuid": 10005,
+            "upgrades": 1
+          },
+          {
+            "id": "Immolate",
+            "uuid": 10006,
+            "upgrades": 1
+          },
+          {
+            "id": "SecondWind",
+            "uuid": 10007,
+            "upgrades": 1
+          },
+          {
+            "id": "DemonForm",
+            "uuid": 10008,
+            "upgrades": 1
+          },
+          {
+            "id": "Bloodletting",
+            "uuid": 10009,
+            "upgrades": 1
+          },
+          {
+            "id": "ShrugItOff",
+            "uuid": 10010,
+            "upgrades": 1
+          },
+          {
+            "id": "Inflame",
+            "uuid": 10011,
+            "upgrades": 1
+          },
+          {
+            "id": "TrueGrit",
+            "uuid": 10012,
+            "upgrades": 1
+          },
+          {
+            "id": "Armaments",
+            "uuid": 10013
+          },
+          {
+            "id": "Cleave",
+            "uuid": 10014
+          },
+          {
+            "id": "GhostlyArmor",
+            "uuid": 10015
+          },
+          {
+            "id": "Uppercut",
+            "uuid": 10016
+          },
+          {
+            "id": "Parasite",
+            "uuid": 10017
+          },
+          {
+            "id": "Sentinel",
+            "uuid": 10018,
+            "upgrades": 1
+          },
+          {
+            "id": "Corruption",
+            "uuid": 10019
+          },
+          {
+            "id": "SwordBoomerang",
+            "uuid": 10020,
+            "upgrades": 1
+          },
+          {
+            "id": "Clothesline",
+            "uuid": 10021
+          },
+          {
+            "id": "DarkEmbrace",
+            "uuid": 10022
+          }
+        ],
+        "meta_changes": []
+      },
+      "turn": {
+        "turn_count": 0,
+        "current_phase": "PlayerTurn",
+        "energy": 6,
+        "turn_start_draw_modifier": 0,
+        "counters": {
+          "cards_played_this_turn": 0,
+          "attacks_played_this_turn": 0,
+          "cards_discarded_this_turn": 0,
+          "card_ids_played_this_turn": [],
+          "card_ids_played_this_combat": [],
+          "orbs_channeled_this_turn": [],
+          "orbs_channeled_this_combat": [],
+          "mantra_gained_this_combat": 0,
+          "times_damaged_this_combat": 0,
+          "victory_triggered": false,
+          "discovery_cost_for_turn": null,
+          "early_end_turn_pending": false,
+          "skip_monster_turn_pending": false,
+          "player_escaping": false,
+          "escape_pending_reward": false
+        }
+      },
+      "zones": {
+        "draw_pile": [
+          {
+            "id": "TrueGrit",
+            "uuid": 10012,
+            "upgrades": 1
+          },
+          {
+            "id": "Uppercut",
+            "uuid": 10016
+          },
+          {
+            "id": "Strike",
+            "uuid": 3,
+            "upgrades": 1
+          },
+          {
+            "id": "Defend",
+            "uuid": 6
+          },
+          {
+            "id": "Cleave",
+            "uuid": 10014
+          },
+          {
+            "id": "Bloodletting",
+            "uuid": 10009,
+            "upgrades": 1
+          },
+          {
+            "id": "Defend",
+            "uuid": 5
+          },
+          {
+            "id": "Bash",
+            "uuid": 9,
+            "upgrades": 1
+          },
+          {
+            "id": "PommelStrike",
+            "uuid": 10003,
+            "upgrades": 1
+          },
+          {
+            "id": "Clothesline",
+            "uuid": 10021
+          },
+          {
+            "id": "HeavyBlade",
+            "uuid": 10001
+          },
+          {
+            "id": "ThunderClap",
+            "uuid": 10005,
+            "upgrades": 1
+          },
+          {
+            "id": "Inflame",
+            "uuid": 10011,
+            "upgrades": 1
+          },
+          {
+            "id": "Sentinel",
+            "uuid": 10018,
+            "upgrades": 1
+          },
+          {
+            "id": "Parasite",
+            "uuid": 10017
+          },
+          {
+            "id": "GhostlyArmor",
+            "uuid": 10015
+          },
+          {
+            "id": "SwordBoomerang",
+            "uuid": 10020,
+            "upgrades": 1
+          },
+          {
+            "id": "Defend",
+            "uuid": 7
+          },
+          {
+            "id": "Corruption",
+            "uuid": 10019
+          },
+          {
+            "id": "FlameBarrier",
+            "uuid": 10002,
+            "upgrades": 1
+          },
+          {
+            "id": "Armaments",
+            "uuid": 10013
+          },
+          {
+            "id": "Defend",
+            "uuid": 8
+          },
+          {
+            "id": "SecondWind",
+            "uuid": 10007,
+            "upgrades": 1
+          }
+        ],
+        "hand": [
+          {
+            "id": "DarkEmbrace",
+            "uuid": 10022
+          },
+          {
+            "id": "Evolve",
+            "uuid": 10004
+          },
+          {
+            "id": "WildStrike",
+            "uuid": 10000
+          },
+          {
+            "id": "DemonForm",
+            "uuid": 10008,
+            "upgrades": 1
+          },
+          {
+            "id": "ShrugItOff",
+            "uuid": 10010,
+            "upgrades": 1
+          },
+          {
+            "id": "Strike",
+            "uuid": 4
+          },
+          {
+            "id": "Immolate",
+            "uuid": 10006,
+            "upgrades": 1
+          }
+        ],
+        "discard_pile": [],
+        "exhaust_pile": [],
+        "limbo": [],
+        "queued_cards": [],
+        "card_uuid_counter": 10022
+      },
+      "entities": {
+        "player": {
+          "id": 0,
+          "current_hp": 45,
+          "max_hp": 80,
+          "block": 0,
+          "facing_left": false,
+          "gold_delta_this_combat": 0,
+          "gold": 28,
+          "max_orbs": 0,
+          "orbs": [],
+          "stance": "Neutral",
+          "relics": [
+            {
+              "id": "BurningBlood"
+            },
+            {
+              "id": "Pocketwatch",
+              "counter": 0
+            },
+            {
+              "id": "Whetstone"
+            },
+            {
+              "id": "Sozu"
+            },
+            {
+              "id": "Nunchaku",
+              "counter": 1
+            },
+            {
+              "id": "VelvetChoker",
+              "counter": 0
+            },
+            {
+              "id": "ChampionBelt"
+            },
+            {
+              "id": "Lantern",
+              "used_up": true
+            },
+            {
+              "id": "BagOfPreparation"
+            }
+          ],
+          "relic_buses": {
+            "at_pre_battle": [
+              7
+            ],
+            "at_battle_start_pre_draw": [],
+            "at_battle_start": [
+              1,
+              5,
+              8
+            ],
+            "at_turn_start": [
+              5,
+              7
+            ],
+            "at_turn_start_post_draw": [
+              1
+            ],
+            "on_use_card": [
+              1,
+              4,
+              5
+            ],
+            "on_shuffle": [],
+            "on_exhaust": [],
+            "on_lose_hp": [],
+            "on_victory": [
+              0,
+              1,
+              5
+            ],
+            "on_apply_power": [
+              6
+            ],
+            "on_monster_death": [],
+            "on_spawn_monster": [],
+            "at_end_of_turn": [],
+            "on_use_potion": [],
+            "on_discard": [],
+            "on_change_stance": [],
+            "on_attacked_to_change_damage": [],
+            "on_lose_hp_last": [],
+            "on_calculate_heal": [],
+            "on_calculate_x_cost": [],
+            "on_calculate_block_retained": [],
+            "on_calculate_energy_retained": [],
+            "on_scry": [],
+            "on_receive_power_modify": [],
+            "on_calculate_vulnerable_multiplier": []
+          },
+          "energy_master": 5
+        },
+        "monsters": [
+          {
+            "id": 1,
+            "monster_type": 1,
+            "current_hp": 51,
+            "max_hp": 51,
+            "block": 0,
+            "slot": 0,
+            "is_dying": false,
+            "is_escaped": false,
+            "half_dead": false,
+            "move_state": {
+              "planned_move_id": 3,
+              "history": [
+                3
+              ],
+              "planned_steps": [
+                {
+                  "ApplyPower": {
+                    "target": "SelfTarget",
+                    "power_id": "Ritual",
+                    "amount": 3,
+                    "effect": "Buff",
+                    "visible_strength": "Normal"
+                  }
+                }
+              ],
+              "planned_visible_spec": null
+            },
+            "logical_position": 0,
+            "hexaghost": {
+              "activated": false,
+              "orb_active_count": 0,
+              "burn_upgraded": false,
+              "divider_damage": null
+            },
+            "louse": {
+              "bite_damage": null
+            },
+            "jaw_worm": {
+              "protocol_seeded": false,
+              "first_move": false,
+              "hard_mode": false
+            },
+            "thief": {
+              "protocol_seeded": false,
+              "slash_count": 0,
+              "stolen_gold": 0
+            },
+            "byrd": {
+              "protocol_seeded": false,
+              "first_move": false,
+              "is_flying": false
+            },
+            "chosen": {
+              "protocol_seeded": false,
+              "first_turn": false,
+              "used_hex": false
+            },
+            "snecko": {
+              "protocol_seeded": false,
+              "first_turn": false
+            },
+            "shelled_parasite": {
+              "protocol_seeded": false,
+              "first_move": false
+            },
+            "bronze_automaton": {
+              "protocol_seeded": false,
+              "first_turn": true,
+              "num_turns": 0
+            },
+            "bronze_orb": {
+              "protocol_seeded": false,
+              "used_stasis": false
+            },
+            "book_of_stabbing": {
+              "protocol_seeded": false,
+              "stab_count": 1
+            },
+            "collector": {
+              "protocol_seeded": false,
+              "initial_spawn": true,
+              "ult_used": false,
+              "turns_taken": 0,
+              "enemy_slots": [
+                null,
+                null
+              ]
+            },
+            "champ": {
+              "protocol_seeded": false,
+              "first_turn": true,
+              "num_turns": 0,
+              "forge_times": 0,
+              "threshold_reached": false
+            },
+            "awakened_one": {
+              "protocol_seeded": false,
+              "form1": true,
+              "first_turn": true
+            },
+            "corrupt_heart": {
+              "protocol_seeded": false,
+              "first_move": true,
+              "move_count": 0,
+              "buff_count": 0,
+              "blood_hit_count": 12
+            },
+            "writhing_mass": {
+              "protocol_seeded": false,
+              "first_move": false,
+              "used_mega_debuff": false
+            },
+            "spiker": {
+              "protocol_seeded": false,
+              "thorns_count": 0
+            },
+            "spire_shield": {
+              "protocol_seeded": false,
+              "move_count": 0
+            },
+            "spire_spear": {
+              "protocol_seeded": false,
+              "move_count": 0,
+              "skewer_count": 0
+            },
+            "slaver_red": {
+              "protocol_seeded": false,
+              "first_turn": true,
+              "used_entangle": false
+            },
+            "gremlin_leader": {
+              "protocol_seeded": false,
+              "gremlin_slots": [
+                null,
+                null,
+                null
+              ]
+            },
+            "gremlin_nob": {
+              "protocol_seeded": false,
+              "used_bellow": false
+            },
+            "gremlin_wizard": {
+              "protocol_seeded": false,
+              "current_charge": 0
+            },
+            "cultist": {
+              "protocol_seeded": true,
+              "first_move": false
+            },
+            "sentry": {
+              "protocol_seeded": false,
+              "first_move": false
+            },
+            "slime_boss": {
+              "protocol_seeded": false,
+              "first_turn": false
+            },
+            "large_slime": {
+              "protocol_seeded": false,
+              "split_triggered": false
+            },
+            "spheric_guardian": {
+              "protocol_seeded": false,
+              "first_move": false,
+              "second_move": false
+            },
+            "reptomancer": {
+              "protocol_seeded": false,
+              "first_move": false,
+              "dagger_slots": [
+                null,
+                null,
+                null,
+                null
+              ]
+            },
+            "darkling": {
+              "protocol_seeded": false,
+              "first_move": false,
+              "nip_dmg": 0
+            },
+            "nemesis": {
+              "protocol_seeded": false,
+              "first_move": false,
+              "scythe_cooldown": 0
+            },
+            "giant_head": {
+              "protocol_seeded": false,
+              "count": 0
+            },
+            "time_eater": {
+              "protocol_seeded": false,
+              "used_haste": false
+            },
+            "donu": {
+              "protocol_seeded": false,
+              "is_attacking": false
+            },
+            "deca": {
+              "protocol_seeded": false,
+              "is_attacking": false
+            },
+            "transient": {
+              "protocol_seeded": false,
+              "count": 0
+            },
+            "exploder": {
+              "protocol_seeded": false,
+              "turn_count": 0
+            },
+            "maw": {
+              "protocol_seeded": false,
+              "roared": false,
+              "turn_count": 1
+            },
+            "snake_dagger": {
+              "protocol_seeded": false,
+              "first_move": true
+            },
+            "lagavulin": {
+              "is_out": false,
+              "idle_count": 0,
+              "debuff_turn_count": 0,
+              "is_out_triggered": false
+            },
+            "guardian": {
+              "damage_threshold": 0,
+              "damage_taken": 0,
+              "is_open": true,
+              "close_up_triggered": false
+            }
+          },
+          {
+            "id": 2,
+            "monster_type": 1,
+            "current_hp": 50,
+            "max_hp": 50,
+            "block": 0,
+            "slot": 1,
+            "is_dying": false,
+            "is_escaped": false,
+            "half_dead": false,
+            "move_state": {
+              "planned_move_id": 3,
+              "history": [
+                3
+              ],
+              "planned_steps": [
+                {
+                  "ApplyPower": {
+                    "target": "SelfTarget",
+                    "power_id": "Ritual",
+                    "amount": 3,
+                    "effect": "Buff",
+                    "visible_strength": "Normal"
+                  }
+                }
+              ],
+              "planned_visible_spec": null
+            },
+            "logical_position": 1,
+            "hexaghost": {
+              "activated": false,
+              "orb_active_count": 0,
+              "burn_upgraded": false,
+              "divider_damage": null
+            },
+            "louse": {
+              "bite_damage": null
+            },
+            "jaw_worm": {
+              "protocol_seeded": false,
+              "first_move": false,
+              "hard_mode": false
+            },
+            "thief": {
+              "protocol_seeded": false,
+              "slash_count": 0,
+              "stolen_gold": 0
+            },
+            "byrd": {
+              "protocol_seeded": false,
+              "first_move": false,
+              "is_flying": false
+            },
+            "chosen": {
+              "protocol_seeded": false,
+              "first_turn": false,
+              "used_hex": false
+            },
+            "snecko": {
+              "protocol_seeded": false,
+              "first_turn": false
+            },
+            "shelled_parasite": {
+              "protocol_seeded": false,
+              "first_move": false
+            },
+            "bronze_automaton": {
+              "protocol_seeded": false,
+              "first_turn": true,
+              "num_turns": 0
+            },
+            "bronze_orb": {
+              "protocol_seeded": false,
+              "used_stasis": false
+            },
+            "book_of_stabbing": {
+              "protocol_seeded": false,
+              "stab_count": 1
+            },
+            "collector": {
+              "protocol_seeded": false,
+              "initial_spawn": true,
+              "ult_used": false,
+              "turns_taken": 0,
+              "enemy_slots": [
+                null,
+                null
+              ]
+            },
+            "champ": {
+              "protocol_seeded": false,
+              "first_turn": true,
+              "num_turns": 0,
+              "forge_times": 0,
+              "threshold_reached": false
+            },
+            "awakened_one": {
+              "protocol_seeded": false,
+              "form1": true,
+              "first_turn": true
+            },
+            "corrupt_heart": {
+              "protocol_seeded": false,
+              "first_move": true,
+              "move_count": 0,
+              "buff_count": 0,
+              "blood_hit_count": 12
+            },
+            "writhing_mass": {
+              "protocol_seeded": false,
+              "first_move": false,
+              "used_mega_debuff": false
+            },
+            "spiker": {
+              "protocol_seeded": false,
+              "thorns_count": 0
+            },
+            "spire_shield": {
+              "protocol_seeded": false,
+              "move_count": 0
+            },
+            "spire_spear": {
+              "protocol_seeded": false,
+              "move_count": 0,
+              "skewer_count": 0
+            },
+            "slaver_red": {
+              "protocol_seeded": false,
+              "first_turn": true,
+              "used_entangle": false
+            },
+            "gremlin_leader": {
+              "protocol_seeded": false,
+              "gremlin_slots": [
+                null,
+                null,
+                null
+              ]
+            },
+            "gremlin_nob": {
+              "protocol_seeded": false,
+              "used_bellow": false
+            },
+            "gremlin_wizard": {
+              "protocol_seeded": false,
+              "current_charge": 0
+            },
+            "cultist": {
+              "protocol_seeded": true,
+              "first_move": false
+            },
+            "sentry": {
+              "protocol_seeded": false,
+              "first_move": false
+            },
+            "slime_boss": {
+              "protocol_seeded": false,
+              "first_turn": false
+            },
+            "large_slime": {
+              "protocol_seeded": false,
+              "split_triggered": false
+            },
+            "spheric_guardian": {
+              "protocol_seeded": false,
+              "first_move": false,
+              "second_move": false
+            },
+            "reptomancer": {
+              "protocol_seeded": false,
+              "first_move": false,
+              "dagger_slots": [
+                null,
+                null,
+                null,
+                null
+              ]
+            },
+            "darkling": {
+              "protocol_seeded": false,
+              "first_move": false,
+              "nip_dmg": 0
+            },
+            "nemesis": {
+              "protocol_seeded": false,
+              "first_move": false,
+              "scythe_cooldown": 0
+            },
+            "giant_head": {
+              "protocol_seeded": false,
+              "count": 0
+            },
+            "time_eater": {
+              "protocol_seeded": false,
+              "used_haste": false
+            },
+            "donu": {
+              "protocol_seeded": false,
+              "is_attacking": false
+            },
+            "deca": {
+              "protocol_seeded": false,
+              "is_attacking": false
+            },
+            "transient": {
+              "protocol_seeded": false,
+              "count": 0
+            },
+            "exploder": {
+              "protocol_seeded": false,
+              "turn_count": 0
+            },
+            "maw": {
+              "protocol_seeded": false,
+              "roared": false,
+              "turn_count": 1
+            },
+            "snake_dagger": {
+              "protocol_seeded": false,
+              "first_move": true
+            },
+            "lagavulin": {
+              "is_out": false,
+              "idle_count": 0,
+              "debuff_turn_count": 0,
+              "is_out_triggered": false
+            },
+            "guardian": {
+              "damage_threshold": 0,
+              "damage_taken": 0,
+              "is_open": true,
+              "close_up_triggered": false
+            }
+          },
+          {
+            "id": 3,
+            "monster_type": 58,
+            "current_hp": 300,
+            "max_hp": 300,
+            "block": 0,
+            "slot": 2,
+            "is_dying": false,
+            "is_escaped": false,
+            "half_dead": false,
+            "move_state": {
+              "planned_move_id": 1,
+              "history": [
+                1
+              ],
+              "planned_steps": [
+                {
+                  "Attack": {
+                    "target": "Player",
+                    "attack": {
+                      "base_damage": 20,
+                      "hits": 1,
+                      "damage_kind": "Normal"
+                    }
+                  }
+                }
+              ],
+              "planned_visible_spec": {
+                "Attack": {
+                  "base_damage": 20,
+                  "hits": 1,
+                  "damage_kind": "Normal"
+                }
+              }
+            },
+            "logical_position": 2,
+            "hexaghost": {
+              "activated": false,
+              "orb_active_count": 0,
+              "burn_upgraded": false,
+              "divider_damage": null
+            },
+            "louse": {
+              "bite_damage": null
+            },
+            "jaw_worm": {
+              "protocol_seeded": false,
+              "first_move": false,
+              "hard_mode": false
+            },
+            "thief": {
+              "protocol_seeded": false,
+              "slash_count": 0,
+              "stolen_gold": 0
+            },
+            "byrd": {
+              "protocol_seeded": false,
+              "first_move": false,
+              "is_flying": false
+            },
+            "chosen": {
+              "protocol_seeded": false,
+              "first_turn": false,
+              "used_hex": false
+            },
+            "snecko": {
+              "protocol_seeded": false,
+              "first_turn": false
+            },
+            "shelled_parasite": {
+              "protocol_seeded": false,
+              "first_move": false
+            },
+            "bronze_automaton": {
+              "protocol_seeded": false,
+              "first_turn": true,
+              "num_turns": 0
+            },
+            "bronze_orb": {
+              "protocol_seeded": false,
+              "used_stasis": false
+            },
+            "book_of_stabbing": {
+              "protocol_seeded": false,
+              "stab_count": 1
+            },
+            "collector": {
+              "protocol_seeded": false,
+              "initial_spawn": true,
+              "ult_used": false,
+              "turns_taken": 0,
+              "enemy_slots": [
+                null,
+                null
+              ]
+            },
+            "champ": {
+              "protocol_seeded": false,
+              "first_turn": true,
+              "num_turns": 0,
+              "forge_times": 0,
+              "threshold_reached": false
+            },
+            "awakened_one": {
+              "protocol_seeded": true,
+              "form1": true,
+              "first_turn": false
+            },
+            "corrupt_heart": {
+              "protocol_seeded": false,
+              "first_move": true,
+              "move_count": 0,
+              "buff_count": 0,
+              "blood_hit_count": 12
+            },
+            "writhing_mass": {
+              "protocol_seeded": false,
+              "first_move": false,
+              "used_mega_debuff": false
+            },
+            "spiker": {
+              "protocol_seeded": false,
+              "thorns_count": 0
+            },
+            "spire_shield": {
+              "protocol_seeded": false,
+              "move_count": 0
+            },
+            "spire_spear": {
+              "protocol_seeded": false,
+              "move_count": 0,
+              "skewer_count": 0
+            },
+            "slaver_red": {
+              "protocol_seeded": false,
+              "first_turn": true,
+              "used_entangle": false
+            },
+            "gremlin_leader": {
+              "protocol_seeded": false,
+              "gremlin_slots": [
+                null,
+                null,
+                null
+              ]
+            },
+            "gremlin_nob": {
+              "protocol_seeded": false,
+              "used_bellow": false
+            },
+            "gremlin_wizard": {
+              "protocol_seeded": false,
+              "current_charge": 0
+            },
+            "cultist": {
+              "protocol_seeded": false,
+              "first_move": false
+            },
+            "sentry": {
+              "protocol_seeded": false,
+              "first_move": false
+            },
+            "slime_boss": {
+              "protocol_seeded": false,
+              "first_turn": false
+            },
+            "large_slime": {
+              "protocol_seeded": false,
+              "split_triggered": false
+            },
+            "spheric_guardian": {
+              "protocol_seeded": false,
+              "first_move": false,
+              "second_move": false
+            },
+            "reptomancer": {
+              "protocol_seeded": false,
+              "first_move": false,
+              "dagger_slots": [
+                null,
+                null,
+                null,
+                null
+              ]
+            },
+            "darkling": {
+              "protocol_seeded": false,
+              "first_move": false,
+              "nip_dmg": 0
+            },
+            "nemesis": {
+              "protocol_seeded": false,
+              "first_move": false,
+              "scythe_cooldown": 0
+            },
+            "giant_head": {
+              "protocol_seeded": false,
+              "count": 0
+            },
+            "time_eater": {
+              "protocol_seeded": false,
+              "used_haste": false
+            },
+            "donu": {
+              "protocol_seeded": false,
+              "is_attacking": false
+            },
+            "deca": {
+              "protocol_seeded": false,
+              "is_attacking": false
+            },
+            "transient": {
+              "protocol_seeded": false,
+              "count": 0
+            },
+            "exploder": {
+              "protocol_seeded": false,
+              "turn_count": 0
+            },
+            "maw": {
+              "protocol_seeded": false,
+              "roared": false,
+              "turn_count": 1
+            },
+            "snake_dagger": {
+              "protocol_seeded": false,
+              "first_move": true
+            },
+            "lagavulin": {
+              "is_out": false,
+              "idle_count": 0,
+              "debuff_turn_count": 0,
+              "is_out_triggered": false
+            },
+            "guardian": {
+              "damage_threshold": 0,
+              "damage_taken": 0,
+              "is_open": true,
+              "close_up_triggered": false
+            }
+          }
+        ],
+        "potions": [
+          null,
+          null,
+          null
+        ],
+        "power_db": {
+          "3": [
+            {
+              "power_type": "Regen",
+              "instance_id": null,
+              "amount": 10,
+              "extra_data": 0,
+              "payload": "None",
+              "just_applied": true
+            },
+            {
+              "power_type": "Curiosity",
+              "instance_id": null,
+              "amount": 1,
+              "extra_data": 0,
+              "payload": "None",
+              "just_applied": true
+            },
+            {
+              "power_type": "Unawakened",
+              "instance_id": null,
+              "amount": -1,
+              "extra_data": 0,
+              "payload": "None",
+              "just_applied": true
+            }
+          ]
+        }
+      },
+      "engine": {
+        "action_queue": []
+      },
+      "rng": {
+        "pool": {
+          "monster_rng": {
+            "seed0": 5992861887757448647,
+            "seed1": 16678328901972651861,
+            "counter": 111
+          },
+          "event_rng": {
+            "seed0": 2654871867894134226,
+            "seed1": 18263053762316801293,
+            "counter": 9
+          },
+          "merchant_rng": {
+            "seed0": 1122493857502876661,
+            "seed1": 5024655256669349931,
+            "counter": 80
+          },
+          "card_rng": {
+            "seed0": 5421932078716447369,
+            "seed1": 8866156217629117626,
+            "counter": 592
+          },
+          "treasure_rng": {
+            "seed0": 17829599869101176908,
+            "seed1": 8116201520211731999,
+            "counter": 31
+          },
+          "relic_rng": {
+            "seed0": 5463039624486061565,
+            "seed1": 2046582219141366143,
+            "counter": 5
+          },
+          "potion_rng": {
+            "seed0": 16672946660122490218,
+            "seed1": 5992861887757448647,
+            "counter": 110
+          },
+          "monster_hp_rng": {
+            "seed0": 1443046037816598972,
+            "seed1": 13997852751100058478,
+            "counter": 55
+          },
+          "ai_rng": {
+            "seed0": 14338395784320477575,
+            "seed1": 17481363288225048988,
+            "counter": 3
+          },
+          "shuffle_rng": {
+            "seed0": 5147537323788490580,
+            "seed1": 8627184429950984193,
+            "counter": 1
+          },
+          "card_random_rng": {
+            "seed0": 715795755370989263,
+            "seed1": 5147537323788490580,
+            "counter": 0
+          },
+          "misc_rng": {
+            "seed0": 3602533343269167984,
+            "seed1": 14041278109602004962,
+            "counter": 24
+          },
+          "math_rng": {
+            "seed0": 715795755370989263,
+            "seed1": 5147537323788490580,
+            "counter": 0
+          }
+        }
+      },
+      "runtime": {
+        "using_card": false,
+        "card_queue": [],
+        "colorless_combat_pool": [],
+        "emitted_events": [],
+        "engine_diagnostics": [],
+        "pending_rewards": [],
+        "power_instance_counter": 0,
+        "last_drawn_cards": [],
+        "monster_protocol": {
+          "3": {
+            "observation": {
+              "visible_intent": "Unknown",
+              "preview_damage_per_hit": 0
+            },
+            "identity": {
+              "instance_id": null,
+              "spawn_order": null,
+              "draw_x": null,
+              "group_index": null
+            }
+          },
+          "1": {
+            "observation": {
+              "visible_intent": "Unknown",
+              "preview_damage_per_hit": 0
+            },
+            "identity": {
+              "instance_id": null,
+              "spawn_order": null,
+              "draw_x": null,
+              "group_index": null
+            }
+          },
+          "2": {
+            "observation": {
+              "visible_intent": "Unknown",
+              "preview_damage_per_hit": 0
+            },
+            "identity": {
+              "instance_id": null,
+              "spawn_order": null,
+              "draw_x": null,
+              "group_index": null
+            }
+          }
+        },
+        "combat_mugged": false,
+        "combat_smoked": false
+      }
+    }
+  }
+}

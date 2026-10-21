@@ -1,0 +1,56 @@
+{
+  "scope": "Adjacent natural Neow three-potion grant: reward room and RNG projection",
+  "capture_scope": "accelerated_sts_wrapper_rng_ledger_and_declared_snapshot_domains",
+  "files": {
+    "neow-potions-before.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-136dd531c5784da489f7798ba5b07dc6/java-evidence/boundaries/00000001-frame-427.json",
+      "sha256": "942baaaaa0362c140ee9afc7d0c2debdc5f1a25fda57cbbea321c559809b2ea0",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "B96FAEE5FDDCFCA4A929F6BDDD6D17076D091E18E7BC013C9099B600C9E27E87",
+        "session_epoch": "abc47ce4-8625-42e5-8445-c87bb69c4214:a596dbea-44b9-4863-9de9-96dadce1ba13:503cca2f-cd80-40af-afbb-b2b8e7eb4959"
+      },
+      "capturing_rust_source": "22a7039bc"
+    },
+    "neow-potions-after.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-136dd531c5784da489f7798ba5b07dc6/java-evidence/boundaries/00000002-frame-428.json",
+      "sha256": "78fa697061e4577fa9887d25446151000a26d23ca50fd099ad8ee5bd4b19c4ac",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "B96FAEE5FDDCFCA4A929F6BDDD6D17076D091E18E7BC013C9099B600C9E27E87",
+        "session_epoch": "abc47ce4-8625-42e5-8445-c87bb69c4214:a596dbea-44b9-4863-9de9-96dadce1ba13:503cca2f-cd80-40af-afbb-b2b8e7eb4959"
+      },
+      "capturing_rust_source": "22a7039bc"
+    },
+    "neow-potions-action.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-136dd531c5784da489f7798ba5b07dc6/java-evidence/actions/00000001-from-frame-427.json",
+      "sha256": "52ecfa54e7d9fa2f62c6cf5e670024da3a94ea582d85593684fef30ba2bdd713",
+      "capturing_rust_source": "22a7039bc"
+    },
+    "neow-map-before.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-136dd531c5784da489f7798ba5b07dc6/java-evidence/boundaries/00000006-frame-432.json",
+      "sha256": "c3f4385ffdf153c297bee7683335cf69d71ac8bc6473ec8231d05e521f2276ae",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "B96FAEE5FDDCFCA4A929F6BDDD6D17076D091E18E7BC013C9099B600C9E27E87",
+        "session_epoch": "abc47ce4-8625-42e5-8445-c87bb69c4214:a596dbea-44b9-4863-9de9-96dadce1ba13:503cca2f-cd80-40af-afbb-b2b8e7eb4959"
+      },
+      "capturing_rust_source": "22a7039bc"
+    },
+    "neow-map-after.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-136dd531c5784da489f7798ba5b07dc6/java-evidence/boundaries/00000007-frame-433.json",
+      "sha256": "16a450c78ea427c77ebe3f3ec241116eac0a76be9e59269c2a1a3eae1df21329",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "B96FAEE5FDDCFCA4A929F6BDDD6D17076D091E18E7BC013C9099B600C9E27E87",
+        "session_epoch": "abc47ce4-8625-42e5-8445-c87bb69c4214:a596dbea-44b9-4863-9de9-96dadce1ba13:503cca2f-cd80-40af-afbb-b2b8e7eb4959"
+      },
+      "capturing_rust_source": "22a7039bc"
+    },
+    "neow-map-action.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-136dd531c5784da489f7798ba5b07dc6/java-evidence/actions/00000006-from-frame-432.json",
+      "sha256": "53d2bf64dbcc8df73beb692e084b5407ac3d0599986aff505e81bfe81f7e2f48",
+      "capturing_rust_source": "22a7039bc"
+    }
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "schema": "sts_java_play_scenario_probe_draft_v1",
+  "provenance": "constructed_validated",
+  "probe_case_id": "cultist-second-strike",
+  "scenario_case_id": "cultist-two-strikes-root",
+  "transition": {
+    "transition_id": "combat.play_card.v1",
+    "card": {
+      "card_id": "Strike_R",
+      "upgrades": 0,
+      "occurrence": 1
+    },
+    "target": {
+      "monster_id": "Cultist",
+      "occurrence": 0
+    }
+  }
+}

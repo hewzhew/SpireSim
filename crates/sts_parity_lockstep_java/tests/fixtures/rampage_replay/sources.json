@@ -1,0 +1,32 @@
+{
+  "scope": "Raw adjacent Double Tap + Rampage evidence. Constructed Rust comparison covers target HP/block, player HP/block/energy, Double Tap consumption, final Rampage pile/count/costs/persistent damage and absence of RNG consumption. No natural card binding, full combat reconstruction, restoration or certification authority.",
+  "source_session": "manual-3dcec99a9fbe45df87b0a0a4115622c2",
+  "capture_scope": "accelerated_sts_wrapper_rng_ledger_and_declared_snapshot_domains",
+  "certifying_rust_source": "9048d3ba751875e94e81c14059c251e85bad2b8d",
+  "constructed_input_scope": "One scenario Rampage and a living Blue Slaver; recorded player resources, Double Tap and target HP/block/Strength. Original unrelated cards, relics and dead slime are omitted. Java UUID continuity remains Java-local. No Java UUID is assigned to a Rust lineage.",
+  "observation_limit": "Java stable frames observe aggregate damage 21 and persistent base damage 8->18, not an individual-hit trace. The 8 then 13 hit sequence follows from the original Rampage/ModifyDamage/DoubleTap code and is not labeled as separately recorded hit evidence. RNG non-consumption is checked independently on each endpoint; initial cross-runtime RNG state equality is outside this constructed scope.",
+  "files": {
+    "before.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-3dcec99a9fbe45df87b0a0a4115622c2/java-evidence/boundaries/00000168-frame-254.json",
+      "sha256": "82b701c2671fa23927beade1ae0282419811d2190f6456b83230628615e59911",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "4F3C7D6C311162A7E4404D67B6F5D5018B05C2F11D9EFEF5E3A383061AF714E8",
+        "session_epoch": "2de13909-0784-4777-af86-f1600735d27b:7e169a2d-c0be-4384-9122-5d90b0d4b247:9477966a-b0de-468d-9970-b2c4903a8eac"
+      }
+    },
+    "play.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-3dcec99a9fbe45df87b0a0a4115622c2/java-evidence/actions/00000168-from-frame-254.json",
+      "sha256": "dbb04708cc04d5bd40c6c6e05d5a0de62c9a4c99ba47d11eb69c98bdb4b9eff1"
+    },
+    "after.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-3dcec99a9fbe45df87b0a0a4115622c2/java-evidence/boundaries/00000169-frame-255.json",
+      "sha256": "27f9432c1eedc6e5e10b870753d2e76514c37037798c44bcf6c5375096006f0a",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "4F3C7D6C311162A7E4404D67B6F5D5018B05C2F11D9EFEF5E3A383061AF714E8",
+        "session_epoch": "2de13909-0784-4777-af86-f1600735d27b:7e169a2d-c0be-4384-9122-5d90b0d4b247:9477966a-b0de-468d-9970-b2c4903a8eac"
+      }
+    }
+  }
+}

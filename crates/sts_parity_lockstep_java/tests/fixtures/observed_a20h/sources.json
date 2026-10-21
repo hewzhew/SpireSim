@@ -1,0 +1,109 @@
+{
+  "scope": "selected observation/adapter regressions; not independent natural-run certification",
+  "capture_scope": "accelerated_sts_wrapper_rng_ledger_and_declared_snapshot_domains",
+  "files": {
+    "reduced-flight.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-ff125cd43e8b46409d1628b443489dd1/java-evidence/boundaries/00000006-frame-12.json",
+      "sha256": "0353da1d348eeb018cfeacfad4a80746a7ebe450358a6feac158a70a9c16cbc2",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "4CD0A7D552C04A42CD530D01CBEB5BA7E0F9FF503420A3A4011EC143924952C6",
+        "session_epoch": "6e4176a6-d602-4b6d-9ff8-c6a2ef8f61dd:0514d0bc-12c9-4210-9601-a0a95d1066fd:538492fe-d8e1-44b2-b181-43d396f59359"
+      },
+      "certifying_rust_source": "1f8c3e9124a347679d54a34e3787c597f56eb662"
+    },
+    "time-eater-haste.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-b19007ca80804d7486c5ee838c4fc328/java-evidence/boundaries/00000381-frame-667.json",
+      "sha256": "ef958ad0f187bbc2b0c42dac19d4151abf61b449756a184a90462a736b4fa81f",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "4CD0A7D552C04A42CD530D01CBEB5BA7E0F9FF503420A3A4011EC143924952C6",
+        "session_epoch": "6e4176a6-d602-4b6d-9ff8-c6a2ef8f61dd:0514d0bc-12c9-4210-9601-a0a95d1066fd:538492fe-d8e1-44b2-b181-43d396f59359"
+      },
+      "certifying_rust_source": "0faebd518ee7b41340e672690fcfaa777620e4b8"
+    },
+    "heart-entrance.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-5a19e9256f984b7e86ce257209c11b50/java-evidence/boundaries/00000052-frame-59.json",
+      "sha256": "5e2dd4d697aeb08ee75c8d0c58cd57f6cfc971fd2410f3a5366abe29b00afefa",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "4CD0A7D552C04A42CD530D01CBEB5BA7E0F9FF503420A3A4011EC143924952C6",
+        "session_epoch": "4e4f53a4-4eec-4bc1-9ecd-2bce6155f88e:12579a2d-6ef0-480d-8bd5-d173979bc109:71b1d440-85c6-40ab-9f3e-b0cb13ddacab"
+      },
+      "certifying_rust_source": "c7887f3c0c8f3d31393f60ec6ae9861f7bfbedf0"
+    },
+    "exhausted-invincible.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-5a19e9256f984b7e86ce257209c11b50/java-evidence/boundaries/00000109-frame-116.json",
+      "sha256": "15364daa0c79128c3b0a52c04ed7913fc0ad26ebe5d80a074b7c5a9233e9fab0",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "4CD0A7D552C04A42CD530D01CBEB5BA7E0F9FF503420A3A4011EC143924952C6",
+        "session_epoch": "4e4f53a4-4eec-4bc1-9ecd-2bce6155f88e:12579a2d-6ef0-480d-8bd5-d173979bc109:71b1d440-85c6-40ab-9f3e-b0cb13ddacab"
+      },
+      "certifying_rust_source": "c7887f3c0c8f3d31393f60ec6ae9861f7bfbedf0"
+    },
+    "heart-proceed.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-5a19e9256f984b7e86ce257209c11b50/java-evidence/boundaries/00000118-frame-125.json",
+      "sha256": "5011ad11ab484a09e68a09643e443e4b582bbdfaa486f5be9a40f3dca6cc0e9b",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "4CD0A7D552C04A42CD530D01CBEB5BA7E0F9FF503420A3A4011EC143924952C6",
+        "session_epoch": "4e4f53a4-4eec-4bc1-9ecd-2bce6155f88e:12579a2d-6ef0-480d-8bd5-d173979bc109:71b1d440-85c6-40ab-9f3e-b0cb13ddacab"
+      },
+      "certifying_rust_source": "c7887f3c0c8f3d31393f60ec6ae9861f7bfbedf0"
+    },
+    "heart-terminal.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-5a19e9256f984b7e86ce257209c11b50/java-evidence/boundaries/00000119-frame-126.json",
+      "sha256": "82b63fb4a3ec52115ba1b07cb005e0239da20c648b557d24699c551a03fbe13a",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "4CD0A7D552C04A42CD530D01CBEB5BA7E0F9FF503420A3A4011EC143924952C6",
+        "session_epoch": "4e4f53a4-4eec-4bc1-9ecd-2bce6155f88e:12579a2d-6ef0-480d-8bd5-d173979bc109:71b1d440-85c6-40ab-9f3e-b0cb13ddacab"
+      },
+      "certifying_rust_source": "c7887f3c0c8f3d31393f60ec6ae9861f7bfbedf0"
+    },
+    "heart-proceed-action.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-5a19e9256f984b7e86ce257209c11b50/java-evidence/actions/00000118-from-frame-125.json",
+      "sha256": "2eb2ed6cf4199b9f5daea2f263674ccf52cef4d9f4c8b08ff6663fec77e15cfe"
+    },
+    "haste-execution-before.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-de4dc1527a3d4fbe8e00e7c4c07a7f90/java-evidence/boundaries/00000042-frame-254.json",
+      "sha256": "314fbc2b84a2ef645323a6ac10419ddb791459f1e3052955de12441634643a28",
+      "certifying_rust_source": "d1af8aab040e6de899156ccf738d5f8d8e1cb761",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "4CD0A7D552C04A42CD530D01CBEB5BA7E0F9FF503420A3A4011EC143924952C6",
+        "session_epoch": "4fa43143-50da-4fcc-8037-2bbeff38636a:8e98a28f-511e-4265-a037-259227ea64a2:d8f7fc1f-3099-4d3b-bc21-dcb5328d1a10"
+      }
+    },
+    "haste-execution-after.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-de4dc1527a3d4fbe8e00e7c4c07a7f90/java-evidence/boundaries/00000043-frame-255.json",
+      "sha256": "059e02ed823a04e894e10b659d19d98ef55d9a58da5e046a0403d4d4eb8681a0",
+      "certifying_rust_source": "d1af8aab040e6de899156ccf738d5f8d8e1cb761",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "4CD0A7D552C04A42CD530D01CBEB5BA7E0F9FF503420A3A4011EC143924952C6",
+        "session_epoch": "4fa43143-50da-4fcc-8037-2bbeff38636a:8e98a28f-511e-4265-a037-259227ea64a2:d8f7fc1f-3099-4d3b-bc21-dcb5328d1a10"
+      }
+    },
+    "haste-execution-action.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-de4dc1527a3d4fbe8e00e7c4c07a7f90/java-evidence/actions/00000042-from-frame-254.json",
+      "sha256": "689912302fef124363bbedab2ae071ca569abcb320aae151ffeed9c6158c4861",
+      "certifying_rust_source": "d1af8aab040e6de899156ccf738d5f8d8e1cb761"
+    }
+  },
+  "transitions": {
+    "haste-execution": {
+      "before": "haste-execution-before.json",
+      "action": "haste-execution-action.json",
+      "after": "haste-execution-after.json",
+      "provenance": "natural Audit branch after source-verified native recovery",
+      "live_scope": "14 committed actions through victory, all declared snapshot domains and RNG call ledgers Exact; not an Act Certification",
+      "offline_scope": "constructed monster mechanism input; Haste end-turn health, block, debuff removal, next intent, move history and floor.ai state; no card identity reconstruction",
+      "not_observed": [
+        "Shackled during Haste",
+        "A0 Haste execution"
+      ]
+    }
+  }
+}

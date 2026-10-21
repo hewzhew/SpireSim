@@ -1,0 +1,1 @@
+{"schema":"sts-recorded-java-action-v1","phase":"committed","action":{"kind":"end_turn"},"receipt":{"status":"completed","request_id":"d5cd1c1f-5d62-45bc-aced-a0e6b7c1bb44","based_on_frame_id":35,"action_id":"end_turn","successor_frame_id":36}}

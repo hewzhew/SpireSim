@@ -1,0 +1,1 @@
+{"schema":"sts-recorded-java-action-v1","phase":"committed","action":{"kind":"select","surface":"event","choice":{"kind":"event_option","id":"ghosts","occurrence":1,"attributes":{"screen":0}}},"receipt":{"status":"completed","request_id":"48c1503c-3e97-455f-bf4b-71863e7776d5","based_on_frame_id":339,"action_id":"event_option:Ghosts:index:0:1","successor_frame_id":340}}

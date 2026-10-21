@@ -1,0 +1,246 @@
+{
+  "schema": "sts-curated-strategy-reading-cases-v1",
+  "provenance": "Constructed offline reading cases; no live state, simulated outcomes, or optimal-action labels. Candidate descriptions compare hypothetical options and are not executable game handles. Prices and routes are explicit case assumptions.",
+  "cases": [
+    {
+      "id": "elite-path-with-fallback",
+      "pair": "elite-path",
+      "purpose": "相同目标路线在准备与退路存在时的关注点",
+      "decision_site": "map",
+      "public_context": {
+        "act": 1,
+        "hp": 66,
+        "max_hp": 80,
+        "deck": "初始牌组另有燔祭与耸肩无视，实际表现未测试",
+        "potions": ["FirePotion"],
+        "visible_route": "左侧通向三个精英，首精英前有营火，之后可转向无精英分支；右侧一路线只有一个精英"
+      },
+      "candidates": ["走左侧成长路线", "走右侧低精英路线"],
+      "analyst_hypothesis": "现成资源和转向余地增加，可以考虑更多成长；尚不能宣布三精英路线安全。",
+      "reading_ids": ["route-options", "readiness-horizon"],
+      "application": "先检查首精英前能兑现什么能力，再保留后续转向条件；不因为看到燔祭就把所有未来精英都算作低战损。",
+      "unknowns": ["实际遭遇与未来奖励", "当前牌组面对高压回合的表现"]
+    },
+    {
+      "id": "elite-path-without-fallback",
+      "pair": "elite-path",
+      "purpose": "同样多精英目标在准备不足且不可转向时的关注点",
+      "decision_site": "map",
+      "public_context": {
+        "act": 1,
+        "hp": 25,
+        "max_hp": 80,
+        "deck": "初始牌组，尚无额外战力",
+        "potions": [],
+        "visible_route": "左侧通向三个精英，前两个精英之间无营火也不能转向；右侧可先走普通战和营火，只遇一个精英"
+      },
+      "candidates": ["走左侧成长路线", "走右侧低精英路线"],
+      "analyst_hypothesis": "固定精英链可能在收益兑现前消耗完生存资源，需要检验；不是已模拟的死亡结论。",
+      "reading_ids": ["route-options", "hp-recovery"],
+      "application": "先关注恢复前连续风险与无法改道的代价；不能照搬作者近乎最多精英的偏好，也不能预支未来奖励填补缺口。",
+      "unknowns": ["第一场精英前能拿到什么", "可承受战损与替代路线表现"]
+    },
+    {
+      "id": "campfire-low-hp",
+      "pair": "campfire-resource",
+      "purpose": "低HP下比较当前恢复与升级机会",
+      "decision_site": "campfire",
+      "public_context": {
+        "act": 1,
+        "hp": 19,
+        "max_hp": 80,
+        "deck": "有未升级的燔祭，其余牌组相同",
+        "potions": [],
+        "visible_route": "下一段包含必经精英，此后才有恢复点"
+      },
+      "candidates": ["休息", "升级燔祭"],
+      "analyst_hypothesis": "恢复可能比升级更能支持越过下段，但升级减损与当前可承受程度都尚未验证。",
+      "reading_ids": ["hp-recovery", "readiness-horizon"],
+      "application": "具体比较恢复提供的余地与升级对近期危险的作用；不能因为有高价值升级就认为低血也能过去。",
+      "unknowns": ["近期战损", "升级是否能改变关键回合"]
+    },
+    {
+      "id": "campfire-high-hp",
+      "pair": "campfire-resource",
+      "purpose": "同一升级对象在恢复可能溢出时的关注点",
+      "decision_site": "campfire",
+      "public_context": {
+        "act": 1,
+        "hp": 76,
+        "max_hp": 80,
+        "deck": "有未升级的燔祭，其余牌组相同",
+        "potions": [],
+        "visible_route": "下一段包含必经精英，此后才有恢复点"
+      },
+      "candidates": ["休息", "升级燔祭"],
+      "analyst_hypothesis": "恢复的可用增量较小，升级的持续收益值得更仔细比较。",
+      "reading_ids": ["hp-recovery", "readiness-horizon"],
+      "application": "关注恢复溢出和升级在剩余战斗中的价值，同时保留具体机制与战斗表现的核查；高血量本身不证明精英无风险。",
+      "unknowns": ["近期战损", "升级在本牌组中的实际收益"]
+    },
+    {
+      "id": "shop-urgent-gap",
+      "pair": "shop-budget",
+      "purpose": "相同预算和库存下的近期压力",
+      "decision_site": "shop",
+      "public_context": {
+        "act": 3,
+        "hp": 21,
+        "gold": 180,
+        "potions": [],
+        "inventory": "假设公开一瓶防御用途药水45g、一个长期收益遗物160g，删牌75g",
+        "visible_route": "商店后即高压战斗"
+      },
+      "candidates": ["购买药水45g", "删牌75g", "购买遗物160g", "离开"],
+      "analyst_hypothesis": "牌组近期防守可能不足，单次救场与长期改善的时间不同。",
+      "reading_ids": ["shop-tradeoffs", "endgame-reserve"],
+      "application": "先检查可买药水或删牌能否解决眼前缺口；把买药后还可做什么作为顺序计划，不能一次提交两次购买，也不能为固定留钱门槛放弃必要补强。",
+      "unknowns": ["不同购买后的战斗表现", "未来商店库存"]
+    },
+    {
+      "id": "shop-prepared-now",
+      "pair": "shop-budget",
+      "purpose": "相同预算在近期准备较充分时的关注点",
+      "decision_site": "shop",
+      "public_context": {
+        "act": 3,
+        "hp": 65,
+        "gold": 180,
+        "potions": ["BlockPotion"],
+        "inventory": "假设公开一瓶防御用途药水45g、一个长期收益遗物160g，删牌75g",
+        "visible_route": "商店后即高压战斗"
+      },
+      "candidates": ["购买药水45g", "删牌75g", "购买遗物160g", "离开"],
+      "analyst_hypothesis": "现有牌组与药水可能已经能应对眼前危险，后段仍担心启动不稳；需进一步评估。",
+      "reading_ids": ["shop-tradeoffs", "endgame-reserve"],
+      "application": "转向比较删牌、遗物和留钱对后段的边际价值，同时检验现成防守是否真的够用；不能把180g或作者的150g变成统一买/不买阈值。",
+      "unknowns": ["近期准备是否充分", "后段缺口与补给需求"]
+    },
+    {
+      "id": "full-slots-defense-gap",
+      "pair": "potion-replacement",
+      "purpose": "满槽且已有公开奖励时，比较具体替换",
+      "decision_site": "reward",
+      "public_context": {
+        "act": 1,
+        "hp": 24,
+        "potion_slots": 2,
+        "potions": ["FirePotion", "BlockPotion"],
+        "visible_reward": "EnergyPotion，槽位满，当前不能领取",
+        "visible_route": "接近Boss"
+      },
+      "candidates": ["丢弃FirePotion", "丢弃BlockPotion", "放弃奖励并继续"],
+      "analyst_hypothesis": "近期可能更缺应急防守，输出与费用似乎较够；这只是待验证判断。",
+      "reading_ids": ["potion-reserve", "readiness-horizon"],
+      "application": "逐瓶比较对近期缺口的作用，再决定是否值得腾槽拿可见补给；不能因为满槽就默认换药，更不能在奖励页发明使用药水动作。",
+      "unknowns": ["现有药水在Boss中的边际作用", "额外费用的可用收益"]
+    },
+    {
+      "id": "full-slots-energy-gap",
+      "pair": "potion-replacement",
+      "purpose": "相同药水和奖励在费用需求不同后的关注点",
+      "decision_site": "reward",
+      "public_context": {
+        "act": 1,
+        "hp": 62,
+        "potion_slots": 2,
+        "potions": ["FirePotion", "BlockPotion"],
+        "visible_reward": "EnergyPotion，槽位满，当前不能领取",
+        "visible_route": "接近Boss"
+      },
+      "candidates": ["丢弃FirePotion", "丢弃BlockPotion", "放弃奖励并继续"],
+      "analyst_hypothesis": "近期关键回合可能有牌却缺费用，常规防守较好；还没有模拟结果。",
+      "reading_ids": ["potion-reserve", "readiness-horizon"],
+      "application": "把重点转向费用药能否兑现关键回合，再与失去的火药或格挡药用途比较；腾槽和领取是两次动作，不能把分析说明当作已执行。",
+      "unknowns": ["关键手牌能否及时到达", "各瓶药的实际收益"]
+    },
+    {
+      "id": "curse-near-planned-shop",
+      "pair": "curse-removal",
+      "purpose": "商店本来就在计划内时仍存在哪些诅咒成本",
+      "decision_site": "event",
+      "public_context": {
+        "act": 1,
+        "hp": 50,
+        "gold": 120,
+        "deck": "仍有多张打击，无已知诅咒抵消能力",
+        "visible_route": "下一节点为原本就要经过的商店，中间无战斗"
+      },
+      "candidates": ["拿金币并获得Doubt", "拒绝"],
+      "analyst_hypothesis": "绕路成本可能很小，但删位与预算仍有其他用途。",
+      "reading_ids": ["curse-cost", "shop-tradeoffs"],
+      "application": "比较奖励与删牌费、失去删打击的机会以及店内其他购买；不能将原文Regret的战损直接套到Doubt，具体机制仍须单独确认。",
+      "unknowns": ["未来店内实际价格与库存", "当前牌组对具体诅咒的容忍度"]
+    },
+    {
+      "id": "curse-far-detour-shop",
+      "pair": "curse-removal",
+      "purpose": "同一诅咒奖励在移除前战斗与改道增加后如何分析",
+      "decision_site": "event",
+      "public_context": {
+        "act": 1,
+        "hp": 50,
+        "gold": 120,
+        "deck": "仍有多张打击，无已知诅咒抵消能力",
+        "visible_route": "可达商店前须经过两场战斗，且为它转向会放弃原来的营火"
+      },
+      "candidates": ["拿金币并获得Doubt", "拒绝"],
+      "analyst_hypothesis": "移除前负担和路线代价比上一案例更突出。",
+      "reading_ids": ["curse-cost", "hp-recovery"],
+      "application": "把两场战斗与失去营火纳入成本；不能把多拿的钱减去一次删牌费就宣布收益为正，也不预设诅咒必然优先于其他删除对象。",
+      "unknowns": ["移除前的实际负担", "改道对恢复/升级计划的影响"]
+    },
+    {
+      "id": "relic-rest-dependent",
+      "pair": "relic-replan",
+      "purpose": "依赖休息且药水不足时比较Boss遗物",
+      "decision_site": "boss_relic",
+      "public_context": {
+        "act": 1,
+        "deck": "无额外恢复来源，运转中需要多次打牌",
+        "potions": [],
+        "visible_route": "下一幕地图尚未公开"
+      },
+      "candidates": ["CoffeeDripper", "Sozu", "VelvetChoker", "skip"],
+      "analyst_hypothesis": "休息、药水补给和出牌次数都可能有重要用途；近期费用也可能不足。",
+      "reading_ids": ["replan-after-relic", "potion-reserve", "hp-recovery"],
+      "application": "按候选分别列出失效的资源计划和即时加费收益，承认可能需要接受长期限制；不提前读取下一幕地图为某项选择背书。",
+      "unknowns": ["下一幕路线", "额外费用与限制共同作用后的准备度"]
+    },
+    {
+      "id": "relic-existing-sustain",
+      "pair": "relic-replan",
+      "purpose": "相同Boss遗物在已有替代能力时的关注点",
+      "decision_site": "boss_relic",
+      "public_context": {
+        "act": 1,
+        "deck": "有死神和力量来源，运转中需要多次打牌",
+        "potions": ["BlockPotion", "FirePotion"],
+        "visible_route": "下一幕地图尚未公开"
+      },
+      "candidates": ["CoffeeDripper", "Sozu", "VelvetChoker", "skip"],
+      "analyst_hypothesis": "已有恢复组件可能降低禁休息成本，但上手和及时恢复是否足够仍未验证。",
+      "reading_ids": ["replan-after-relic", "potion-reserve", "hp-recovery"],
+      "application": "重点核查恢复替代能力能否兑现，再比较其他限制；有两瓶药不等于整局不需补给，有死神也不等于咖啡杯没有代价。",
+      "unknowns": ["恢复速度和稳定性", "下一幕路线与后段药水需求"]
+    },
+    {
+      "id": "potion-resupply-not-observed",
+      "purpose": "未来掉落未知时不能照搬可见补给的替换分析",
+      "decision_site": "map",
+      "public_context": {
+        "act": 2,
+        "hp": 37,
+        "potion_slots": 2,
+        "potions": ["FirePotion", "BlockPotion"],
+        "visible_route": "普通战分支与问号分支，之后同去一个精英",
+        "future_potion_reward": null
+      },
+      "candidates": ["走普通战", "走问号"],
+      "analyst_hypothesis": "希望得到更合适的药水，但当前只知道已有槽位和公开路线。",
+      "reading_ids": ["potion-reserve", "route-options"],
+      "application": "把普通战可能的资源收益与其战损、问号的不确定性共同考虑；不读取掉落RNG，不保证会补药，也不能在地图页把未来战斗用药当作当前动作。",
+      "unknowns": ["未来药水是否掉落及种类", "两种路线的实际代价"]
+    }
+  ]
+}

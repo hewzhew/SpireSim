@@ -1,0 +1,1 @@
+{"schema":"sts-recorded-java-action-v1","phase":"committed","action":{"kind":"proceed","surface":"neow"},"receipt":{"status":"completed","request_id":"3d1a9cb4-1b21-4450-bf1d-b5198cd9e0da","based_on_frame_id":8,"action_id":"event_option:Neow:index:1:0","successor_frame_id":9}}

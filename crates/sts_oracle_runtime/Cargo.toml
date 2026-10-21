@@ -1,0 +1,25 @@
+[package]
+name = "sts_oracle_runtime"
+version = "0.1.0"
+edition = "2021"
+publish = false
+build = "build.rs"
+autobins = false
+autotests = false
+
+[features]
+default = ["oracle-lab"]
+control-full = ["sts_oracle_run_control/control-full"]
+oracle-lab = ["sts_oracle_run_control/oracle-lab"]
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+oracle_lab_protocol = { path = "../oracle_lab_protocol" }
+sts_oracle_run_control = { path = "../sts_oracle_run_control", default-features = false }
+sts_core = { package = "sts_simulator", path = "../.." }
+sts_combat_planner = { path = "../sts_combat_planner" }
+blake2 = "0.10"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"

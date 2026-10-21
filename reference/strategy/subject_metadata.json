@@ -1,0 +1,17 @@
+[
+  {
+    "subject": "Runic Dome",
+    "aliases": [],
+    "mechanics": "每回合获得 1 点能量；敌人的意图不再可见。"
+  },
+  {
+    "subject": "Cursed Key",
+    "aliases": [],
+    "mechanics": "每回合获得 1 点能量；打开非 Boss 宝箱时获得一张诅咒。"
+  },
+  {
+    "subject": "Velvet Choker",
+    "aliases": ["天鹅绒颈圈", "狗圈"],
+    "mechanics": "每回合获得 1 点能量；每回合最多打出 6 张牌。"
+  }
+]

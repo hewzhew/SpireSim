@@ -1,0 +1,1714 @@
+{
+  "schema": "combat_case_v1",
+  "source": {
+    "seed": 1552225675,
+    "ascension": 0,
+    "generation": 42,
+    "branch_id": 42,
+    "parent_id": 41
+  },
+  "gap": {
+    "boundary": "Combat",
+    "reason": "combat search did not find an executable complete win",
+    "witness_budget": {
+      "witness_engine": "atomic_exact_v2",
+      "primary_nodes": 50000,
+      "primary_wall_ms": 500,
+      "rescue_nodes": 200000,
+      "rescue_wall_ms": 3000
+    }
+  },
+  "run": {
+    "act": 3,
+    "floor": 48,
+    "hp": 105,
+    "max_hp": 128,
+    "gold": 317,
+    "deck_size": 17,
+    "relic_count": 12,
+    "potion_slots": 3
+  },
+  "combat": {
+    "engine_state": "CombatPlayerTurn",
+    "turn": 0,
+    "hp": 105,
+    "max_hp": 128,
+    "block": 0,
+    "energy": 4,
+    "enemies": [
+      "Cultist",
+      "Cultist",
+      "AwakenedOne"
+    ],
+    "hand": [
+      {
+        "id": "Headbutt",
+        "uuid": 10000,
+        "upgrades": 1
+      },
+      {
+        "id": "Whirlwind",
+        "uuid": 10005
+      },
+      {
+        "id": "ShrugItOff",
+        "uuid": 10003,
+        "upgrades": 1
+      },
+      {
+        "id": "ShrugItOff",
+        "uuid": 10008,
+        "upgrades": 1
+      },
+      {
+        "id": "Hemokinesis",
+        "uuid": 10001,
+        "upgrades": 1
+      }
+    ],
+    "draw_count": 12,
+    "discard_count": 0,
+    "exhaust_count": 0
+  },
+  "atomic_combat_search_attempts": [
+    {
+      "source": "search_combat_rejected",
+      "act": 3,
+      "floor": 48,
+      "turn": 0,
+      "combat_kind": "boss",
+      "enemies": [
+        "Cultist",
+        "Cultist",
+        "Awakened One"
+      ],
+      "coverage_status": "TimeBudgetLimited",
+      "complete_trajectory_found": false,
+      "complete_win_found": false,
+      "nodes_expanded": 2,
+      "terminal_wins": 0,
+      "total_us": 1228926
+    },
+    {
+      "source": "search_combat_rejected",
+      "act": 3,
+      "floor": 48,
+      "turn": 0,
+      "combat_kind": "boss",
+      "enemies": [
+        "Cultist",
+        "Cultist",
+        "Awakened One"
+      ],
+      "coverage_status": "TimeBudgetLimited",
+      "complete_trajectory_found": false,
+      "complete_win_found": false,
+      "nodes_expanded": 65,
+      "terminal_wins": 0,
+      "total_us": 8764513
+    },
+    {
+      "source": "search_combat_rejected",
+      "act": 3,
+      "floor": 48,
+      "turn": 0,
+      "combat_kind": "boss",
+      "enemies": [
+        "Cultist",
+        "Cultist",
+        "Awakened One"
+      ],
+      "coverage_status": "TimeBudgetLimited",
+      "complete_trajectory_found": false,
+      "complete_win_found": false,
+      "nodes_expanded": 63,
+      "terminal_wins": 0,
+      "total_us": 8911955
+    }
+  ],
+  "failed_atomic_combat_search": {
+    "source": "search_combat_rejected",
+    "act": 3,
+    "floor": 48,
+    "turn": 0,
+    "combat_kind": "boss",
+    "enemies": [
+      "Cultist",
+      "Cultist",
+      "Awakened One"
+    ],
+    "coverage_status": "TimeBudgetLimited",
+    "complete_trajectory_found": false,
+    "complete_win_found": false,
+    "nodes_expanded": 63,
+    "terminal_wins": 0,
+    "total_us": 8911955
+  },
+  "path": [
+    {
+      "key": {
+        "EventOption": {
+          "action": "Gain",
+          "event_id": "Neow",
+          "option_index": 0,
+          "screen": 1
+        }
+      },
+      "label": "Choose a colorless card to obtain. [neow:offer_cards]"
+    },
+    {
+      "key": {
+        "CardRewardSkip": {
+          "reward_item_index": 0
+        }
+      },
+      "label": "Skip card reward"
+    },
+    {
+      "key": {
+        "CardRewardPick": {
+          "card": "Headbutt",
+          "option_index": 1,
+          "reward_item_index": 0,
+          "upgrades": 0
+        }
+      },
+      "label": "Headbutt"
+    },
+    {
+      "key": {
+        "ShopPurgeCard": {
+          "card": "Strike",
+          "deck_index": 0,
+          "upgrades": 0
+        }
+      },
+      "label": "Remove Strike | 75 gold"
+    },
+    {
+      "key": "ShopLeave",
+      "label": "Leave shop"
+    },
+    {
+      "key": {
+        "CardRewardPick": {
+          "card": "Hemokinesis",
+          "option_index": 0,
+          "reward_item_index": 0,
+          "upgrades": 0
+        }
+      },
+      "label": "Hemokinesis"
+    },
+    {
+      "key": {
+        "CardRewardPick": {
+          "card": "Armaments",
+          "option_index": 2,
+          "reward_item_index": 0,
+          "upgrades": 0
+        }
+      },
+      "label": "Armaments"
+    },
+    {
+      "key": {
+        "ShopBuyCard": {
+          "card": "ShrugItOff",
+          "price": 51,
+          "shop_slot": 3,
+          "upgrades": 0
+        }
+      },
+      "label": "Shrug It Off | 51 gold"
+    },
+    {
+      "key": "ShopLeave",
+      "label": "Leave shop"
+    },
+    {
+      "key": {
+        "CardRewardSkip": {
+          "reward_item_index": 0
+        }
+      },
+      "label": "Skip card reward"
+    },
+    {
+      "key": {
+        "CardRewardPick": {
+          "card": "BurningPact",
+          "option_index": 2,
+          "reward_item_index": 0,
+          "upgrades": 0
+        }
+      },
+      "label": "Burning Pact"
+    },
+    {
+      "key": {
+        "CardRewardPick": {
+          "card": "Whirlwind",
+          "option_index": 2,
+          "reward_item_index": 0,
+          "upgrades": 0
+        }
+      },
+      "label": "Whirlwind"
+    },
+    {
+      "key": {
+        "CardRewardSkip": {
+          "reward_item_index": 0
+        }
+      },
+      "label": "Skip card reward"
+    },
+    {
+      "key": {
+        "CardRewardSkip": {
+          "reward_item_index": 0
+        }
+      },
+      "label": "Skip card reward"
+    },
+    {
+      "key": {
+        "CardRewardPick": {
+          "card": "Feed",
+          "option_index": 1,
+          "reward_item_index": 1,
+          "upgrades": 0
+        }
+      },
+      "label": "Feed"
+    },
+    {
+      "key": {
+        "BossRelicPick": {
+          "option_index": 2,
+          "relic": "RunicDome"
+        }
+      },
+      "label": "RunicDome"
+    },
+    {
+      "key": {
+        "CardRewardSkip": {
+          "reward_item_index": 0
+        }
+      },
+      "label": "Skip card reward"
+    },
+    {
+      "key": {
+        "CardRewardPick": {
+          "card": "Offering",
+          "option_index": 1,
+          "reward_item_index": 1,
+          "upgrades": 0
+        }
+      },
+      "label": "Offering"
+    },
+    {
+      "key": {
+        "CardRewardPick": {
+          "card": "ShrugItOff",
+          "option_index": 1,
+          "reward_item_index": 1,
+          "upgrades": 0
+        }
+      },
+      "label": "Shrug It Off"
+    },
+    {
+      "key": {
+        "CardRewardPick": {
+          "card": "FeelNoPain",
+          "option_index": 2,
+          "reward_item_index": 0,
+          "upgrades": 0
+        }
+      },
+      "label": "Feel No Pain"
+    },
+    {
+      "key": {
+        "CardRewardSkip": {
+          "reward_item_index": 0
+        }
+      },
+      "label": "Skip card reward"
+    },
+    {
+      "key": {
+        "CardRewardSkip": {
+          "reward_item_index": 0
+        }
+      },
+      "label": "Skip card reward"
+    },
+    {
+      "key": {
+        "CardRewardSkip": {
+          "reward_item_index": 1
+        }
+      },
+      "label": "Skip card reward"
+    },
+    {
+      "key": {
+        "CardRewardSkip": {
+          "reward_item_index": 0
+        }
+      },
+      "label": "Skip card reward"
+    },
+    {
+      "key": {
+        "BossRelicPick": {
+          "option_index": 1,
+          "relic": "EmptyCage"
+        }
+      },
+      "label": "EmptyCage"
+    },
+    {
+      "key": null,
+      "label": "Purge Writhe curse, Strike+1 strike"
+    },
+    {
+      "key": {
+        "CardRewardSkip": {
+          "reward_item_index": 0
+        }
+      },
+      "label": "Skip card reward"
+    },
+    {
+      "key": {
+        "CardRewardPick": {
+          "card": "IronWave",
+          "option_index": 1,
+          "reward_item_index": 0,
+          "upgrades": 0
+        }
+      },
+      "label": "Iron Wave"
+    },
+    {
+      "key": {
+        "CardRewardSkip": {
+          "reward_item_index": 0
+        }
+      },
+      "label": "Skip card reward"
+    },
+    {
+      "key": {
+        "ShopBuyRelic": {
+          "price": 155,
+          "relic": "Waffle",
+          "shop_slot": 2
+        }
+      },
+      "label": "Waffle | 155 gold"
+    },
+    {
+      "key": {
+        "ShopPurgeCard": {
+          "card": "Strike",
+          "deck_index": 0,
+          "upgrades": 1
+        }
+      },
+      "label": "Remove Strike+1 | 50 gold"
+    },
+    {
+      "key": "ShopLeave",
+      "label": "Leave shop"
+    },
+    {
+      "key": {
+        "CardRewardSkip": {
+          "reward_item_index": 0
+        }
+      },
+      "label": "Skip card reward"
+    },
+    {
+      "key": {
+        "CardRewardSkip": {
+          "reward_item_index": 0
+        }
+      },
+      "label": "Skip card reward"
+    },
+    {
+      "key": {
+        "CardRewardSkip": {
+          "reward_item_index": 0
+        }
+      },
+      "label": "Skip card reward"
+    },
+    {
+      "key": {
+        "CardRewardSkip": {
+          "reward_item_index": 0
+        }
+      },
+      "label": "Skip card reward"
+    },
+    {
+      "key": {
+        "ShopPurgeCard": {
+          "card": "Strike",
+          "deck_index": 0,
+          "upgrades": 1
+        }
+      },
+      "label": "Remove Strike+1 | 50 gold"
+    },
+    {
+      "key": "ShopLeave",
+      "label": "Leave shop"
+    },
+    {
+      "key": {
+        "ShopPurgeCard": {
+          "card": "Strike",
+          "deck_index": 0,
+          "upgrades": 1
+        }
+      },
+      "label": "Remove Strike+1 | 50 gold"
+    },
+    {
+      "key": "ShopLeave",
+      "label": "Leave shop"
+    },
+    {
+      "key": {
+        "CardRewardPick": {
+          "card": "Inflame",
+          "option_index": 1,
+          "reward_item_index": 0,
+          "upgrades": 1
+        }
+      },
+      "label": "Inflame+1"
+    },
+    {
+      "key": {
+        "CardRewardSkip": {
+          "reward_item_index": 0
+        }
+      },
+      "label": "Skip card reward"
+    }
+  ],
+  "run_rng": {
+    "monster_rng": 107,
+    "event_rng": 11,
+    "merchant_rng": 80,
+    "card_rng": 609,
+    "treasure_rng": 32,
+    "relic_rng": 7,
+    "potion_rng": 111,
+    "monster_hp_rng": 44,
+    "ai_rng": 0,
+    "shuffle_rng": 0,
+    "card_random_rng": 0,
+    "misc_rng": 15,
+    "math_rng": 0
+  },
+  "position": {
+    "engine": "CombatPlayerTurn",
+    "combat": {
+      "meta": {
+        "ascension_level": 0,
+        "player_class": "Ironclad",
+        "is_boss_fight": true,
+        "is_elite_fight": false,
+        "master_deck_snapshot": [
+          {
+            "id": "Defend",
+            "uuid": 5,
+            "upgrades": 1
+          },
+          {
+            "id": "Defend",
+            "uuid": 6,
+            "upgrades": 1
+          },
+          {
+            "id": "Defend",
+            "uuid": 7,
+            "upgrades": 1
+          },
+          {
+            "id": "Defend",
+            "uuid": 8,
+            "upgrades": 1
+          },
+          {
+            "id": "Bash",
+            "uuid": 9
+          },
+          {
+            "id": "Headbutt",
+            "uuid": 10000,
+            "upgrades": 1
+          },
+          {
+            "id": "Hemokinesis",
+            "uuid": 10001,
+            "upgrades": 1
+          },
+          {
+            "id": "Armaments",
+            "uuid": 10002,
+            "upgrades": 1
+          },
+          {
+            "id": "ShrugItOff",
+            "uuid": 10003,
+            "upgrades": 1
+          },
+          {
+            "id": "BurningPact",
+            "uuid": 10004,
+            "upgrades": 1
+          },
+          {
+            "id": "Whirlwind",
+            "uuid": 10005
+          },
+          {
+            "id": "Feed",
+            "uuid": 10006,
+            "upgrades": 1
+          },
+          {
+            "id": "Offering",
+            "uuid": 10007,
+            "upgrades": 1
+          },
+          {
+            "id": "ShrugItOff",
+            "uuid": 10008,
+            "upgrades": 1
+          },
+          {
+            "id": "FeelNoPain",
+            "uuid": 10009
+          },
+          {
+            "id": "IronWave",
+            "uuid": 10010,
+            "upgrades": 1
+          },
+          {
+            "id": "Inflame",
+            "uuid": 10011,
+            "upgrades": 1
+          }
+        ],
+        "meta_changes": []
+      },
+      "turn": {
+        "turn_count": 0,
+        "current_phase": "PlayerTurn",
+        "energy": 4,
+        "turn_start_draw_modifier": 0,
+        "counters": {
+          "cards_played_this_turn": 0,
+          "attacks_played_this_turn": 0,
+          "cards_discarded_this_turn": 0,
+          "card_ids_played_this_turn": [],
+          "card_ids_played_this_combat": [],
+          "orbs_channeled_this_turn": [],
+          "orbs_channeled_this_combat": [],
+          "mantra_gained_this_combat": 0,
+          "times_damaged_this_combat": 0,
+          "victory_triggered": false,
+          "discovery_cost_for_turn": null,
+          "early_end_turn_pending": false,
+          "skip_monster_turn_pending": false,
+          "player_escaping": false,
+          "escape_pending_reward": false
+        }
+      },
+      "zones": {
+        "draw_pile": [
+          {
+            "id": "FeelNoPain",
+            "uuid": 10009
+          },
+          {
+            "id": "Defend",
+            "uuid": 8,
+            "upgrades": 1
+          },
+          {
+            "id": "Defend",
+            "uuid": 7,
+            "upgrades": 1
+          },
+          {
+            "id": "Inflame",
+            "uuid": 10011,
+            "upgrades": 1
+          },
+          {
+            "id": "Feed",
+            "uuid": 10006,
+            "upgrades": 1
+          },
+          {
+            "id": "Armaments",
+            "uuid": 10002,
+            "upgrades": 1
+          },
+          {
+            "id": "Offering",
+            "uuid": 10007,
+            "upgrades": 1
+          },
+          {
+            "id": "BurningPact",
+            "uuid": 10004,
+            "upgrades": 1
+          },
+          {
+            "id": "Defend",
+            "uuid": 5,
+            "upgrades": 1
+          },
+          {
+            "id": "IronWave",
+            "uuid": 10010,
+            "upgrades": 1
+          },
+          {
+            "id": "Bash",
+            "uuid": 9
+          },
+          {
+            "id": "Defend",
+            "uuid": 6,
+            "upgrades": 1
+          }
+        ],
+        "hand": [
+          {
+            "id": "Headbutt",
+            "uuid": 10000,
+            "upgrades": 1
+          },
+          {
+            "id": "Whirlwind",
+            "uuid": 10005
+          },
+          {
+            "id": "ShrugItOff",
+            "uuid": 10003,
+            "upgrades": 1
+          },
+          {
+            "id": "ShrugItOff",
+            "uuid": 10008,
+            "upgrades": 1
+          },
+          {
+            "id": "Hemokinesis",
+            "uuid": 10001,
+            "upgrades": 1
+          }
+        ],
+        "discard_pile": [],
+        "exhaust_pile": [],
+        "limbo": [],
+        "queued_cards": [],
+        "card_uuid_counter": 10011
+      },
+      "entities": {
+        "player": {
+          "id": 0,
+          "current_hp": 105,
+          "max_hp": 128,
+          "block": 0,
+          "facing_left": false,
+          "gold_delta_this_combat": 0,
+          "gold": 317,
+          "max_orbs": 0,
+          "orbs": [],
+          "stance": "Neutral",
+          "relics": [
+            {
+              "id": "BurningBlood"
+            },
+            {
+              "id": "Vajra"
+            },
+            {
+              "id": "RunicDome"
+            },
+            {
+              "id": "NilrysCodex"
+            },
+            {
+              "id": "SmilingMask"
+            },
+            {
+              "id": "Nunchaku",
+              "counter": 4
+            },
+            {
+              "id": "EmptyCage"
+            },
+            {
+              "id": "WingBoots",
+              "counter": 3
+            },
+            {
+              "id": "Waffle"
+            },
+            {
+              "id": "Courier"
+            },
+            {
+              "id": "MercuryHourglass"
+            },
+            {
+              "id": "Boot"
+            }
+          ],
+          "relic_buses": {
+            "at_pre_battle": [],
+            "at_battle_start_pre_draw": [],
+            "at_battle_start": [
+              1
+            ],
+            "at_turn_start": [
+              10
+            ],
+            "at_turn_start_post_draw": [],
+            "on_use_card": [
+              5
+            ],
+            "on_shuffle": [],
+            "on_exhaust": [],
+            "on_lose_hp": [],
+            "on_victory": [
+              0
+            ],
+            "on_apply_power": [],
+            "on_monster_death": [],
+            "on_spawn_monster": [],
+            "at_end_of_turn": [
+              3
+            ],
+            "on_use_potion": [],
+            "on_discard": [],
+            "on_change_stance": [],
+            "on_attacked_to_change_damage": [],
+            "on_lose_hp_last": [],
+            "on_calculate_heal": [],
+            "on_calculate_x_cost": [],
+            "on_calculate_block_retained": [],
+            "on_calculate_energy_retained": [],
+            "on_scry": [],
+            "on_receive_power_modify": [],
+            "on_calculate_vulnerable_multiplier": []
+          },
+          "energy_master": 4
+        },
+        "monsters": [
+          {
+            "id": 1,
+            "monster_type": 1,
+            "current_hp": 50,
+            "max_hp": 53,
+            "block": 0,
+            "slot": 0,
+            "is_dying": false,
+            "is_escaped": false,
+            "half_dead": false,
+            "move_state": {
+              "planned_move_id": 3,
+              "history": [
+                3
+              ],
+              "planned_steps": [
+                {
+                  "ApplyPower": {
+                    "target": "SelfTarget",
+                    "power_id": "Ritual",
+                    "amount": 3,
+                    "effect": "Buff",
+                    "visible_strength": "Normal"
+                  }
+                }
+              ],
+              "planned_visible_spec": null
+            },
+            "logical_position": 0,
+            "hexaghost": {
+              "activated": false,
+              "orb_active_count": 0,
+              "burn_upgraded": false,
+              "divider_damage": null
+            },
+            "louse": {
+              "bite_damage": null
+            },
+            "jaw_worm": {
+              "protocol_seeded": false,
+              "first_move": false,
+              "hard_mode": false
+            },
+            "thief": {
+              "protocol_seeded": false,
+              "slash_count": 0,
+              "stolen_gold": 0
+            },
+            "byrd": {
+              "protocol_seeded": false,
+              "first_move": false,
+              "is_flying": false
+            },
+            "chosen": {
+              "protocol_seeded": false,
+              "first_turn": false,
+              "used_hex": false
+            },
+            "snecko": {
+              "protocol_seeded": false,
+              "first_turn": false
+            },
+            "shelled_parasite": {
+              "protocol_seeded": false,
+              "first_move": false
+            },
+            "bronze_automaton": {
+              "protocol_seeded": false,
+              "first_turn": true,
+              "num_turns": 0
+            },
+            "bronze_orb": {
+              "protocol_seeded": false,
+              "used_stasis": false
+            },
+            "book_of_stabbing": {
+              "protocol_seeded": false,
+              "stab_count": 1
+            },
+            "collector": {
+              "protocol_seeded": false,
+              "initial_spawn": true,
+              "ult_used": false,
+              "turns_taken": 0,
+              "enemy_slots": [
+                null,
+                null
+              ]
+            },
+            "champ": {
+              "protocol_seeded": false,
+              "first_turn": true,
+              "num_turns": 0,
+              "forge_times": 0,
+              "threshold_reached": false
+            },
+            "awakened_one": {
+              "protocol_seeded": false,
+              "form1": true,
+              "first_turn": true
+            },
+            "corrupt_heart": {
+              "protocol_seeded": false,
+              "first_move": true,
+              "move_count": 0,
+              "buff_count": 0,
+              "blood_hit_count": 12
+            },
+            "writhing_mass": {
+              "protocol_seeded": false,
+              "first_move": false,
+              "used_mega_debuff": false
+            },
+            "spiker": {
+              "protocol_seeded": false,
+              "thorns_count": 0
+            },
+            "spire_shield": {
+              "protocol_seeded": false,
+              "move_count": 0
+            },
+            "spire_spear": {
+              "protocol_seeded": false,
+              "move_count": 0,
+              "skewer_count": 0
+            },
+            "slaver_red": {
+              "protocol_seeded": false,
+              "first_turn": true,
+              "used_entangle": false
+            },
+            "gremlin_leader": {
+              "protocol_seeded": false,
+              "gremlin_slots": [
+                null,
+                null,
+                null
+              ]
+            },
+            "gremlin_nob": {
+              "protocol_seeded": false,
+              "used_bellow": false
+            },
+            "gremlin_wizard": {
+              "protocol_seeded": false,
+              "current_charge": 0
+            },
+            "cultist": {
+              "protocol_seeded": true,
+              "first_move": false
+            },
+            "sentry": {
+              "protocol_seeded": false,
+              "first_move": false
+            },
+            "slime_boss": {
+              "protocol_seeded": false,
+              "first_turn": false
+            },
+            "large_slime": {
+              "protocol_seeded": false,
+              "split_triggered": false
+            },
+            "spheric_guardian": {
+              "protocol_seeded": false,
+              "first_move": false,
+              "second_move": false
+            },
+            "reptomancer": {
+              "protocol_seeded": false,
+              "first_move": false,
+              "dagger_slots": [
+                null,
+                null,
+                null,
+                null
+              ]
+            },
+            "darkling": {
+              "protocol_seeded": false,
+              "first_move": false,
+              "nip_dmg": 0
+            },
+            "nemesis": {
+              "protocol_seeded": false,
+              "first_move": false,
+              "scythe_cooldown": 0
+            },
+            "giant_head": {
+              "protocol_seeded": false,
+              "count": 0
+            },
+            "time_eater": {
+              "protocol_seeded": false,
+              "used_haste": false
+            },
+            "donu": {
+              "protocol_seeded": false,
+              "is_attacking": false
+            },
+            "deca": {
+              "protocol_seeded": false,
+              "is_attacking": false
+            },
+            "transient": {
+              "protocol_seeded": false,
+              "count": 0
+            },
+            "exploder": {
+              "protocol_seeded": false,
+              "turn_count": 0
+            },
+            "maw": {
+              "protocol_seeded": false,
+              "roared": false,
+              "turn_count": 1
+            },
+            "snake_dagger": {
+              "protocol_seeded": false,
+              "first_move": true
+            },
+            "lagavulin": {
+              "is_out": false,
+              "idle_count": 0,
+              "debuff_turn_count": 0,
+              "is_out_triggered": false
+            },
+            "guardian": {
+              "damage_threshold": 0,
+              "damage_taken": 0,
+              "is_open": true,
+              "close_up_triggered": false
+            }
+          },
+          {
+            "id": 2,
+            "monster_type": 1,
+            "current_hp": 46,
+            "max_hp": 49,
+            "block": 0,
+            "slot": 1,
+            "is_dying": false,
+            "is_escaped": false,
+            "half_dead": false,
+            "move_state": {
+              "planned_move_id": 3,
+              "history": [
+                3
+              ],
+              "planned_steps": [
+                {
+                  "ApplyPower": {
+                    "target": "SelfTarget",
+                    "power_id": "Ritual",
+                    "amount": 3,
+                    "effect": "Buff",
+                    "visible_strength": "Normal"
+                  }
+                }
+              ],
+              "planned_visible_spec": null
+            },
+            "logical_position": 1,
+            "hexaghost": {
+              "activated": false,
+              "orb_active_count": 0,
+              "burn_upgraded": false,
+              "divider_damage": null
+            },
+            "louse": {
+              "bite_damage": null
+            },
+            "jaw_worm": {
+              "protocol_seeded": false,
+              "first_move": false,
+              "hard_mode": false
+            },
+            "thief": {
+              "protocol_seeded": false,
+              "slash_count": 0,
+              "stolen_gold": 0
+            },
+            "byrd": {
+              "protocol_seeded": false,
+              "first_move": false,
+              "is_flying": false
+            },
+            "chosen": {
+              "protocol_seeded": false,
+              "first_turn": false,
+              "used_hex": false
+            },
+            "snecko": {
+              "protocol_seeded": false,
+              "first_turn": false
+            },
+            "shelled_parasite": {
+              "protocol_seeded": false,
+              "first_move": false
+            },
+            "bronze_automaton": {
+              "protocol_seeded": false,
+              "first_turn": true,
+              "num_turns": 0
+            },
+            "bronze_orb": {
+              "protocol_seeded": false,
+              "used_stasis": false
+            },
+            "book_of_stabbing": {
+              "protocol_seeded": false,
+              "stab_count": 1
+            },
+            "collector": {
+              "protocol_seeded": false,
+              "initial_spawn": true,
+              "ult_used": false,
+              "turns_taken": 0,
+              "enemy_slots": [
+                null,
+                null
+              ]
+            },
+            "champ": {
+              "protocol_seeded": false,
+              "first_turn": true,
+              "num_turns": 0,
+              "forge_times": 0,
+              "threshold_reached": false
+            },
+            "awakened_one": {
+              "protocol_seeded": false,
+              "form1": true,
+              "first_turn": true
+            },
+            "corrupt_heart": {
+              "protocol_seeded": false,
+              "first_move": true,
+              "move_count": 0,
+              "buff_count": 0,
+              "blood_hit_count": 12
+            },
+            "writhing_mass": {
+              "protocol_seeded": false,
+              "first_move": false,
+              "used_mega_debuff": false
+            },
+            "spiker": {
+              "protocol_seeded": false,
+              "thorns_count": 0
+            },
+            "spire_shield": {
+              "protocol_seeded": false,
+              "move_count": 0
+            },
+            "spire_spear": {
+              "protocol_seeded": false,
+              "move_count": 0,
+              "skewer_count": 0
+            },
+            "slaver_red": {
+              "protocol_seeded": false,
+              "first_turn": true,
+              "used_entangle": false
+            },
+            "gremlin_leader": {
+              "protocol_seeded": false,
+              "gremlin_slots": [
+                null,
+                null,
+                null
+              ]
+            },
+            "gremlin_nob": {
+              "protocol_seeded": false,
+              "used_bellow": false
+            },
+            "gremlin_wizard": {
+              "protocol_seeded": false,
+              "current_charge": 0
+            },
+            "cultist": {
+              "protocol_seeded": true,
+              "first_move": false
+            },
+            "sentry": {
+              "protocol_seeded": false,
+              "first_move": false
+            },
+            "slime_boss": {
+              "protocol_seeded": false,
+              "first_turn": false
+            },
+            "large_slime": {
+              "protocol_seeded": false,
+              "split_triggered": false
+            },
+            "spheric_guardian": {
+              "protocol_seeded": false,
+              "first_move": false,
+              "second_move": false
+            },
+            "reptomancer": {
+              "protocol_seeded": false,
+              "first_move": false,
+              "dagger_slots": [
+                null,
+                null,
+                null,
+                null
+              ]
+            },
+            "darkling": {
+              "protocol_seeded": false,
+              "first_move": false,
+              "nip_dmg": 0
+            },
+            "nemesis": {
+              "protocol_seeded": false,
+              "first_move": false,
+              "scythe_cooldown": 0
+            },
+            "giant_head": {
+              "protocol_seeded": false,
+              "count": 0
+            },
+            "time_eater": {
+              "protocol_seeded": false,
+              "used_haste": false
+            },
+            "donu": {
+              "protocol_seeded": false,
+              "is_attacking": false
+            },
+            "deca": {
+              "protocol_seeded": false,
+              "is_attacking": false
+            },
+            "transient": {
+              "protocol_seeded": false,
+              "count": 0
+            },
+            "exploder": {
+              "protocol_seeded": false,
+              "turn_count": 0
+            },
+            "maw": {
+              "protocol_seeded": false,
+              "roared": false,
+              "turn_count": 1
+            },
+            "snake_dagger": {
+              "protocol_seeded": false,
+              "first_move": true
+            },
+            "lagavulin": {
+              "is_out": false,
+              "idle_count": 0,
+              "debuff_turn_count": 0,
+              "is_out_triggered": false
+            },
+            "guardian": {
+              "damage_threshold": 0,
+              "damage_taken": 0,
+              "is_open": true,
+              "close_up_triggered": false
+            }
+          },
+          {
+            "id": 3,
+            "monster_type": 58,
+            "current_hp": 297,
+            "max_hp": 300,
+            "block": 0,
+            "slot": 2,
+            "is_dying": false,
+            "is_escaped": false,
+            "half_dead": false,
+            "move_state": {
+              "planned_move_id": 1,
+              "history": [
+                1
+              ],
+              "planned_steps": [
+                {
+                  "Attack": {
+                    "target": "Player",
+                    "attack": {
+                      "base_damage": 20,
+                      "hits": 1,
+                      "damage_kind": "Normal"
+                    }
+                  }
+                }
+              ],
+              "planned_visible_spec": {
+                "Attack": {
+                  "base_damage": 20,
+                  "hits": 1,
+                  "damage_kind": "Normal"
+                }
+              }
+            },
+            "logical_position": 2,
+            "hexaghost": {
+              "activated": false,
+              "orb_active_count": 0,
+              "burn_upgraded": false,
+              "divider_damage": null
+            },
+            "louse": {
+              "bite_damage": null
+            },
+            "jaw_worm": {
+              "protocol_seeded": false,
+              "first_move": false,
+              "hard_mode": false
+            },
+            "thief": {
+              "protocol_seeded": false,
+              "slash_count": 0,
+              "stolen_gold": 0
+            },
+            "byrd": {
+              "protocol_seeded": false,
+              "first_move": false,
+              "is_flying": false
+            },
+            "chosen": {
+              "protocol_seeded": false,
+              "first_turn": false,
+              "used_hex": false
+            },
+            "snecko": {
+              "protocol_seeded": false,
+              "first_turn": false
+            },
+            "shelled_parasite": {
+              "protocol_seeded": false,
+              "first_move": false
+            },
+            "bronze_automaton": {
+              "protocol_seeded": false,
+              "first_turn": true,
+              "num_turns": 0
+            },
+            "bronze_orb": {
+              "protocol_seeded": false,
+              "used_stasis": false
+            },
+            "book_of_stabbing": {
+              "protocol_seeded": false,
+              "stab_count": 1
+            },
+            "collector": {
+              "protocol_seeded": false,
+              "initial_spawn": true,
+              "ult_used": false,
+              "turns_taken": 0,
+              "enemy_slots": [
+                null,
+                null
+              ]
+            },
+            "champ": {
+              "protocol_seeded": false,
+              "first_turn": true,
+              "num_turns": 0,
+              "forge_times": 0,
+              "threshold_reached": false
+            },
+            "awakened_one": {
+              "protocol_seeded": true,
+              "form1": true,
+              "first_turn": false
+            },
+            "corrupt_heart": {
+              "protocol_seeded": false,
+              "first_move": true,
+              "move_count": 0,
+              "buff_count": 0,
+              "blood_hit_count": 12
+            },
+            "writhing_mass": {
+              "protocol_seeded": false,
+              "first_move": false,
+              "used_mega_debuff": false
+            },
+            "spiker": {
+              "protocol_seeded": false,
+              "thorns_count": 0
+            },
+            "spire_shield": {
+              "protocol_seeded": false,
+              "move_count": 0
+            },
+            "spire_spear": {
+              "protocol_seeded": false,
+              "move_count": 0,
+              "skewer_count": 0
+            },
+            "slaver_red": {
+              "protocol_seeded": false,
+              "first_turn": true,
+              "used_entangle": false
+            },
+            "gremlin_leader": {
+              "protocol_seeded": false,
+              "gremlin_slots": [
+                null,
+                null,
+                null
+              ]
+            },
+            "gremlin_nob": {
+              "protocol_seeded": false,
+              "used_bellow": false
+            },
+            "gremlin_wizard": {
+              "protocol_seeded": false,
+              "current_charge": 0
+            },
+            "cultist": {
+              "protocol_seeded": false,
+              "first_move": false
+            },
+            "sentry": {
+              "protocol_seeded": false,
+              "first_move": false
+            },
+            "slime_boss": {
+              "protocol_seeded": false,
+              "first_turn": false
+            },
+            "large_slime": {
+              "protocol_seeded": false,
+              "split_triggered": false
+            },
+            "spheric_guardian": {
+              "protocol_seeded": false,
+              "first_move": false,
+              "second_move": false
+            },
+            "reptomancer": {
+              "protocol_seeded": false,
+              "first_move": false,
+              "dagger_slots": [
+                null,
+                null,
+                null,
+                null
+              ]
+            },
+            "darkling": {
+              "protocol_seeded": false,
+              "first_move": false,
+              "nip_dmg": 0
+            },
+            "nemesis": {
+              "protocol_seeded": false,
+              "first_move": false,
+              "scythe_cooldown": 0
+            },
+            "giant_head": {
+              "protocol_seeded": false,
+              "count": 0
+            },
+            "time_eater": {
+              "protocol_seeded": false,
+              "used_haste": false
+            },
+            "donu": {
+              "protocol_seeded": false,
+              "is_attacking": false
+            },
+            "deca": {
+              "protocol_seeded": false,
+              "is_attacking": false
+            },
+            "transient": {
+              "protocol_seeded": false,
+              "count": 0
+            },
+            "exploder": {
+              "protocol_seeded": false,
+              "turn_count": 0
+            },
+            "maw": {
+              "protocol_seeded": false,
+              "roared": false,
+              "turn_count": 1
+            },
+            "snake_dagger": {
+              "protocol_seeded": false,
+              "first_move": true
+            },
+            "lagavulin": {
+              "is_out": false,
+              "idle_count": 0,
+              "debuff_turn_count": 0,
+              "is_out_triggered": false
+            },
+            "guardian": {
+              "damage_threshold": 0,
+              "damage_taken": 0,
+              "is_open": true,
+              "close_up_triggered": false
+            }
+          }
+        ],
+        "potions": [
+          null,
+          {
+            "id": "StrengthPotion",
+            "uuid": 50001
+          },
+          {
+            "id": "DistilledChaosPotion",
+            "uuid": 50002
+          }
+        ],
+        "power_db": {
+          "3": [
+            {
+              "power_type": "Regen",
+              "instance_id": null,
+              "amount": 10,
+              "extra_data": 0,
+              "payload": "None",
+              "just_applied": true
+            },
+            {
+              "power_type": "Curiosity",
+              "instance_id": null,
+              "amount": 1,
+              "extra_data": 0,
+              "payload": "None",
+              "just_applied": true
+            },
+            {
+              "power_type": "Unawakened",
+              "instance_id": null,
+              "amount": -1,
+              "extra_data": 0,
+              "payload": "None",
+              "just_applied": true
+            }
+          ],
+          "0": [
+            {
+              "power_type": "Strength",
+              "instance_id": null,
+              "amount": 1,
+              "extra_data": 0,
+              "payload": "None",
+              "just_applied": true
+            }
+          ]
+        }
+      },
+      "engine": {
+        "action_queue": []
+      },
+      "rng": {
+        "pool": {
+          "monster_rng": {
+            "seed0": 9490015805270581918,
+            "seed1": 14269531175377507151,
+            "counter": 107
+          },
+          "event_rng": {
+            "seed0": 16278102928291405671,
+            "seed1": 9325758471995356778,
+            "counter": 11
+          },
+          "merchant_rng": {
+            "seed0": 6729143990070308991,
+            "seed1": 4960377005673127436,
+            "counter": 80
+          },
+          "card_rng": {
+            "seed0": 7571480052841256461,
+            "seed1": 18382408022031091996,
+            "counter": 609
+          },
+          "treasure_rng": {
+            "seed0": 5125991444896438271,
+            "seed1": 4292043402882904956,
+            "counter": 32
+          },
+          "relic_rng": {
+            "seed0": 5925370743875823700,
+            "seed1": 3517334032725153242,
+            "counter": 7
+          },
+          "potion_rng": {
+            "seed0": 112730458982208174,
+            "seed1": 10647439067513174783,
+            "counter": 111
+          },
+          "monster_hp_rng": {
+            "seed0": 608853787928011157,
+            "seed1": 3535033682286846869,
+            "counter": 44
+          },
+          "ai_rng": {
+            "seed0": 15521621995520795699,
+            "seed1": 108313397928943274,
+            "counter": 3
+          },
+          "shuffle_rng": {
+            "seed0": 15156147275725954246,
+            "seed1": 15559936721935895405,
+            "counter": 1
+          },
+          "card_random_rng": {
+            "seed0": 15717239165933452770,
+            "seed1": 15156147275725954246,
+            "counter": 0
+          },
+          "misc_rng": {
+            "seed0": 9809887544508935085,
+            "seed1": 5182130014720022601,
+            "counter": 15
+          },
+          "math_rng": {
+            "seed0": 15717239165933452770,
+            "seed1": 15156147275725954246,
+            "counter": 0
+          }
+        }
+      },
+      "runtime": {
+        "using_card": false,
+        "card_queue": [],
+        "colorless_combat_pool": [],
+        "emitted_events": [],
+        "engine_diagnostics": [],
+        "pending_rewards": [],
+        "power_instance_counter": 0,
+        "last_drawn_cards": [],
+        "monster_protocol": {
+          "2": {
+            "observation": {
+              "visible_intent": "Unknown",
+              "preview_damage_per_hit": 0
+            },
+            "identity": {
+              "instance_id": null,
+              "spawn_order": null,
+              "draw_x": null,
+              "group_index": null
+            }
+          },
+          "1": {
+            "observation": {
+              "visible_intent": "Unknown",
+              "preview_damage_per_hit": 0
+            },
+            "identity": {
+              "instance_id": null,
+              "spawn_order": null,
+              "draw_x": null,
+              "group_index": null
+            }
+          },
+          "3": {
+            "observation": {
+              "visible_intent": "Unknown",
+              "preview_damage_per_hit": 0
+            },
+            "identity": {
+              "instance_id": null,
+              "spawn_order": null,
+              "draw_x": null,
+              "group_index": null
+            }
+          }
+        },
+        "combat_mugged": false,
+        "combat_smoked": false
+      }
+    }
+  }
+}

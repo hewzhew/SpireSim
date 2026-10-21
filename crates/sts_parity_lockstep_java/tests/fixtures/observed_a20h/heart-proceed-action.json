@@ -1,0 +1,1 @@
+{"schema":"sts-recorded-java-action-v1","phase":"committed","action":{"kind":"proceed","surface":"true_victory"},"receipt":{"status":"completed","request_id":"2ecc7218-e2a4-450c-881c-696f3cd6f054","based_on_frame_id":125,"action_id":"proceed_true_victory","successor_frame_id":126}}

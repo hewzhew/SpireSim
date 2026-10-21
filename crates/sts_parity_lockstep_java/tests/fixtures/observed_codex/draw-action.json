@@ -1,0 +1,1 @@
+{"schema":"sts-recorded-java-action-v1","phase":"committed","action":{"kind":"play_card","card_binding":"natural_run/combat_birth/F05X00/34/0","card_id":"doppelganger","target":null},"receipt":{"status":"completed","request_id":"3e425d42-e005-4ec8-a9d3-abfd1cfc8ad2","based_on_frame_id":51,"action_id":"play_card:4d718606-e104-488b-ba5e-57ae14d6230b:none","successor_frame_id":52}}

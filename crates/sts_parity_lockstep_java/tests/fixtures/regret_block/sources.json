@@ -1,0 +1,168 @@
+{
+  "scope": "Constructed A20 Regret EndTurn with Barricade/block, optional Buffer/Tungsten Rod: player scalars/powers, monster state, AI/shuffle states and complete RNG calls; no cross-runtime card bindings, full relic/deck comparison or natural certification",
+  "constructed_input_scope": "A20 Ironclad, 80 HP, Spire Growth first Constrict. Normal Barricade+ and Defend leave 5 block and Regret plus two Wounds in hand. Optional Fossilized Helix supplies Buffer; optional Tungsten Rod reduces remaining HP loss. Rust uses unbound constructed recipe slots, never Java UUIDs.",
+  "capture_status": "Complete bounded batch: four live and four immediate offline Exact transitions; only the declared mechanism scope.",
+  "collector_executable_sha256": "d6c1cf451998df4a01d998ec2c8f288e010abd1e79ee86d52099fa8fc5857b20",
+  "capture_manifest_source": ".oracle-lab/diagnostics/20260907-regret-block-verified/complete.json",
+  "capture_manifest_sha256": "ef35f2ace13863de7c253fdaf262aa7902342d489f970e9186b8e5de688da35d",
+  "files": {
+    "plain-before.json": {
+      "source": ".oracle-lab/diagnostics/20260907-regret-block-verified/plain/before.json",
+      "sha256": "99d2b1af69623cb97556f0cbf2622f5d17180c20ad16d4aab8fbdbf668739526",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "19DB8497D557D1F61C3BC85B00536E8B020DF4B2B932FD8790E2C366CE0E901F",
+        "session_epoch": "6bd5eb46-157f-4a6a-8341-f174f6b4657b:94170dc0-a309-4ce8-8a44-72aa33bdbafe:de4c3ab6-0486-466c-bfa2-15b168dce43f"
+      }
+    },
+    "plain-action.json": {
+      "source": ".oracle-lab/diagnostics/20260907-regret-block-verified/plain/action.json",
+      "sha256": "8ed0cb1db6c51bd5504cd8627ed7292cfb4819e336123a864bf31bbfa15cbeca"
+    },
+    "plain-after.json": {
+      "source": ".oracle-lab/diagnostics/20260907-regret-block-verified/plain/after.json",
+      "sha256": "1ddabf4d353e3ad15de7d737e616d6ae1ad83c47a70bd90ed57d0d9f74e5514b",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "19DB8497D557D1F61C3BC85B00536E8B020DF4B2B932FD8790E2C366CE0E901F",
+        "session_epoch": "6bd5eb46-157f-4a6a-8341-f174f6b4657b:94170dc0-a309-4ce8-8a44-72aa33bdbafe:de4c3ab6-0486-466c-bfa2-15b168dce43f"
+      }
+    },
+    "buffer-before.json": {
+      "source": ".oracle-lab/diagnostics/20260907-regret-block-verified/buffer/before.json",
+      "sha256": "2fdd197cef6d79e3b651f27e4714d96cb464ab7f87ea466e67a0be7f18825406",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "19DB8497D557D1F61C3BC85B00536E8B020DF4B2B932FD8790E2C366CE0E901F",
+        "session_epoch": "6bd5eb46-157f-4a6a-8341-f174f6b4657b:94170dc0-a309-4ce8-8a44-72aa33bdbafe:de4c3ab6-0486-466c-bfa2-15b168dce43f"
+      }
+    },
+    "buffer-action.json": {
+      "source": ".oracle-lab/diagnostics/20260907-regret-block-verified/buffer/action.json",
+      "sha256": "9139b7ffdbd3eed890034e080e87fb8f179a13fddefaf67b0c3053ecc6f4838f"
+    },
+    "buffer-after.json": {
+      "source": ".oracle-lab/diagnostics/20260907-regret-block-verified/buffer/after.json",
+      "sha256": "dfbae35856723f5987d25c969ec6736af953dcc1929867f8ffe68d2bb9e8058b",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "19DB8497D557D1F61C3BC85B00536E8B020DF4B2B932FD8790E2C366CE0E901F",
+        "session_epoch": "6bd5eb46-157f-4a6a-8341-f174f6b4657b:94170dc0-a309-4ce8-8a44-72aa33bdbafe:de4c3ab6-0486-466c-bfa2-15b168dce43f"
+      }
+    },
+    "tungsten-before.json": {
+      "source": ".oracle-lab/diagnostics/20260907-regret-block-verified/tungsten/before.json",
+      "sha256": "8f5232f9cfe4076ae50eb75d5356af7b4ece1c1174fb563fb641ef14b87098ee",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "19DB8497D557D1F61C3BC85B00536E8B020DF4B2B932FD8790E2C366CE0E901F",
+        "session_epoch": "6bd5eb46-157f-4a6a-8341-f174f6b4657b:94170dc0-a309-4ce8-8a44-72aa33bdbafe:de4c3ab6-0486-466c-bfa2-15b168dce43f"
+      }
+    },
+    "tungsten-action.json": {
+      "source": ".oracle-lab/diagnostics/20260907-regret-block-verified/tungsten/action.json",
+      "sha256": "ec432fffe4c0a92064bc4d2ca8b083d7068f23a65855eb55e2b8a3facb1e34db"
+    },
+    "tungsten-after.json": {
+      "source": ".oracle-lab/diagnostics/20260907-regret-block-verified/tungsten/after.json",
+      "sha256": "6d47fbcb6fbacfcbe3da4666e7f5dbb10d94304a43a5c534884ae85307cf1b8a",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "19DB8497D557D1F61C3BC85B00536E8B020DF4B2B932FD8790E2C366CE0E901F",
+        "session_epoch": "6bd5eb46-157f-4a6a-8341-f174f6b4657b:94170dc0-a309-4ce8-8a44-72aa33bdbafe:de4c3ab6-0486-466c-bfa2-15b168dce43f"
+      }
+    },
+    "buffer-tungsten-before.json": {
+      "source": ".oracle-lab/diagnostics/20260907-regret-block-verified/buffer-tungsten/before.json",
+      "sha256": "f1dc86e4640157174c470fb0b7d9675edfed6ef8935c1eecd7f9f9a48dfc590a",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "19DB8497D557D1F61C3BC85B00536E8B020DF4B2B932FD8790E2C366CE0E901F",
+        "session_epoch": "6bd5eb46-157f-4a6a-8341-f174f6b4657b:94170dc0-a309-4ce8-8a44-72aa33bdbafe:de4c3ab6-0486-466c-bfa2-15b168dce43f"
+      }
+    },
+    "buffer-tungsten-action.json": {
+      "source": ".oracle-lab/diagnostics/20260907-regret-block-verified/buffer-tungsten/action.json",
+      "sha256": "e28ed4f463e24b281200ea2a32cdfdf7c1870c978e64161a7f2adc3ce1cd726e"
+    },
+    "buffer-tungsten-after.json": {
+      "source": ".oracle-lab/diagnostics/20260907-regret-block-verified/buffer-tungsten/after.json",
+      "sha256": "482989cbaa0030710bb73061dfa311025e504377ee35ed81dc6e944cd21e413a",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "19DB8497D557D1F61C3BC85B00536E8B020DF4B2B932FD8790E2C366CE0E901F",
+        "session_epoch": "6bd5eb46-157f-4a6a-8341-f174f6b4657b:94170dc0-a309-4ce8-8a44-72aa33bdbafe:de4c3ab6-0486-466c-bfa2-15b168dce43f"
+      }
+    }
+  },
+  "capture_launch_plan_source": ".oracle-lab/diagnostics/20260907-regret-block-verified/launch-plan.json",
+  "capture_launch_plan_sha256": "e3a86959b516c91d1fbe1a2cac603e6cef18b0268cea7d82226fad77d2bfda53",
+  "runtime_provenance": {
+    "schema": "sts_java_play_launch_plan_v4",
+    "profile": "accelerated",
+    "control_profile": "parity_scenario_control",
+    "game_java": {
+      "length": 206912,
+      "path": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\SlayTheSpire\\jre\\bin\\javaw.exe",
+      "sha256": "036584C1C8321FF67E4933CC9072797A2FD4CFE8EF02460F4621A7CFEA9D1091"
+    },
+    "mod_the_spire": {
+      "length": 10252951,
+      "path": "\\\\?\\D:\\rust\\lib\\ModTheSpire.jar",
+      "sha256": "541B5E8A875D2A404A5A6D54F4A6F814284B0CF71ACB9245239D9C5EF50EA604"
+    },
+    "selected_mods": [
+      {
+        "id": "basemod",
+        "jar": {
+          "length": 7659408,
+          "path": "C:\\Program Files (x86)\\Steam\\steamapps\\workshop\\content\\646570\\1605833019\\BaseMod.jar",
+          "sha256": "C3353C10E64C621B723E9FD7D0502DFA796F828B101B68513594A5F5EF83FBAF"
+        },
+        "version": "5.56.0"
+      },
+      {
+        "id": "superfastmode",
+        "jar": {
+          "length": 25877,
+          "path": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\SlayTheSpire\\mods\\SuperFastMode.jar",
+          "sha256": "CECDC2A54D0B2DB8AA66857098D4740E5D74EC3361CD12416629019438D25C60"
+        },
+        "version": "1.0.8"
+      },
+      {
+        "id": "CommunicationMod",
+        "jar": {
+          "length": 704884,
+          "path": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\SlayTheSpire\\mods\\CommunicationMod.jar",
+          "sha256": "19DB8497D557D1F61C3BC85B00536E8B020DF4B2B932FD8790E2C366CE0E901F"
+        },
+        "version": "1.2.1"
+      }
+    ],
+    "acceleration": {
+      "game_fast_mode": true,
+      "mod": {
+        "id": "superfastmode",
+        "jar": {
+          "length": 25877,
+          "path": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\SlayTheSpire\\mods\\SuperFastMode.jar",
+          "sha256": "CECDC2A54D0B2DB8AA66857098D4740E5D74EC3361CD12416629019438D25C60"
+        },
+        "version": "1.0.8"
+      },
+      "settings": {
+        "config": {
+          "length": 123,
+          "path": "C:\\Users\\17239\\AppData\\Local\\ModTheSpire\\SuperFastMode\\SuperFastModeConfig.properties",
+          "sha256": "C9AC6FA74C9EDC8FB3F59EC6AC6CBE6B83CD77D012C0A129D297D4276ACE2931"
+        },
+        "values": {
+          "delta_multiplier": 5.0,
+          "is_delta_multiplied": true,
+          "is_instant_lerp": true
+        }
+      }
+    }
+  }
+}

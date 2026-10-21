@@ -1,0 +1,245 @@
+{
+  "source": {
+    "id": "reddit-ironclad-10-streak-guide",
+    "title": "Ironclad guide A20H",
+    "author": "Panacea (Darth_Calculus)",
+    "url": "https://www.reddit.com/r/slaythespire/comments/rlcxra/ironclad_in_depth_guide_for_a20_heart_kills_10/"
+  },
+  "theme": "Boss relics",
+  "origin": {
+    "record_id": "section-012",
+    "locator": "Boss Rewards / Act 1"
+  },
+  "blocks": [
+    {
+      "key": "b01",
+      "kind": "ranking",
+      "title": "Act 1 rank Sneck",
+      "subjects": [
+        "Snecko Eye"
+      ],
+      "text": "Act 1 Boss relic tier list — Sneck: Snecko Eye."
+    },
+    {
+      "key": "b02",
+      "kind": "ranking",
+      "title": "Act 1 rank A",
+      "subjects": [
+        "Coffee Dripper"
+      ],
+      "text": "Act 1 Boss relic tier list — A: Coffee Dripper, Cursed Key."
+    },
+    {
+      "key": "b03",
+      "kind": "ranking",
+      "title": "Act 1 rank B",
+      "subjects": [
+        "Philosopher's Stone"
+      ],
+      "text": "Act 1 Boss relic tier list — B: Philosopher's Stone, Velvet Choker."
+    },
+    {
+      "key": "b04",
+      "kind": "ranking",
+      "title": "Act 1 rank C",
+      "subjects": [
+        "Astrolabe"
+      ],
+      "text": "Act 1 Boss relic tier list — C: Astrolabe."
+    },
+    {
+      "key": "b05",
+      "kind": "ranking",
+      "title": "Act 1 rank Sad Energy",
+      "subjects": [
+        "Slaver's Collar",
+        "Sozu"
+      ],
+      "text": "Act 1 Boss relic tier list — Sad Energy: Slaver's Collar, Sozu."
+    },
+    {
+      "key": "b07",
+      "kind": "ranking",
+      "title": "Act 1 rank F",
+      "subjects": [
+        "Runic Cube",
+        "Calling Bell",
+        "Black Blood",
+        "Empty Cage",
+        "Sacred Bark",
+        "Black Star",
+        "Tiny House"
+      ],
+      "text": "Act 1 Boss relic tier list — F: Runic Cube, Calling Bell, Black Blood, Empty Cage, Sacred Bark, Black Star, Tiny House."
+    },
+    {
+      "key": "b08-sad",
+      "kind": "context",
+      "title": "Sad Energy rank",
+      "subjects": [
+        "Slaver's Collar",
+        "Sozu"
+      ],
+      "text": "The bottom three tiers (sad energy, sus energy, F) are not meant to be ordered. Sad energy means that the relics have a huge immediate downside, which will continue to cost you a fair amount of hp every combat for the rest of the run."
+    },
+    {
+      "key": "b08-f",
+      "kind": "context",
+      "title": "F rank",
+      "subjects": [
+        "Runic Cube",
+        "Calling Bell",
+        "Black Blood",
+        "Empty Cage",
+        "Sacred Bark",
+        "Black Star",
+        "Tiny House"
+      ],
+      "text": "The bottom three tiers (sad energy, sus energy, F) are not meant to be ordered."
+    },
+    {
+      "key": "b09",
+      "kind": "context",
+      "title": "Hard choices",
+      "subjects": [],
+      "text": "When you don’t receive any relics in tier C or above, you may have a tough decision on your hands. Deciding between sad energy, sus energy, and F is particularly difficult. Ectoplasm can definitely save a deck that would die if it picked sozu, but will start really costing you in acts 3 and 4."
+    },
+    {
+      "key": "b10",
+      "kind": "discussion",
+      "title": "Snecko Eye",
+      "subjects": [
+        "Snecko Eye"
+      ],
+      "text": "Snecko eye: This relic draws 2 cards per turn which is insanely good. It also randomizes the costs of cards in your hand which is scary. On average it either costs you energy or produces energy based on the average cost of cards in your deck. There are some particular interactions that make this relic extra strong. Corruption overwrites the cost of snecko, which is a run winning combo. Fiend fire / second work well with the larger hand size and unplayable 3 costs. Ironclad has lots of 2 and 3 energy cards to draft, and snecko effectively produces energy whenever you draw them. Which is nice because it also provides a lot of extra draw. Snecko eye is significantly worse if your deck relies on multiple card combos to function, since you can no longer guarantee being able to play both cards if you draw them together. Overall I almost always recommend picking this relic after act 1.    \nFinally, a note on cost variance: Snecko has the potential to make all of your cards expensive. This can make easy fights worse because you have a chance of taking a lot of damage in situations that would have been fine without the card draw. This is a small price to pay. In longer fights you will have powerful turns that will make up for the bad turns, and your deck will perform well a vast majority of the time. Coming into this game I got to ascension 20 without ever winning with a snecko eye. I wanted to make decks where I would know exactly what my deck would do every single turn. This was a limitation. Great power comes with embracing variance. Trust in the sneck and you will be rewarded."
+    },
+    {
+      "key": "b11",
+      "kind": "discussion",
+      "title": "Runic Pyramid",
+      "subjects": [
+        "Runic Pyramid"
+      ],
+      "text": "Runic Pyramid: This relic allows for you to play cards on the turn that they are best played in, and also save pieces of multi-card combos, to have powerful combo turns. This effect comes with a downside of potentially not having the energy to get rid of unwanted cards, and thus being unable to draw cards due to the hand-size limit. Naturally, any cards that produce energy are amazing with pyramid. Pyramid is particularly strong with corruption, fiend fire, second wind, and bloodletting as those cards have huge benefits with the large hand size and they help unclog your hand. If you do not have any of those cards, pyramid is significantly less good. If in addition, you do not have any 0 energy cards, taking pyramid after act 1 boss can be risky. Especially take extra care against the slavers elite fight, because you will not be able to discard your wounds after the reshuffle. After act 2 boss, this relic is usually amazing."
+    },
+    {
+      "key": "b12",
+      "kind": "discussion",
+      "title": "Coffee Dripper / Fusion Hammer",
+      "subjects": [
+        "Coffee Dripper",
+        "Fusion Hammer"
+      ],
+      "text": "Coffee Dripper / Fusion Hammer: Part of what makes these relics amazing is that you can choose to path away from campfires. In an ideal world you don’t rest almost ever, so coffee dripper can often have no downside. Realistically, it comes with the downside of requiring more conservative pathing, and more conservative use of your hp. Fusion hammer is a bit worse than coffee dripper, but again you can avoid campfires if you don’t want to rest. Fusion hammer is also good with armaments and apotheosis so you can upgrade stuff during combat."
+    },
+    {
+      "key": "b14",
+      "kind": "discussion",
+      "title": "Philosopher's Stone",
+      "subjects": [
+        "Philosopher's Stone"
+      ],
+      "text": "Philosopher's Stone: In my experience, the downside of giving enemies 1 strength is not that significant. You will take some extra damage occasionally, and must prepare for tougher byrds, book of stabbing, and later on the heart. Against byrds typically the 4th energy is very helpful for knocking them down. Against the heart a single copy of disarm can completely negate the downside. If your deck seems particularly weak, this relic is a bit worse since it comes with an immediate downside rather than a delayed downside."
+    },
+    {
+      "key": "b16",
+      "kind": "discussion",
+      "title": "Pandora's Box / Astrolabe",
+      "subjects": [
+        "Pandora's Box",
+        "Astrolabe"
+      ],
+      "text": "Pandora’s Box / Astrolabe: These relics are a lot of fun and pretty good at the same time. They are not as amazing as an extra energy each turn, but do not be too scared of the RNG associated with transform, most of the time it significantly upgrades your deck."
+    },
+    {
+      "key": "b17",
+      "kind": "discussion",
+      "title": "Sad energy relics",
+      "subjects": [
+        "Slaver's Collar",
+        "Mark of Pain",
+        "Sozu"
+      ],
+      "text": "Sad energy relics: We now come to collar, mark of pain and sozu, which provide energy with a very huge immediate downside that will affect the rest of your run. The downside of collar is that you effectively lose 1 energy every turn in hallway fights. You basically skip a boss relic until you reach your first act 2 elite, and this can be deadly. The downside of mark of pain is reduced card draw, which is an extremely bad thing for an energy relic to give, since it may prevent you from being able to spend the extra energy. The downside of sozu is no more potions, which costs an absurd amount of hp throughout your run. If you don’t have any potions currently, you also guarantee that you will not have any potions for the heart fight which is significant. You can take one of these relics if your deck seems very strong, or if your other options seem worse, but sozu is particularly bad."
+    },
+    {
+      "key": "b18",
+      "kind": "discussion",
+      "title": "Sus energy relics",
+      "subjects": [],
+      "text": "Then there are what I call the Sus energy relics, but I could also call them the desperate prayer relics. These relics don’t have too much of a downside in the short term, but you will have a much harder time later on."
+    },
+    {
+      "key": "b19",
+      "kind": "discussion",
+      "title": "Ectoplasm",
+      "subjects": [
+        "Ectoplasm"
+      ],
+      "text": "Ectoplasm: No. More. Gold. This will make many of your relics useless, many of the possible events useless, and prevent you from card removing and buying stuff to make your deck stronger. You can definitely win with it, but it won’t be easy."
+    },
+    {
+      "key": "b21",
+      "kind": "discussion",
+      "title": "Busted Crown",
+      "subjects": [
+        "Busted Crown"
+      ],
+      "text": "Busted Crown: This relic is probably the most suspicious of them all, because it nukes your ability to find the cards you want. Becoming stronger is going to be a very tough challenge, and you will need to farm events heavily. This can be good if you think your deck beats the heart with an extra each turn, but otherwise only take this if you are very very desperate."
+    },
+    {
+      "key": "b22",
+      "kind": "discussion",
+      "title": "Low impact relics",
+      "subjects": [
+        "Runic Cube",
+        "Calling Bell",
+        "Black Blood",
+        "Empty Cage",
+        "Sacred Bark",
+        "Black Star",
+        "Tiny House"
+      ],
+      "text": "Finally, there are the bad relics. More realistically I should call them the low impact relics."
+    },
+    {
+      "key": "b23",
+      "kind": "discussion",
+      "title": "Runic Cube",
+      "subjects": [
+        "Runic Cube"
+      ],
+      "text": "Runic cube: If you have a deck that synergizes with cube this relic can be nice. Bloodletting and brutality are particularly nice. For most decks this relic does very little until the heart fight, where it becomes amazing. Against the heart you can draw as many cards as you want by taking damage from beat of death. This relic is often amazing from act 2 boss."
+    },
+    {
+      "key": "b24",
+      "kind": "discussion",
+      "title": "Black Blood / Calling Bell / Sacred Bark / Empty Cage",
+      "subjects": [
+        "Black Blood",
+        "Calling Bell",
+        "Sacred Bark",
+        "Empty Cage"
+      ],
+      "text": "Black blood / Calling Bell / Sacred Bark / Empty Cage : These relics do something, but it’s not really that exciting."
+    },
+    {
+      "key": "b25",
+      "kind": "discussion",
+      "title": "Black Star",
+      "subjects": [
+        "Black Star"
+      ],
+      "text": "Black star: This relic doesn’t do anything in the short term, which can be deadly. If your deck is already strong in act 2 without a boss relic, this can be quite nice though."
+    },
+    {
+      "key": "b26",
+      "kind": "discussion",
+      "title": "Tiny House",
+      "subjects": [
+        "Tiny House"
+      ],
+      "text": "Tiny House : It’s better than skipping!"
+    }
+  ]
+}

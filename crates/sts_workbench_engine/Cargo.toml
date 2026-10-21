@@ -1,0 +1,27 @@
+[package]
+name = "sts_workbench_engine"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "sts_workbench_engine"
+path = "src/main.rs"
+
+[dependencies]
+oracle_artifact_contract = { path = "../oracle_artifact_contract" }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+sha2 = "0.10"
+sts_java_parity_protocol = { path = "../sts_java_parity_protocol" }
+sts_java_parity_projection = { path = "../sts_java_parity_projection" }
+sts_paired_root = { path = "../sts_paired_root" }
+sts_workbench_artifact_store = { path = "../sts_workbench_artifact_store" }
+sts_workbench_engine_protocol = { path = "../sts_workbench_engine_protocol" }
+sts_workbench_supervisor = { path = "../sts_workbench_supervisor" }
+
+[dev-dependencies]
+uuid = { version = "1.18", features = ["v4"] }

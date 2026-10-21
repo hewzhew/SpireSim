@@ -1,0 +1,1 @@
+{"schema":"sts-recorded-java-action-v1","phase":"committed","action":{"kind":"proceed","surface":"combat_reward"},"receipt":{"status":"completed","request_id":"3714e765-8b5c-4f90-85f8-e9c7ecf15a73","based_on_frame_id":713,"action_id":"close_combat_reward","successor_frame_id":714}}

@@ -1,0 +1,18 @@
+[package]
+name = "sts_complete_turn_view"
+version = "0.1.0"
+edition = "2021"
+publish = false
+autobins = false
+autotests = false
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+sts_agent = { path = "../sts_agent" }
+sts_combat_strategy = { path = "../sts_combat_strategy" }
+sts_combat_planner = { path = "../sts_combat_planner" }
+sts_complete_turn_proposal = { path = "../sts_complete_turn_proposal" }
+sts_core = { package = "sts_simulator", path = "../.." }

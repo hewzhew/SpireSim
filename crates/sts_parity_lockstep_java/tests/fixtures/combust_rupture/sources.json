@@ -1,0 +1,307 @@
+{
+  "scope": "Constructed A20 Rupture+ with normal/upgraded/stacked Combust and optional Regret/Buffer/Tungsten Rod: creatures including independent Combust HP loss, AI/shuffle states and complete RNG calls only; no card bindings, full relic/deck comparison or natural certification",
+  "constructed_input_scope": "Ten A20 Ironclad first-EndTurn cases with normally played Rupture+ and Combust, Combust+, or both. Optional Regret/Wounds, Buffer and Tungsten Rod. Independent Rust scenario identities; no Java UUID bindings.",
+  "capture_status": "Stopped batch: nine live Exact, tenth live Mismatch (Java HP 79, Rust HP 77). Original failed report retained; current offline fixture tests recompute every transition. No live-complete seal exists.",
+  "collector_executable_sha256": "3442f32ab4cec044529333a032597738267708ab4e7ac7d648626abcad255b5d",
+  "files": {
+    "single-before.json": {
+      "source": ".oracle-lab/diagnostics/20260907-combust-live-v2/single/before.json",
+      "sha256": "e454fe32be03f5b2e4dc6558c324a57fac91277390e4f61285cc9674e9bcf553",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "119B2C05C13A021CF114C354F1B5B0D629C2D03BCE7B578DE1690B2DB3E35EF1",
+        "session_epoch": "86e5268b-6c1c-494c-8caa-a9022271d31d:751853ba-6510-4f11-9995-fe65e6d48bfa:1fce17d7-4ee9-45ff-827e-2d80c1df9707"
+      }
+    },
+    "single-action.json": {
+      "source": ".oracle-lab/diagnostics/20260907-combust-live-v2/single/action.json",
+      "sha256": "08e20b411c470de67ef548af3cc0c6a852ec9100b3a1bb157476aa2f75374ad6"
+    },
+    "single-after.json": {
+      "source": ".oracle-lab/diagnostics/20260907-combust-live-v2/single/after.json",
+      "sha256": "12424a74303fd18b8e83a645c6f02352ca601cf68cff04df7526a88a5898cc03",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "119B2C05C13A021CF114C354F1B5B0D629C2D03BCE7B578DE1690B2DB3E35EF1",
+        "session_epoch": "86e5268b-6c1c-494c-8caa-a9022271d31d:751853ba-6510-4f11-9995-fe65e6d48bfa:1fce17d7-4ee9-45ff-827e-2d80c1df9707"
+      }
+    },
+    "upgraded-before.json": {
+      "source": ".oracle-lab/diagnostics/20260907-combust-live-v2/upgraded/before.json",
+      "sha256": "fb07a93af4e58fb43f5eb86f83a66d4f9961e6d163da09bb706aea07ed37427f",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "119B2C05C13A021CF114C354F1B5B0D629C2D03BCE7B578DE1690B2DB3E35EF1",
+        "session_epoch": "86e5268b-6c1c-494c-8caa-a9022271d31d:751853ba-6510-4f11-9995-fe65e6d48bfa:1fce17d7-4ee9-45ff-827e-2d80c1df9707"
+      }
+    },
+    "upgraded-action.json": {
+      "source": ".oracle-lab/diagnostics/20260907-combust-live-v2/upgraded/action.json",
+      "sha256": "8b86490a636ab8b9ea77cd4ad57456ff50d0b80fcb07ffe5214b517f8267fe71"
+    },
+    "upgraded-after.json": {
+      "source": ".oracle-lab/diagnostics/20260907-combust-live-v2/upgraded/after.json",
+      "sha256": "0be60c846d791b895721ca6c73430fcab1df0e72d959b90cfe6fdb6e9df7c073",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "119B2C05C13A021CF114C354F1B5B0D629C2D03BCE7B578DE1690B2DB3E35EF1",
+        "session_epoch": "86e5268b-6c1c-494c-8caa-a9022271d31d:751853ba-6510-4f11-9995-fe65e6d48bfa:1fce17d7-4ee9-45ff-827e-2d80c1df9707"
+      }
+    },
+    "stacked-before.json": {
+      "source": ".oracle-lab/diagnostics/20260907-combust-live-v2/stacked/before.json",
+      "sha256": "62e8bb922e37c896af87032eacff675d76e6fa2289f4d8d826a4ad4542c26f25",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "119B2C05C13A021CF114C354F1B5B0D629C2D03BCE7B578DE1690B2DB3E35EF1",
+        "session_epoch": "86e5268b-6c1c-494c-8caa-a9022271d31d:751853ba-6510-4f11-9995-fe65e6d48bfa:1fce17d7-4ee9-45ff-827e-2d80c1df9707"
+      }
+    },
+    "stacked-action.json": {
+      "source": ".oracle-lab/diagnostics/20260907-combust-live-v2/stacked/action.json",
+      "sha256": "ffb219c0b44cf676789a3542d1ea7daefddad166f3157cd520a2b9990d7e1864"
+    },
+    "stacked-after.json": {
+      "source": ".oracle-lab/diagnostics/20260907-combust-live-v2/stacked/after.json",
+      "sha256": "04258fbd5542552b7c52057b4b6d13c4c1b6037cf25447e4c01f6f65ef539185",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "119B2C05C13A021CF114C354F1B5B0D629C2D03BCE7B578DE1690B2DB3E35EF1",
+        "session_epoch": "86e5268b-6c1c-494c-8caa-a9022271d31d:751853ba-6510-4f11-9995-fe65e6d48bfa:1fce17d7-4ee9-45ff-827e-2d80c1df9707"
+      }
+    },
+    "stacked-tungsten-before.json": {
+      "source": ".oracle-lab/diagnostics/20260907-combust-live-v2/stacked-tungsten/before.json",
+      "sha256": "c27340a65def30185fdbd38a3e748968bd6d5a8d5a5191f9c1b7c4be6c5339e7",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "119B2C05C13A021CF114C354F1B5B0D629C2D03BCE7B578DE1690B2DB3E35EF1",
+        "session_epoch": "86e5268b-6c1c-494c-8caa-a9022271d31d:751853ba-6510-4f11-9995-fe65e6d48bfa:1fce17d7-4ee9-45ff-827e-2d80c1df9707"
+      }
+    },
+    "stacked-tungsten-action.json": {
+      "source": ".oracle-lab/diagnostics/20260907-combust-live-v2/stacked-tungsten/action.json",
+      "sha256": "41409bb1581df41567900e305abc497f1f19fe9ffa780e8715d083966a63e828"
+    },
+    "stacked-tungsten-after.json": {
+      "source": ".oracle-lab/diagnostics/20260907-combust-live-v2/stacked-tungsten/after.json",
+      "sha256": "06ac6c94daa4cdc205567d66717cf7720ee2aab123fc6e14f1bec95df42f19f3",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "119B2C05C13A021CF114C354F1B5B0D629C2D03BCE7B578DE1690B2DB3E35EF1",
+        "session_epoch": "86e5268b-6c1c-494c-8caa-a9022271d31d:751853ba-6510-4f11-9995-fe65e6d48bfa:1fce17d7-4ee9-45ff-827e-2d80c1df9707"
+      }
+    },
+    "stacked-buffer-before.json": {
+      "source": ".oracle-lab/diagnostics/20260907-combust-live-v2/stacked-buffer/before.json",
+      "sha256": "9b01b9edc80f6a2fa60a2e742279488aaa5d690c61c046dc1343b77eb08d0d5c",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "119B2C05C13A021CF114C354F1B5B0D629C2D03BCE7B578DE1690B2DB3E35EF1",
+        "session_epoch": "86e5268b-6c1c-494c-8caa-a9022271d31d:751853ba-6510-4f11-9995-fe65e6d48bfa:1fce17d7-4ee9-45ff-827e-2d80c1df9707"
+      }
+    },
+    "stacked-buffer-action.json": {
+      "source": ".oracle-lab/diagnostics/20260907-combust-live-v2/stacked-buffer/action.json",
+      "sha256": "8ed855963f9b979106bad46e590fc569b7fce812a5a689b6b71638484d8cd950"
+    },
+    "stacked-buffer-after.json": {
+      "source": ".oracle-lab/diagnostics/20260907-combust-live-v2/stacked-buffer/after.json",
+      "sha256": "e887b2eab2b6a66622200e63f8871b0e675f48f2db8f8b4e63e0557efde838ec",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "119B2C05C13A021CF114C354F1B5B0D629C2D03BCE7B578DE1690B2DB3E35EF1",
+        "session_epoch": "86e5268b-6c1c-494c-8caa-a9022271d31d:751853ba-6510-4f11-9995-fe65e6d48bfa:1fce17d7-4ee9-45ff-827e-2d80c1df9707"
+      }
+    },
+    "regret-before.json": {
+      "source": ".oracle-lab/diagnostics/20260907-combust-live-v2/regret/before.json",
+      "sha256": "5ddbc14c4f2f0d4b1c8a75c5fb5a2b212bbfa5f520498e6c92348af676460181",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "119B2C05C13A021CF114C354F1B5B0D629C2D03BCE7B578DE1690B2DB3E35EF1",
+        "session_epoch": "86e5268b-6c1c-494c-8caa-a9022271d31d:751853ba-6510-4f11-9995-fe65e6d48bfa:1fce17d7-4ee9-45ff-827e-2d80c1df9707"
+      }
+    },
+    "regret-action.json": {
+      "source": ".oracle-lab/diagnostics/20260907-combust-live-v2/regret/action.json",
+      "sha256": "d58df4c1b741350f0fc85409a367f570c5410e6d7e433c98f4b1f8441674ff05"
+    },
+    "regret-after.json": {
+      "source": ".oracle-lab/diagnostics/20260907-combust-live-v2/regret/after.json",
+      "sha256": "4b1b60b1f26bb1eeea70e07cc4498fd72465d653f71e4ec9b0cb2babf3e033c5",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "119B2C05C13A021CF114C354F1B5B0D629C2D03BCE7B578DE1690B2DB3E35EF1",
+        "session_epoch": "86e5268b-6c1c-494c-8caa-a9022271d31d:751853ba-6510-4f11-9995-fe65e6d48bfa:1fce17d7-4ee9-45ff-827e-2d80c1df9707"
+      }
+    },
+    "regret-buffer-before.json": {
+      "source": ".oracle-lab/diagnostics/20260907-combust-live-v2/regret-buffer/before.json",
+      "sha256": "b9c5242ee8d3346cc8a101036b70d12ac9da92011fcff7423e4ac09f1e3aa63b",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "119B2C05C13A021CF114C354F1B5B0D629C2D03BCE7B578DE1690B2DB3E35EF1",
+        "session_epoch": "86e5268b-6c1c-494c-8caa-a9022271d31d:751853ba-6510-4f11-9995-fe65e6d48bfa:1fce17d7-4ee9-45ff-827e-2d80c1df9707"
+      }
+    },
+    "regret-buffer-action.json": {
+      "source": ".oracle-lab/diagnostics/20260907-combust-live-v2/regret-buffer/action.json",
+      "sha256": "76a56b873f3a089f6eae79355eff9f0015d29be49c078897dd11118cc48cf4e7"
+    },
+    "regret-buffer-after.json": {
+      "source": ".oracle-lab/diagnostics/20260907-combust-live-v2/regret-buffer/after.json",
+      "sha256": "296b4f90456ddf0633f1cc04429372ad00370d4dc17aa0137585df00baad5556",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "119B2C05C13A021CF114C354F1B5B0D629C2D03BCE7B578DE1690B2DB3E35EF1",
+        "session_epoch": "86e5268b-6c1c-494c-8caa-a9022271d31d:751853ba-6510-4f11-9995-fe65e6d48bfa:1fce17d7-4ee9-45ff-827e-2d80c1df9707"
+      }
+    },
+    "regret-tungsten-before.json": {
+      "source": ".oracle-lab/diagnostics/20260907-combust-live-v2/regret-tungsten/before.json",
+      "sha256": "3c42a2e99e2e91cb79c0448f0e7619776a31d91d9d86e49e45672f9f0a93d802",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "119B2C05C13A021CF114C354F1B5B0D629C2D03BCE7B578DE1690B2DB3E35EF1",
+        "session_epoch": "86e5268b-6c1c-494c-8caa-a9022271d31d:751853ba-6510-4f11-9995-fe65e6d48bfa:1fce17d7-4ee9-45ff-827e-2d80c1df9707"
+      }
+    },
+    "regret-tungsten-action.json": {
+      "source": ".oracle-lab/diagnostics/20260907-combust-live-v2/regret-tungsten/action.json",
+      "sha256": "550ccccc831beca657aeb6513983306deb1f80ca96e09753d11857da92b4dc09"
+    },
+    "regret-tungsten-after.json": {
+      "source": ".oracle-lab/diagnostics/20260907-combust-live-v2/regret-tungsten/after.json",
+      "sha256": "4bd2859cce8d7afcb46ce7e41c6621288c07c43e067c104a7599f29b4c57d58f",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "119B2C05C13A021CF114C354F1B5B0D629C2D03BCE7B578DE1690B2DB3E35EF1",
+        "session_epoch": "86e5268b-6c1c-494c-8caa-a9022271d31d:751853ba-6510-4f11-9995-fe65e6d48bfa:1fce17d7-4ee9-45ff-827e-2d80c1df9707"
+      }
+    },
+    "regret-buffer-tungsten-before.json": {
+      "source": ".oracle-lab/diagnostics/20260907-combust-live-v2/regret-buffer-tungsten/before.json",
+      "sha256": "89f951906adcf590ac19dd95af0e9e6a38848daa14e1e9b2bb1cdb1942b915c4",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "119B2C05C13A021CF114C354F1B5B0D629C2D03BCE7B578DE1690B2DB3E35EF1",
+        "session_epoch": "86e5268b-6c1c-494c-8caa-a9022271d31d:751853ba-6510-4f11-9995-fe65e6d48bfa:1fce17d7-4ee9-45ff-827e-2d80c1df9707"
+      }
+    },
+    "regret-buffer-tungsten-action.json": {
+      "source": ".oracle-lab/diagnostics/20260907-combust-live-v2/regret-buffer-tungsten/action.json",
+      "sha256": "268c4466e2b272dae71edda6e7d10e0f9e449d176aaceff928c3e101db063d13"
+    },
+    "regret-buffer-tungsten-after.json": {
+      "source": ".oracle-lab/diagnostics/20260907-combust-live-v2/regret-buffer-tungsten/after.json",
+      "sha256": "7cac422bc1b82f009a2827ba633e9fddfe19cbb214d49d78135c042a984fc6b2",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "119B2C05C13A021CF114C354F1B5B0D629C2D03BCE7B578DE1690B2DB3E35EF1",
+        "session_epoch": "86e5268b-6c1c-494c-8caa-a9022271d31d:751853ba-6510-4f11-9995-fe65e6d48bfa:1fce17d7-4ee9-45ff-827e-2d80c1df9707"
+      }
+    },
+    "regret-three-buffer-before.json": {
+      "source": ".oracle-lab/diagnostics/20260907-combust-live-v2/regret-three-buffer/before.json",
+      "sha256": "bfc1514e1355135486f18bbaa0df430144898ebf178c7c7daae63ea4f15b11ba",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "119B2C05C13A021CF114C354F1B5B0D629C2D03BCE7B578DE1690B2DB3E35EF1",
+        "session_epoch": "86e5268b-6c1c-494c-8caa-a9022271d31d:751853ba-6510-4f11-9995-fe65e6d48bfa:1fce17d7-4ee9-45ff-827e-2d80c1df9707"
+      }
+    },
+    "regret-three-buffer-action.json": {
+      "source": ".oracle-lab/diagnostics/20260907-combust-live-v2/regret-three-buffer/action.json",
+      "sha256": "3221a56171d752c9439e562602b9da35c66bf81442dee67f9a8b35f33490784e"
+    },
+    "regret-three-buffer-after.json": {
+      "source": ".oracle-lab/diagnostics/20260907-combust-live-v2/regret-three-buffer/after.json",
+      "sha256": "f6467e22e95c313b29f27381dbb74aaab23718f2f0472823eaa0dfb6b2bb753a",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "119B2C05C13A021CF114C354F1B5B0D629C2D03BCE7B578DE1690B2DB3E35EF1",
+        "session_epoch": "86e5268b-6c1c-494c-8caa-a9022271d31d:751853ba-6510-4f11-9995-fe65e6d48bfa:1fce17d7-4ee9-45ff-827e-2d80c1df9707"
+      }
+    }
+  },
+  "recorded_stop": {
+    "case": "regret-three-buffer",
+    "reason": "Combat values differ at $.player.current_hp: Java=79 Rust=77",
+    "scope": "Constructed A20 Rupture+ with normal/upgraded/stacked Combust and optional Regret/Buffer/Tungsten Rod: creatures including independent Combust HP loss, AI/shuffle states and complete RNG calls only; no card bindings, full relic/deck comparison or natural certification"
+  },
+  "capture_manifest_source": ".oracle-lab/diagnostics/20260907-combust-live-v2/capture.json",
+  "capture_manifest_sha256": "15f65170dcc97043b7601b2a270ca85bc0ce3831e04b10e0ebfd2651d79e0185",
+  "capture_launch_plan_source": ".oracle-lab/diagnostics/20260907-combust-live-v2/launch-plan.json",
+  "capture_launch_plan_sha256": "d97e1a77da96d82c6c6fbe53d5e620b067f9ac1b7cb6648b625ef28022ca0f16",
+  "capture_stop_source": ".oracle-lab/diagnostics/20260907-combust-live-v2/stopped.json",
+  "capture_stop_sha256": "86a89bb3e4d8ee38ac57700c9d51c9c957ed157cdb6c40ba2d0733d1ea8eeb2a",
+  "runtime_provenance": {
+    "schema": "sts_java_play_launch_plan_v4",
+    "profile": "accelerated",
+    "control_profile": "parity_scenario_control",
+    "game_java": {
+      "length": 206912,
+      "path": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\SlayTheSpire\\jre\\bin\\javaw.exe",
+      "sha256": "036584C1C8321FF67E4933CC9072797A2FD4CFE8EF02460F4621A7CFEA9D1091"
+    },
+    "mod_the_spire": {
+      "length": 10252951,
+      "path": "\\\\?\\D:\\rust\\lib\\ModTheSpire.jar",
+      "sha256": "541B5E8A875D2A404A5A6D54F4A6F814284B0CF71ACB9245239D9C5EF50EA604"
+    },
+    "selected_mods": [
+      {
+        "id": "basemod",
+        "jar": {
+          "length": 7659408,
+          "path": "C:\\Program Files (x86)\\Steam\\steamapps\\workshop\\content\\646570\\1605833019\\BaseMod.jar",
+          "sha256": "C3353C10E64C621B723E9FD7D0502DFA796F828B101B68513594A5F5EF83FBAF"
+        },
+        "version": "5.56.0"
+      },
+      {
+        "id": "superfastmode",
+        "jar": {
+          "length": 25877,
+          "path": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\SlayTheSpire\\mods\\SuperFastMode.jar",
+          "sha256": "CECDC2A54D0B2DB8AA66857098D4740E5D74EC3361CD12416629019438D25C60"
+        },
+        "version": "1.0.8"
+      },
+      {
+        "id": "CommunicationMod",
+        "jar": {
+          "length": 704949,
+          "path": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\SlayTheSpire\\mods\\CommunicationMod.jar",
+          "sha256": "119B2C05C13A021CF114C354F1B5B0D629C2D03BCE7B578DE1690B2DB3E35EF1"
+        },
+        "version": "1.2.1"
+      }
+    ],
+    "acceleration": {
+      "game_fast_mode": true,
+      "mod": {
+        "id": "superfastmode",
+        "jar": {
+          "length": 25877,
+          "path": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\SlayTheSpire\\mods\\SuperFastMode.jar",
+          "sha256": "CECDC2A54D0B2DB8AA66857098D4740E5D74EC3361CD12416629019438D25C60"
+        },
+        "version": "1.0.8"
+      },
+      "settings": {
+        "config": {
+          "length": 123,
+          "path": "C:\\Users\\17239\\AppData\\Local\\ModTheSpire\\SuperFastMode\\SuperFastModeConfig.properties",
+          "sha256": "C9AC6FA74C9EDC8FB3F59EC6AC6CBE6B83CD77D012C0A129D297D4276ACE2931"
+        },
+        "values": {
+          "delta_multiplier": 5.0,
+          "is_delta_multiplied": true,
+          "is_instant_lerp": true
+        }
+      }
+    }
+  }
+}

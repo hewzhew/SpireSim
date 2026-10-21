@@ -1,0 +1,10 @@
+[package]
+name = "sts_combat_tactics"
+version = "0.1.0"
+edition = "2021"
+publish = false
+autobins = false
+autotests = false
+
+[dependencies]
+sts_core = { package = "sts_simulator", path = "../.." }

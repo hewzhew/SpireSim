@@ -1,0 +1,21 @@
+[package]
+name = "sts_parity_lockstep_rust"
+version = "0.1.0"
+edition = "2021"
+publish = false
+autobins = false
+autotests = false
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+sts_java_parity_protocol = { path = "../sts_java_parity_protocol" }
+sts_oracle_run_control = { path = "../sts_oracle_run_control", default-features = false }
+sts_parity_lockstep = { path = "../sts_parity_lockstep" }
+
+[lib]
+path = "src/lib.rs"
+
+[[test]]
+name = "natural_boundary_adapter"
+path = "tests/natural_boundary_adapter.rs"

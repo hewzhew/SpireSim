@@ -1,0 +1,1 @@
+{"schema":"sts-recorded-java-action-v1","phase":"committed","action":{"kind":"play_card","card_binding":"natural_run/card_reward/F01X05/0","card_id":"burningpact","target":null},"receipt":{"status":"completed","request_id":"16056275-6f06-4680-8361-0b4b50dc4b98","based_on_frame_id":9,"action_id":"play_card:b042b3f5-aff5-4941-a2f9-fcb907c16ded:none","successor_frame_id":10}}

@@ -1,0 +1,23 @@
+{
+  "schema": "sts_java_parity_shared_runtime_suite_manifest_v1",
+  "provenance": "constructed_validated",
+  "suite_id": "cultist-shared-runtime-smoke",
+  "launch_profile": "accelerated",
+  "members": [
+    {
+      "probe_case_id": "cultist-base-end-turn"
+    },
+    {
+      "probe_case_id": "cultist-second-strike"
+    },
+    {
+      "probe_case_id": "cultist-block-potion-use"
+    },
+    {
+      "probe_case_id": "cultist-fire-potion-use"
+    },
+    {
+      "probe_case_id": "three-sentries-second-fire-potion-use"
+    }
+  ]
+}

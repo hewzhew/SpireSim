@@ -1,0 +1,32 @@
+[package]
+name = "sts_parity_lockstep_java"
+version = "0.1.0"
+edition = "2021"
+publish = false
+autobins = false
+autotests = false
+
+[dependencies]
+fs2 = "0.4"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+sts_java_parity_live = { path = "../sts_java_parity_live" }
+sts_java_parity_runtime = { path = "../sts_java_parity_runtime" }
+sts_java_parity_protocol = { path = "../sts_java_parity_protocol" }
+sts_parity_lockstep = { path = "../sts_parity_lockstep" }
+
+[dev-dependencies]
+sha2 = "0.10"
+sts_oracle_run_control = { path = "../sts_oracle_run_control", default-features = false }
+sts_parity_lockstep_rust = { path = "../sts_parity_lockstep_rust" }
+
+[lib]
+path = "src/lib.rs"
+
+[[test]]
+name = "natural_java_adapter"
+path = "tests/natural_java_adapter.rs"
+
+[[test]]
+name = "natural_initial_parity"
+path = "tests/natural_initial_parity.rs"

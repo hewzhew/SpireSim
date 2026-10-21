@@ -1,0 +1,1 @@
+{"schema":"sts-recorded-java-action-v1","phase":"interstitial_settlement","action":{"kind":"proceed","surface":"boss_relic"},"receipt":{"status":"completed","request_id":"d48d487f-fb9a-4a81-b8c6-aaf7c772c1cb","based_on_frame_id":714,"action_id":"open_boss_chest","successor_frame_id":715}}

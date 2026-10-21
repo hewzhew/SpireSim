@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "experiment_id": "seed006_reptomancer_8x2",
+  "scenario_id": "seed006_derived_reptomancer",
+  "start_spec": "seed006_reptomancer_derived.start.json",
+  "schedule": {
+    "generator": "split_mix64_v1",
+    "seed": 20260713006
+  },
+  "profiles": [
+    {
+      "id": "lazy_on_pop",
+      "label": "Lazy on pop",
+      "information_scope": "exact_state_oracle",
+      "potion_policy": "semantic_budgeted",
+      "rollout_policy": "enemy_mechanics_adaptive_no_potion",
+      "child_rollout_policy": "lazy_on_pop",
+      "turn_plan_policy": "disabled",
+      "phase_guard_policy": "default",
+      "setup_bias_policy": "default"
+    },
+    {
+      "id": "immediate",
+      "label": "Immediate",
+      "information_scope": "exact_state_oracle",
+      "potion_policy": "semantic_budgeted",
+      "rollout_policy": "enemy_mechanics_adaptive_no_potion",
+      "child_rollout_policy": "immediate",
+      "turn_plan_policy": "disabled",
+      "phase_guard_policy": "default",
+      "setup_bias_policy": "default"
+    }
+  ],
+  "common_budget": {
+    "max_nodes": 200000,
+    "max_actions_per_line": 200,
+    "max_engine_steps_per_action": 250,
+    "wall_ms": 3000,
+    "satisfaction": "zero_loss_or_budget",
+    "max_potions_used": 1,
+    "rollout_max_evaluations": 384,
+    "rollout_max_actions": 80,
+    "rollout_beam_width": 3,
+    "turn_plan_probe_max_inner_nodes": null,
+    "turn_plan_probe_max_end_states": null,
+    "turn_plan_probe_per_bucket_limit": null
+  }
+}

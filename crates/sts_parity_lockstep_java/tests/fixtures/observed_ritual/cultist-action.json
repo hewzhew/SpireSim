@@ -1,0 +1,1 @@
+{"schema":"sts-recorded-java-action-v1","phase":"committed","action":{"kind":"use_potion","slot":0,"potion_id":"cultistpotion","target":null},"receipt":{"status":"completed","request_id":"547cd594-7d4b-43ce-8ba2-1c9d96781393","based_on_frame_id":559,"action_id":"use_potion:0:CultistPotion:none","successor_frame_id":560}}

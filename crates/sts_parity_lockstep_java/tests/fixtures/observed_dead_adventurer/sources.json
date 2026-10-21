@@ -1,0 +1,31 @@
+{
+  "scope": "Natural Dead Adventurer initial Leave uses ESCAPE ordinal3; SUCCESS ordinal2 belongs to completing all3 rewards",
+  "capture_scope": "accelerated_sts_wrapper_rng_ledger_and_declared_snapshot_domains",
+  "files": {
+    "before.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-627a5dec58b44e5ea61182c817e17a67/java-evidence/boundaries/00000133-frame-135.json",
+      "sha256": "f23d47e57572779c6a1400a463b73c0a3f3240f2f3917049863f386489192a3f",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "1C91255EE2E63B358364DA7195B09427B8948A61327E97A9A70E6A4D84BD9173",
+        "session_epoch": "d0fae10f-5d29-49d7-b83d-e0e682d0c6c9:be602476-e062-4fee-84a1-798227e1376b:ded9c61e-0a1d-4263-887d-9576b5b04302"
+      },
+      "capturing_rust_source": "20d18a026"
+    },
+    "after.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-627a5dec58b44e5ea61182c817e17a67/java-evidence/boundaries/00000134-frame-136.json",
+      "sha256": "63c699080fd437e44f0a77cfafde61137adb9f1a9e819d06fee7f5a97bdda73d",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "1C91255EE2E63B358364DA7195B09427B8948A61327E97A9A70E6A4D84BD9173",
+        "session_epoch": "d0fae10f-5d29-49d7-b83d-e0e682d0c6c9:be602476-e062-4fee-84a1-798227e1376b:ded9c61e-0a1d-4263-887d-9576b5b04302"
+      },
+      "capturing_rust_source": "20d18a026"
+    },
+    "action.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-627a5dec58b44e5ea61182c817e17a67/java-evidence/actions/00000133-from-frame-135.json",
+      "sha256": "b8b213149be443935e9959836097dab986d08d82a8575def5649ec112dfece8f",
+      "capturing_rust_source": "20d18a026"
+    }
+  }
+}

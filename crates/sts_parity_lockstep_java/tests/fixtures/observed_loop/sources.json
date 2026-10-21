@@ -1,0 +1,34 @@
+{
+  "scope": "Natural Defect Loop: first Frost triggers once at the next turn start; the second Dark grows only at the ordinary turn end",
+  "capture_scope": "accelerated_sts_wrapper_rng_ledger_and_declared_snapshot_domains",
+  "files": {
+    "before.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-627a5dec58b44e5ea61182c817e17a67/java-evidence/boundaries/00000287-frame-289.json",
+      "sha256": "816151ba1994958024314de204ce18638c6cf0eb83d8b1b2a68dcaf3fa39f2e2",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "1C91255EE2E63B358364DA7195B09427B8948A61327E97A9A70E6A4D84BD9173",
+        "session_epoch": "d0fae10f-5d29-49d7-b83d-e0e682d0c6c9:be602476-e062-4fee-84a1-798227e1376b:ded9c61e-0a1d-4263-887d-9576b5b04302"
+      },
+      "capturing_rust_source": "e57060838 plus Loop projection",
+      "capturing_runner_sha256": "f79929900f7b4dd11787697353ad1a053944ab929827608769bcce81f74c0646"
+    },
+    "after.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-627a5dec58b44e5ea61182c817e17a67/java-evidence/boundaries/00000288-frame-290.json",
+      "sha256": "0aac584bd25c5cf0e595bcd0629ad4375d661737a8d192759aec8d5c94ecb88a",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "1C91255EE2E63B358364DA7195B09427B8948A61327E97A9A70E6A4D84BD9173",
+        "session_epoch": "d0fae10f-5d29-49d7-b83d-e0e682d0c6c9:be602476-e062-4fee-84a1-798227e1376b:ded9c61e-0a1d-4263-887d-9576b5b04302"
+      },
+      "capturing_rust_source": "e57060838 plus Loop projection",
+      "capturing_runner_sha256": "f79929900f7b4dd11787697353ad1a053944ab929827608769bcce81f74c0646"
+    },
+    "action.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-627a5dec58b44e5ea61182c817e17a67/java-evidence/actions/00000287-from-frame-289.json",
+      "sha256": "9bd8827bef2912329fe6b87565767c4c3b7cf5ff8468dbf3c354d00dc88ce207",
+      "capturing_rust_source": "e57060838 plus Loop projection",
+      "capturing_runner_sha256": "f79929900f7b4dd11787697353ad1a053944ab929827608769bcce81f74c0646"
+    }
+  }
+}

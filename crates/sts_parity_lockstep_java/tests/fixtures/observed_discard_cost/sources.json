@@ -1,0 +1,31 @@
+{
+  "scope": "Natural Heart Survivor manually discards generated Eviscerate; its own cost remains3 while discard count increments",
+  "capture_scope": "accelerated_sts_wrapper_rng_ledger_and_declared_snapshot_domains",
+  "files": {
+    "before.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-867620b4d6ea4407af71713aa734688b/java-evidence/boundaries/00000969-frame-971.json",
+      "sha256": "44e9c9d3bbb33d7373c35a3f3950bd5fd1579eb240351e30f4d8ee5633480ac8",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "DCF1F6CB0B45F4E29ECB2708FC22B0F30E2556354BB153DD3098A8B05CC021B4",
+        "session_epoch": "c74f76ae-42b8-4af3-985d-fe2cebfa9174:cf67063c-7aac-44a2-bcf6-3de6c5fd72ea:38c78cfd-32ef-41be-b983-efcbb3db6fdf"
+      },
+      "capturing_rust_source": "17433cf60"
+    },
+    "after.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-867620b4d6ea4407af71713aa734688b/java-evidence/boundaries/00000970-frame-972.json",
+      "sha256": "fba00849d5a86284d9fd5d261192c1b75e5d76e3932cd54220102d1c79cce8e0",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "DCF1F6CB0B45F4E29ECB2708FC22B0F30E2556354BB153DD3098A8B05CC021B4",
+        "session_epoch": "c74f76ae-42b8-4af3-985d-fe2cebfa9174:cf67063c-7aac-44a2-bcf6-3de6c5fd72ea:38c78cfd-32ef-41be-b983-efcbb3db6fdf"
+      },
+      "capturing_rust_source": "17433cf60"
+    },
+    "action.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-867620b4d6ea4407af71713aa734688b/java-evidence/actions/00000969-from-frame-971.json",
+      "sha256": "a28ac7457845208637ae3c1ee23c53c028267de0467a689eec80b1ff8d148016",
+      "capturing_rust_source": "17433cf60"
+    }
+  }
+}

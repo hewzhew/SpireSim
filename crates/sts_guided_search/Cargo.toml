@@ -1,0 +1,22 @@
+[package]
+name = "sts_guided_search"
+version = "0.1.0"
+edition = "2021"
+publish = false
+autobins = false
+autotests = false
+
+[dependencies]
+sts_core = { package = "sts_simulator", path = "../.." }
+sts_combat_outcome = { path = "../sts_combat_outcome" }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+sha2 = "0.10"
+
+[dev-dependencies]
+clap = { version = "4.0", features = ["derive"] }
+sts_oracle_learning = { path = "../sts_oracle_learning" }
+sts_combat_atomic = { path = "../sts_combat_atomic" }
+sts_combat_planner = { path = "../sts_combat_planner" }
+sts_combat_tactics = { path = "../sts_combat_tactics" }

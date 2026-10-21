@@ -1,0 +1,49 @@
+[target.x86_64-pc-windows-msvc]
+# rustup ships this COFF linker with the Windows MSVC target. It keeps final
+# executable and extension-module links cheap without a machine-specific path.
+linker = "rust-lld"
+
+[alias]
+test-core = ["test", "-p", "sts_simulator", "--lib"]
+test-strategy = ["test", "-p", "sts_card_semantics", "-p", "sts_combat_evidence", "-p", "sts_run_strategy", "--lib"]
+test-agent = ["test", "-p", "sts_agent", "--lib"]
+test-planner = ["test", "-p", "sts_combat_planner", "--lib"]
+# Keep the retained combat-search capability package explicit: Cargo does not
+# run a dependency's private unit tests merely because control crates link it.
+test-control = [
+    "test", "-p", "sts_agent",
+    "-p", "sts_card_semantics",
+    "-p", "sts_combat_evidence",
+    "-p", "sts_run_strategy",
+    "-p", "sts_combat_atomic",
+    "-p", "sts_combat_search_driver",
+    "-p", "sts_oracle_eval",
+    "-p", "sts_oracle_learning_env",
+    "-p", "sts_oracle_learning",
+    "-p", "sts_oracle_learning_projection",
+    "-p", "sts_oracle_run_control",
+    "-p", "sts_oracle_runtime",
+    "-p", "sts_oracle_strategic_owner",
+    "-p", "sts_oracle_tools",
+    "-p", "sts_oracle_lab",
+    "--no-default-features",
+    "--features", "sts_combat_search_driver/backend,sts_oracle_eval/control-full,sts_oracle_run_control/control-full,sts_oracle_runtime/control-full,sts_oracle_lab/canonical-oracle-artifacts",
+]
+test-runtime = ["test", "-p", "sts_oracle_eval", "-p", "sts_oracle_run_control", "-p", "sts_oracle_learning_env", "-p", "sts_oracle_learning", "-p", "sts_oracle_learning_projection", "-p", "sts_oracle_strategic_owner", "-p", "sts_oracle_runtime", "--no-default-features", "--features", "sts_oracle_eval/control-full,sts_oracle_run_control/control-full,sts_oracle_runtime/control-full", "--lib"]
+check-runtime = ["check", "-p", "sts_oracle_eval", "-p", "sts_oracle_run_control", "-p", "sts_oracle_learning_env", "-p", "sts_oracle_learning", "-p", "sts_oracle_learning_projection", "-p", "sts_oracle_strategic_owner", "-p", "sts_oracle_runtime", "--no-default-features", "--features", "sts_oracle_eval/control-full,sts_oracle_run_control/control-full,sts_oracle_runtime/control-full", "--lib"]
+check-workspace = ["check", "--workspace", "--all-targets", "--all-features"]
+# One canonical formatting gate for local work and CI.
+fmt-check = ["fmt", "--all", "--", "--check"]
+# Strict everyday lint gate. The allowed Clippy lints are architecture review
+# prompts rather than local correctness checks; docs/TESTING.md records why
+# they must not trigger automatic boxing, renaming, or signature churn.
+lint-workspace = [
+    "clippy", "--workspace", "--all-targets", "--no-deps", "--",
+    "-D", "warnings",
+    "-A", "clippy::too_many_arguments",
+    "-A", "clippy::large_enum_variant",
+    "-A", "clippy::type_complexity",
+    "-A", "clippy::result_large_err",
+    "-A", "clippy::enum_variant_names",
+    "-A", "clippy::items_after_test_module",
+]

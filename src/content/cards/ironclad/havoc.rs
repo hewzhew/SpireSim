@@ -1,0 +1,44 @@
+use crate::content::cards::{CardDefinition, CardId, CardRarity, CardTarget, CardType};
+use crate::runtime::action::{Action, ActionInfo, AddTo};
+use crate::runtime::combat::{CombatCard, CombatState};
+use smallvec::SmallVec;
+
+pub const MECHANICS: &str = "Play the top card of your draw pile with a random enemy target, and Exhaust it after play. A playable Power is applied normally and stays active; it is not lost before activation or moved to Exhaust. Fixed Energy costs are not paid; X-cost cards use remaining Energy and retain their own Energy spending rule. If the draw pile is empty, shuffle discard first. Ordinary autoplay playability checks apply. Costs 0 if upgraded.";
+
+pub fn definition() -> CardDefinition {
+    CardDefinition {
+        id: CardId::Havoc,
+        name: "Havoc",
+        card_type: CardType::Skill,
+        rarity: CardRarity::Common,
+        cost: 1,
+        base_damage: 0,
+        base_block: 0,
+        base_magic: 0,
+        target: CardTarget::None,
+        is_multi_damage: false,
+        exhaust: false,
+        ethereal: false,
+        innate: false,
+        tags: &[],
+        upgrade_damage: 0,
+        upgrade_block: 0,
+        upgrade_magic: 0,
+    }
+}
+
+pub fn havoc_play(
+    _state: &CombatState,
+    card: &CombatCard,
+    _target: Option<crate::EntityId>,
+) -> SmallVec<[ActionInfo; 4]> {
+    smallvec::smallvec![ActionInfo {
+        action: Action::PlayTopCard {
+            target: None,
+            exhaust: crate::content::cards::mechanics::card_top_deck_play_v1(card.id)
+                .expect("Havoc top-deck play rule")
+                .exhaust_after_play
+        },
+        insertion_mode: AddTo::Bottom,
+    }]
+}

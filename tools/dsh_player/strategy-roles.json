@@ -1,0 +1,296 @@
+{
+  "schema": "sts-expert-card-role-catalogue-v1",
+  "source": "reference/expert/notes/tieba-10072740344-card-index.md",
+  "sourceId": "tieba-10072740344",
+  "interpretation": "Expert role descriptions; simulator readings supply actual card effects and costs.",
+  "cards": {
+    "Clash": {
+      "floor": 20,
+      "role": "zero-cost core; infinite core"
+    },
+    "BodySlam": {
+      "floor": 21,
+      "role": "zero-cost/cycle core; scaling and transitional damage"
+    },
+    "PommelStrike": {
+      "floor": 22,
+      "role": "mutual-draw cycle; draw; transitional damage"
+    },
+    "TwinStrike": {
+      "floor": 23,
+      "role": "transitional damage; strength payoff"
+    },
+    "TrueGrit": {
+      "floor": 24,
+      "role": "targeted exhaust; transitional block"
+    },
+    "Headbutt": {
+      "floor": 25,
+      "role": "targeted retrieval; transitional damage"
+    },
+    "PerfectedStrike": {
+      "floor": 26,
+      "role": "transitional damage"
+    },
+    "Anger": {
+      "floor": 27,
+      "role": "transitional damage; strength/draw payoff; zero-cost core"
+    },
+    "Warcry": {
+      "floor": 28,
+      "role": "hand planning; deck lubricant"
+    },
+    "Armaments": {
+      "floor": 29,
+      "role": "upgrade resource; transitional attack/block; draw payoff"
+    },
+    "Flex": {
+      "floor": 30,
+      "role": "temporary strength; draw/access payoff"
+    },
+    "WildStrike": {
+      "floor": 31,
+      "role": "transitional damage"
+    },
+    "Havoc": {
+      "floor": 32,
+      "role": "exhaust; reusable energy relief; zero-cost core"
+    },
+    "ShrugItOff": {
+      "floor": 33,
+      "role": "transitional block; mutual-draw cycle"
+    },
+    "HeavyBlade": {
+      "floor": 34,
+      "role": "strength payoff; scaling damage"
+    },
+    "Clothesline": {
+      "floor": 35,
+      "role": "weak source; transitional damage"
+    },
+    "IronWave": {
+      "floor": 36,
+      "role": "transitional attack/block"
+    },
+    "ThunderClap": {
+      "floor": 37,
+      "role": "vulnerable source; artifact strip"
+    },
+    "Cleave": {
+      "floor": 38,
+      "role": "transitional area damage"
+    },
+    "SwordBoomerang": {
+      "floor": 39,
+      "role": "strength payoff; scaling damage"
+    },
+    "Uppercut": {
+      "floor": 41,
+      "role": "weak/vulnerable source; transitional damage"
+    },
+    "BloodForBlood": {
+      "floor": 42,
+      "role": "zero-cost/cycle core; transitional damage"
+    },
+    "DualWield": {
+      "floor": 43,
+      "role": "scaling; burst; resource generation"
+    },
+    "Sentinel": {
+      "floor": 44,
+      "role": "startup energy"
+    },
+    "InfernalBlade": {
+      "floor": 45,
+      "role": "transitional and pseudo-zero-cost damage"
+    },
+    "Intimidate": {
+      "floor": 46,
+      "role": "weak source; cost balancing"
+    },
+    "Entrench": {
+      "floor": 47,
+      "role": "scaling block"
+    },
+    "GhostlyArmor": {
+      "floor": 48,
+      "role": "transitional block"
+    },
+    "Hemokinesis": {
+      "floor": 49,
+      "role": "transitional damage"
+    },
+    "BattleTrance": {
+      "floor": 50,
+      "role": "large draw; deck control"
+    },
+    "Rupture": {
+      "floor": 51,
+      "role": "strength source; scaling damage"
+    },
+    "Bloodletting": {
+      "floor": 52,
+      "role": "reusable energy; draw payoff"
+    },
+    "SeverSoul": {
+      "floor": 53,
+      "role": "broad exhaust; transitional damage"
+    },
+    "Whirlwind": {
+      "floor": 54,
+      "role": "transitional area damage; pseudo-strength payoff"
+    },
+    "FeelNoPain": {
+      "floor": 55,
+      "role": "exhaust compensation; transitional/scaling block"
+    },
+    "RecklessCharge": {
+      "floor": 56,
+      "role": "zero-cost/cycle core; transitional damage"
+    },
+    "Rampage": {
+      "floor": 57,
+      "role": "scaling and transitional damage"
+    },
+    "Carnage": {
+      "floor": 58,
+      "role": "transitional damage"
+    },
+    "FireBreathing": {
+      "floor": 59,
+      "role": "status-matchup damage"
+    },
+    "FlameBarrier": {
+      "floor": 60,
+      "role": "transitional block; Byrds/Heart multi-hit counter"
+    },
+    "SearingBlow": {
+      "floor": 61,
+      "role": "single-card scaling damage"
+    },
+    "Inflame": {
+      "floor": 62,
+      "role": "strength source; transitional/scaling damage"
+    },
+    "BurningPact": {
+      "floor": 63,
+      "role": "targeted exhaust; large draw"
+    },
+    "Rage": {
+      "floor": 64,
+      "role": "zero-cost core; scaling block"
+    },
+    "SeeingRed": {
+      "floor": 65,
+      "role": "startup energy; deck lubricant"
+    },
+    "PowerThrough": {
+      "floor": 66,
+      "role": "transitional/terminal block; emergency block"
+    },
+    "Disarm": {
+      "floor": 67,
+      "role": "multi-hit counter; long-fight defense"
+    },
+    "Combust": {
+      "floor": 69,
+      "role": "transitional and long-fight damage"
+    },
+    "SpotWeakness": {
+      "floor": 70,
+      "role": "strength source; transitional/scaling damage"
+    },
+    "Evolve": {
+      "floor": 73,
+      "role": "status resistance; cycle draw"
+    },
+    "Pummel": {
+      "floor": 74,
+      "role": "strength payoff; burst damage"
+    },
+    "SecondWind": {
+      "floor": 75,
+      "role": "broad exhaust; startup and terminal block"
+    },
+    "Metallicize": {
+      "floor": 76,
+      "role": "transitional and long-fight block"
+    },
+    "Shockwave": {
+      "floor": 77,
+      "role": "weak/vulnerable source"
+    },
+    "Dropkick": {
+      "floor": 78,
+      "role": "mutual-draw cycle; pseudo-zero-cost core"
+    },
+    "DarkEmbrace": {
+      "floor": 79,
+      "role": "exhaust compensation; startup/cycle draw"
+    },
+    "Juggernaut": {
+      "floor": 81,
+      "role": "terminal/long-fight damage"
+    },
+    "DoubleTap": {
+      "floor": 82,
+      "role": "attack amplifier; terminal cycle component"
+    },
+    "Exhume": {
+      "floor": 83,
+      "role": "exhaust reuse; deck lubricant"
+    },
+    "Barricade": {
+      "floor": 84,
+      "role": "scaling block; retained block"
+    },
+    "Impervious": {
+      "floor": 85,
+      "role": "emergency/startup block"
+    },
+    "FiendFire": {
+      "floor": 86,
+      "role": "broad exhaust; burst and strength payoff"
+    },
+    "DemonForm": {
+      "floor": 87,
+      "role": "strength source; long-fight scaling damage"
+    },
+    "Reaper": {
+      "floor": 88,
+      "role": "HP resource; terminal/startup defense"
+    },
+    "Brutality": {
+      "floor": 89,
+      "role": "startup support; long-fight draw"
+    },
+    "Immolate": {
+      "floor": 90,
+      "role": "transitional area damage"
+    },
+    "Feed": {
+      "floor": 91,
+      "role": "max-HP resource; terminal/startup defense"
+    },
+    "Berserk": {
+      "floor": 92,
+      "role": "energy source"
+    },
+    "Offering": {
+      "floor": 93,
+      "role": "startup energy; large draw"
+    },
+    "LimitBreak": {
+      "floor": 94,
+      "role": "scaling damage; cycle core"
+    },
+    "Corruption": {
+      "floor": 95,
+      "role": "broad exhaust; skill-energy transformation"
+    },
+    "Bludgeon": {
+      "floor": 96,
+      "role": "transitional damage"
+    }
+  }
+}

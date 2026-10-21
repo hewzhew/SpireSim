@@ -1,0 +1,97 @@
+{
+  "schema_name": "OracleWitnessMilestonesV1",
+  "schema_version": 1,
+  "witness": "seed20260713007_a0_awakened_one.actions.json",
+  "annotation_policy": {
+    "observed": "Facts replayed by the exact simulator at completed player-turn boundaries.",
+    "interpretation": "Human-readable meaning for diagnosis only; it is not a production search rule or proof that every winning line must match this milestone."
+  },
+  "milestones": [
+    {
+      "id": "cultists_cleared",
+      "first_observed_after_turn": 1,
+      "through_action": 9,
+      "observed": {
+        "player_hp": 68,
+        "cultists_alive": 0,
+        "awakened_one_hp": 296,
+        "block_potion_remaining": false,
+        "player_powers": []
+      },
+      "interpretation": "The line removes both minions before continuing the boss race. The exact cards and the potion spend are properties of this witness, not universal requirements."
+    },
+    {
+      "id": "strength_axis_realized",
+      "first_observed_after_turn": 2,
+      "through_action": 13,
+      "observed": {
+        "player_hp": 40,
+        "strength": 6,
+        "awakened_one_hp": 266,
+        "limit_break_was_played_after_inflame": true
+      },
+      "interpretation": "Persistent strength and a multi-hit payoff are now realized. Strength 6 is evidence from this witness, not a general threshold."
+    },
+    {
+      "id": "draw_engine_realized_before_corruption",
+      "first_observed_after_turn": 3,
+      "through_action": 21,
+      "observed": {
+        "player_hp": 37,
+        "strength": 6,
+        "dark_embrace_active": true,
+        "corruption_active": false,
+        "disarm_was_played_on_awakened_one": true,
+        "awakened_one_hp": 257
+      },
+      "interpretation": "Dark Embrace is an actual active asset while Corruption remains unplayed. This records timing; it does not turn 'delay Corruption' into a universal rule."
+    },
+    {
+      "id": "phase_transition_setup_realized",
+      "first_observed_after_turn": 10,
+      "through_action": 49,
+      "observed": {
+        "player_hp": 19,
+        "strength": 6,
+        "dark_embrace_active": true,
+        "evolve_active": true,
+        "corruption_active": true,
+        "awakened_one_second_phase_hp": 300,
+        "draw_pile_count": 8,
+        "discard_pile_count": 6,
+        "exhaust_pile_count": 13
+      },
+      "interpretation": "The first phase is down and the management engine is installed for phase two. Equivalent winning lines may reach this boundary with different resources or action order."
+    },
+    {
+      "id": "dark_echo_survived",
+      "first_observed_after_turn": 11,
+      "through_action": 55,
+      "observed": {
+        "player_hp": 4,
+        "strength": 6,
+        "dexterity": 2,
+        "dark_embrace_active": true,
+        "evolve_active": true,
+        "corruption_active": true,
+        "awakened_one_hp": 236
+      },
+      "interpretation": "The line survives the first phase-two attack with the engine intact. Low HP is an exact property of this witness, not a desired generic target."
+    },
+    {
+      "id": "terminal_convergence",
+      "first_observed_after_turn": 13,
+      "through_action": 64,
+      "observed": {
+        "player_hp": 4,
+        "strength": 6,
+        "dexterity": 3,
+        "awakened_one_hp": 93,
+        "draw_pile_count": 8,
+        "discard_pile_count": 0,
+        "exhaust_pile_count": 21
+      },
+      "interpretation": "The surviving engine and remaining attacks converge to the verified turn-14 lethal. This is a corridor landmark, not a heuristic promise of lethal from every state with similar totals."
+    }
+  ]
+}

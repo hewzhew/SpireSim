@@ -1,0 +1,1178 @@
+{
+  "payload": {
+    "card_mechanics": {
+      "basis": "simulator_definition_and_reviewed_effects",
+      "candidates": [
+        {
+          "candidate_id": "task_public_candidate_v1:a2c282e3af7fea09da5c19841bddf66e5a183ccd",
+          "facts": {
+            "current": {
+              "base_cost": 0,
+              "card": "Offering",
+              "card_type": "Skill",
+              "definition_numbers": {
+                "block": 0,
+                "damage": 0
+              },
+              "ethereal": false,
+              "exhausts": true,
+              "innate": false,
+              "play_target": "player",
+              "rarity": "Rare",
+              "reviewed_effects": {
+                "end_of_turn_block_each_turn": null,
+                "enemy_strength_reduction": null,
+                "energy_gain": {
+                  "amount": 2,
+                  "delivery": "on_play"
+                },
+                "self_hp_loss_on_play": {
+                  "base_hp_loss": 6,
+                  "bypasses_block": true,
+                  "bypasses_intangible": false,
+                  "triggers_rupture": true
+                },
+                "unconditional_draw_request": 3
+              },
+              "upgrades": 0
+            },
+            "next_upgrade": {
+              "base_cost": 0,
+              "card": "Offering",
+              "card_type": "Skill",
+              "definition_numbers": {
+                "block": 0,
+                "damage": 0
+              },
+              "ethereal": false,
+              "exhausts": true,
+              "innate": false,
+              "play_target": "player",
+              "rarity": "Rare",
+              "reviewed_effects": {
+                "end_of_turn_block_each_turn": null,
+                "enemy_strength_reduction": null,
+                "energy_gain": {
+                  "amount": 2,
+                  "delivery": "on_play"
+                },
+                "self_hp_loss_on_play": {
+                  "base_hp_loss": 6,
+                  "bypasses_block": true,
+                  "bypasses_intangible": false,
+                  "triggers_rupture": true
+                },
+                "unconditional_draw_request": 5
+              },
+              "upgrades": 1
+            }
+          }
+        },
+        {
+          "candidate_id": "task_public_candidate_v1:e9163b608105d94bc7121954add8ccf1ebaf3846",
+          "facts": {
+            "current": {
+              "base_cost": 1,
+              "card": "SeeingRed",
+              "card_type": "Skill",
+              "definition_numbers": {
+                "block": 0,
+                "damage": 0
+              },
+              "ethereal": false,
+              "exhausts": true,
+              "innate": false,
+              "play_target": "no_explicit_target",
+              "rarity": "Uncommon",
+              "reviewed_effects": {
+                "end_of_turn_block_each_turn": null,
+                "enemy_strength_reduction": null,
+                "energy_gain": {
+                  "amount": 2,
+                  "delivery": "on_play"
+                },
+                "self_hp_loss_on_play": null,
+                "unconditional_draw_request": null
+              },
+              "upgrades": 0
+            },
+            "next_upgrade": {
+              "base_cost": 0,
+              "card": "SeeingRed",
+              "card_type": "Skill",
+              "definition_numbers": {
+                "block": 0,
+                "damage": 0
+              },
+              "ethereal": false,
+              "exhausts": true,
+              "innate": false,
+              "play_target": "no_explicit_target",
+              "rarity": "Uncommon",
+              "reviewed_effects": {
+                "end_of_turn_block_each_turn": null,
+                "enemy_strength_reduction": null,
+                "energy_gain": {
+                  "amount": 2,
+                  "delivery": "on_play"
+                },
+                "self_hp_loss_on_play": null,
+                "unconditional_draw_request": null
+              },
+              "upgrades": 1
+            }
+          }
+        },
+        {
+          "candidate_id": "task_public_candidate_v1:dc21e868ed36f9eea87133739465dc184cf8179d",
+          "facts": {
+            "current": {
+              "base_cost": 0,
+              "card": "Bloodletting",
+              "card_type": "Skill",
+              "definition_numbers": {
+                "block": 0,
+                "damage": 0
+              },
+              "ethereal": false,
+              "exhausts": false,
+              "innate": false,
+              "play_target": "player",
+              "rarity": "Uncommon",
+              "reviewed_effects": {
+                "end_of_turn_block_each_turn": null,
+                "enemy_strength_reduction": null,
+                "energy_gain": {
+                  "amount": 2,
+                  "delivery": "on_play"
+                },
+                "self_hp_loss_on_play": {
+                  "base_hp_loss": 3,
+                  "bypasses_block": true,
+                  "bypasses_intangible": false,
+                  "triggers_rupture": true
+                },
+                "unconditional_draw_request": null
+              },
+              "upgrades": 0
+            },
+            "next_upgrade": {
+              "base_cost": 0,
+              "card": "Bloodletting",
+              "card_type": "Skill",
+              "definition_numbers": {
+                "block": 0,
+                "damage": 0
+              },
+              "ethereal": false,
+              "exhausts": false,
+              "innate": false,
+              "play_target": "player",
+              "rarity": "Uncommon",
+              "reviewed_effects": {
+                "end_of_turn_block_each_turn": null,
+                "enemy_strength_reduction": null,
+                "energy_gain": {
+                  "amount": 3,
+                  "delivery": "on_play"
+                },
+                "self_hp_loss_on_play": {
+                  "base_hp_loss": 3,
+                  "bypasses_block": true,
+                  "bypasses_intangible": false,
+                  "triggers_rupture": true
+                },
+                "unconditional_draw_request": null
+              },
+              "upgrades": 1
+            }
+          }
+        },
+        {
+          "candidate_id": "task_public_candidate_v1:292b1db474a8eddf277478f92c03828560db365b",
+          "facts": {
+            "current": {
+              "base_cost": 0,
+              "card": "Berserk",
+              "card_type": "Power",
+              "definition_numbers": {
+                "block": 0,
+                "damage": 0
+              },
+              "ethereal": false,
+              "exhausts": false,
+              "innate": false,
+              "play_target": "player",
+              "rarity": "Rare",
+              "reviewed_effects": {
+                "end_of_turn_block_each_turn": null,
+                "enemy_strength_reduction": null,
+                "energy_gain": {
+                  "amount": 1,
+                  "delivery": "each_player_turn_start"
+                },
+                "player_vulnerable_on_play": 2,
+                "self_hp_loss_on_play": null,
+                "unconditional_draw_request": null
+              },
+              "upgrades": 0
+            },
+            "next_upgrade": {
+              "base_cost": 0,
+              "card": "Berserk",
+              "card_type": "Power",
+              "definition_numbers": {
+                "block": 0,
+                "damage": 0
+              },
+              "ethereal": false,
+              "exhausts": false,
+              "innate": false,
+              "play_target": "player",
+              "rarity": "Rare",
+              "reviewed_effects": {
+                "end_of_turn_block_each_turn": null,
+                "enemy_strength_reduction": null,
+                "energy_gain": {
+                  "amount": 1,
+                  "delivery": "each_player_turn_start"
+                },
+                "player_vulnerable_on_play": 1,
+                "self_hp_loss_on_play": null,
+                "unconditional_draw_request": null
+              },
+              "upgrades": 1
+            }
+          }
+        },
+        {
+          "candidate_id": "task_public_candidate_v1:88db088f1b4e67dcd0d0e016cb9ec418bed219aa",
+          "facts": {
+            "current": {
+              "base_cost": 1,
+              "card": "Sentinel",
+              "card_type": "Skill",
+              "definition_numbers": {
+                "block": 5,
+                "damage": 0
+              },
+              "ethereal": false,
+              "exhausts": false,
+              "innate": false,
+              "play_target": "player",
+              "rarity": "Uncommon",
+              "reviewed_effects": {
+                "base_block_delivery": "once_on_play",
+                "end_of_turn_block_each_turn": null,
+                "enemy_strength_reduction": null,
+                "energy_gain": {
+                  "amount": 2,
+                  "delivery": "on_exhaust"
+                },
+                "self_hp_loss_on_play": null,
+                "unconditional_draw_request": null
+              },
+              "upgrades": 0
+            },
+            "next_upgrade": {
+              "base_cost": 1,
+              "card": "Sentinel",
+              "card_type": "Skill",
+              "definition_numbers": {
+                "block": 8,
+                "damage": 0
+              },
+              "ethereal": false,
+              "exhausts": false,
+              "innate": false,
+              "play_target": "player",
+              "rarity": "Uncommon",
+              "reviewed_effects": {
+                "base_block_delivery": "once_on_play",
+                "end_of_turn_block_each_turn": null,
+                "enemy_strength_reduction": null,
+                "energy_gain": {
+                  "amount": 3,
+                  "delivery": "on_exhaust"
+                },
+                "self_hp_loss_on_play": null,
+                "unconditional_draw_request": null
+              },
+              "upgrades": 1
+            }
+          }
+        },
+        {
+          "candidate_id": "task_public_candidate_v1:6612ccc9e88ea2e002582f8a8292ad612e11f598",
+          "facts": {
+            "current": {
+              "base_cost": 1,
+              "card": "Dropkick",
+              "card_type": "Attack",
+              "definition_numbers": {
+                "block": 0,
+                "damage": 5
+              },
+              "ethereal": false,
+              "exhausts": false,
+              "innate": false,
+              "play_target": "one_enemy",
+              "rarity": "Uncommon",
+              "reviewed_effects": {
+                "base_damage_delivery": {
+                  "amount": {
+                    "kind": "base"
+                  },
+                  "hits": {
+                    "count": 1,
+                    "kind": "fixed"
+                  },
+                  "kind": "attack",
+                  "play_condition": null,
+                  "targets": "selected_enemy"
+                },
+                "end_of_turn_block_each_turn": null,
+                "enemy_strength_reduction": null,
+                "energy_gain": {
+                  "amount": 1,
+                  "delivery": "if_target_vulnerable_at_resolution"
+                },
+                "self_hp_loss_on_play": null,
+                "unconditional_draw_request": null
+              },
+              "upgrades": 0
+            },
+            "next_upgrade": {
+              "base_cost": 1,
+              "card": "Dropkick",
+              "card_type": "Attack",
+              "definition_numbers": {
+                "block": 0,
+                "damage": 8
+              },
+              "ethereal": false,
+              "exhausts": false,
+              "innate": false,
+              "play_target": "one_enemy",
+              "rarity": "Uncommon",
+              "reviewed_effects": {
+                "base_damage_delivery": {
+                  "amount": {
+                    "kind": "base"
+                  },
+                  "hits": {
+                    "count": 1,
+                    "kind": "fixed"
+                  },
+                  "kind": "attack",
+                  "play_condition": null,
+                  "targets": "selected_enemy"
+                },
+                "end_of_turn_block_each_turn": null,
+                "enemy_strength_reduction": null,
+                "energy_gain": {
+                  "amount": 1,
+                  "delivery": "if_target_vulnerable_at_resolution"
+                },
+                "self_hp_loss_on_play": null,
+                "unconditional_draw_request": null
+              },
+              "upgrades": 1
+            }
+          }
+        },
+        {
+          "candidate_id": "task_public_candidate_v1:c6447a79f2d4df6ceadbccd1d5d663d6c8786702",
+          "facts": {
+            "current": {
+              "base_cost": 0,
+              "card": "Adrenaline",
+              "card_type": "Skill",
+              "definition_numbers": {
+                "block": 0,
+                "damage": 0
+              },
+              "ethereal": false,
+              "exhausts": true,
+              "innate": false,
+              "play_target": "player",
+              "rarity": "Rare",
+              "reviewed_effects": {
+                "end_of_turn_block_each_turn": null,
+                "enemy_strength_reduction": null,
+                "energy_gain": {
+                  "amount": 1,
+                  "delivery": "on_play"
+                },
+                "self_hp_loss_on_play": null,
+                "unconditional_draw_request": 2
+              },
+              "upgrades": 0
+            },
+            "next_upgrade": {
+              "base_cost": 0,
+              "card": "Adrenaline",
+              "card_type": "Skill",
+              "definition_numbers": {
+                "block": 0,
+                "damage": 0
+              },
+              "ethereal": false,
+              "exhausts": true,
+              "innate": false,
+              "play_target": "player",
+              "rarity": "Rare",
+              "reviewed_effects": {
+                "end_of_turn_block_each_turn": null,
+                "enemy_strength_reduction": null,
+                "energy_gain": {
+                  "amount": 2,
+                  "delivery": "on_play"
+                },
+                "self_hp_loss_on_play": null,
+                "unconditional_draw_request": 2
+              },
+              "upgrades": 1
+            }
+          }
+        },
+        {
+          "candidate_id": "task_public_candidate_v1:216416d3b2d7f9817e69422f20af3efff61fc4bc",
+          "facts": {
+            "current": {
+              "base_cost": 1,
+              "card": "Outmaneuver",
+              "card_type": "Skill",
+              "definition_numbers": {
+                "block": 0,
+                "damage": 0
+              },
+              "ethereal": false,
+              "exhausts": false,
+              "innate": false,
+              "play_target": "no_explicit_target",
+              "rarity": "Common",
+              "reviewed_effects": {
+                "end_of_turn_block_each_turn": null,
+                "enemy_strength_reduction": null,
+                "energy_gain": {
+                  "amount": 2,
+                  "delivery": "next_player_energy_recharge"
+                },
+                "self_hp_loss_on_play": null,
+                "unconditional_draw_request": null
+              },
+              "upgrades": 0
+            },
+            "next_upgrade": {
+              "base_cost": 1,
+              "card": "Outmaneuver",
+              "card_type": "Skill",
+              "definition_numbers": {
+                "block": 0,
+                "damage": 0
+              },
+              "ethereal": false,
+              "exhausts": false,
+              "innate": false,
+              "play_target": "no_explicit_target",
+              "rarity": "Common",
+              "reviewed_effects": {
+                "end_of_turn_block_each_turn": null,
+                "enemy_strength_reduction": null,
+                "energy_gain": {
+                  "amount": 3,
+                  "delivery": "next_player_energy_recharge"
+                },
+                "self_hp_loss_on_play": null,
+                "unconditional_draw_request": null
+              },
+              "upgrades": 1
+            }
+          }
+        },
+        {
+          "candidate_id": "task_public_candidate_v1:78bb9702b982c8e3226cf6174c4a16f2fa03bb95",
+          "facts": {
+            "current": {
+              "base_cost": 0,
+              "card": "Turbo",
+              "card_type": "Skill",
+              "definition_numbers": {
+                "block": 0,
+                "damage": 0
+              },
+              "ethereal": false,
+              "exhausts": false,
+              "innate": false,
+              "play_target": "player",
+              "rarity": "Common",
+              "reviewed_effects": {
+                "end_of_turn_block_each_turn": null,
+                "enemy_strength_reduction": null,
+                "energy_gain": {
+                  "amount": 2,
+                  "delivery": "on_play"
+                },
+                "self_hp_loss_on_play": null,
+                "status_injections_on_play": [
+                  {
+                    "card": "Void",
+                    "count": 1,
+                    "destination": "discard_pile",
+                    "persistence": "ethereal"
+                  }
+                ],
+                "unconditional_draw_request": null
+              },
+              "upgrades": 0
+            },
+            "next_upgrade": {
+              "base_cost": 0,
+              "card": "Turbo",
+              "card_type": "Skill",
+              "definition_numbers": {
+                "block": 0,
+                "damage": 0
+              },
+              "ethereal": false,
+              "exhausts": false,
+              "innate": false,
+              "play_target": "player",
+              "rarity": "Common",
+              "reviewed_effects": {
+                "end_of_turn_block_each_turn": null,
+                "enemy_strength_reduction": null,
+                "energy_gain": {
+                  "amount": 3,
+                  "delivery": "on_play"
+                },
+                "self_hp_loss_on_play": null,
+                "status_injections_on_play": [
+                  {
+                    "card": "Void",
+                    "count": 1,
+                    "destination": "discard_pile",
+                    "persistence": "ethereal"
+                  }
+                ],
+                "unconditional_draw_request": null
+              },
+              "upgrades": 1
+            }
+          }
+        },
+        {
+          "candidate_id": "task_public_candidate_v1:c63e2c5928a6f78f8546bc18a50c204af699245b",
+          "facts": {
+            "current": {
+              "base_cost": 1,
+              "card": "DoubleEnergy",
+              "card_type": "Skill",
+              "definition_numbers": {
+                "block": 0,
+                "damage": 0
+              },
+              "ethereal": false,
+              "exhausts": true,
+              "innate": false,
+              "play_target": "player",
+              "rarity": "Uncommon",
+              "reviewed_effects": {
+                "end_of_turn_block_each_turn": null,
+                "enemy_strength_reduction": null,
+                "self_hp_loss_on_play": null,
+                "unconditional_draw_request": null
+              },
+              "upgrades": 0
+            },
+            "next_upgrade": {
+              "base_cost": 0,
+              "card": "DoubleEnergy",
+              "card_type": "Skill",
+              "definition_numbers": {
+                "block": 0,
+                "damage": 0
+              },
+              "ethereal": false,
+              "exhausts": true,
+              "innate": false,
+              "play_target": "player",
+              "rarity": "Uncommon",
+              "reviewed_effects": {
+                "end_of_turn_block_each_turn": null,
+                "enemy_strength_reduction": null,
+                "self_hp_loss_on_play": null,
+                "unconditional_draw_request": null
+              },
+              "upgrades": 1
+            }
+          }
+        }
+      ],
+      "coverage": "partial",
+      "public_snapshot_id": "public_information_snapshot_v1:2ee55e34e9499c5077781afcaa660afb2b9664b0",
+      "schema": "sts-card-acquisition-reading-v1"
+    },
+    "decision": {
+      "candidates": [
+        {
+          "action": {
+            "card": "Offering",
+            "kind": "take_card",
+            "option_index": 0,
+            "reward_item_index": 0,
+            "upgrades": 0
+          },
+          "domain": "strategic"
+        },
+        {
+          "action": {
+            "card": "SeeingRed",
+            "kind": "take_card",
+            "option_index": 1,
+            "reward_item_index": 0,
+            "upgrades": 0
+          },
+          "domain": "strategic"
+        },
+        {
+          "action": {
+            "card": "Bloodletting",
+            "kind": "take_card",
+            "option_index": 2,
+            "reward_item_index": 0,
+            "upgrades": 0
+          },
+          "domain": "strategic"
+        },
+        {
+          "action": {
+            "card": "Berserk",
+            "kind": "take_card",
+            "option_index": 3,
+            "reward_item_index": 0,
+            "upgrades": 0
+          },
+          "domain": "strategic"
+        },
+        {
+          "action": {
+            "card": "Sentinel",
+            "kind": "take_card",
+            "option_index": 4,
+            "reward_item_index": 0,
+            "upgrades": 0
+          },
+          "domain": "strategic"
+        },
+        {
+          "action": {
+            "card": "Dropkick",
+            "kind": "take_card",
+            "option_index": 5,
+            "reward_item_index": 0,
+            "upgrades": 0
+          },
+          "domain": "strategic"
+        },
+        {
+          "action": {
+            "card": "Adrenaline",
+            "kind": "take_card",
+            "option_index": 6,
+            "reward_item_index": 0,
+            "upgrades": 0
+          },
+          "domain": "strategic"
+        },
+        {
+          "action": {
+            "card": "Outmaneuver",
+            "kind": "take_card",
+            "option_index": 7,
+            "reward_item_index": 0,
+            "upgrades": 0
+          },
+          "domain": "strategic"
+        },
+        {
+          "action": {
+            "card": "Turbo",
+            "kind": "take_card",
+            "option_index": 8,
+            "reward_item_index": 0,
+            "upgrades": 0
+          },
+          "domain": "strategic"
+        },
+        {
+          "action": {
+            "card": "DoubleEnergy",
+            "kind": "take_card",
+            "option_index": 9,
+            "reward_item_index": 0,
+            "upgrades": 0
+          },
+          "domain": "strategic"
+        },
+        {
+          "action": {
+            "kind": "skip_card_reward",
+            "reward_item_index": 0
+          },
+          "domain": "strategic"
+        }
+      ],
+      "information": {
+        "candidate_surface": {
+          "candidate_surface_id": "public_candidate_surface_v1:de1a9be3cbb2fb75f5e92671ac906d7e36d231a4",
+          "kind": "deployable_policy",
+          "ordered_candidate_ids": [
+            "task_public_candidate_v1:a2c282e3af7fea09da5c19841bddf66e5a183ccd",
+            "task_public_candidate_v1:e9163b608105d94bc7121954add8ccf1ebaf3846",
+            "task_public_candidate_v1:dc21e868ed36f9eea87133739465dc184cf8179d",
+            "task_public_candidate_v1:292b1db474a8eddf277478f92c03828560db365b",
+            "task_public_candidate_v1:88db088f1b4e67dcd0d0e016cb9ec418bed219aa",
+            "task_public_candidate_v1:6612ccc9e88ea2e002582f8a8292ad612e11f598",
+            "task_public_candidate_v1:c6447a79f2d4df6ceadbccd1d5d663d6c8786702",
+            "task_public_candidate_v1:216416d3b2d7f9817e69422f20af3efff61fc4bc",
+            "task_public_candidate_v1:78bb9702b982c8e3226cf6174c4a16f2fa03bb95",
+            "task_public_candidate_v1:c63e2c5928a6f78f8546bc18a50c204af699245b",
+            "task_public_candidate_v1:516688900897c40f36456ffeadf7dc186566f769"
+          ],
+          "schema_name": "TaskPublicCandidateSurfaceV1",
+          "schema_version": 1
+        },
+        "domain": "strategic",
+        "history_snapshot": {
+          "history_snapshot_id": "public_history_snapshot_v1:6693c80a196e79ffd3ad98e8555f9928d6f69390",
+          "schema_name": "TaskPublicHistorySnapshotV1",
+          "schema_version": 1
+        },
+        "observation": {
+          "observation_id": "public_observation_v1:3220d29b0a37222703b3f1a2645279699e7bab68",
+          "schema_name": "TaskStrategicPublicObservationV3",
+          "schema_version": 3,
+          "scope": "strategic_run_decision"
+        },
+        "schema_name": "PublicInformationSnapshotV1",
+        "schema_version": 1,
+        "snapshot_id": "public_information_snapshot_v1:2ee55e34e9499c5077781afcaa660afb2b9664b0"
+      },
+      "observation": {
+        "domain": "strategic",
+        "observation": {
+          "cards": [
+            {
+              "base_block_override": null,
+              "base_damage_override": null,
+              "card": "Strike",
+              "cost_modifier": 0,
+              "misc_value": 0,
+              "ordinal": 0,
+              "upgrades": 0
+            },
+            {
+              "base_block_override": null,
+              "base_damage_override": null,
+              "card": "Strike",
+              "cost_modifier": 0,
+              "misc_value": 0,
+              "ordinal": 1,
+              "upgrades": 1
+            }
+          ],
+          "context": {
+            "kind": "card_reward",
+            "reward_item_index": 0
+          },
+          "decision_site": "card_reward",
+          "mechanics": {
+            "mechanics_id": "constructed-reading-contract",
+            "mechanics_version": 1
+          },
+          "potions": [
+            {
+              "potion": {
+                "can_discard": true,
+                "can_use": false,
+                "potion": "FirePotion",
+                "requires_target": true
+              },
+              "slot": 0
+            },
+            {
+              "potion": null,
+              "slot": 1
+            }
+          ],
+          "public_history": {
+            "recent_combat_hp_loss": null,
+            "recent_combat_potions_used": null,
+            "recent_combat_turns": null,
+            "shop_purge_count": 0
+          },
+          "public_map": {
+            "boss": null,
+            "current_x": 1,
+            "current_y": 5,
+            "nodes": [
+              {
+                "edges": [
+                  {
+                    "destination_x": 0,
+                    "destination_y": 6
+                  },
+                  {
+                    "destination_x": 2,
+                    "destination_y": 6
+                  }
+                ],
+                "has_emerald_key": false,
+                "room": "monster",
+                "x": 1,
+                "y": 5
+              },
+              {
+                "edges": [],
+                "has_emerald_key": true,
+                "room": "elite",
+                "x": 0,
+                "y": 6
+              },
+              {
+                "edges": [],
+                "has_emerald_key": false,
+                "room": "question_mark",
+                "x": 2,
+                "y": 6
+              }
+            ]
+          },
+          "relics": [
+            {
+              "amount": 1,
+              "counter": -1,
+              "relic": "BurningBlood",
+              "used_up": false
+            },
+            {
+              "amount": 1,
+              "counter": -1,
+              "relic": "SingingBowl",
+              "used_up": false
+            }
+          ],
+          "run": {
+            "act": 1,
+            "ascension_level": 20,
+            "current_hp": 22,
+            "floor": 7,
+            "gold": 131,
+            "keys": [
+              false,
+              false,
+              false
+            ],
+            "max_hp": 80,
+            "player_class": "ironclad",
+            "potion_capacity": 2
+          },
+          "run_goal": "heart_victory"
+        }
+      },
+      "site": "card_reward"
+    },
+    "deck_mechanics": {
+      "basis": "public_instance_and_shared_card_mechanics",
+      "cards": [
+        {
+          "card_sha256": "fea993e81934c780734b1127365e2ae7ec7f95876d4244b0e0f89b9b564c8108",
+          "facts": {
+            "current": {
+              "definition": {
+                "base_cost": 1,
+                "card": "Strike",
+                "card_type": "Attack",
+                "definition_numbers": {
+                  "block": 0,
+                  "damage": 6
+                },
+                "ethereal": false,
+                "exhausts": false,
+                "innate": false,
+                "play_target": "one_enemy",
+                "rarity": "Basic",
+                "reviewed_effects": {
+                  "base_damage_delivery": {
+                    "amount": {
+                      "kind": "base"
+                    },
+                    "hits": {
+                      "count": 1,
+                      "kind": "fixed"
+                    },
+                    "kind": "attack",
+                    "play_condition": null,
+                    "targets": "selected_enemy"
+                  },
+                  "end_of_turn_block_each_turn": null,
+                  "enemy_strength_reduction": null,
+                  "self_hp_loss_on_play": null,
+                  "unconditional_draw_request": null
+                },
+                "upgrades": 0
+              },
+              "misc_value": 0,
+              "persistent_block": 0,
+              "persistent_cost": 1,
+              "persistent_damage": 6
+            },
+            "next_upgrade": {
+              "definition": {
+                "base_cost": 1,
+                "card": "Strike",
+                "card_type": "Attack",
+                "definition_numbers": {
+                  "block": 0,
+                  "damage": 9
+                },
+                "ethereal": false,
+                "exhausts": false,
+                "innate": false,
+                "play_target": "one_enemy",
+                "rarity": "Basic",
+                "reviewed_effects": {
+                  "base_damage_delivery": {
+                    "amount": {
+                      "kind": "base"
+                    },
+                    "hits": {
+                      "count": 1,
+                      "kind": "fixed"
+                    },
+                    "kind": "attack",
+                    "play_condition": null,
+                    "targets": "selected_enemy"
+                  },
+                  "end_of_turn_block_each_turn": null,
+                  "enemy_strength_reduction": null,
+                  "self_hp_loss_on_play": null,
+                  "unconditional_draw_request": null
+                },
+                "upgrades": 1
+              },
+              "misc_value": 0,
+              "persistent_block": 0,
+              "persistent_cost": 1,
+              "persistent_damage": 9
+            }
+          },
+          "ordinal": 0
+        },
+        {
+          "card_sha256": "0b18905da661f3ab3ec7533f1db055f85605b044757d878e3dcc5415029ac318",
+          "facts": {
+            "current": {
+              "definition": {
+                "base_cost": 1,
+                "card": "Strike",
+                "card_type": "Attack",
+                "definition_numbers": {
+                  "block": 0,
+                  "damage": 9
+                },
+                "ethereal": false,
+                "exhausts": false,
+                "innate": false,
+                "play_target": "one_enemy",
+                "rarity": "Basic",
+                "reviewed_effects": {
+                  "base_damage_delivery": {
+                    "amount": {
+                      "kind": "base"
+                    },
+                    "hits": {
+                      "count": 1,
+                      "kind": "fixed"
+                    },
+                    "kind": "attack",
+                    "play_condition": null,
+                    "targets": "selected_enemy"
+                  },
+                  "end_of_turn_block_each_turn": null,
+                  "enemy_strength_reduction": null,
+                  "self_hp_loss_on_play": null,
+                  "unconditional_draw_request": null
+                },
+                "upgrades": 1
+              },
+              "misc_value": 0,
+              "persistent_block": 0,
+              "persistent_cost": 1,
+              "persistent_damage": 9
+            },
+            "next_upgrade": null
+          },
+          "ordinal": 1
+        }
+      ],
+      "coverage": "partial",
+      "public_snapshot_id": "public_information_snapshot_v1:2ee55e34e9499c5077781afcaa660afb2b9664b0",
+      "schema": "sts-owned-card-reading-v1"
+    },
+    "potion_mechanics": {
+      "basis": "simulator_definition_and_reviewed_effects",
+      "candidates": [],
+      "coverage": "partial",
+      "public_snapshot_id": "public_information_snapshot_v1:2ee55e34e9499c5077781afcaa660afb2b9664b0",
+      "schema": "sts-potion-acquisition-reading-v1"
+    },
+    "producer": {
+      "component": "sts_run_play",
+      "evidence_identity": {
+        "build_source": {
+          "configuration": {
+            "CARGO_CFG_FEATURE": "",
+            "CARGO_CFG_PANIC": "unwind",
+            "CARGO_CFG_TARGET_ABI": "",
+            "CARGO_CFG_TARGET_ARCH": "x86_64",
+            "CARGO_CFG_TARGET_ENDIAN": "little",
+            "CARGO_CFG_TARGET_ENV": "msvc",
+            "CARGO_CFG_TARGET_FAMILY": "windows",
+            "CARGO_CFG_TARGET_FEATURE": "cmpxchg16b,fxsr,sse,sse2,sse3",
+            "CARGO_CFG_TARGET_HAS_ATOMIC": "128,16,32,64,8,ptr",
+            "CARGO_CFG_TARGET_OS": "windows",
+            "CARGO_CFG_TARGET_POINTER_WIDTH": "64",
+            "CARGO_CFG_TARGET_VENDOR": "pc",
+            "CARGO_CFG_WINDOWS": "",
+            "CARGO_ENCODED_RUSTFLAGS": "",
+            "DEBUG": "false",
+            "HOST": "x86_64-pc-windows-msvc",
+            "OPT_LEVEL": "0",
+            "TARGET": "x86_64-pc-windows-msvc",
+            "profile": "debug",
+            "rustc": "rustc 1.91.1 (ed61e7d7e 2025-11-07)\nbinary: rustc\ncommit-hash: ed61e7d7e242494fb7057f2657300d9e77bb4fcb\ncommit-date: 2025-11-07\nhost: x86_64-pc-windows-msvc\nrelease: 1.91.1\nLLVM version: 21.1.2\n"
+          },
+          "input_scope": "workspace-rust-source-v1",
+          "schema": "sts-rust-build-source-v1",
+          "source_sha256": "660318a278092dca8f08cbcb78298bc620446970a26e5aa9c659a19f806a3d55"
+        },
+        "public_observation_id": "sts-run-play-public-observation-20260906-v4",
+        "rng_semantics_id": "sts-simulator-run-rng-neow-card-parity-20260829-v1",
+        "run_play_head_schema": "sts-run-play-head-v1",
+        "schema": "sts-run-play-evidence-identity-v1",
+        "simulator_semantics_id": "sts-simulator-run-semantics-20260902-v14"
+      },
+      "version": "0.1.0"
+    },
+    "relic_mechanics": {
+      "basis": "simulator_definition_and_reviewed_effects",
+      "coverage": "partial",
+      "definitions": [
+        {
+          "battle_start_power": null,
+          "combat_victory_healing": {
+            "affected_by_healing_modifiers": true,
+            "base_hp": 6,
+            "capped_at_max_hp": true,
+            "requires_player_alive": true
+          },
+          "relic": "BurningBlood",
+          "shuffle_energy": null
+        },
+        {
+          "battle_start_power": null,
+          "combat_victory_healing": null,
+          "relic": "SingingBowl",
+          "shuffle_energy": null
+        }
+      ],
+      "public_snapshot_id": "public_information_snapshot_v1:2ee55e34e9499c5077781afcaa660afb2b9664b0",
+      "schema": "sts-visible-relic-reading-v1"
+    },
+    "source": {
+      "case_id": "energy-delivery-reading-contract",
+      "kind": "constructed_contract_case"
+    },
+    "strategic_reading": {
+      "candidates": [
+        {
+          "brief": "take Offering",
+          "candidate_id": "task_public_candidate_v1:a2c282e3af7fea09da5c19841bddf66e5a183ccd",
+          "candidate_sha256": "3a4bee7c264f2745240ec9558dd1b9bab0bbf38a124deb819222ef6fc608ee24",
+          "detail": "take Offering"
+        },
+        {
+          "brief": "take Seeing Red",
+          "candidate_id": "task_public_candidate_v1:e9163b608105d94bc7121954add8ccf1ebaf3846",
+          "candidate_sha256": "ced4222d24890517991f7542500d84f7fa3e69b628dac348bf0f22b97820e23e",
+          "detail": "take Seeing Red"
+        },
+        {
+          "brief": "take Bloodletting",
+          "candidate_id": "task_public_candidate_v1:dc21e868ed36f9eea87133739465dc184cf8179d",
+          "candidate_sha256": "02a6179d5625afa85d5580df212c6d0aba97feae26c34a2f380318c82f6482e0",
+          "detail": "take Bloodletting"
+        },
+        {
+          "brief": "take Berserk",
+          "candidate_id": "task_public_candidate_v1:292b1db474a8eddf277478f92c03828560db365b",
+          "candidate_sha256": "e8d222e8243bc4cb4284ad6e0d24972eef650d23b08872375aaa6555c0c11af8",
+          "detail": "take Berserk"
+        },
+        {
+          "brief": "take Sentinel",
+          "candidate_id": "task_public_candidate_v1:88db088f1b4e67dcd0d0e016cb9ec418bed219aa",
+          "candidate_sha256": "b70536f589c2a07fba806c4cb9b1aca4ecb38d64b9af7f2e76f24c78b4ef9c1b",
+          "detail": "take Sentinel"
+        },
+        {
+          "brief": "take Dropkick",
+          "candidate_id": "task_public_candidate_v1:6612ccc9e88ea2e002582f8a8292ad612e11f598",
+          "candidate_sha256": "5f454a141a6edccde92afa54d9417fbbde26a75c2f3e7839db8d2e0fe5ba8ea3",
+          "detail": "take Dropkick"
+        },
+        {
+          "brief": "take Adrenaline",
+          "candidate_id": "task_public_candidate_v1:c6447a79f2d4df6ceadbccd1d5d663d6c8786702",
+          "candidate_sha256": "27e1284b04a1fc2a4fdb16e33a316b3a51386ed244dc454434936642cb54a3eb",
+          "detail": "take Adrenaline"
+        },
+        {
+          "brief": "take Outmaneuver",
+          "candidate_id": "task_public_candidate_v1:216416d3b2d7f9817e69422f20af3efff61fc4bc",
+          "candidate_sha256": "763451977b39912b37c075912574662fc74ccd85e1bf2fa96eb29e42d62dc044",
+          "detail": "take Outmaneuver"
+        },
+        {
+          "brief": "take Turbo",
+          "candidate_id": "task_public_candidate_v1:78bb9702b982c8e3226cf6174c4a16f2fa03bb95",
+          "candidate_sha256": "ee6cc957183c1259e6138dc720a93dd38436e90d6c53f8a1e07a70bb65e9f796",
+          "detail": "take Turbo"
+        },
+        {
+          "brief": "take Double Energy",
+          "candidate_id": "task_public_candidate_v1:c63e2c5928a6f78f8546bc18a50c204af699245b",
+          "candidate_sha256": "afe6530f4781db23a3288b3897e937687dc219babd155398c8d6b0fa2ca4b456",
+          "detail": "take Double Energy"
+        },
+        {
+          "brief": "skip card reward",
+          "candidate_id": "task_public_candidate_v1:516688900897c40f36456ffeadf7dc186566f769",
+          "candidate_sha256": "9fec78e09575987bdfe8d84a9854fc47eac4a4efd338cca498ade3c7affe9d17",
+          "detail": "skip card reward"
+        }
+      ],
+      "context_detail": "",
+      "context_summary": "Card reward · reward item Some(0)",
+      "decision_site": "card_reward",
+      "observation_sha256": "0547cf3871e8779498319711e045bab8a67f9447bddbd49a7468510df0c0938e",
+      "public_snapshot_id": "public_information_snapshot_v1:2ee55e34e9499c5077781afcaa660afb2b9664b0",
+      "schema": "sts-strategic-reading-surface-v1"
+    }
+  },
+  "payload_sha256": "ebcf6080baaa242a3c28f749ea639b047adb8968c56ac4193427312e934c480e",
+  "schema": "sts-public-decision-export-v3"
+}

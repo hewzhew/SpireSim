@@ -1,0 +1,34 @@
+[package]
+name = "sts_oracle_eval"
+version = "0.1.0"
+edition = "2021"
+publish = false
+build = "build.rs"
+autobins = false
+autotests = false
+
+[features]
+default = ["oracle-lab"]
+combat-search-driver = []
+control-full = []
+oracle-lab = []
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+sts_core = { package = "sts_simulator", path = "../.." }
+sts_agent = { path = "../sts_agent" }
+sts_combat_atomic = { path = "../sts_combat_atomic" }
+sts_combat_outcome = { path = "../sts_combat_outcome" }
+sts_combat_knowledge = { path = "../sts_combat_knowledge" }
+sts_combat_planner = { path = "../sts_combat_planner" }
+sts_run_strategy = { path = "../sts_run_strategy" }
+sts_combat_storyboard = { path = "../sts_combat_storyboard" }
+blake2 = "0.10"
+rmp-serde = "1.3"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = ["Win32_Storage_FileSystem"] }

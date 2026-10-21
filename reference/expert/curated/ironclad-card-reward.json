@@ -1,0 +1,451 @@
+{
+  "schema": "sts-curated-strategy-v1",
+  "id": "ironclad-card-reward",
+  "title": "铁甲战士选牌",
+  "scope": {
+    "character": "Ironclad",
+    "decision_site": "card_reward",
+    "intended_use": "整局研究中的选牌判断；A20H应用尚需评估"
+  },
+  "review": {
+    "method": "model_source_review_and_cross_source_synthesis",
+    "reviewer": "Codex",
+    "human_review": "not_recorded",
+    "gameplay_validation": "not_performed"
+  },
+  "boundaries": [
+    "条件经验与决策方法，不是机制证明、动作评分或执行许可。",
+    "是否适用于当前局面由分析者判断；未知条件不能视为成立。",
+    "日常读取只使用整理后的条目，原文留给离线核查；未在当前读取中重新审计原文。"
+  ],
+  "sources": {
+    "tieba-10072740344": {
+      "title": "209连胜战逝用3w4字数教你如何玩懂战士",
+      "author": "漅汐",
+      "published_at": "2025-09-26",
+      "url": "https://tieba.baidu.com/p/10072740344?fr=frs",
+      "scope_note": "2025 single-author Ironclad guide; author self-reports a 209-win streak; exact ascension, Heart, and save/load permissions are not inferred beyond the cited text",
+      "raw_cache": ".oracle-lab/external-research/sources/tieba-10072740344/",
+      "curator_scope_note": "第15楼明确讨论必要时通过SL调整牌序/RNG；本文经验不能当作严格无读档或无隐藏信息干预的连胜证据。"
+    },
+    "tieba-7709780592": {
+      "title": "胜利的方程式——进阶20下的战士碎心攻略",
+      "author": "我要吃人1",
+      "published_at": "2022-01-28",
+      "url": "https://tieba.baidu.com/p/7709780592?fr=pb",
+      "scope_note": "2022版本的A20H且明确以允许SL的玩法经验为背景",
+      "raw_cache": ".oracle-lab/external-research/sources/tieba-7709780592/",
+      "curator_scope_note": "这里仅使用第72楼的过渡代价论证；不继承单卡分数或普遍最优主张。"
+    },
+    "reddit-ironclad-10-streak-guide": {
+      "title": "Ironclad guide A20H",
+      "author": "Panacea (Darth_Calculus)",
+      "published_at": "2021-12-21",
+      "url": "https://www.reddit.com/r/slaythespire/comments/rlcxra/ironclad_in_depth_guide_for_a20_heart_kills_10/",
+      "scope_note": "2021 single-author Ironclad A20H guide built around a self-reported ten-win streak with Twitch-chat assistance; tier lists are explicitly approximate and context dependent",
+      "raw_cache": ".oracle-lab/external-research/sources/reddit-ironclad-10-streak-guide/",
+      "curator_scope_note": "单作者经验；第14节的图片等级未在本样本中读取或转录，不能从空表格补造等级。"
+    },
+    "reddit-ironclad-35-of-50": {
+      "title": "I won 35 out of my last 50 Ironclad A20H games, here's what I learned!",
+      "author": "Brawlers9901",
+      "published_at": "2025-01-08",
+      "url": "https://www.reddit.com/r/slaythespire/comments/1hw65pn/i_won_35_out_of_my_last_50_ironclad_a20h_games/",
+      "scope_note": "2025 single-author retrospective over fifty Ironclad A20H runs; the 35/50 result and twelve-win streak are self-reported, and comments or linked statistics images are outside this corpus",
+      "raw_cache": ".oracle-lab/external-research/sources/reddit-ironclad-35-of-50/",
+      "curator_scope_note": "作者称只回滚部分误操作，不因战斗失误读档；样本结果、所有局可赢等说法均为作者自述。"
+    }
+  },
+  "assertions": {
+    "cx6": {
+      "source_id": "tieba-10072740344",
+      "record_id": "152669578498",
+      "locator": "floor 6",
+      "summary": "作者区分过渡期每轮可兑现数值与长期上限，同时指出增加攻击牌会占用牌位、减慢洗牌；文中的数值公式是解释模型。"
+    },
+    "cx7": {
+      "source_id": "tieba-10072740344",
+      "record_id": "152669582592",
+      "locator": "floor 7",
+      "summary": "作者担心低质过渡攻击很快成为攻防比例和启动负担，但明确保留不拿就会死的情形。"
+    },
+    "cx8": {
+      "source_id": "tieba-10072740344",
+      "record_id": "152669587471",
+      "locator": "floor 8",
+      "summary": "作者鼓励战士一层投资未来，同时要求联合评估当前强度、竞争选项、路线、药水、血量，以及未来收益与兑现速度。"
+    },
+    "cx15": {
+      "source_id": "tieba-10072740344",
+      "record_id": "152669608625",
+      "locator": "floor 15",
+      "summary": "作者指出二层费用和启动压力；拥有黑拥、重振、硬撑等组件不代表已经启动稳定，并讨论缺费时的对策和绕路。"
+    },
+    "cx50": {
+      "source_id": "tieba-10072740344",
+      "record_id": "152669682883",
+      "locator": "floor 50",
+      "summary": "作者强调战斗专注对早期访问能力的作用，也指出停止抽牌会打断其他过牌；升级应与其他敲位竞争。"
+    },
+    "cx52": {
+      "source_id": "tieba-10072740344",
+      "record_id": "152669684792",
+      "locator": "floor 52",
+      "summary": "作者将放血视为可复用费用来源，说明它消耗血量、需要过牌配合，并可能出现有费没牌可打。"
+    },
+    "cx63": {
+      "source_id": "tieba-10072740344",
+      "record_id": "152669693780",
+      "locator": "floor 63",
+      "summary": "作者重视燃烧契约的定向消耗与过牌，但强调升级、费用和过渡期不直接产出数值的代价，未来价值也需判断兑现速度。"
+    },
+    "equation72": {
+      "source_id": "tieba-7709780592",
+      "record_id": "143003900450",
+      "locator": "floor 72",
+      "summary": "作者从战损收益及其时间分布讨论过渡牌，说明短期收益与后期运转负担可能相反；该章节为简化分类，只把部分输出牌称为过渡。"
+    },
+    "pan4": {
+      "source_id": "reddit-ironclad-10-streak-guide",
+      "record_id": "section-004",
+      "locator": "lines 92-99",
+      "summary": "作者主张初始牌组很弱且仍面临精英时优先短期减损；这个阶段按实际强度或后续精英需求结束，而非固定楼层。"
+    },
+    "pan13": {
+      "source_id": "reddit-ironclad-10-streak-guide",
+      "record_id": "section-013",
+      "locator": "lines 300-307",
+      "summary": "作者要求评估下一场可能致死的遭遇，把选牌与路线、药水、遗物联动；并强调后期需要更强协同。"
+    },
+    "pan14": {
+      "source_id": "reddit-ironclad-10-streak-guide",
+      "record_id": "section-014",
+      "locator": "lines 308-323",
+      "summary": "作者明确表示后期卡组差异使通用攻略困难；记录主要包含图片表格，未据空表格推断任何卡牌等级。"
+    },
+    "pan15": {
+      "source_id": "reddit-ironclad-10-streak-guide",
+      "record_id": "section-015",
+      "locator": "lines 324-343",
+      "summary": "作者讨论腐化的短战结束时机、长战技能耗尽及消耗联动，并对后期黑暗之拥、无惧疼痛给出很强的抓取倾向。"
+    },
+    "bralle": {
+      "source_id": "reddit-ironclad-35-of-50",
+      "record_id": "t3_1hw65pn",
+      "locator": "main post",
+      "summary": "作者报告一次50局样本并拒绝将其外推为一般胜率，强调删除低效牌与过牌的重要性，并提醒单卡等级受打法影响。"
+    }
+  },
+  "entries": [
+    {
+      "id": "near-threat",
+      "title": "先看近期危险",
+      "kind": "decision_method",
+      "principle": "先判断候选能否改善最近可能致死的遭遇，再比较成长收益。",
+      "check": "查看公开路线、牌组、HP、药水和全部候选；近期战斗准备度需要分析，不能从牌名或数量推定。",
+      "unless": "已有足够应对能力或可以绕开危险时，短期减损的优先级可能下降；未知遭遇不可偷看隐藏结果。",
+      "inputs": [
+        {
+          "id": "visible_route",
+          "kind": "observable",
+          "description": "公开路线、Boss与可绕行节点"
+        },
+        {
+          "id": "resources",
+          "kind": "observable",
+          "description": "HP、药水、金币与牌组"
+        },
+        {
+          "id": "readiness",
+          "kind": "judgment",
+          "description": "面对可能遭遇的输出、防御与启动是否够用"
+        }
+      ],
+      "reasoning": [
+        "以实际压力界定当前阶段，不按固定楼层切换策略。",
+        "选牌、用药与改路可以共同解决一个风险；不要只在卡牌之间比较。"
+      ],
+      "disagreements": [
+        "Panacea强调初始弱牌组先降低精英战损；漅汐同时强调战士应利用前期优势投资未来。两者不能合成无条件的统一优先级。"
+      ],
+      "assertions": [
+        "pan4",
+        "pan13",
+        "cx15",
+        "cx8"
+      ]
+    },
+    {
+      "id": "future-value",
+      "title": "未来收益要有兑现路径",
+      "kind": "conditional_experience",
+      "principle": "接受眼前代价，需要看未来收益有多大、依赖什么，以及何时能兑现。",
+      "check": "区分已经拥有的支持、尚待获得的组件和需要的升级；评估竞争奖励、眼前战力与可调整的路线。",
+      "unless": "收益依赖未出现的特定组件、兑现太慢或近期代价承受不起时，未来价值可能不足；单局未找到胜线仍是Unknown。",
+      "inputs": [
+        {
+          "id": "existing_support",
+          "kind": "observable",
+          "description": "当前已获得的卡牌、遗物、药水"
+        },
+        {
+          "id": "upgrade_access",
+          "kind": "observable",
+          "description": "公开休息点与既有升级"
+        },
+        {
+          "id": "realization",
+          "kind": "judgment",
+          "description": "支持能否及时、稳定地转化为收益"
+        },
+        {
+          "id": "survival_margin",
+          "kind": "judgment",
+          "description": "承担当前代价后还有多少调整空间"
+        }
+      ],
+      "reasoning": [
+        "把确定存在的支持和期待将来拿到的支持分开。",
+        "评估整副牌的变化与同组选择的机会成本，不能只评价候选的理论终局。"
+      ],
+      "disagreements": [
+        "鼓励早拿未来牌是漅汐的强烈经验倾向；Panacea的初期策略更强调短期减损。本条保留这个取舍，不估计未经测量的概率。"
+      ],
+      "assertions": [
+        "cx8",
+        "cx63",
+        "pan4"
+      ]
+    },
+    {
+      "id": "transition",
+      "title": "过渡收益看发生阶段",
+      "kind": "conditional_experience",
+      "principle": "过渡牌要看在哪些战斗节省资源，以及何时开始拖累访问和运转。",
+      "check": "比较近期输出需求、攻击密度、过牌、后续补强与处理负担；一次洗牌的总伤害不能代替输出速度。",
+      "unless": "当前确实有致死风险时，可以接受长期负担；未来已确定的协同也可能延长过渡牌的价值。",
+      "inputs": [
+        {
+          "id": "deck",
+          "kind": "observable",
+          "description": "牌组与现有协同"
+        },
+        {
+          "id": "encounter_needs",
+          "kind": "judgment",
+          "description": "近期需要多少速度、点杀或群体输出"
+        },
+        {
+          "id": "expiry",
+          "kind": "judgment",
+          "description": "之后仍能发挥作用，还是需要花资源处理"
+        }
+      ],
+      "reasoning": [
+        "同样的总减损，发生在不同阶段可能有不同价值。",
+        "牌位、费用与访问同时限制输出，不能把更高总伤害自动当作更强。"
+      ],
+      "disagreements": [
+        "《胜利的方程式》该节对过渡牌的分类范围较窄；这里综合的是短期收益与长期负担，不沿用它的具体单卡排名或固定折算系数。"
+      ],
+      "assertions": [
+        "equation72",
+        "cx6",
+        "cx7"
+      ]
+    },
+    {
+      "id": "draw-access",
+      "title": "过牌要转成有效动作",
+      "kind": "conditional_experience",
+      "principle": "过牌的价值来自及时拿到并打出需要的牌，不能只看抽到几张。",
+      "check": "检查费用、手牌可用性、抽牌限制和牌序依赖；区分访问不足与拿到牌却打不出的情况。",
+      "unless": "费用不足、抽牌被阻断或新增过牌挤占必要动作时，边际收益可能很低；牌组密度问题也未必能靠继续抓过牌解决。",
+      "inputs": [
+        {
+          "id": "draw_mechanics",
+          "kind": "observable",
+          "description": "候选与已有卡牌的费用、抽牌限制及升级"
+        },
+        {
+          "id": "energy_supply",
+          "kind": "observable",
+          "description": "当前费用与加费来源"
+        },
+        {
+          "id": "access_bottleneck",
+          "kind": "judgment",
+          "description": "关键动作是否能及时出现并被支付"
+        }
+      ],
+      "reasoning": [
+        "战斗专注与燃烧契约的启动代价和抽牌限制不同，不能仅按过牌标签互换。",
+        "Brawlers的删牌经验提醒我们同时检查低效牌密度；它没有证明某个固定牌组大小。"
+      ],
+      "disagreements": [
+        "各作者对过牌卡普遍评价较高，但这不证明每个额外副本都值得拿；本条的边际比较是分析者综合。"
+      ],
+      "assertions": [
+        "cx50",
+        "cx63",
+        "cx52",
+        "bralle"
+      ]
+    },
+    {
+      "id": "energy",
+      "title": "费用与可用手牌一起看",
+      "kind": "conditional_experience",
+      "principle": "加费需要有值得支付的动作，过牌也需要费用或低费动作承接。",
+      "check": "检查可用手牌、启动开销、加费代价及补偿；三费或四费本身不能概括卡组强度。",
+      "unless": "经常有费没牌时，更多加费可能不解决问题；自伤、技能耗尽和长战防御也可能改变某种加费方式的价值。",
+      "inputs": [
+        {
+          "id": "energy_sources",
+          "kind": "observable",
+          "description": "当前费用与加费来源、代价"
+        },
+        {
+          "id": "spendable_actions",
+          "kind": "judgment",
+          "description": "关键回合是否有可支付且值得执行的动作"
+        },
+        {
+          "id": "fight_horizon",
+          "kind": "judgment",
+          "description": "短战能否结束，长战是否会耗尽必要资源"
+        }
+      ],
+      "reasoning": [
+        "放血的讨论同时包含费用收益、HP代价和过牌需求。",
+        "腐化的费用收益与技能消耗是同一选择的两面，应结合结束战斗或保留长战能力的计划。"
+      ],
+      "disagreements": [
+        "漅汐对二层四费与低费牌的倾向很强；这里不将其变成必须四费或必须抓若干零费牌的硬条件。"
+      ],
+      "assertions": [
+        "cx52",
+        "cx15",
+        "pan15"
+      ]
+    },
+    {
+      "id": "skip-density",
+      "title": "把跳过作为完整对照",
+      "kind": "decision_method",
+      "principle": "比较新增一张牌对当前牌组的边际改变，同时保留跳过。",
+      "check": "说明候选改善哪个实际问题，以及会占用什么抽牌、费用或升级资源；已解决的问题可能只有很小的增益。",
+      "unless": "维持牌组紧凑不能压过真实生存缺口；已有更强同类牌也不自动说明新增副本无用。",
+      "inputs": [
+        {
+          "id": "alternatives",
+          "kind": "observable",
+          "description": "完整候选，包括跳过"
+        },
+        {
+          "id": "current_deck",
+          "kind": "observable",
+          "description": "当前牌组与升级"
+        },
+        {
+          "id": "marginal_change",
+          "kind": "judgment",
+          "description": "新牌增加什么能力，又牺牲了什么"
+        }
+      ],
+      "reasoning": [
+        "把跳过当作不增加这张牌的对照，不赋予零分，也不由资料命中量排序。",
+        "删牌和过牌经验提示密度的影响，但没有提供普遍正确的牌组张数。"
+      ],
+      "disagreements": [
+        "原文含有强烈的抓取与单卡等级偏好；本条是结合牌位负担、后期差异和删牌经验的决策方法，不宣称作者达成共同排名。"
+      ],
+      "assertions": [
+        "cx6",
+        "cx7",
+        "pan13",
+        "pan14",
+        "bralle"
+      ]
+    },
+    {
+      "id": "upgrade",
+      "title": "把升级竞争算进抓牌",
+      "kind": "conditional_experience",
+      "principle": "候选依赖升级时，要同时评估升级机会与其他牌的竞争。",
+      "check": "查看候选当前升级、公开休息点及其他升级需求；休息点还可能用于回血，不能全算成可用升级。",
+      "unless": "未升级已经足够有效或有明确替代升级手段时，升级竞争的影响会减小；未知的未来火堆不能当作既得资源。",
+      "inputs": [
+        {
+          "id": "upgrades",
+          "kind": "observable",
+          "description": "现有升级与公开休息点"
+        },
+        {
+          "id": "upgrade_competition",
+          "kind": "judgment",
+          "description": "该升级是否值得挤占其他升级或回血"
+        },
+        {
+          "id": "unupgraded_value",
+          "kind": "judgment",
+          "description": "未升级版本能否满足当前需要"
+        }
+      ],
+      "reasoning": [
+        "漅汐对战斗专注、燃烧契约和放血的升级需求描述不同，应分别分析。",
+        "把升级需求视为机会成本，不给某张牌设永久吃敲标签。"
+      ],
+      "disagreements": [
+        "这一条主要来自漅汐的单卡讨论，是单来源经验的综合；尚未形成跨作者验证。"
+      ],
+      "assertions": [
+        "cx50",
+        "cx63",
+        "cx52"
+      ]
+    },
+    {
+      "id": "exhaust-startup",
+      "title": "消耗组件齐全仍要看启动",
+      "kind": "conditional_experience",
+      "principle": "消耗组合的潜力，需要通过能及时支付、找到并打出组件的过程兑现。",
+      "check": "区分现有组件、抽到顺序、费用和启动时的防御；拥有组件只是可检查事实，启动稳定性仍需判断。",
+      "unless": "短战可能来不及回收启动成本；长战可能耗尽技能。未经验证不能把成套组件直接视为可安全走精英的证据。",
+      "inputs": [
+        {
+          "id": "components",
+          "kind": "observable",
+          "description": "当前消耗与补偿组件"
+        },
+        {
+          "id": "access_energy",
+          "kind": "observable",
+          "description": "过牌、费用与升级"
+        },
+        {
+          "id": "startup_safety",
+          "kind": "judgment",
+          "description": "启动期间是否能承受敌方压力"
+        },
+        {
+          "id": "terminal_plan",
+          "kind": "judgment",
+          "description": "消耗后如何完成战斗或维持防御"
+        }
+      ],
+      "reasoning": [
+        "漅汐举例说明二层拥有黑拥、重振、硬撑等牌仍会因启动慢而失败。",
+        "Panacea对后期消耗补偿牌非常积极，但也讨论腐化在长战中的技能耗尽问题。"
+      ],
+      "disagreements": [
+        "后期强烈抓取倾向与二层启动风险的适用情境不同，不能压成全局无条件的必拿规则。"
+      ],
+      "assertions": [
+        "cx15",
+        "cx63",
+        "pan15"
+      ]
+    }
+  ]
+}

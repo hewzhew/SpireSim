@@ -1,0 +1,62 @@
+{
+  "scope": "Natural Defect Collector: repeated Electro keeps -1; Machine Learning triggers one Heatsink draw and adds persistent Draw",
+  "capture_scope": "accelerated_sts_wrapper_rng_ledger_and_declared_snapshot_domains",
+  "files": {
+    "electro-before.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-c8f1db35cea34af8a1dace3bde4df769/java-evidence/boundaries/00000038-frame-40.json",
+      "sha256": "a8efb764e6b954701157a094a824505175f82aeb1513b850350c6ec90dc2a15e",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "1C91255EE2E63B358364DA7195B09427B8948A61327E97A9A70E6A4D84BD9173",
+        "session_epoch": "4b08de76-1dee-4156-955e-0c9b998c472a:b733bcde-a4d2-4453-b510-221203c44015:5e41d6b8-4ba2-41af-a206-7605a1998867"
+      },
+      "capturing_rust_source": "6d2bae946 plus Defect power projections and corrected -1 sentinel stacking",
+      "capturing_runner_sha256": "9a889333d029d197ee93d27891fe424e0e9e586b9d8b6708de43800075b76b78"
+    },
+    "electro-action.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-c8f1db35cea34af8a1dace3bde4df769/java-evidence/actions/00000038-from-frame-40.json",
+      "sha256": "059f8a99c6e04ff8c1a169fe19176912a604f429780940c77a9fc29307d5e34e",
+      "capturing_rust_source": "6d2bae946 plus Defect power projections and corrected -1 sentinel stacking",
+      "capturing_runner_sha256": "9a889333d029d197ee93d27891fe424e0e9e586b9d8b6708de43800075b76b78"
+    },
+    "electro-after.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-c8f1db35cea34af8a1dace3bde4df769/java-evidence/boundaries/00000039-frame-41.json",
+      "sha256": "e0ec0c7190584e5d66d1cf5555ae4369adaae7a9a4340175582d9d627a0df913",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "1C91255EE2E63B358364DA7195B09427B8948A61327E97A9A70E6A4D84BD9173",
+        "session_epoch": "4b08de76-1dee-4156-955e-0c9b998c472a:b733bcde-a4d2-4453-b510-221203c44015:5e41d6b8-4ba2-41af-a206-7605a1998867"
+      },
+      "capturing_rust_source": "6d2bae946 plus Defect power projections and corrected -1 sentinel stacking",
+      "capturing_runner_sha256": "9a889333d029d197ee93d27891fe424e0e9e586b9d8b6708de43800075b76b78"
+    },
+    "draw-before.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-c8f1db35cea34af8a1dace3bde4df769/java-evidence/boundaries/00000062-frame-64.json",
+      "sha256": "87adcbba8a9e3220154a05ed34e296ea482d0889bbb7d030e9e3350fd1920fc7",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "1C91255EE2E63B358364DA7195B09427B8948A61327E97A9A70E6A4D84BD9173",
+        "session_epoch": "4b08de76-1dee-4156-955e-0c9b998c472a:b733bcde-a4d2-4453-b510-221203c44015:5e41d6b8-4ba2-41af-a206-7605a1998867"
+      },
+      "capturing_rust_source": "6d2bae946 plus Defect power projections and corrected -1 sentinel stacking",
+      "capturing_runner_sha256": "9a889333d029d197ee93d27891fe424e0e9e586b9d8b6708de43800075b76b78"
+    },
+    "draw-action.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-c8f1db35cea34af8a1dace3bde4df769/java-evidence/actions/00000062-from-frame-64.json",
+      "sha256": "5916e04e8051f4d3d5f64b71206ba68b5eb8204fc7c1dd8a86564113db4c0246",
+      "capturing_rust_source": "6d2bae946 plus Defect power projections and corrected -1 sentinel stacking",
+      "capturing_runner_sha256": "9a889333d029d197ee93d27891fe424e0e9e586b9d8b6708de43800075b76b78"
+    },
+    "draw-after.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-c8f1db35cea34af8a1dace3bde4df769/java-evidence/boundaries/00000063-frame-65.json",
+      "sha256": "c9ac35c7fa1ff3e598e35562713ced15236eab7515df40c86b2e21f30e234cb4",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "1C91255EE2E63B358364DA7195B09427B8948A61327E97A9A70E6A4D84BD9173",
+        "session_epoch": "4b08de76-1dee-4156-955e-0c9b998c472a:b733bcde-a4d2-4453-b510-221203c44015:5e41d6b8-4ba2-41af-a206-7605a1998867"
+      },
+      "capturing_rust_source": "6d2bae946 plus Defect power projections and corrected -1 sentinel stacking",
+      "capturing_runner_sha256": "9a889333d029d197ee93d27891fe424e0e9e586b9d8b6708de43800075b76b78"
+    }
+  }
+}

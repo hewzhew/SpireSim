@@ -1,0 +1,477 @@
+{
+  "payload": {
+    "card_mechanics": {
+      "basis": "simulator_definition_and_reviewed_effects",
+      "candidates": [],
+      "coverage": "partial",
+      "public_snapshot_id": "public_information_snapshot_v1:aa5558c0b92d00af52e3da7171086536623dc89e",
+      "schema": "sts-card-acquisition-reading-v1"
+    },
+    "decision": {
+      "candidates": [
+        {
+          "action": {
+            "card": "Armaments",
+            "card_ordinal": 0,
+            "kind": "smith",
+            "upgrades": 0
+          },
+          "domain": "strategic"
+        },
+        {
+          "action": {
+            "card": "Apotheosis",
+            "card_ordinal": 2,
+            "kind": "smith",
+            "upgrades": 0
+          },
+          "domain": "strategic"
+        },
+        {
+          "action": {
+            "kind": "rest"
+          },
+          "domain": "strategic"
+        }
+      ],
+      "information": {
+        "candidate_surface": {
+          "candidate_surface_id": "public_candidate_surface_v1:1e13e69bc6e4341d13316aefc0da3338422e2822",
+          "kind": "deployable_policy",
+          "ordered_candidate_ids": [
+            "task_public_candidate_v1:724fe7fb70723abfbde976c1f617bd7721012117",
+            "task_public_candidate_v1:6e9e4103845d73cd99528fc084baf21bbe0d50a3",
+            "task_public_candidate_v1:31d8e55850e207fab53339f62c1e100fa261c978"
+          ],
+          "schema_name": "TaskPublicCandidateSurfaceV1",
+          "schema_version": 1
+        },
+        "domain": "strategic",
+        "history_snapshot": {
+          "history_snapshot_id": "public_history_snapshot_v1:6693c80a196e79ffd3ad98e8555f9928d6f69390",
+          "schema_name": "TaskPublicHistorySnapshotV1",
+          "schema_version": 1
+        },
+        "observation": {
+          "observation_id": "public_observation_v1:6a07a243cd87bf51540b987509b9118b3497df69",
+          "schema_name": "TaskStrategicPublicObservationV3",
+          "schema_version": 3,
+          "scope": "strategic_run_decision"
+        },
+        "schema_name": "PublicInformationSnapshotV1",
+        "schema_version": 1,
+        "snapshot_id": "public_information_snapshot_v1:aa5558c0b92d00af52e3da7171086536623dc89e"
+      },
+      "observation": {
+        "domain": "strategic",
+        "observation": {
+          "cards": [
+            {
+              "base_block_override": null,
+              "base_damage_override": null,
+              "card": "Armaments",
+              "cost_modifier": 0,
+              "misc_value": 0,
+              "ordinal": 0,
+              "upgrades": 0
+            },
+            {
+              "base_block_override": null,
+              "base_damage_override": null,
+              "card": "Armaments",
+              "cost_modifier": 0,
+              "misc_value": 0,
+              "ordinal": 1,
+              "upgrades": 1
+            },
+            {
+              "base_block_override": null,
+              "base_damage_override": null,
+              "card": "Apotheosis",
+              "cost_modifier": 0,
+              "misc_value": 0,
+              "ordinal": 2,
+              "upgrades": 0
+            }
+          ],
+          "context": {
+            "kind": "campfire"
+          },
+          "decision_site": "campfire",
+          "mechanics": {
+            "mechanics_id": "constructed-reading-contract",
+            "mechanics_version": 1
+          },
+          "potions": [
+            {
+              "potion": {
+                "can_discard": true,
+                "can_use": false,
+                "potion": "FirePotion",
+                "requires_target": true
+              },
+              "slot": 0
+            },
+            {
+              "potion": null,
+              "slot": 1
+            }
+          ],
+          "public_history": {
+            "recent_combat_hp_loss": null,
+            "recent_combat_potions_used": null,
+            "recent_combat_turns": null,
+            "shop_purge_count": 0
+          },
+          "public_map": {
+            "boss": null,
+            "current_x": 1,
+            "current_y": 5,
+            "nodes": [
+              {
+                "edges": [
+                  {
+                    "destination_x": 0,
+                    "destination_y": 6
+                  },
+                  {
+                    "destination_x": 2,
+                    "destination_y": 6
+                  }
+                ],
+                "has_emerald_key": false,
+                "room": "monster",
+                "x": 1,
+                "y": 5
+              },
+              {
+                "edges": [],
+                "has_emerald_key": true,
+                "room": "elite",
+                "x": 0,
+                "y": 6
+              },
+              {
+                "edges": [],
+                "has_emerald_key": false,
+                "room": "question_mark",
+                "x": 2,
+                "y": 6
+              }
+            ]
+          },
+          "relics": [
+            {
+              "amount": 1,
+              "counter": -1,
+              "relic": "BurningBlood",
+              "used_up": false
+            },
+            {
+              "amount": 1,
+              "counter": -1,
+              "relic": "SingingBowl",
+              "used_up": false
+            }
+          ],
+          "run": {
+            "act": 1,
+            "ascension_level": 20,
+            "current_hp": 22,
+            "floor": 7,
+            "gold": 131,
+            "keys": [
+              false,
+              false,
+              false
+            ],
+            "max_hp": 80,
+            "player_class": "ironclad",
+            "potion_capacity": 2
+          },
+          "run_goal": "heart_victory"
+        }
+      },
+      "site": "campfire"
+    },
+    "deck_mechanics": {
+      "basis": "public_instance_and_shared_card_mechanics",
+      "cards": [
+        {
+          "card_sha256": "25b40b9e5bf7e09bf8301a97067535227e15671995344c4656d9cc36b0925d2e",
+          "facts": {
+            "current": {
+              "definition": {
+                "base_cost": 1,
+                "card": "Armaments",
+                "card_type": "Skill",
+                "definition_numbers": {
+                  "block": 5,
+                  "damage": 0
+                },
+                "ethereal": false,
+                "exhausts": false,
+                "innate": false,
+                "play_target": "player",
+                "rarity": "Common",
+                "reviewed_effects": {
+                  "base_block_delivery": "once_on_play",
+                  "combat_upgrade_persistence": "combat_only",
+                  "combat_upgrade_scope": "selected_card_in_hand",
+                  "end_of_turn_block_each_turn": null,
+                  "enemy_strength_reduction": null,
+                  "self_hp_loss_on_play": null,
+                  "unconditional_draw_request": null
+                },
+                "upgrades": 0
+              },
+              "misc_value": 0,
+              "persistent_block": 5,
+              "persistent_cost": 1,
+              "persistent_damage": 0
+            },
+            "next_upgrade": {
+              "definition": {
+                "base_cost": 1,
+                "card": "Armaments",
+                "card_type": "Skill",
+                "definition_numbers": {
+                  "block": 5,
+                  "damage": 0
+                },
+                "ethereal": false,
+                "exhausts": false,
+                "innate": false,
+                "play_target": "player",
+                "rarity": "Common",
+                "reviewed_effects": {
+                  "base_block_delivery": "once_on_play",
+                  "combat_upgrade_persistence": "combat_only",
+                  "combat_upgrade_scope": "whole_hand",
+                  "end_of_turn_block_each_turn": null,
+                  "enemy_strength_reduction": null,
+                  "self_hp_loss_on_play": null,
+                  "unconditional_draw_request": null
+                },
+                "upgrades": 1
+              },
+              "misc_value": 0,
+              "persistent_block": 5,
+              "persistent_cost": 1,
+              "persistent_damage": 0
+            }
+          },
+          "ordinal": 0
+        },
+        {
+          "card_sha256": "56caac02c11b3abdef529a0c83767b7d815e1f49b850558152afbbb5b21eec7a",
+          "facts": {
+            "current": {
+              "definition": {
+                "base_cost": 1,
+                "card": "Armaments",
+                "card_type": "Skill",
+                "definition_numbers": {
+                  "block": 5,
+                  "damage": 0
+                },
+                "ethereal": false,
+                "exhausts": false,
+                "innate": false,
+                "play_target": "player",
+                "rarity": "Common",
+                "reviewed_effects": {
+                  "base_block_delivery": "once_on_play",
+                  "combat_upgrade_persistence": "combat_only",
+                  "combat_upgrade_scope": "whole_hand",
+                  "end_of_turn_block_each_turn": null,
+                  "enemy_strength_reduction": null,
+                  "self_hp_loss_on_play": null,
+                  "unconditional_draw_request": null
+                },
+                "upgrades": 1
+              },
+              "misc_value": 0,
+              "persistent_block": 5,
+              "persistent_cost": 1,
+              "persistent_damage": 0
+            },
+            "next_upgrade": null
+          },
+          "ordinal": 1
+        },
+        {
+          "card_sha256": "c549ceb901d5d32462817371e7c45eebe9060ea897d4039d8c714e8a326b55a9",
+          "facts": {
+            "current": {
+              "definition": {
+                "base_cost": 2,
+                "card": "Apotheosis",
+                "card_type": "Skill",
+                "definition_numbers": {
+                  "block": 0,
+                  "damage": 0
+                },
+                "ethereal": false,
+                "exhausts": true,
+                "innate": false,
+                "play_target": "no_explicit_target",
+                "rarity": "Rare",
+                "reviewed_effects": {
+                  "combat_upgrade_persistence": "combat_only",
+                  "combat_upgrade_scope": "all_combat_zones",
+                  "end_of_turn_block_each_turn": null,
+                  "enemy_strength_reduction": null,
+                  "self_hp_loss_on_play": null,
+                  "unconditional_draw_request": null
+                },
+                "upgrades": 0
+              },
+              "misc_value": 0,
+              "persistent_block": 0,
+              "persistent_cost": 2,
+              "persistent_damage": 0
+            },
+            "next_upgrade": {
+              "definition": {
+                "base_cost": 1,
+                "card": "Apotheosis",
+                "card_type": "Skill",
+                "definition_numbers": {
+                  "block": 0,
+                  "damage": 0
+                },
+                "ethereal": false,
+                "exhausts": true,
+                "innate": false,
+                "play_target": "no_explicit_target",
+                "rarity": "Rare",
+                "reviewed_effects": {
+                  "combat_upgrade_persistence": "combat_only",
+                  "combat_upgrade_scope": "all_combat_zones",
+                  "end_of_turn_block_each_turn": null,
+                  "enemy_strength_reduction": null,
+                  "self_hp_loss_on_play": null,
+                  "unconditional_draw_request": null
+                },
+                "upgrades": 1
+              },
+              "misc_value": 0,
+              "persistent_block": 0,
+              "persistent_cost": 1,
+              "persistent_damage": 0
+            }
+          },
+          "ordinal": 2
+        }
+      ],
+      "coverage": "partial",
+      "public_snapshot_id": "public_information_snapshot_v1:aa5558c0b92d00af52e3da7171086536623dc89e",
+      "schema": "sts-owned-card-reading-v1"
+    },
+    "potion_mechanics": {
+      "basis": "simulator_definition_and_reviewed_effects",
+      "candidates": [],
+      "coverage": "partial",
+      "public_snapshot_id": "public_information_snapshot_v1:aa5558c0b92d00af52e3da7171086536623dc89e",
+      "schema": "sts-potion-acquisition-reading-v1"
+    },
+    "producer": {
+      "component": "sts_run_play",
+      "evidence_identity": {
+        "build_source": {
+          "configuration": {
+            "CARGO_CFG_FEATURE": "",
+            "CARGO_CFG_PANIC": "unwind",
+            "CARGO_CFG_TARGET_ABI": "",
+            "CARGO_CFG_TARGET_ARCH": "x86_64",
+            "CARGO_CFG_TARGET_ENDIAN": "little",
+            "CARGO_CFG_TARGET_ENV": "msvc",
+            "CARGO_CFG_TARGET_FAMILY": "windows",
+            "CARGO_CFG_TARGET_FEATURE": "cmpxchg16b,fxsr,sse,sse2,sse3",
+            "CARGO_CFG_TARGET_HAS_ATOMIC": "128,16,32,64,8,ptr",
+            "CARGO_CFG_TARGET_OS": "windows",
+            "CARGO_CFG_TARGET_POINTER_WIDTH": "64",
+            "CARGO_CFG_TARGET_VENDOR": "pc",
+            "CARGO_CFG_WINDOWS": "",
+            "CARGO_ENCODED_RUSTFLAGS": "",
+            "DEBUG": "false",
+            "HOST": "x86_64-pc-windows-msvc",
+            "OPT_LEVEL": "0",
+            "TARGET": "x86_64-pc-windows-msvc",
+            "profile": "debug",
+            "rustc": "rustc 1.91.1 (ed61e7d7e 2025-11-07)\nbinary: rustc\ncommit-hash: ed61e7d7e242494fb7057f2657300d9e77bb4fcb\ncommit-date: 2025-11-07\nhost: x86_64-pc-windows-msvc\nrelease: 1.91.1\nLLVM version: 21.1.2\n"
+          },
+          "input_scope": "workspace-rust-source-v1",
+          "schema": "sts-rust-build-source-v1",
+          "source_sha256": "660318a278092dca8f08cbcb78298bc620446970a26e5aa9c659a19f806a3d55"
+        },
+        "public_observation_id": "sts-run-play-public-observation-20260906-v4",
+        "rng_semantics_id": "sts-simulator-run-rng-neow-card-parity-20260829-v1",
+        "run_play_head_schema": "sts-run-play-head-v1",
+        "schema": "sts-run-play-evidence-identity-v1",
+        "simulator_semantics_id": "sts-simulator-run-semantics-20260902-v14"
+      },
+      "version": "0.1.0"
+    },
+    "relic_mechanics": {
+      "basis": "simulator_definition_and_reviewed_effects",
+      "coverage": "partial",
+      "definitions": [
+        {
+          "battle_start_power": null,
+          "combat_victory_healing": {
+            "affected_by_healing_modifiers": true,
+            "base_hp": 6,
+            "capped_at_max_hp": true,
+            "requires_player_alive": true
+          },
+          "relic": "BurningBlood",
+          "shuffle_energy": null
+        },
+        {
+          "battle_start_power": null,
+          "combat_victory_healing": null,
+          "relic": "SingingBowl",
+          "shuffle_energy": null
+        }
+      ],
+      "public_snapshot_id": "public_information_snapshot_v1:aa5558c0b92d00af52e3da7171086536623dc89e",
+      "schema": "sts-visible-relic-reading-v1"
+    },
+    "source": {
+      "case_id": "campfire-combat-upgrade-scope",
+      "kind": "constructed_contract_case"
+    },
+    "strategic_reading": {
+      "candidates": [
+        {
+          "brief": "smith Armaments@deck[0]",
+          "candidate_id": "task_public_candidate_v1:724fe7fb70723abfbde976c1f617bd7721012117",
+          "candidate_sha256": "857a77e8457c5f2b127c8bb56788934acc7b2f02296a4062b03a59492ad715d1",
+          "detail": "smith Armaments@deck[0]"
+        },
+        {
+          "brief": "smith Apotheosis@deck[2]",
+          "candidate_id": "task_public_candidate_v1:6e9e4103845d73cd99528fc084baf21bbe0d50a3",
+          "candidate_sha256": "317480b70855f65c0835ef402820c105ae696c5713a5083f12a79400eaded8a1",
+          "detail": "smith Apotheosis@deck[2]"
+        },
+        {
+          "brief": "rest",
+          "candidate_id": "task_public_candidate_v1:31d8e55850e207fab53339f62c1e100fa261c978",
+          "candidate_sha256": "873df124734c2557b98fde81449fbb7d0f9c250768b285c4951e2a98e87d003c",
+          "detail": "rest"
+        }
+      ],
+      "context_detail": "",
+      "context_summary": "Campfire · available rest, upgrade and other actions are listed in the current candidates",
+      "decision_site": "campfire",
+      "observation_sha256": "0e60ca4cad231e1a4aab49106154c9d5d8055fcc15ef4a73f92ea1ac87418a9e",
+      "public_snapshot_id": "public_information_snapshot_v1:aa5558c0b92d00af52e3da7171086536623dc89e",
+      "schema": "sts-strategic-reading-surface-v1"
+    }
+  },
+  "payload_sha256": "5a78cee93b910f4055809dd8b39f3dd6a988bba4eaa6964deb6325571f4a2ec4",
+  "schema": "sts-public-decision-export-v3"
+}

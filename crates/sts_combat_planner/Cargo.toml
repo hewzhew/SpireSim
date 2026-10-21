@@ -1,0 +1,24 @@
+[package]
+name = "sts_combat_planner"
+version = "0.1.0"
+edition = "2021"
+publish = false
+autobins = false
+autotests = false
+
+[dependencies]
+sts_core = { package = "sts_simulator", path = "../.." }
+sts_agent = { path = "../sts_agent" }
+sts_combat_option_grounder = { path = "../sts_combat_option_grounder" }
+sts_combat_evidence = { path = "../sts_combat_evidence" }
+sts_combat_outcome = { path = "../sts_combat_outcome" }
+sts_complete_turn_proposal = { path = "../sts_complete_turn_proposal" }
+sts_combat_strategy = { path = "../sts_combat_strategy" }
+sts_combat_tactics = { path = "../sts_combat_tactics" }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+rustc-hash = { version = "2.1", default-features = false }
+smallvec = "1.11"
+
+[dev-dependencies]
+sha2 = "0.10"

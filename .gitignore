@@ -1,0 +1,44 @@
+# Rust (all nested target dirs too)
+/target/
+**/target/
+/target_codex*/
+/.worktrees/
+/.oracle-lab/
+/.profiles/
+/tools/dsh_player/node_modules/
+
+# Python
+**/__pycache__/
+*.pyc
+*.egg-info/
+.venv-ai/
+**/.pytest_cache/
+
+# Generated outputs
+tools/artifacts/
+/artifacts/
+
+# Temporary files
+*.log
+/cargo_err.txt
+/*_batch_report.md
+/monster_analysis_output.md
+/coverage.json
+/ledger.jsonl
+/crash_trace_*.log
+/silent_auto_smoke*.log
+/tmp/
+/tmp_*.json
+/tmp_*.jsonl
+/data/
+/data/*.md
+/data/*.json
+/data/*.jsonl
+/data/*.pkl
+/logs/
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

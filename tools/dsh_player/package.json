@@ -1,0 +1,78 @@
+{
+  "name": "@sts-simulator/dsh-player",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Slay the Spire A20 Heart gameplay in native DeepSeek Harness sessions",
+  "type": "module",
+  "exports": {
+    ".": "./map-view.mjs",
+    "./context": "./context.mjs",
+    "./launch": "./launch.mjs",
+    "./native": "./native.mjs",
+    "./updates": "./updates.mjs",
+    "./client": "./client.js",
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./locale/*.json": "./locale/*.json",
+    "./native/locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg",
+    "./native/icon": "./icon.svg",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "*.mjs",
+    "!*.test.mjs",
+    "client.js",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg",
+    "README.md"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-client-connection",
+        "@deepseek-ai/dsh-client-ui-sidebar-right",
+        "@deepseek-ai/dsh-client-ui-conversation",
+        "@deepseek-ai/dsh-client-ui-session"
+      ]
+    }
+  },
+  "bin": {
+    "sts-dsh-player": "./launch.mjs"
+  },
+  "bundledDependencies": ["@sts-simulator/run-play"],
+  "dependencies": {
+    "@sts-simulator/run-play": "file:../run_play",
+    "@deepseek-ai/cordis": "4.0.5",
+    "@deepseek-ai/dsh-agent": "0.2.1-rc.2",
+    "@deepseek-ai/dsh-agent-loop": "0.2.1-rc.2",
+    "@deepseek-ai/dsh-command-compact": "0.2.1-rc.2",
+    "@deepseek-ai/dsh-compaction": "0.2.1-rc.2",
+    "@deepseek-ai/dsh-compaction-basic": "0.2.1-rc.2",
+    "@deepseek-ai/dsh-fs-local": "0.2.1-rc.2",
+    "@deepseek-ai/dsh-llm": "0.2.1-rc.2",
+    "@deepseek-ai/dsh-llm-deepseek-api-key": "0.2.1-rc.2",
+    "@deepseek-ai/dsh-llm-retry": "0.2.1-rc.2",
+    "@deepseek-ai/dsh-session": "0.2.1-rc.2",
+    "@deepseek-ai/dsh-session-persistence-jsonl": "0.2.1-rc.2",
+    "@deepseek-ai/dsh-session-projection": "0.2.1-rc.2",
+    "@deepseek-ai/dsh-subprocess-local": "0.2.1-rc.2",
+    "@deepseek-ai/dsh-system-prompt": "0.2.1-rc.2",
+    "@deepseek-ai/dsh-token-meter": "0.2.1-rc.2",
+    "@deepseek-ai/dsh-tool-fs": "0.2.1-rc.2",
+    "@deepseek-ai/dsh-tool-fs-search": "0.2.1-rc.2",
+    "@deepseek-ai/dsh-tool-todo": "0.2.1-rc.2",
+    "@deepseek-ai/dsh-typert-protocol": "0.2.1-rc.2",
+    "zod": "4.6.5"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/dsh-commands": "0.2.1-rc.2",
+    "@deepseek-ai/dsh-scope": "0.2.1-rc.2",
+    "@deepseek-ai/dsh-tools": "0.2.1-rc.2",
+    "@deepseek-ai/schemastery": "3.18.5"
+  }
+}

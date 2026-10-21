@@ -1,0 +1,32 @@
+{
+  "scope": "Raw adjacent Body Slam+ evidence; constructed Rust mechanism comparison covers monster HP/block/powers/move/history, hidden public intent, player HP/block and the complete single floor.ai call with state/counter. No natural card binding, full combat reconstruction, restoration or certification authority.",
+  "source_session": "manual-4f1d866084124af58a517e757e532148",
+  "capture_scope": "accelerated_sts_wrapper_rng_ledger_and_declared_snapshot_domains",
+  "certifying_rust_source": "8637779a1af849c4046619c62225d6ec519a335c",
+  "constructed_input_scope": "One scenario Body Slam+; observed player HP/block/energy and powers; observed Writhing Mass HP/block/powers/move/history and AI stream. Only Runic Dome is retained from relics. No original card zones or Java UUID-to-lineage binding. Damage comes from pre-state block plus Strength, never from the successor HP delta.",
+  "unobserved_runtime_scope": "Writhing Mass private flags are not captured. The constructed input uses first_move=false for an already-active monster and tests both values of used_mega_debuff; the observed random_int(99)=34 branch reads neither used_mega_debuff value. This does not establish the original private flag value.",
+  "files": {
+    "before.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-4f1d866084124af58a517e757e532148/java-evidence/boundaries/00000194-frame-530.json",
+      "sha256": "8a333df19ef5c2d3702f25d26710e9b8b6b9d8463aa76ca53ed5211aab41ea47",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "19DB8497D557D1F61C3BC85B00536E8B020DF4B2B932FD8790E2C366CE0E901F",
+        "session_epoch": "5153f9b4-b0b5-4c53-acd8-47fdc1f099c6:c744c74f-9f94-4f57-8acb-71c81554bbc5:574b4d63-b94b-4021-85eb-9b35f3e96dfa"
+      }
+    },
+    "play.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-4f1d866084124af58a517e757e532148/java-evidence/actions/00000194-from-frame-530.json",
+      "sha256": "70f1074ac39ca49b14890b2f0b5b3c9c19fe6b08af50d527855db3ab03077713"
+    },
+    "after.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-4f1d866084124af58a517e757e532148/java-evidence/boundaries/00000195-frame-531.json",
+      "sha256": "f5dd193ee0549e782d7a6037a40cd864b6a8ec66281a1d4189faf379c046e845",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "19DB8497D557D1F61C3BC85B00536E8B020DF4B2B932FD8790E2C366CE0E901F",
+        "session_epoch": "5153f9b4-b0b5-4c53-acd8-47fdc1f099c6:c744c74f-9f94-4f57-8acb-71c81554bbc5:574b4d63-b94b-4021-85eb-9b35f3e96dfa"
+      }
+    }
+  }
+}

@@ -1,0 +1,39 @@
+[package]
+name = "sts_run_play"
+version = "0.1.0"
+edition = "2021"
+publish = false
+autobins = false
+autotests = false
+
+[dependencies]
+clap = { version = "4.0", features = ["derive"] }
+oracle_artifact_contract = { path = "../oracle_artifact_contract" }
+rmp-serde = "1.3"
+serde = { version = "1.0", features = ["derive"] }
+serde_bytes = "0.11"
+serde_json = "1.0"
+sha2 = "0.10"
+sts_complete_turn_proposal = { path = "../sts_complete_turn_proposal" }
+sts_complete_turn_view = { path = "../sts_complete_turn_view" }
+sts_combat_knowledge = { path = "../sts_combat_knowledge" }
+sts_combat_planner = { path = "../sts_combat_planner" }
+sts_combat_strategy = { path = "../sts_combat_strategy" }
+sts_complete_turn_env = { path = "../sts_complete_turn_env" }
+sts_combat_option_grounder = { path = "../sts_combat_option_grounder" }
+sts_guided_search = { path = "../sts_guided_search" }
+sts_oracle_learning = { path = "../sts_oracle_learning" }
+sts_java_parity_live = { path = "../sts_java_parity_live" }
+sts_java_parity_compare = { path = "../sts_java_parity_compare" }
+sts_java_parity_projection = { path = "../sts_java_parity_projection" }
+sts_java_parity_protocol = { path = "../sts_java_parity_protocol" }
+sts_paired_root = { path = "../sts_paired_root" }
+zip = { version = "4.6", default-features = false, features = ["deflate"] }
+
+[build-dependencies]
+sha2 = "0.10"
+serde_json = "1.0"
+
+[[bin]]
+name = "run_play"
+path = "src/main.rs"

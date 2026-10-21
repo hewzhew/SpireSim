@@ -1,0 +1,493 @@
+{
+  "schema": "sts-curated-strategy-v2",
+  "id": "ironclad-run-planning",
+  "title": "铁甲战士整局路线与资源规划",
+  "scope": {
+    "character": "Ironclad",
+    "decision_sites": [
+      "neow",
+      "map",
+      "card_reward",
+      "reward",
+      "shop",
+      "campfire",
+      "event",
+      "boss_relic",
+      "run_choice",
+      "treasure"
+    ],
+    "intended_use": "跨战略页面按需参考路线与资源条件；不是每个页面或整局策略的完整覆盖，A20H应用尚需评估"
+  },
+  "review": {
+    "method": "model_source_review_and_cross_source_synthesis",
+    "reviewer": "Codex",
+    "human_review": "not_recorded",
+    "gameplay_validation": "not_performed"
+  },
+  "boundaries": [
+    "条件经验与决策方法，不是机制证明、动作评分或执行许可。",
+    "是否适用于当前局面由分析者判断；未知条件不能视为成立。",
+    "日常读取只使用整理后的条目，原文留给离线核查；未在当前读取中重新审计原文。"
+  ],
+  "sources": {
+    "reddit-ironclad-10-streak-guide": {
+      "title": "Ironclad guide A20H",
+      "author": "Panacea (Darth_Calculus)",
+      "published_at": "2021-12-21",
+      "url": "https://www.reddit.com/r/slaythespire/comments/rlcxra/ironclad_in_depth_guide_for_a20_heart_kills_10/",
+      "scope_note": "2021 single-author Ironclad A20H guide built around a self-reported ten-win streak with Twitch-chat assistance; tier lists are explicitly approximate and context dependent",
+      "raw_cache": ".oracle-lab/external-research/sources/reddit-ironclad-10-streak-guide/",
+      "curator_scope_note": "本包使用路线、Neow与药水、Boss遗物、Act2后规划、商店导语和Act1事件记录。作者的榜单、金币门槛、HP换算与掉药概率叙述没有转成当前机制事实或自动规则。"
+    },
+    "reddit-ironclad-35-of-50": {
+      "title": "I won 35 out of my last 50 Ironclad A20H games, here's what I learned!",
+      "author": "Brawlers9901",
+      "published_at": "2025-01-08",
+      "url": "https://www.reddit.com/r/slaythespire/comments/1hw65pn/i_won_35_out_of_my_last_50_ironclad_a20h_games/",
+      "scope_note": "2025 single-author retrospective over fifty Ironclad A20H runs; the 35/50 result and twelve-win streak are self-reported, and comments or linked statistics images are outside this corpus",
+      "raw_cache": ".oracle-lab/external-research/sources/reddit-ironclad-35-of-50/",
+      "curator_scope_note": "仅使用主帖的删牌、精英路线和Act4补给经验。作者称只回滚商店/选牌/药水误操作，不因战斗失误读档；非直播且未使用RNGFix。样本与连胜为自述，作者拒绝外推一般胜率；150g与近乎每店删牌是个人偏好。"
+    },
+    "tieba-10072740344": {
+      "title": "209连胜战逝用3w4字数教你如何玩懂战士",
+      "author": "漅汐",
+      "published_at": "2025-09-26",
+      "url": "https://tieba.baidu.com/p/10072740344?fr=frs",
+      "scope_note": "2025 single-author Ironclad guide; author self-reports a 209-win streak; exact ascension, Heart, and save/load permissions are not inferred beyond the cited text",
+      "raw_cache": ".oracle-lab/external-research/sources/tieba-10072740344/",
+      "curator_scope_note": "使用第8、9、13、14、15、184楼的路线条件、启动、删牌与Boss遗物讨论。第15楼明确讨论必要时通过SL调整牌序/RNG；不继承该玩法权限，不把连胜、99%口号或排名作为严格无读档证据。"
+    }
+  },
+  "assertions": {
+    "pan-route": {
+      "source_id": "reddit-ironclad-10-streak-guide",
+      "record_id": "section-002",
+      "locator": "lines 15-37",
+      "summary": "作者把Act1看作控制死亡风险下的资源积累；多精英是顺利时的理想路线，须检查第一精英前的准备、营火，以及不顺时能否绕行或休息。"
+    },
+    "pan-neow": {
+      "source_id": "reddit-ironclad-10-streak-guide",
+      "record_id": "section-003",
+      "locator": "lines 38-91",
+      "summary": "作者认为需要商店兑现的Neow奖励会占用后续楼层；高方差奖励应同时考虑好结果与坏结果下的路线。"
+    },
+    "pan-potion": {
+      "source_id": "reddit-ironclad-10-streak-guide",
+      "record_id": "section-003",
+      "locator": "lines 38-91",
+      "summary": "作者建议想清每瓶药水在哪场战斗减损最多；槽位满时可以为潜在补给接受较低收益的使用，并根据药水调整路线。这里不继承文中的掉落概率。"
+    },
+    "pan-relic": {
+      "source_id": "reddit-ironclad-10-streak-guide",
+      "record_id": "section-012",
+      "locator": "lines 242-299",
+      "summary": "作者区分Boss遗物的即时与后期代价：咖啡杯可能要求更保守的用血和路线，锤子可结合战斗中升级；添水与灵体外质改变药水和金币补给。"
+    },
+    "pan-variance": {
+      "source_id": "reddit-ironclad-10-streak-guide",
+      "record_id": "section-012",
+      "locator": "lines 242-299",
+      "summary": "作者很偏好一幕后蛇眼，但提醒多牌组合与费用方差；认为贤者之石负面通常不大，同时要求准备异鸟、扎人书和心脏，弱牌组须更谨慎。"
+    },
+    "pan-threat": {
+      "source_id": "reddit-ironclad-10-streak-guide",
+      "record_id": "section-013",
+      "locator": "lines 300-307",
+      "summary": "作者把选牌、路线与购买/使用药水联系到最近可能致死的战斗；怕特定精英可以绕开。能轻松打普通战且不需要相关事件收益时，普通战可能优于问号。"
+    },
+    "pan-shop": {
+      "source_id": "reddit-ironclad-10-streak-guide",
+      "record_id": "section-016",
+      "locator": "lines 344-347",
+      "summary": "作者强调买牌和药水应帮助通过近期难战，同时指出购买遗物与存钱之间存在选择。"
+    },
+    "pan-event": {
+      "source_id": "reddit-ironclad-10-streak-guide",
+      "record_id": "section-020",
+      "locator": "lines 468-493",
+      "summary": "作者以Big Fish说明治疗可支持更强路线或省下休息；接受Regret的代价包含移除前战损、删牌费及后续涨价、失去删其他牌的机会和备选奖励。"
+    },
+    "bralle-run": {
+      "source_id": "reddit-ironclad-35-of-50",
+      "record_id": "t3_1hw65pn",
+      "locator": "main post",
+      "summary": "作者在自述50局样本中偏好多精英和商店删牌；对Act3 Boss不放心时倾向留150g进Act4，以便前两场用药后仍有补给余地。这是个人经验，不是一般胜率或最优策略证明。"
+    },
+    "cx-invest": {
+      "source_id": "tieba-10072740344",
+      "record_id": "152669587471",
+      "locator": "floor 8",
+      "summary": "作者鼓励早期投资未来，但要求联合考虑当前卡组、其他候选、路线、药水、HP及收益兑现速度。"
+    },
+    "cx-remove": {
+      "source_id": "tieba-10072740344",
+      "record_id": "152669588576",
+      "locator": "floor 9",
+      "summary": "作者因攻防比例、消耗方式和自身打法而强烈偏好先删打击，甚至有时高于删诅咒；原文99%是建议口号，未提供概率验证。"
+    },
+    "cx-relic": {
+      "source_id": "tieba-10072740344",
+      "record_id": "152669602881",
+      "locator": "floor 13",
+      "summary": "作者对一幕后蛇眼的三费与费用方差更谨慎；可能为活过二幕接受狗圈的长期限制，并从删牌损失和现有恢复/升级替代能力讨论灵体外质、锤子、咖啡杯。"
+    },
+    "cx-byrds": {
+      "source_id": "tieba-10072740344",
+      "record_id": "152669605218",
+      "locator": "floor 14",
+      "summary": "作者严厉看待贤者之石与异鸟风险，强调针对能力需要及时上手；反对只因有重锤或燔祭就认定可以放心处理。"
+    },
+    "cx-startup": {
+      "source_id": "tieba-10072740344",
+      "record_id": "152669608625",
+      "locator": "floor 15",
+      "summary": "作者强调二幕能打则发育、不能打则绕；已有消耗组件不代表费用和启动足够。同楼还讨论通过SL改变牌序/RNG，不能继承为本项目策略权限。"
+    },
+    "cx-route": {
+      "source_id": "tieba-10072740344",
+      "record_id": "152929476544",
+      "locator": "floor 184",
+      "summary": "作者的开局金卡排序以精英可进可绕的发育路线为背景；精英堵路的压力会提高过渡需求，可逃跑路线则增加考虑未来收益的空间。这里只使用条件变化，不继承排名。"
+    }
+  },
+  "entries": [
+    {
+      "id": "route-options",
+      "title": "路线收益与退路一起看",
+      "kind": "decision_method",
+      "principle": "比较路线能带来多少成长，也比较不顺时能否改道；多精英可以是目标，但节点数量不能代替准备度判断。",
+      "check": "看第一处危险前的普通战、营火和商店，以及分支何时合流；把HP、药水和Neow结果纳入同一条路线。",
+      "unless": "能绕开的精英与被迫连续作战不同；高方差开局缺少坏结果退路时应更谨慎，未知奖励不能当成已经拿到。",
+      "inputs": [
+        {
+          "id": "route",
+          "kind": "observable",
+          "description": "公开节点、连线和分叉位置"
+        },
+        {
+          "id": "resources",
+          "kind": "observable",
+          "description": "HP、牌组、药水、金币与已获得的Neow结果"
+        },
+        {
+          "id": "readiness",
+          "kind": "judgment",
+          "description": "危险前是否来得及补足能力"
+        },
+        {
+          "id": "fallback",
+          "kind": "judgment",
+          "description": "坏结果下的替代路线是否仍可承受"
+        }
+      ],
+      "reasoning": [
+        "把准备阶段、第一场高压战和补给点连起来看；营火位于危险之后，不能补救此前就可能发生的死亡。",
+        "先保留顺利时的成长路线和不顺时的退路，再根据新获得的公开资源重新判断。Neow若尚未选择，分别讨论结果情景，不预读结果。",
+        "退路的价值取决于当前节点是否仍能转向；纸面上有另一条路，不表示已经走入分支后还能去。"
+      ],
+      "disagreements": [
+        "Brawlers偏向Act1近乎最多精英；Panacea强调绕行/休息退路。漅汐也按堵路与安全路线改变取舍，其原文含SL范围，不作为无读档表现证明。"
+      ],
+      "assertions": [
+        "pan-route",
+        "pan-neow",
+        "bralle-run",
+        "cx-route"
+      ]
+    },
+    {
+      "id": "readiness-horizon",
+      "title": "把未来成长接到最近的危险上",
+      "kind": "decision_method",
+      "principle": "整局目标要落实到最近的准备缺口：缺及时输出、防守、访问还是费用，决定现在补什么与往哪里走。",
+      "check": "结合当前牌组、药水和公开路线，分别判断短战启动与后期成长；已有组件不等于关键回合用得出来。",
+      "unless": "若危险可绕或已有足够应对能力，可以增加未来投资；具体战斗表现仍待分析，不能把未知遭遇当成确定下一战。",
+      "inputs": [
+        {
+          "id": "public_state",
+          "kind": "observable",
+          "description": "当前牌组、遗物、药水与公开Boss/路线"
+        },
+        {
+          "id": "bottleneck",
+          "kind": "judgment",
+          "description": "接下来可能遭遇的具体能力缺口"
+        },
+        {
+          "id": "timing",
+          "kind": "judgment",
+          "description": "新收益兑现时间与高压回合是否相容"
+        }
+      ],
+      "reasoning": [
+        "同一张卡、同一瓶药或同一个商店，应比较它对最近危险的作用，再看通过这段路线后留下什么长期资源。",
+        "有组件却启动慢，可能连续损失HP与药水，继而被迫放弃成长节点；绕路也是改善整局结果的候选。",
+        "长期收益并非只能等到后期才考虑；当下有足够支撑和退路时，比较它能否在需要前兑现。"
+      ],
+      "disagreements": [
+        "Panacea强调下一处致死风险；漅汐更鼓励早期投资未来，但也要求检查资源和启动。后者第15楼含SL做法，不能当成我们的补救手段。"
+      ],
+      "assertions": [
+        "pan-threat",
+        "cx-invest",
+        "cx-startup"
+      ]
+    },
+    {
+      "id": "hp-recovery",
+      "title": "血量、恢复与升级共同规划",
+      "kind": "decision_method",
+      "principle": "花血换成长前，先估计恢复之前还要承受什么；休息的价值也包括支持后续成长或省下别处的休息。",
+      "check": "查看当前HP、可用恢复、下一补给前的路线和可升级对象；比较升级可能减少的战损与恢复提供的余地。",
+      "unless": "没有机会有效使用的恢复可能溢出；升级也未必能及时救场。血量与成长不能用固定兑换率决定，受禁休息等限制时须重算。",
+      "inputs": [
+        {
+          "id": "hp",
+          "kind": "observable",
+          "description": "当前HP、上限与公开可选恢复/升级"
+        },
+        {
+          "id": "route",
+          "kind": "observable",
+          "description": "恢复前必经节点和可绕路线"
+        },
+        {
+          "id": "loss",
+          "kind": "judgment",
+          "description": "各段可能战损与升级的实际作用"
+        },
+        {
+          "id": "recovery_use",
+          "kind": "judgment",
+          "description": "恢复是否能支持更多成长或生存"
+        }
+      ],
+      "reasoning": [
+        "把一次事件花血与后续可能被迫休息联看：获得的成长可能挤掉一次升级，而不是只损失面板HP。",
+        "反过来，事件恢复也可能换来更多高收益节点或把营火留给升级。先看路线能否兑现这些机会。",
+        "固定战斗实验只回答给定输入；未观察到的遭遇和未来恢复仍用明确情景保留不确定性。"
+      ],
+      "disagreements": [
+        "Panacea重视HP换资源与事件治疗；这里提炼比较方法，不继承原文的平均战损、固定HP估价或事件普遍推荐。"
+      ],
+      "assertions": [
+        "pan-route",
+        "pan-event",
+        "pan-relic"
+      ]
+    },
+    {
+      "id": "potion-reserve",
+      "title": "为难点留药，也为补给留空间",
+      "kind": "decision_method",
+      "principle": "为现有药水提出具体用途，再比较当下减损与保留价值；满槽时还要考虑新补给被挡住的代价。",
+      "check": "看药水种类、空槽、当前公开奖励/库存、路线与预计难点；区分已经看见的药水和未来可能掉落。",
+      "unless": "不能为省药错过生存机会，也不能仅因满槽就用掉关键药；未知补给不保证发生，药水效果或使用资格不清时保持Unknown。",
+      "inputs": [
+        {
+          "id": "potions",
+          "kind": "observable",
+          "description": "现有药水、槽位与公开可领取/购买的药水"
+        },
+        {
+          "id": "route",
+          "kind": "observable",
+          "description": "当前阶段与公开后续路线"
+        },
+        {
+          "id": "role",
+          "kind": "judgment",
+          "description": "每瓶药对当前与后续难点的边际作用"
+        },
+        {
+          "id": "replacement",
+          "kind": "judgment",
+          "description": "放弃现有药换取可见补给的得失"
+        }
+      ],
+      "reasoning": [
+        "已看见的奖励可以具体比较替换；尚未出现的掉落只能作为可能性，不能先把旧药当成可免费补回。",
+        "把某瓶药留到后面是可修订的用途假设，获得新战力或遇到更紧迫威胁后应重新比较。",
+        "规划中的用药、弃药、领取是不同动作，必须尊重当前owner提供的候选；奖励页不能凭这条经验生成战斗用药动作。"
+      ],
+      "disagreements": [
+        "Panacea支持满槽时接受较低收益的用药；Brawlers强调后段补给储备。此处不继承掉落概率或固定留药数量。"
+      ],
+      "assertions": [
+        "pan-potion",
+        "pan-threat",
+        "bralle-run"
+      ]
+    },
+    {
+      "id": "shop-tradeoffs",
+      "title": "把商店花费与路线机会成本放在一起",
+      "kind": "decision_method",
+      "principle": "比较立即补强、删牌、买药和留钱各自解决什么问题；走进商店也会占掉原本可用于别种收益的节点。",
+      "check": "店内用实际库存、价格、删牌费与全部合法候选比较；店外只讨论预算和路径，不假定下一店必有需要的商品。",
+      "unless": "近期生存需求可能胜过留钱或删牌，现有战力充足时反之。低金币并非绝对不能进店，高金币也不等于值得绕远。",
+      "inputs": [
+        {
+          "id": "budget",
+          "kind": "observable",
+          "description": "现有金币，已公开的库存、价格与删牌资格"
+        },
+        {
+          "id": "route",
+          "kind": "observable",
+          "description": "商店前后节点与可走替代路线"
+        },
+        {
+          "id": "marginal_value",
+          "kind": "judgment",
+          "description": "各项购买/删除对近期危险和运转的改善"
+        },
+        {
+          "id": "opportunity",
+          "kind": "judgment",
+          "description": "花钱或绕路挤掉的其他机会"
+        }
+      ],
+      "reasoning": [
+        "删牌与购买共享预算；即使通常很重视删牌，也应比较当下哪项先解决真正缺口。连续购买属于待执行的计划，当前只采用一个合法动作。",
+        "一份Neow金币奖励或事件金币可能需要走商店才能兑现；将这条路线与不需要商店的候选一同比较。",
+        "保留钱的理由应连接到后续需要与可见路线。未来库存未知时，不用设想中的强遗物替代当前可买到的具体收益。"
+      ],
+      "disagreements": [
+        "Brawlers和漅汐强烈重视删牌；Panacea还强调眼前买牌/药和路线成本。作者金币门槛与近乎每店删牌是个人偏好，不合成为硬规则。"
+      ],
+      "assertions": [
+        "pan-route",
+        "pan-neow",
+        "pan-shop",
+        "bralle-run",
+        "cx-remove"
+      ]
+    },
+    {
+      "id": "curse-cost",
+      "title": "把诅咒算到真正移除为止",
+      "kind": "decision_method",
+      "principle": "接受诅咒的成本包括移除前的负担、移除费用、前往商店的路线，以及这次删位原本能做什么。",
+      "check": "确认具体诅咒、当前牌组、可用移除方式及抵达前必经战斗；同时看接受它所得收益与其他选项。",
+      "unless": "不能只因下一段有商店就把诅咒视为零成本；也不一律先删诅咒，具体负面、现有消耗与其他低效牌可能改变取舍。",
+      "inputs": [
+        {
+          "id": "curse",
+          "kind": "observable",
+          "description": "公开的具体诅咒、当前牌组和候选收益"
+        },
+        {
+          "id": "removal",
+          "kind": "observable",
+          "description": "公开移除资格、价格和通往移除点的路线"
+        },
+        {
+          "id": "burden",
+          "kind": "judgment",
+          "description": "移除前的战损或启动负担"
+        },
+        {
+          "id": "displaced",
+          "kind": "judgment",
+          "description": "删位与预算被占用后失去的改善"
+        }
+      ],
+      "reasoning": [
+        "先把移除前的每段路线纳入分析，再比较诅咒换来的收益。未来移除价格或机制不明确时查owner，不套原文价格。",
+        "即使原本就要逛店，移除诅咒仍可能挤掉一次删打击和其他购买；若为它改道，还会额外改变楼层收益。",
+        "删哪张应回到当前牌组与具体负面。经验里的优先级不是按类别固定排序。"
+      ],
+      "disagreements": [
+        "Panacea以Regret强调多重成本；漅汐有时先删打击而非诅咒。两者情境不同，不能压成统一删牌顺序，99%口号也不是概率证据。"
+      ],
+      "assertions": [
+        "pan-event",
+        "pan-route",
+        "cx-remove"
+      ]
+    },
+    {
+      "id": "replan-after-relic",
+      "title": "能力或补给方式变了，就重算计划",
+      "kind": "decision_method",
+      "principle": "Boss遗物要连同当前牌组和之后的资源计划比较：新能力能否及时发挥，限制又让哪些原计划失效。",
+      "check": "查候选遗物的真实机制与当前替代能力；分别看启动、出牌上限、恢复、升级、药水和金币补给。下一幕尚不可见的路线保持Unknown。",
+      "unless": "长期限制可能为通过近期难关而值得接受，但这不是默认选择；有相关卡牌不等于能稳定处理新增风险。",
+      "inputs": [
+        {
+          "id": "relics",
+          "kind": "observable",
+          "description": "候选遗物、现有牌组、资源与已知机制"
+        },
+        {
+          "id": "visible_route",
+          "kind": "observable",
+          "description": "当前已公开的路线；下一幕未公开部分不预读"
+        },
+        {
+          "id": "replacement",
+          "kind": "judgment",
+          "description": "既有能力能否实际替代失去的恢复/升级/补给"
+        },
+        {
+          "id": "timing",
+          "kind": "judgment",
+          "description": "新收益能否在高压回合兑现，限制影响哪些计划"
+        }
+      ],
+      "reasoning": [
+        "例如失去休息后，原本靠营火补血的路线需要重估；禁止获得药水后，不能沿用未来会补回药水的预算。具体限制需先查机制owner。",
+        "来源对蛇眼方差、贤者之石与异鸟风险有实质分歧。列出自己牌组的费用、访问、控制和多段能力，再决定是否需要定向实验。",
+        "选择遗物时下一幕路线若不可见，先比较不同公开规则下的情景；进入下一幕后再用实际地图修订，不提前读取隐藏地图。"
+      ],
+      "disagreements": [
+        "Panacea更接受蛇眼方差与贤者之石负面；漅汐更担心二幕三费和异鸟，反对仅凭燔祭/重锤判定安全。这里保留分歧，不产生统一榜单。"
+      ],
+      "assertions": [
+        "pan-relic",
+        "pan-variance",
+        "cx-relic",
+        "cx-byrds"
+      ]
+    },
+    {
+      "id": "endgame-reserve",
+      "title": "把后段用药与补给预算连起来",
+      "kind": "decision_method",
+      "principle": "冲击后段前，分别规划眼前Boss的资源消耗与之后补给；留钱的理由应对应仍可能存在的缺口。",
+      "check": "结合目标是否碎心、当前药水、金币和牌组准备度；区分已知后段流程与未知商店库存，承认战损和用药量尚待判断。",
+      "unless": "不能为了后段储备牺牲眼前生存，也不能把某笔金币视为保证买到所需药水；禁药、禁金或充足现成能力会改变预算。",
+      "inputs": [
+        {
+          "id": "resources",
+          "kind": "observable",
+          "description": "当前阶段、目标、金币、药水与补给限制"
+        },
+        {
+          "id": "boss_use",
+          "kind": "judgment",
+          "description": "通过近期Boss可能要消耗哪些药水"
+        },
+        {
+          "id": "later_gap",
+          "kind": "judgment",
+          "description": "后段仍缺的能力与可承担的补给预算"
+        }
+      ],
+      "reasoning": [
+        "把现有药水可能消耗殆尽后的局面也列为情景；钱只是保留购买可能，未见库存前不能宣称后段已被覆盖。",
+        "越过一个难点后应以真实资源重新规划。为了存钱错过必要补强，或为了未来心脏而拒用救命药，都需要重新比较。",
+        "作者的Act4留钱数额可以帮助提出问题，但当前价格、药水需求与候选不同，不能把它直接变成阈值。"
+      ],
+      "disagreements": [
+        "Brawlers的150g是对Act3 Boss不放心时的个人经验；这里仅提炼连续战斗与补给联动，不继承固定金额或其自述胜率。"
+      ],
+      "assertions": [
+        "bralle-run",
+        "pan-shop",
+        "pan-relic"
+      ]
+    }
+  ]
+}

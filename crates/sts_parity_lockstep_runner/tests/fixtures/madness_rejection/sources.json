@@ -1,0 +1,27 @@
+{
+  "schema": "sts-observed-madness-fixture-sources-v1",
+  "source_session": "manual-a8053debd2f64f33b7a1c6c5578cbc1c",
+  "committed_action": 28,
+  "original_failure": "full-hand rejection sampling versus prefiltered eligible pool",
+  "repair_commit": "ff0ac896e",
+  "scope": "constructed Madness handler input, exact hand-cost mutation and floor.card_random calls; not a natural replay root",
+  "producer": {
+    "implementation": "communicationmod",
+    "version": "3B6419DDECF35A183E0B65A8D32E27D648E84238507CA91B01B300552AB4CFA6",
+    "session_epoch": "704b5254-18c4-4166-940a-78a6c0c7341d:a00fdb68-0cc3-40cd-b76f-f86574e556e7:1585ed75-c4a6-42e9-a2b2-bf1ee63c4182"
+  },
+  "files": {
+    "before.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-a8053debd2f64f33b7a1c6c5578cbc1c/java-evidence/boundaries/00000029-frame-31.json",
+      "sha256": "ce810df05eed1a337dd153313e77f165aedf330fa536b42f79052cf7f7b7385e"
+    },
+    "after.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-a8053debd2f64f33b7a1c6c5578cbc1c/java-evidence/boundaries/00000030-frame-32.json",
+      "sha256": "0b705faa09a3826a5e88df8fa8ccb4a497a422a47fc2d7cda95379a6961f8999"
+    },
+    "action.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-a8053debd2f64f33b7a1c6c5578cbc1c/java-evidence/actions/00000029-from-frame-31.json",
+      "sha256": "bda8891e37bb82b443c85cd08cfb28db19439a5bf71091fde73393dc89ba270c"
+    }
+  }
+}

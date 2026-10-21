@@ -1,0 +1,29 @@
+[package]
+name = "sts_oracle_run_control"
+version = "0.1.0"
+edition = "2021"
+publish = false
+autobins = false
+autotests = false
+
+[features]
+default = ["oracle-lab"]
+control-full = ["sts_oracle_eval/control-full"]
+oracle-lab = ["sts_oracle_eval/oracle-lab"]
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+sts_oracle_eval = { path = "../sts_oracle_eval", default-features = false }
+sts_combat_knowledge = { path = "../sts_combat_knowledge" }
+sts_combat_atomic = { path = "../sts_combat_atomic" }
+sts_combat_planner = { path = "../sts_combat_planner" }
+blake2 = "0.10"
+rmp-serde = "1.3"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+[[test]]
+name = "run_level_potion_surface"
+path = "tests/run_level_potion_surface.rs"

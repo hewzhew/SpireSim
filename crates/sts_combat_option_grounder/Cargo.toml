@@ -1,0 +1,15 @@
+[package]
+name = "sts_combat_option_grounder"
+version = "0.1.0"
+edition = "2021"
+publish = false
+autobins = false
+autotests = false
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+sts_core = { package = "sts_simulator", path = "../.." }
+sts_agent = { path = "../sts_agent" }
+serde = { version = "1.0", features = ["derive"] }

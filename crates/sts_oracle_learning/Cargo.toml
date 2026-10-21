@@ -1,0 +1,25 @@
+[package]
+name = "sts_oracle_learning"
+version = "0.1.0"
+edition = "2021"
+publish = false
+autobins = false
+autotests = false
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "public_actor_census"
+path = "src/bin/public_actor_census.rs"
+
+[[bin]]
+name = "run_solution_branch"
+path = "src/bin/run_solution_branch.rs"
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+sts_oracle_learning_env = { path = "../sts_oracle_learning_env" }
+sts_run_checkpoint = { path = "../sts_run_checkpoint" }
+sts_complete_turn_view = { path = "../sts_complete_turn_view" }

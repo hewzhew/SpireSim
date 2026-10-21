@@ -1,0 +1,31 @@
+{
+  "scope": "Unchanged adjacent Java EndTurn boundaries. Constructed Rust comparison covers ordered, identity-free hand/discard card kind, upgrade count, combat cost and turn cost only. No original deck reconstruction, Java UUID-to-Rust lineage binding, full combat/RNG parity, restoration or certification authority.",
+  "source_session": "manual-4f1d866084124af58a517e757e532148",
+  "capture_scope": "accelerated_sts_wrapper_rng_ledger_and_declared_snapshot_domains",
+  "certifying_rust_source": "8637779a1af849c4046619c62225d6ec519a335c",
+  "constructed_input_scope": "Explicit ten-card hand and four-card discard recipes checked against the original pre-state cost facts; Corruption only; a constructed Jaw Worm Bellow turn and five Strike draw cards isolate ordinary turn settlement from the original boss, player powers, relics, draw pile and RNG. Rust EndTurn runs to the next player decision.",
+  "files": {
+    "before.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-4f1d866084124af58a517e757e532148/java-evidence/boundaries/00000314-frame-650.json",
+      "sha256": "04239aa04ea106cf7b8991431531aacb16a3b247ca90019b18d6505bb5d72437",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "19DB8497D557D1F61C3BC85B00536E8B020DF4B2B932FD8790E2C366CE0E901F",
+        "session_epoch": "5153f9b4-b0b5-4c53-acd8-47fdc1f099c6:c744c74f-9f94-4f57-8acb-71c81554bbc5:574b4d63-b94b-4021-85eb-9b35f3e96dfa"
+      }
+    },
+    "end-turn.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-4f1d866084124af58a517e757e532148/java-evidence/actions/00000314-from-frame-650.json",
+      "sha256": "79a3653aee9dd34cf2e603d9a8e0debaed94df5033d54ae0d974a69c333f6f60"
+    },
+    "after.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-4f1d866084124af58a517e757e532148/java-evidence/boundaries/00000315-frame-651.json",
+      "sha256": "53029f9e2a7220f2831f2ed0bd5429ce53f2139dd593e79795c833919e82277f",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "19DB8497D557D1F61C3BC85B00536E8B020DF4B2B932FD8790E2C366CE0E901F",
+        "session_epoch": "5153f9b4-b0b5-4c53-acd8-47fdc1f099c6:c744c74f-9f94-4f57-8acb-71c81554bbc5:574b4d63-b94b-4021-85eb-9b35f3e96dfa"
+      }
+    }
+  }
+}

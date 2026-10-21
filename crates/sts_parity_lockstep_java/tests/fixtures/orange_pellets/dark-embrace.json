@@ -1,0 +1,1 @@
+{"schema":"sts-recorded-java-action-v1","phase":"committed","action":{"kind":"play_card","card_binding":"natural_run/card_reward/F14X04/0","card_id":"darkembrace","target":null},"receipt":{"status":"completed","request_id":"c85fe53a-bed3-4568-8ca8-943d9d14483c","based_on_frame_id":2019,"action_id":"play_card:165cf2db-f34b-4fb7-8820-b1128b7d79b0:none","successor_frame_id":2020}}

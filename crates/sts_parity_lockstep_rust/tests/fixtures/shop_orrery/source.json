@@ -1,0 +1,15 @@
+{
+  "schema": "sts-original-adjacent-rust-source-v1",
+  "before": {
+    "file": "rust-before.json",
+    "sha256": "279b223f5169dc8a6fb539517a2d6c8b08b0bd5b5bfe30575106b89f56a25a82",
+    "recoverySource": "manual-e38a78d6ec454c7a87cb9017c5a4131c",
+    "parent": "manual-940fbf041b584091bff040123a643905",
+    "parentActions": 69
+  },
+  "original": {
+    "file": "../../../../sts_java_parity_live/tests/fixtures/shop_orrery/open.raw.json",
+    "source": "../../../../sts_java_parity_live/tests/fixtures/shop_orrery/source.json"
+  },
+  "comparison": "all five typed offers, complete per-transition RNG call ledger and rarity offset"
+}

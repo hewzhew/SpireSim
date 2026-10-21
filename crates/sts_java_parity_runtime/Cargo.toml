@@ -1,0 +1,29 @@
+[package]
+name = "sts_java_parity_runtime"
+version = "0.1.0"
+edition = "2021"
+publish = false
+autobins = false
+autotests = false
+
+[dependencies]
+oracle_artifact_contract = { path = "../oracle_artifact_contract" }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+sha2 = "0.10"
+sts_java_parity_live = { path = "../sts_java_parity_live" }
+sts_java_parity_protocol = { path = "../sts_java_parity_protocol" }
+sts_workbench_supervisor = { path = "../sts_workbench_supervisor" }
+uuid = { version = "1.18", features = ["v4"] }
+zip = { version = "4.6", default-features = false, features = ["deflate"] }
+
+[dev-dependencies]
+serde_json = "1.0"
+uuid = { version = "1.18", features = ["v4"] }
+
+[lib]
+path = "src/lib.rs"
+
+[[test]]
+name = "owned_runtime"
+path = "tests/owned_runtime.rs"

@@ -1,0 +1,107 @@
+[package]
+name = "sts_learning_bridge"
+version = "0.1.0"
+edition = "2021"
+publish = false
+# Maturin requires license text inside this standalone package workspace.
+license-file = "LICENSE"
+
+[lib]
+name = "_native"
+crate-type = ["cdylib"]
+test = false
+doctest = false
+
+[dependencies]
+numpy = "0.29.0"
+pyo3 = { version = "0.29.2", features = ["extension-module"] }
+rmp-serde = "1.3"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+sts_guided_search = { path = "../../crates/sts_guided_search" }
+sts_oracle_eval = { path = "../../crates/sts_oracle_eval", default-features = false }
+sts_oracle_learning = { path = "../../crates/sts_oracle_learning" }
+sts_oracle_learning_projection = { path = "../../crates/sts_oracle_learning_projection" }
+sts_combat_strategy = { path = "../../crates/sts_combat_strategy" }
+sts_complete_turn_env = { path = "../../crates/sts_complete_turn_env" }
+sts_complete_turn_proposal = { path = "../../crates/sts_complete_turn_proposal" }
+
+[workspace]
+
+# This binding is intentionally its own workspace because its Python ABI and
+# wheel lifecycle are independent from the Rust workspace. Cargo profiles do
+# not cross workspace boundaries, so mirror the hot-kernel/cold-adapter split
+# explicitly instead of silently compiling every transitive crate at O3.
+[profile.release]
+opt-level = 3
+debug = false
+debug-assertions = false
+overflow-checks = false
+lto = "off"
+incremental = true
+codegen-units = 64
+
+[profile.release.package.sts_oracle_eval]
+opt-level = 2
+codegen-units = 64
+
+[profile.release.package.sts_agent]
+opt-level = 2
+codegen-units = 64
+
+[profile.release.package.sts_oracle_run_control]
+opt-level = 2
+codegen-units = 64
+
+[profile.release.package.sts_oracle_learning_env]
+opt-level = 2
+codegen-units = 64
+
+[profile.release.package.sts_oracle_learning]
+opt-level = 2
+codegen-units = 64
+
+[profile.release.package.sts_oracle_learning_projection]
+opt-level = 2
+codegen-units = 64
+
+[profile.release.package.sts_learning_bridge]
+opt-level = 2
+codegen-units = 64
+
+# Rare maximum-throughput deployment build. Routine verified training wheels
+# use `release`; this profile is available for a measured final publication.
+[profile.release-final]
+inherits = "release"
+opt-level = 3
+lto = "thin"
+incremental = false
+codegen-units = 1
+
+[profile.release-final.package.sts_oracle_eval]
+opt-level = 3
+codegen-units = 1
+
+[profile.release-final.package.sts_agent]
+opt-level = 3
+codegen-units = 1
+
+[profile.release-final.package.sts_oracle_run_control]
+opt-level = 3
+codegen-units = 1
+
+[profile.release-final.package.sts_oracle_learning_env]
+opt-level = 3
+codegen-units = 1
+
+[profile.release-final.package.sts_oracle_learning]
+opt-level = 3
+codegen-units = 1
+
+[profile.release-final.package.sts_oracle_learning_projection]
+opt-level = 3
+codegen-units = 1
+
+[profile.release-final.package.sts_learning_bridge]
+opt-level = 3
+codegen-units = 1

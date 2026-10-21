@@ -1,0 +1,152 @@
+{
+  "title": "静默 A20H：成长、访问与出牌限制的文字资料对读",
+  "reviewed_at": "2026-10-20",
+  "scope": "Slay the Spire 1, 2.x, Silent A20 Heart",
+  "purpose": "供分析者按具体问题回查作者原文；不作为自动选牌评分或模型运行指令。",
+  "reading_contract": {
+    "catalog": "reference/expert/sources.jsonl",
+    "source_count": 8,
+    "distinct_authors": 8,
+    "coverage": "包括完整短复盘、长攻略的相关章节和作者答疑；不是八份全部精读完成的全角色百科。",
+    "credentials": "分别记录作者自述成绩、攻略范围和未知项，不将八位作者归为同一水平。",
+    "independence": "不同作者仍可能互相学习；不是八次独立验证。",
+    "videos": "本次未采用视频内容或凭标题转述视频。"
+  },
+  "source_reviews": [
+    {
+      "source_id": "steam-silent-qingyu-2022",
+      "author": "青玉",
+      "reading_extent": "正文的一幕、二幕及特殊打法章节；未将评论算作作者观点。",
+      "locators": ["优缺点总结", "开局选项", "一层BOSS战利品选择", "特殊打法分析和教学"],
+      "takeaways": [
+        "将静默发育建立在运转上，同时把树枝、蛇眼、烟斗、灵体当作会改变运营方式的条件。",
+        "取得某张强牌还需支付启动、强化与过牌成本；例如幽魂形态也需要匹配输出窗口。"
+      ],
+      "conditions": "作者偏向保守二幕路线与删牌；其固定抓位、金币门槛和部分首领遗物判断保留为个人风格。"
+    },
+    {
+      "source_id": "steam-silent-cpt-sweet-2025",
+      "author": "Cpt Sweet",
+      "reading_extent": "Steam 摘要正文；未读取其链接的完整 GoogleDoc。",
+      "locators": ["Deck building - grandes lignes", "Neow", "Deck building - acte 3", "Acte 4"],
+      "takeaways": [
+        "强调抽牌效率、能力部署代价及进入第四幕前的准备。",
+        "将项圈列为困难换四结果，提醒第三幕补齐组合，且要提前准备矛盾第二回合。"
+      ],
+      "conditions": "没有公开长期成绩可供本次核对；固定卡组比例和遗物等级不转成规则。"
+    },
+    {
+      "source_id": "reddit-silent-zakk-30-of-50",
+      "author": "zakk / zakkles (EuphoricNeckbeard)",
+      "reading_extent": "50 局主帖及作者关于改进、大卡组和能量遗物的回复；未逐局复核表格。",
+      "locators": ["What did I learn?", "Average winning deck size", "Runs won without WLP or pyramid", "not overdraft damage"],
+      "takeaways": [
+        "报告 50 局 30 胜；强调及时停止补过渡伤害，保留和过牌使大牌组也能运行。",
+        "第三幕一场昂贵战斗可能连续挤压药水，进而破坏终局资源安排。"
+      ],
+      "conditions": "40.9 张的获胜牌组均值描述其样本，不是推荐牌数，也不自动适用于项圈。"
+    },
+    {
+      "source_id": "reddit-jorbs-80-percent-2022",
+      "author": "Jorbs (JoINrbs)",
+      "reading_extent": "General Advice 与 Silent 章节；未从视频或评级图补充推断。",
+      "locators": ["General Advice", "Silent (14w-1l)", "There is some nuance to matching the right amount of energy with your card draw"],
+      "takeaways": [
+        "强伤害牌减少了每局所需的伤害牌数量，腾出的空间可建立抽牌、加费和能力启动。",
+        "以实际威胁组织选牌，而不是先固定流派；费用与抽牌要匹配。"
+      ],
+      "conditions": "整体 48/60 是轮换样本，其中静默 14/15；其偏早杂技的经验不直接外推到项圈。"
+    },
+    {
+      "source_id": "reddit-baalorlord-20-streak-2022",
+      "author": "Baalorlord (BaalorlordStreaming)",
+      "reading_extent": "轮换连胜主帖，以及本人回答首幕卡牌、静默和心脏准备的问题。",
+      "locators": ["Quick A20 Tips", "Silent: Don't sleep on Backflip, Acrobatics, or Backstab", "the Heart - you need a block engine"],
+      "takeaways": [
+        "心脏需要可运行的防御引擎，虚弱、人工制品、香炉及关键药水可以各自解决具体压力。",
+        "提出在第三幕留好关键药水，尽量不在第三幕 Boss 战消耗这笔终局资源。"
+      ],
+      "conditions": "这是四角色轮换复盘及静默答疑，不是完整静默逐卡攻略；没有把相关视频算作已读。"
+    },
+    {
+      "source_id": "reddit-silent-tilting-module-10-streak",
+      "author": "tilting-module / qbooster1199",
+      "reading_extent": "十连胜文字复盘、相关作者答疑，以及另一篇分类评卡的正文和指定回复；未转录评级图片。",
+      "locators": ["I won 10 A20H Silent runs in a row. AMA", "not playing with Ring of the Snake changes the game dramatically", "After Image is stronger with card spam decks", "slow stuff like Footwork, Malaise, and Leg sweep lean energy"],
+      "takeaways": [
+        "把保留视为应对错回合、抽牌削弱和组合不相遇的重要工具；具体防御方案会改变遗物取舍。",
+        "区分依赖大量出牌的余像与偏向费用支持的敏捷直防；并反思缺保留时的资源代价。"
+      ],
+      "conditions": "两篇文章合计只算一位作者；十连胜为作者自述，估计胜率不当作测得胜率。"
+    },
+    {
+      "source_id": "hatena-silent-quinty09-2022",
+      "author": "Quinty09 / いんく屋",
+      "reading_extent": "前言、选牌方法及保留、敏捷、余像、催化、扫腿、残影、肾上腺素等相关条目。",
+      "locators": ["前書き", "カード評価の前に", "用意周到", "フットワーク", "残像", "アドレナリン"],
+      "takeaways": [
+        "强调卡牌相遇时机、保留与洗牌管理；扫腿的优势包括一次出牌同时完成较大格挡与虚弱。",
+        "把肾上腺素视为润滑，但在金卡三选一中仍先考虑缺失的获胜组件。"
+      ],
+      "conditions": "作者明确自述静默胜率在 30% 段，作为细节对照阅读，不冒称顶尖连胜攻略。"
+    },
+    {
+      "source_id": "reddit-silent-blank-anonymous-timing",
+      "author": "blank_anonymous",
+      "reading_extent": "本人关于保留、出牌时机与防御/击杀速度关系的长回复。",
+      "locators": ["comment ntcfbey", "you need to play the cheating cards at the right time", "the better you block, the worse your damage can be"],
+      "takeaways": [
+        "尖啸、幽魂、残影、催化与夜魇的价值依赖正确回合；保留帮助这些工具按时工作。",
+        "防御与击杀速度共同决定可用窗口，不能只问一套牌最终伤害是否足够。"
+      ],
+      "conditions": "这是另一位具名玩家的专题答疑；本次没有核对其长期成绩，不归给楼主的十连胜。"
+    }
+  ],
+  "analyst_synthesis": {
+    "authorship": "以下为对上述资料的综合判断及机制推导，不是八位作者逐字共识。",
+    "core": "项圈会改变静默的选牌与成长路线。新增一费需要与每回合六次出牌的机会成本一起衡量。",
+    "resource_dimensions": [
+      "费用是否足以支付关键牌",
+      "出牌次数是否足以完成同回合的准备、防御与输出，含复制出牌",
+      "抽牌和保留是否能让需要的牌在正确回合可用",
+      "启动期间的实际战损和跨战药水储备",
+      "成长后能维持几回合防御及能否在此窗口结束战斗"
+    ],
+    "choker_implications": [
+      "不能默认依赖反复小刀触发苦无，再反复打出防牌兑现敏捷；这些环节共用六次额度。",
+      "双余像抵消律动后，不会自动补出抵挡心脏正面攻击的足够净格挡。",
+      "肾上腺素和过牌仍可能有价值，但一张零费牌也需要出牌额度，额外费用必须有兑现空间。",
+      "少出牌即可持续输出的毒更容易节省额度；爆发催化等组合仍需访问、顺序和防御窗口。",
+      "也要评估已有敏捷配高效直防、虚弱/减力量、无实体与遗物药水减伤的具体组合，不预设每局都只能等待幽魂。"
+    ],
+    "decision_method": [
+      "拿到项圈等限制性遗物后，重新审查后续抓牌、升级、药水和路径；不得仅修改遗物评分。",
+      "把候选防御与输出写成可执行的少量回合安排，核对每回合出牌数和费用。",
+      "只有当前实际获得或可选的组件可以承担方案；未出现的幽魂、夜魇等只是候选方向。",
+      "普通过渡战、精英与连续终局分别检查；局部能赢不自动说明整条资源计划健康。"
+    ],
+    "not_automatic_rules": [
+      "不是静默永远不能拿项圈。",
+      "不是每局都应强行走毒或无限。",
+      "不是看到某张好牌就忽略当前限制。",
+      "不将作者自述胜率、固定牌数和抓位表转换成机器评分。"
+    ]
+  },
+  "disagreements_to_keep": [
+    {
+      "question": "早期杂技与即时伤害怎样取舍？",
+      "source_ids": ["reddit-jorbs-80-percent-2022", "steam-silent-qingyu-2022", "reddit-silent-tilting-module-10-streak"],
+      "distinction": "作者的经验偏好不同；用 Neow、路线和最近精英所需伤害判断，不能多数票选一张牌。"
+    },
+    {
+      "question": "大卡组还是偏删牌？",
+      "source_ids": ["reddit-silent-zakk-30-of-50", "steam-silent-qingyu-2022", "reddit-silent-tilting-module-10-streak"],
+      "distinction": "牌数需结合启动、抽弃与保留评估；项圈会改变用更多过牌补偿牌组大小的能力。"
+    },
+    {
+      "question": "余像、灵动、幽魂与药水如何组成防御？",
+      "source_ids": ["reddit-baalorlord-20-streak-2022", "reddit-silent-tilting-module-10-streak", "hatena-silent-quinty09-2022", "reddit-silent-blank-anonymous-timing"],
+      "distinction": "分别核对启动、能否重复兑现、正确回合的访问与持续时间，不把任何一张牌标成无条件完成防御。"
+    }
+  ]
+}

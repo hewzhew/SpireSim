@@ -1,0 +1,438 @@
+{
+  "schema": "sts-hp-loss-draw-powers-fixture-sources-v1",
+  "provenance": "constructed_validated",
+  "batches": [
+    {
+      "original_directory": "D:\\rust\\sts_simulator\\.oracle-lab\\diagnostics\\20260907-hp-draw-powers-live-v2",
+      "complete_manifest": {
+        "schema": "sts-hp-draw-powers-mechanism-batch-v1",
+        "scope": "Constructed A20 Rupture+ with Combust/Brutality and Centennial Puzzle/Runic Cube, optional Regret/Buffer/Tungsten Rod: creatures, source-bound cards, relics, AI/shuffle states and complete RNG calls; no natural certification",
+        "producer": {
+          "implementation": "communicationmod",
+          "version": "3F59A9280525AE3EA9B52B758BBF431CEDC3190EE840375AC1213F3A3D3BF800",
+          "session_epoch": "8efa6354-862b-4adc-8ca8-64cceeaddab9:de2b97df-037c-4a76-a8a2-895588d51c54:d63aa2dd-04a1-4d86-a4d3-967631e240c7"
+        },
+        "collector_executable_sha256": "2ca93b2f0b36a2349bb522bf0c3460c969bef5df46dda28e28a5c3781e3d1c02",
+        "files": {
+          "cube_brutality/action.json": "f1eae42bf4045ccec4dfc1892d9a19416f5175cc8edcb5adc72dbab6aabcf308",
+          "cube_brutality/after.json": "a95175038a51d6f7c541e10e9a94a1a7ca5e62085ca30c64a64b06bf6cab1ffd",
+          "cube_brutality/before.json": "d12b729f8a636a1990c3cb4ceb4a82c2b364c110933447b04d3360e3f25706ab",
+          "cube_brutality_buffer/action.json": "635d9ef1084147ab4644a72a61a77ba9d6239b50c41d262b50a18ff38feb1ca6",
+          "cube_brutality_buffer/after.json": "9cc2676f30680a667cdeded96d89c5fde8182904fb1474b88506517c283810d9",
+          "cube_brutality_buffer/before.json": "457ff9042055747d6e0c76b3db47bfcd290631bb631a9296a3f4e43327fe78cd",
+          "cube_brutality_tungsten/action.json": "c682591a593bd4175f29e37df2b13bef2bf696b0726f71680d2a18537370f4c7",
+          "cube_brutality_tungsten/after.json": "c7d8a9ff62ae777d913b10689a2b472a218883cd8b5d6fb61f3ce08cbaab42b7",
+          "cube_brutality_tungsten/before.json": "8a9ab3bd599b380b7221cd98644d18fa31a66a59bb58575a36ddc76eda0224c6",
+          "cube_combust/action.json": "f1c8c8774fca883a40d2decf222e5810ef7e93438ba52840d00eb56455414436",
+          "cube_combust/after.json": "30181b9943d2e5f535e5e0638f401d4b15f4f1645a397f5c2b5c39b811405146",
+          "cube_combust/before.json": "a599c5b557f0e6a2563854f763548c92312986687572ec5d9f634443f5485f8e",
+          "cube_combust_buffer/action.json": "b2615914aea62417aaf8ffdc3caa241d82c43bd5342c92d76ec57e2f46b252b4",
+          "cube_combust_buffer/after.json": "1e3ff8478402001d1fd5e0d732af21b77a3d0753dbd479f41f6a2142e7129849",
+          "cube_combust_buffer/before.json": "b796e4b553bd66b9e6186041a43a88382930c06db065f080600b83852838d632",
+          "cube_combust_regret/action.json": "14e9de32b8fc4fe1b53e6efa32573e7fc06f51e313e96cfe3d351db1d3eb5b68",
+          "cube_combust_regret/after.json": "fe6ce7daddc485859817217bdcdf0560f81f6194089d08f9abc6b1aaffdfe2c1",
+          "cube_combust_regret/before.json": "18ab786e795801d33f526d1564d763d45453923d1eb2648c08b5bdca433c4715",
+          "cube_combust_regret_buffer/action.json": "c8820854fb66dce1c4e062a87dff5a8e0f110c7e45fbb3eb9ad942068ec732d9",
+          "cube_combust_regret_buffer/after.json": "e886c172b3a260acc401a1be653430c486b4412803c08084b6af6195be801b12",
+          "cube_combust_regret_buffer/before.json": "cd8f66234fa9f4a41eebc204b7586f992e1a0a81ef461fe8fe2eeca5b7d3ab29",
+          "cube_combust_stacked/action.json": "fbf2faaa5bfe6ea30ba711786ee024a82a4205017803e891f2103e50898d0b83",
+          "cube_combust_stacked/after.json": "8c43f543936f409feb3ede25dd9534c37d396e8955dcd13797be94b42a66b8bb",
+          "cube_combust_stacked/before.json": "9fcf460afff534dc6a6dc9d9aecff4dcff637c000ed96bbd0b24b5782d8a980e",
+          "cube_combust_tungsten/action.json": "4528e46f7184eade83266fab4f3f45de8713436ab018cd1f1c1c344b0f77a917",
+          "cube_combust_tungsten/after.json": "c9b6d101b3174423f9472918808749f1ce802cadfef07f6ba2f321ca621edab3",
+          "cube_combust_tungsten/before.json": "3c442542eabf5afaa7517361b40c5e51bd82f67a4bf9567603b3ba424bddb8b8",
+          "puzzle_brutality/action.json": "4115f6da917ef3d3026caf4ba1d56f1e3415dba4ae4182415305ee8d47379f65",
+          "puzzle_brutality/after.json": "b59acf4f298e1b9e5303d0de116f232b9c59606fdbc185b8a863a694550feb6e",
+          "puzzle_brutality/before.json": "1158541d9d76f4aa08c9fb7608c9c78a7c4d112dd19c3ac0733d22231a7509cd",
+          "puzzle_brutality_buffer/action.json": "efab6e75c312748aafd0ba15d63557b0fb867cdcc1b65ba489bbc0c9860e3b94",
+          "puzzle_brutality_buffer/after.json": "5bac6ecf483eef097ca7960bbb49562acfa3322c2b94434036bf84d0dd1d4d9a",
+          "puzzle_brutality_buffer/before.json": "caf3ce44330c1740310614ddfae675c140b1e5ee1fb0005352c03ea37a47fb9b",
+          "puzzle_brutality_tungsten/action.json": "3eb02e2fa4e1216864938fad7d811372b4bbc00d85bd545fa94513c5a39c7fdc",
+          "puzzle_brutality_tungsten/after.json": "6dd1dccce12b76ff34adff1da789c17ae0466f262dd47aad34ee21db76794ae6",
+          "puzzle_brutality_tungsten/before.json": "b4c0d4951c7dca9f11727f9db27b739c6fa08ce9bdfe6b54b75054d8d71597a0",
+          "puzzle_combust/action.json": "1c50566c6e4a6f5c97f7fa5c1c08922a4f3e47f99597cc5c78c76f2d9a5e24fc",
+          "puzzle_combust/after.json": "bcd00e68f211efdc9697b75942156643c1776fc3ef1d5231753d3210b8d06cdd",
+          "puzzle_combust/before.json": "1f7dec18e97a6ddd978b13fde635e1114e581c0ea059da418bb9c709b5f5d4ec",
+          "puzzle_combust_buffer/action.json": "51a8e2ddd7074ac6c9afe8929318ecec5e8907991cc5423f9f136bd1d71d4019",
+          "puzzle_combust_buffer/after.json": "7b5860b5816dbaf81c19a831cabfc7b46c5e2769ad251a59758039f8396e7e4d",
+          "puzzle_combust_buffer/before.json": "e76848710608e66a2fdb371a0c6fc589db3681075dc342dd183ac732f53285d2",
+          "puzzle_combust_regret/action.json": "2a0cf78ce515f3b6e7a318911f038155eb7628544b5a33df92640ab97ee0e729",
+          "puzzle_combust_regret/after.json": "7c5a8a9896ddfce9b7c706455ee6c8683de3696dcf5f4097dddd396abcc81454",
+          "puzzle_combust_regret/before.json": "8d0fdbdac7964b03829c075d1372578fed6509791cd31dccdeb9aa2981583d01",
+          "puzzle_combust_regret_buffer/action.json": "6c7de2e91a3ed9992ea11b770012c32b74267c8f18f5596ee5a31af80426a8d8",
+          "puzzle_combust_regret_buffer/after.json": "3489324c499d75709715a1ee32a1db767f845605804df082fd64411dc830b025",
+          "puzzle_combust_regret_buffer/before.json": "19819cab7dec3c2b22ae251eda0677e10c623d3b61bc41f281a292e7c85b987c",
+          "puzzle_combust_stacked/action.json": "80260c020fd3245860bf66fd9b13385685a56eebff1af629a4def7807b81c4e2",
+          "puzzle_combust_stacked/after.json": "d258a9fb7e7bb98a5fcdfb6999d389ae3107dd7ab3c099d8429b4102091c01d0",
+          "puzzle_combust_stacked/before.json": "0ba0ee6287ad30c6a9e66af3b41bf9e6de8ecaffa04e52ad45c7c627b9d3b7a1",
+          "puzzle_combust_tungsten/action.json": "d40d4c3ae61c8a356c3de1bbf197db5ed827029302c4ed0265e3dc83e638147e",
+          "puzzle_combust_tungsten/after.json": "601aec4571e690801d5b9121ec25855b4ea8a1f8125c0087a9bc469660d727f3",
+          "puzzle_combust_tungsten/before.json": "5d25ead282804e78f94b6bfa22bd497ff1fc6c8a47f1674fa268a6d83e779c83"
+        }
+      },
+      "launch_plan": {
+        "acceleration": {
+          "game_fast_mode": true,
+          "mod": {
+            "id": "superfastmode",
+            "jar": {
+              "length": 25877,
+              "path": "C:/Program Files (x86)/Steam/steamapps/common/SlayTheSpire\\mods\\SuperFastMode.jar",
+              "sha256": "CECDC2A54D0B2DB8AA66857098D4740E5D74EC3361CD12416629019438D25C60"
+            },
+            "version": "1.0.8"
+          },
+          "settings": {
+            "config": {
+              "length": 123,
+              "path": "C:\\Users\\17239\\AppData\\Local\\ModTheSpire\\SuperFastMode\\SuperFastModeConfig.properties",
+              "sha256": "C9AC6FA74C9EDC8FB3F59EC6AC6CBE6B83CD77D012C0A129D297D4276ACE2931"
+            },
+            "values": {
+              "delta_multiplier": 5.0,
+              "is_delta_multiplied": true,
+              "is_instant_lerp": true
+            }
+          }
+        },
+        "bridge": {
+          "executable": {
+            "length": 8529920,
+            "path": "D:\\rust\\sts_simulator\\.oracle-lab\\java-parity-runtime\\live-bridge-images\\sts-java-parity-live-f80cb46367cadf6a418b59adb060a3a9e6a9a33a1f10b0987bf9e420d3633970.exe",
+            "sha256": "F80CB46367CADF6A418B59ADB060A3A9E6A9A33A1F10B0987BF9E420D3633970"
+          },
+          "kind": "communication_mod_stdio_v1",
+          "output_directory": "D:\\rust\\sts_simulator\\.oracle-lab\\java-parity-runtime\\launches\\adbb060938924dd2842030e43f9ff303\\java-live"
+        },
+        "control_profile": "parity_scenario_control",
+        "created_at_unix_ms": 1788762932377,
+        "game_java": {
+          "length": 206912,
+          "path": "C:/Program Files (x86)/Steam/steamapps/common/SlayTheSpire\\jre\\bin\\javaw.exe",
+          "sha256": "036584C1C8321FF67E4933CC9072797A2FD4CFE8EF02460F4621A7CFEA9D1091"
+        },
+        "mod_the_spire": {
+          "length": 10252951,
+          "path": "\\\\?\\D:\\rust\\lib\\ModTheSpire.jar",
+          "sha256": "541B5E8A875D2A404A5A6D54F4A6F814284B0CF71ACB9245239D9C5EF50EA604"
+        },
+        "profile": "accelerated",
+        "schema": "sts_java_play_launch_plan_v4",
+        "selected_mod_ids": [
+          "basemod",
+          "superfastmode",
+          "CommunicationMod"
+        ],
+        "selected_mods": [
+          {
+            "id": "basemod",
+            "jar": {
+              "length": 7659408,
+              "path": "C:\\Program Files (x86)\\Steam\\steamapps\\workshop\\content\\646570\\1605833019\\BaseMod.jar",
+              "sha256": "C3353C10E64C621B723E9FD7D0502DFA796F828B101B68513594A5F5EF83FBAF"
+            },
+            "version": "5.56.0"
+          },
+          {
+            "id": "superfastmode",
+            "jar": {
+              "length": 25877,
+              "path": "C:/Program Files (x86)/Steam/steamapps/common/SlayTheSpire\\mods\\SuperFastMode.jar",
+              "sha256": "CECDC2A54D0B2DB8AA66857098D4740E5D74EC3361CD12416629019438D25C60"
+            },
+            "version": "1.0.8"
+          },
+          {
+            "id": "CommunicationMod",
+            "jar": {
+              "length": 705769,
+              "path": "C:/Program Files (x86)/Steam/steamapps/common/SlayTheSpire\\mods\\CommunicationMod.jar",
+              "sha256": "3F59A9280525AE3EA9B52B758BBF431CEDC3190EE840375AC1213F3A3D3BF800"
+            },
+            "version": "1.2.1"
+          }
+        ],
+        "storage": {
+          "class": "isolated_working_directory_v1",
+          "isolation_id": "340a6276-00ab-4534-8f80-68207cd14bc5",
+          "profile_substrate": "canonical_a20h_lab_preferences_v1",
+          "source_game_directory": "C:/Program Files (x86)/Steam/steamapps/common/SlayTheSpire",
+          "tutorial_policy": "precompleted_via_profile_v1",
+          "working_directory": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\SlayTheSpire\\.sts-java-play\\isolated-storage\\340a6276-00ab-4534-8f80-68207cd14bc5"
+        }
+      }
+    }
+  ],
+  "files": {
+    "cube_brutality/action.json": {
+      "original_file": "D:\\rust\\sts_simulator\\.oracle-lab\\diagnostics\\20260907-hp-draw-powers-live-v2\\cube_brutality\\action.json",
+      "sha256": "f1eae42bf4045ccec4dfc1892d9a19416f5175cc8edcb5adc72dbab6aabcf308",
+      "bytes": 244
+    },
+    "cube_brutality/after.json": {
+      "original_file": "D:\\rust\\sts_simulator\\.oracle-lab\\diagnostics\\20260907-hp-draw-powers-live-v2\\cube_brutality\\after.json",
+      "sha256": "a95175038a51d6f7c541e10e9a94a1a7ca5e62085ca30c64a64b06bf6cab1ffd",
+      "bytes": 27817
+    },
+    "cube_brutality/before.json": {
+      "original_file": "D:\\rust\\sts_simulator\\.oracle-lab\\diagnostics\\20260907-hp-draw-powers-live-v2\\cube_brutality\\before.json",
+      "sha256": "d12b729f8a636a1990c3cb4ceb4a82c2b364c110933447b04d3360e3f25706ab",
+      "bytes": 26903
+    },
+    "cube_brutality_buffer/action.json": {
+      "original_file": "D:\\rust\\sts_simulator\\.oracle-lab\\diagnostics\\20260907-hp-draw-powers-live-v2\\cube_brutality_buffer\\action.json",
+      "sha256": "635d9ef1084147ab4644a72a61a77ba9d6239b50c41d262b50a18ff38feb1ca6",
+      "bytes": 246
+    },
+    "cube_brutality_buffer/after.json": {
+      "original_file": "D:\\rust\\sts_simulator\\.oracle-lab\\diagnostics\\20260907-hp-draw-powers-live-v2\\cube_brutality_buffer\\after.json",
+      "sha256": "9cc2676f30680a667cdeded96d89c5fde8182904fb1474b88506517c283810d9",
+      "bytes": 27686
+    },
+    "cube_brutality_buffer/before.json": {
+      "original_file": "D:\\rust\\sts_simulator\\.oracle-lab\\diagnostics\\20260907-hp-draw-powers-live-v2\\cube_brutality_buffer\\before.json",
+      "sha256": "457ff9042055747d6e0c76b3db47bfcd290631bb631a9296a3f4e43327fe78cd",
+      "bytes": 27133
+    },
+    "cube_brutality_tungsten/action.json": {
+      "original_file": "D:\\rust\\sts_simulator\\.oracle-lab\\diagnostics\\20260907-hp-draw-powers-live-v2\\cube_brutality_tungsten\\action.json",
+      "sha256": "c682591a593bd4175f29e37df2b13bef2bf696b0726f71680d2a18537370f4c7",
+      "bytes": 246
+    },
+    "cube_brutality_tungsten/after.json": {
+      "original_file": "D:\\rust\\sts_simulator\\.oracle-lab\\diagnostics\\20260907-hp-draw-powers-live-v2\\cube_brutality_tungsten\\after.json",
+      "sha256": "c7d8a9ff62ae777d913b10689a2b472a218883cd8b5d6fb61f3ce08cbaab42b7",
+      "bytes": 27679
+    },
+    "cube_brutality_tungsten/before.json": {
+      "original_file": "D:\\rust\\sts_simulator\\.oracle-lab\\diagnostics\\20260907-hp-draw-powers-live-v2\\cube_brutality_tungsten\\before.json",
+      "sha256": "8a9ab3bd599b380b7221cd98644d18fa31a66a59bb58575a36ddc76eda0224c6",
+      "bytes": 27018
+    },
+    "cube_combust/action.json": {
+      "original_file": "D:\\rust\\sts_simulator\\.oracle-lab\\diagnostics\\20260907-hp-draw-powers-live-v2\\cube_combust\\action.json",
+      "sha256": "f1c8c8774fca883a40d2decf222e5810ef7e93438ba52840d00eb56455414436",
+      "bytes": 244
+    },
+    "cube_combust/after.json": {
+      "original_file": "D:\\rust\\sts_simulator\\.oracle-lab\\diagnostics\\20260907-hp-draw-powers-live-v2\\cube_combust\\after.json",
+      "sha256": "30181b9943d2e5f535e5e0638f401d4b15f4f1645a397f5c2b5c39b811405146",
+      "bytes": 27543
+    },
+    "cube_combust/before.json": {
+      "original_file": "D:\\rust\\sts_simulator\\.oracle-lab\\diagnostics\\20260907-hp-draw-powers-live-v2\\cube_combust\\before.json",
+      "sha256": "a599c5b557f0e6a2563854f763548c92312986687572ec5d9f634443f5485f8e",
+      "bytes": 26912
+    },
+    "cube_combust_buffer/action.json": {
+      "original_file": "D:\\rust\\sts_simulator\\.oracle-lab\\diagnostics\\20260907-hp-draw-powers-live-v2\\cube_combust_buffer\\action.json",
+      "sha256": "b2615914aea62417aaf8ffdc3caa241d82c43bd5342c92d76ec57e2f46b252b4",
+      "bytes": 244
+    },
+    "cube_combust_buffer/after.json": {
+      "original_file": "D:\\rust\\sts_simulator\\.oracle-lab\\diagnostics\\20260907-hp-draw-powers-live-v2\\cube_combust_buffer\\after.json",
+      "sha256": "1e3ff8478402001d1fd5e0d732af21b77a3d0753dbd479f41f6a2142e7129849",
+      "bytes": 27844
+    },
+    "cube_combust_buffer/before.json": {
+      "original_file": "D:\\rust\\sts_simulator\\.oracle-lab\\diagnostics\\20260907-hp-draw-powers-live-v2\\cube_combust_buffer\\before.json",
+      "sha256": "b796e4b553bd66b9e6186041a43a88382930c06db065f080600b83852838d632",
+      "bytes": 27129
+    },
+    "cube_combust_regret/action.json": {
+      "original_file": "D:\\rust\\sts_simulator\\.oracle-lab\\diagnostics\\20260907-hp-draw-powers-live-v2\\cube_combust_regret\\action.json",
+      "sha256": "14e9de32b8fc4fe1b53e6efa32573e7fc06f51e313e96cfe3d351db1d3eb5b68",
+      "bytes": 244
+    },
+    "cube_combust_regret/after.json": {
+      "original_file": "D:\\rust\\sts_simulator\\.oracle-lab\\diagnostics\\20260907-hp-draw-powers-live-v2\\cube_combust_regret\\after.json",
+      "sha256": "fe6ce7daddc485859817217bdcdf0560f81f6194089d08f9abc6b1aaffdfe2c1",
+      "bytes": 27552
+    },
+    "cube_combust_regret/before.json": {
+      "original_file": "D:\\rust\\sts_simulator\\.oracle-lab\\diagnostics\\20260907-hp-draw-powers-live-v2\\cube_combust_regret\\before.json",
+      "sha256": "18ab786e795801d33f526d1564d763d45453923d1eb2648c08b5bdca433c4715",
+      "bytes": 26922
+    },
+    "cube_combust_regret_buffer/action.json": {
+      "original_file": "D:\\rust\\sts_simulator\\.oracle-lab\\diagnostics\\20260907-hp-draw-powers-live-v2\\cube_combust_regret_buffer\\action.json",
+      "sha256": "c8820854fb66dce1c4e062a87dff5a8e0f110c7e45fbb3eb9ad942068ec732d9",
+      "bytes": 244
+    },
+    "cube_combust_regret_buffer/after.json": {
+      "original_file": "D:\\rust\\sts_simulator\\.oracle-lab\\diagnostics\\20260907-hp-draw-powers-live-v2\\cube_combust_regret_buffer\\after.json",
+      "sha256": "e886c172b3a260acc401a1be653430c486b4412803c08084b6af6195be801b12",
+      "bytes": 27664
+    },
+    "cube_combust_regret_buffer/before.json": {
+      "original_file": "D:\\rust\\sts_simulator\\.oracle-lab\\diagnostics\\20260907-hp-draw-powers-live-v2\\cube_combust_regret_buffer\\before.json",
+      "sha256": "cd8f66234fa9f4a41eebc204b7586f992e1a0a81ef461fe8fe2eeca5b7d3ab29",
+      "bytes": 27141
+    },
+    "cube_combust_stacked/action.json": {
+      "original_file": "D:\\rust\\sts_simulator\\.oracle-lab\\diagnostics\\20260907-hp-draw-powers-live-v2\\cube_combust_stacked\\action.json",
+      "sha256": "fbf2faaa5bfe6ea30ba711786ee024a82a4205017803e891f2103e50898d0b83",
+      "bytes": 244
+    },
+    "cube_combust_stacked/after.json": {
+      "original_file": "D:\\rust\\sts_simulator\\.oracle-lab\\diagnostics\\20260907-hp-draw-powers-live-v2\\cube_combust_stacked\\after.json",
+      "sha256": "8c43f543936f409feb3ede25dd9534c37d396e8955dcd13797be94b42a66b8bb",
+      "bytes": 27418
+    },
+    "cube_combust_stacked/before.json": {
+      "original_file": "D:\\rust\\sts_simulator\\.oracle-lab\\diagnostics\\20260907-hp-draw-powers-live-v2\\cube_combust_stacked\\before.json",
+      "sha256": "9fcf460afff534dc6a6dc9d9aecff4dcff637c000ed96bbd0b24b5782d8a980e",
+      "bytes": 26645
+    },
+    "cube_combust_tungsten/action.json": {
+      "original_file": "D:\\rust\\sts_simulator\\.oracle-lab\\diagnostics\\20260907-hp-draw-powers-live-v2\\cube_combust_tungsten\\action.json",
+      "sha256": "4528e46f7184eade83266fab4f3f45de8713436ab018cd1f1c1c344b0f77a917",
+      "bytes": 244
+    },
+    "cube_combust_tungsten/after.json": {
+      "original_file": "D:\\rust\\sts_simulator\\.oracle-lab\\diagnostics\\20260907-hp-draw-powers-live-v2\\cube_combust_tungsten\\after.json",
+      "sha256": "c9b6d101b3174423f9472918808749f1ce802cadfef07f6ba2f321ca621edab3",
+      "bytes": 27839
+    },
+    "cube_combust_tungsten/before.json": {
+      "original_file": "D:\\rust\\sts_simulator\\.oracle-lab\\diagnostics\\20260907-hp-draw-powers-live-v2\\cube_combust_tungsten\\before.json",
+      "sha256": "3c442542eabf5afaa7517361b40c5e51bd82f67a4bf9567603b3ba424bddb8b8",
+      "bytes": 27016
+    },
+    "puzzle_brutality/action.json": {
+      "original_file": "D:\\rust\\sts_simulator\\.oracle-lab\\diagnostics\\20260907-hp-draw-powers-live-v2\\puzzle_brutality\\action.json",
+      "sha256": "4115f6da917ef3d3026caf4ba1d56f1e3415dba4ae4182415305ee8d47379f65",
+      "bytes": 244
+    },
+    "puzzle_brutality/after.json": {
+      "original_file": "D:\\rust\\sts_simulator\\.oracle-lab\\diagnostics\\20260907-hp-draw-powers-live-v2\\puzzle_brutality\\after.json",
+      "sha256": "b59acf4f298e1b9e5303d0de116f232b9c59606fdbc185b8a863a694550feb6e",
+      "bytes": 28142
+    },
+    "puzzle_brutality/before.json": {
+      "original_file": "D:\\rust\\sts_simulator\\.oracle-lab\\diagnostics\\20260907-hp-draw-powers-live-v2\\puzzle_brutality\\before.json",
+      "sha256": "1158541d9d76f4aa08c9fb7608c9c78a7c4d112dd19c3ac0733d22231a7509cd",
+      "bytes": 26969
+    },
+    "puzzle_brutality_buffer/action.json": {
+      "original_file": "D:\\rust\\sts_simulator\\.oracle-lab\\diagnostics\\20260907-hp-draw-powers-live-v2\\puzzle_brutality_buffer\\action.json",
+      "sha256": "efab6e75c312748aafd0ba15d63557b0fb867cdcc1b65ba489bbc0c9860e3b94",
+      "bytes": 244
+    },
+    "puzzle_brutality_buffer/after.json": {
+      "original_file": "D:\\rust\\sts_simulator\\.oracle-lab\\diagnostics\\20260907-hp-draw-powers-live-v2\\puzzle_brutality_buffer\\after.json",
+      "sha256": "5bac6ecf483eef097ca7960bbb49562acfa3322c2b94434036bf84d0dd1d4d9a",
+      "bytes": 27738
+    },
+    "puzzle_brutality_buffer/before.json": {
+      "original_file": "D:\\rust\\sts_simulator\\.oracle-lab\\diagnostics\\20260907-hp-draw-powers-live-v2\\puzzle_brutality_buffer\\before.json",
+      "sha256": "caf3ce44330c1740310614ddfae675c140b1e5ee1fb0005352c03ea37a47fb9b",
+      "bytes": 27185
+    },
+    "puzzle_brutality_tungsten/action.json": {
+      "original_file": "D:\\rust\\sts_simulator\\.oracle-lab\\diagnostics\\20260907-hp-draw-powers-live-v2\\puzzle_brutality_tungsten\\action.json",
+      "sha256": "3eb02e2fa4e1216864938fad7d811372b4bbc00d85bd545fa94513c5a39c7fdc",
+      "bytes": 244
+    },
+    "puzzle_brutality_tungsten/after.json": {
+      "original_file": "D:\\rust\\sts_simulator\\.oracle-lab\\diagnostics\\20260907-hp-draw-powers-live-v2\\puzzle_brutality_tungsten\\after.json",
+      "sha256": "6dd1dccce12b76ff34adff1da789c17ae0466f262dd47aad34ee21db76794ae6",
+      "bytes": 27730
+    },
+    "puzzle_brutality_tungsten/before.json": {
+      "original_file": "D:\\rust\\sts_simulator\\.oracle-lab\\diagnostics\\20260907-hp-draw-powers-live-v2\\puzzle_brutality_tungsten\\before.json",
+      "sha256": "b4c0d4951c7dca9f11727f9db27b739c6fa08ce9bdfe6b54b75054d8d71597a0",
+      "bytes": 27069
+    },
+    "puzzle_combust/action.json": {
+      "original_file": "D:\\rust\\sts_simulator\\.oracle-lab\\diagnostics\\20260907-hp-draw-powers-live-v2\\puzzle_combust\\action.json",
+      "sha256": "1c50566c6e4a6f5c97f7fa5c1c08922a4f3e47f99597cc5c78c76f2d9a5e24fc",
+      "bytes": 242
+    },
+    "puzzle_combust/after.json": {
+      "original_file": "D:\\rust\\sts_simulator\\.oracle-lab\\diagnostics\\20260907-hp-draw-powers-live-v2\\puzzle_combust\\after.json",
+      "sha256": "bcd00e68f211efdc9697b75942156643c1776fc3ef1d5231753d3210b8d06cdd",
+      "bytes": 27594
+    },
+    "puzzle_combust/before.json": {
+      "original_file": "D:\\rust\\sts_simulator\\.oracle-lab\\diagnostics\\20260907-hp-draw-powers-live-v2\\puzzle_combust\\before.json",
+      "sha256": "1f7dec18e97a6ddd978b13fde635e1114e581c0ea059da418bb9c709b5f5d4ec",
+      "bytes": 26963
+    },
+    "puzzle_combust_buffer/action.json": {
+      "original_file": "D:\\rust\\sts_simulator\\.oracle-lab\\diagnostics\\20260907-hp-draw-powers-live-v2\\puzzle_combust_buffer\\action.json",
+      "sha256": "51a8e2ddd7074ac6c9afe8929318ecec5e8907991cc5423f9f136bd1d71d4019",
+      "bytes": 244
+    },
+    "puzzle_combust_buffer/after.json": {
+      "original_file": "D:\\rust\\sts_simulator\\.oracle-lab\\diagnostics\\20260907-hp-draw-powers-live-v2\\puzzle_combust_buffer\\after.json",
+      "sha256": "7b5860b5816dbaf81c19a831cabfc7b46c5e2769ad251a59758039f8396e7e4d",
+      "bytes": 27906
+    },
+    "puzzle_combust_buffer/before.json": {
+      "original_file": "D:\\rust\\sts_simulator\\.oracle-lab\\diagnostics\\20260907-hp-draw-powers-live-v2\\puzzle_combust_buffer\\before.json",
+      "sha256": "e76848710608e66a2fdb371a0c6fc589db3681075dc342dd183ac732f53285d2",
+      "bytes": 27191
+    },
+    "puzzle_combust_regret/action.json": {
+      "original_file": "D:\\rust\\sts_simulator\\.oracle-lab\\diagnostics\\20260907-hp-draw-powers-live-v2\\puzzle_combust_regret\\action.json",
+      "sha256": "2a0cf78ce515f3b6e7a318911f038155eb7628544b5a33df92640ab97ee0e729",
+      "bytes": 244
+    },
+    "puzzle_combust_regret/after.json": {
+      "original_file": "D:\\rust\\sts_simulator\\.oracle-lab\\diagnostics\\20260907-hp-draw-powers-live-v2\\puzzle_combust_regret\\after.json",
+      "sha256": "7c5a8a9896ddfce9b7c706455ee6c8683de3696dcf5f4097dddd396abcc81454",
+      "bytes": 27617
+    },
+    "puzzle_combust_regret/before.json": {
+      "original_file": "D:\\rust\\sts_simulator\\.oracle-lab\\diagnostics\\20260907-hp-draw-powers-live-v2\\puzzle_combust_regret\\before.json",
+      "sha256": "8d0fdbdac7964b03829c075d1372578fed6509791cd31dccdeb9aa2981583d01",
+      "bytes": 26988
+    },
+    "puzzle_combust_regret_buffer/action.json": {
+      "original_file": "D:\\rust\\sts_simulator\\.oracle-lab\\diagnostics\\20260907-hp-draw-powers-live-v2\\puzzle_combust_regret_buffer\\action.json",
+      "sha256": "6c7de2e91a3ed9992ea11b770012c32b74267c8f18f5596ee5a31af80426a8d8",
+      "bytes": 244
+    },
+    "puzzle_combust_regret_buffer/after.json": {
+      "original_file": "D:\\rust\\sts_simulator\\.oracle-lab\\diagnostics\\20260907-hp-draw-powers-live-v2\\puzzle_combust_regret_buffer\\after.json",
+      "sha256": "3489324c499d75709715a1ee32a1db767f845605804df082fd64411dc830b025",
+      "bytes": 27724
+    },
+    "puzzle_combust_regret_buffer/before.json": {
+      "original_file": "D:\\rust\\sts_simulator\\.oracle-lab\\diagnostics\\20260907-hp-draw-powers-live-v2\\puzzle_combust_regret_buffer\\before.json",
+      "sha256": "19819cab7dec3c2b22ae251eda0677e10c623d3b61bc41f281a292e7c85b987c",
+      "bytes": 27203
+    },
+    "puzzle_combust_stacked/action.json": {
+      "original_file": "D:\\rust\\sts_simulator\\.oracle-lab\\diagnostics\\20260907-hp-draw-powers-live-v2\\puzzle_combust_stacked\\action.json",
+      "sha256": "80260c020fd3245860bf66fd9b13385685a56eebff1af629a4def7807b81c4e2",
+      "bytes": 244
+    },
+    "puzzle_combust_stacked/after.json": {
+      "original_file": "D:\\rust\\sts_simulator\\.oracle-lab\\diagnostics\\20260907-hp-draw-powers-live-v2\\puzzle_combust_stacked\\after.json",
+      "sha256": "d258a9fb7e7bb98a5fcdfb6999d389ae3107dd7ab3c099d8429b4102091c01d0",
+      "bytes": 27481
+    },
+    "puzzle_combust_stacked/before.json": {
+      "original_file": "D:\\rust\\sts_simulator\\.oracle-lab\\diagnostics\\20260907-hp-draw-powers-live-v2\\puzzle_combust_stacked\\before.json",
+      "sha256": "0ba0ee6287ad30c6a9e66af3b41bf9e6de8ecaffa04e52ad45c7c627b9d3b7a1",
+      "bytes": 26708
+    },
+    "puzzle_combust_tungsten/action.json": {
+      "original_file": "D:\\rust\\sts_simulator\\.oracle-lab\\diagnostics\\20260907-hp-draw-powers-live-v2\\puzzle_combust_tungsten\\action.json",
+      "sha256": "d40d4c3ae61c8a356c3de1bbf197db5ed827029302c4ed0265e3dc83e638147e",
+      "bytes": 244
+    },
+    "puzzle_combust_tungsten/after.json": {
+      "original_file": "D:\\rust\\sts_simulator\\.oracle-lab\\diagnostics\\20260907-hp-draw-powers-live-v2\\puzzle_combust_tungsten\\after.json",
+      "sha256": "601aec4571e690801d5b9121ec25855b4ea8a1f8125c0087a9bc469660d727f3",
+      "bytes": 27898
+    },
+    "puzzle_combust_tungsten/before.json": {
+      "original_file": "D:\\rust\\sts_simulator\\.oracle-lab\\diagnostics\\20260907-hp-draw-powers-live-v2\\puzzle_combust_tungsten\\before.json",
+      "sha256": "5d25ead282804e78f94b6bfa22bd497ff1fc6c8a47f1674fa268a6d83e779c83",
+      "bytes": 27075
+    }
+  }
+}

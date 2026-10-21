@@ -1,0 +1,21 @@
+[package]
+name = "sts_complete_turn_env"
+version = "0.1.0"
+edition = "2021"
+publish = false
+autobins = false
+autotests = false
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+sts_agent = { path = "../sts_agent" }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+sts_combat_atomic = { path = "../sts_combat_atomic" }
+sts_combat_outcome = { path = "../sts_combat_outcome" }
+sts_combat_planner = { path = "../sts_combat_planner" }
+sts_complete_turn_proposal = { path = "../sts_complete_turn_proposal" }
+sts_complete_turn_view = { path = "../sts_complete_turn_view" }
+sts_core = { package = "sts_simulator", path = "../.." }

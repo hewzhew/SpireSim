@@ -1,0 +1,51 @@
+{
+  "scope": "Natural Masked Bandits entry consumes three HP draws in its constructor, before Pay/Fight; Fight reuses those HP values and exposes Pointy as the original BanditChild ID",
+  "capture_scope": "accelerated_sts_wrapper_rng_ledger_and_declared_snapshot_domains",
+  "files": {
+    "before.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-627a5dec58b44e5ea61182c817e17a67/java-evidence/boundaries/00000457-frame-459.json",
+      "sha256": "d50c1d84dc3ae52d66c464b7f195c0aa19321d70b3b2fd00b70338b92df9bc46",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "1C91255EE2E63B358364DA7195B09427B8948A61327E97A9A70E6A4D84BD9173",
+        "session_epoch": "d0fae10f-5d29-49d7-b83d-e0e682d0c6c9:be602476-e062-4fee-84a1-798227e1376b:ded9c61e-0a1d-4263-887d-9576b5b04302"
+      },
+      "capturing_rust_source": "e57060838 plus Loop and Ghosts repairs (94a4f6f26)",
+      "capturing_runner_sha256": "d783380d84f016d34ad1126e016e875dd6fb079a1bc0aa6accdbfa1448cb7e28"
+    },
+    "after.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-627a5dec58b44e5ea61182c817e17a67/java-evidence/boundaries/00000458-frame-460.json",
+      "sha256": "b5ede6ed3ec5699df35fe98d4cf32b665713b86da62d003f8a91638eb2140acb",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "1C91255EE2E63B358364DA7195B09427B8948A61327E97A9A70E6A4D84BD9173",
+        "session_epoch": "d0fae10f-5d29-49d7-b83d-e0e682d0c6c9:be602476-e062-4fee-84a1-798227e1376b:ded9c61e-0a1d-4263-887d-9576b5b04302"
+      },
+      "capturing_rust_source": "e57060838 plus Loop and Ghosts repairs (94a4f6f26)",
+      "capturing_runner_sha256": "d783380d84f016d34ad1126e016e875dd6fb079a1bc0aa6accdbfa1448cb7e28"
+    },
+    "action.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-627a5dec58b44e5ea61182c817e17a67/java-evidence/actions/00000457-from-frame-459.json",
+      "sha256": "206f3bfd1c38c9caad4b987276df22ced51b68ad8bc52f5d640518f74bb9fcfe",
+      "capturing_rust_source": "e57060838 plus Loop and Ghosts repairs (94a4f6f26)",
+      "capturing_runner_sha256": "d783380d84f016d34ad1126e016e875dd6fb079a1bc0aa6accdbfa1448cb7e28"
+    },
+    "fight-action.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-627a5dec58b44e5ea61182c817e17a67/java-evidence/actions/00000458-from-frame-460.json",
+      "sha256": "751a2efeddfc1e74f1dc53b8d69683e6594263b94b808394387e1a1f1c670cc5",
+      "capturing_rust_source": "94a4f6f26 plus Masked Bandits constructor-time encounter repair",
+      "capturing_runner_sha256": "b9d4fae12726fd9c0829ae9c6fe7770ef26228701d0287c98616a663e10ec7fd"
+    },
+    "fight-after.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-627a5dec58b44e5ea61182c817e17a67/java-evidence/boundaries/00000459-frame-461.json",
+      "sha256": "621d778e03fd68b1cb6dae795b8ab06ff088df60426faf073959a8dc036c8cfd",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "1C91255EE2E63B358364DA7195B09427B8948A61327E97A9A70E6A4D84BD9173",
+        "session_epoch": "d0fae10f-5d29-49d7-b83d-e0e682d0c6c9:be602476-e062-4fee-84a1-798227e1376b:ded9c61e-0a1d-4263-887d-9576b5b04302"
+      },
+      "capturing_rust_source": "94a4f6f26 plus Masked Bandits constructor-time encounter repair",
+      "capturing_runner_sha256": "b9d4fae12726fd9c0829ae9c6fe7770ef26228701d0287c98616a663e10ec7fd"
+    }
+  }
+}

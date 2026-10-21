@@ -1,0 +1,18 @@
+[package]
+name = "sts_oracle_v2_cli"
+version = "0.1.0"
+edition = "2021"
+publish = false
+autobins = false
+autotests = false
+
+[dependencies]
+clap = { version = "4.0", features = ["derive"] }
+serde = { version = "1.0", features = ["derive"] }
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "oracle_v2_help"
+path = "src/main.rs"

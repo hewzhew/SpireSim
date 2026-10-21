@@ -1,0 +1,17 @@
+{
+  "schema": "sts_java_play_scenario_probe_draft_v1",
+  "provenance": "constructed_validated",
+  "probe_case_id": "three-sentries-second-fire-potion-use",
+  "scenario_case_id": "three-sentries-fire-potion-root",
+  "transition": {
+    "transition_id": "combat.use_potion.v1",
+    "potion": {
+      "slot_index": 0,
+      "potion_id": "Fire Potion"
+    },
+    "target": {
+      "monster_id": "Sentry",
+      "occurrence": 1
+    }
+  }
+}

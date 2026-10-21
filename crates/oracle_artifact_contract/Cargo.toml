@@ -1,0 +1,15 @@
+[package]
+name = "oracle_artifact_contract"
+version = "0.1.0"
+edition = "2021"
+publish = false
+autobins = false
+autotests = false
+
+[features]
+default = []
+oracle-host = []
+oracle-client = []
+
+[lib]
+path = "src/lib.rs"

@@ -1,0 +1,19 @@
+name: rustfmt
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v6
+      - name: Install rustfmt
+        run: rustup component add rustfmt
+      - name: Check Rust formatting
+        run: cargo fmt-check

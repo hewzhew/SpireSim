@@ -1,0 +1,1489 @@
+{
+ "decision": {
+  "candidates": [
+   {
+    "action": {
+     "kind": "end_turn"
+    },
+    "domain": "combat_atomic"
+   },
+   {
+    "action": {
+     "hand_index": 0,
+     "kind": "play_card",
+     "target_monster_index": 0
+    },
+    "domain": "combat_atomic"
+   },
+   {
+    "action": {
+     "hand_index": 1,
+     "kind": "play_card",
+     "target_monster_index": 0
+    },
+    "domain": "combat_atomic"
+   },
+   {
+    "action": {
+     "hand_index": 2,
+     "kind": "play_card",
+     "target_monster_index": null
+    },
+    "domain": "combat_atomic"
+   },
+   {
+    "action": {
+     "hand_index": 3,
+     "kind": "play_card",
+     "target_monster_index": 0
+    },
+    "domain": "combat_atomic"
+   },
+   {
+    "action": {
+     "hand_index": 4,
+     "kind": "play_card",
+     "target_monster_index": null
+    },
+    "domain": "combat_atomic"
+   }
+  ],
+  "information": {
+   "candidate_surface": {
+    "candidate_surface_id": "public_candidate_surface_v1:241999286c49dabfcfde12f9cdab701e44887d51",
+    "kind": "deployable_policy",
+    "ordered_candidate_ids": [
+     "task_public_candidate_v1:06f48d16ad1f35893a9796059d95d39a08c7d18a",
+     "task_public_candidate_v1:cf85661701ce333723af4b82f770c744a2457a47",
+     "task_public_candidate_v1:b185991234c165e0e0d7d4e0f9c93a9e4bb78c78",
+     "task_public_candidate_v1:2f1582313dce1ae625f2da7f78981ca066089a8f",
+     "task_public_candidate_v1:19209cd3417dfc7cd28f0d28e500ce5624b0ff0e",
+     "task_public_candidate_v1:29ec9edcb8f9fab1d53faca4e7b813fcc517e0d6"
+    ],
+    "schema_name": "TaskPublicCandidateSurfaceV1",
+    "schema_version": 1
+   },
+   "domain": "combat",
+   "history_snapshot": {
+    "history_snapshot_id": "public_history_snapshot_v1:36e757ca7fd76f6705f9b89daaf409997a6f841d",
+    "schema_name": "TaskPublicHistorySnapshotV1",
+    "schema_version": 1
+   },
+   "observation": {
+    "observation_id": "public_observation_v1:cce7e96f39840fc869185acb682cf885de91dba1",
+    "schema_name": "TaskCombatPublicObservationV1",
+    "schema_version": 1,
+    "scope": "combat_decision_with_run_continuation"
+   },
+   "schema_name": "PublicInformationSnapshotV1",
+   "schema_version": 1,
+   "snapshot_id": "public_information_snapshot_v1:4cd18bce39b49a246e01c0c83d5b67e74ef33d09"
+  },
+  "observation": {
+   "domain": "combat",
+   "observation": {
+    "cards": {
+     "discard": {
+      "cards": [],
+      "evidence": "public_unordered_collection"
+     },
+     "draw": {
+      "cards": [
+       {
+        "base_block_override": null,
+        "base_damage_override": null,
+        "card_id": "Strike",
+        "cost_for_turn": null,
+        "cost_modifier": 0,
+        "current_block": 0,
+        "current_damage": 6,
+        "current_magic_number": 0,
+        "damage_by_monster_order": [],
+        "effective_cost": 1,
+        "energy_on_use": 0,
+        "exhaust_override": null,
+        "free_to_play_once": false,
+        "misc_value": 0,
+        "retain_override": null,
+        "upgrades": 0
+       },
+       {
+        "base_block_override": null,
+        "base_damage_override": null,
+        "card_id": "Strike",
+        "cost_for_turn": null,
+        "cost_modifier": 0,
+        "current_block": 0,
+        "current_damage": 6,
+        "current_magic_number": 0,
+        "damage_by_monster_order": [],
+        "effective_cost": 1,
+        "energy_on_use": 0,
+        "exhaust_override": null,
+        "free_to_play_once": false,
+        "misc_value": 0,
+        "retain_override": null,
+        "upgrades": 0
+       },
+       {
+        "base_block_override": null,
+        "base_damage_override": null,
+        "card_id": "Defend",
+        "cost_for_turn": null,
+        "cost_modifier": 0,
+        "current_block": 5,
+        "current_damage": 0,
+        "current_magic_number": 0,
+        "damage_by_monster_order": [],
+        "effective_cost": 1,
+        "energy_on_use": 0,
+        "exhaust_override": null,
+        "free_to_play_once": false,
+        "misc_value": 0,
+        "retain_override": null,
+        "upgrades": 0
+       },
+       {
+        "base_block_override": null,
+        "base_damage_override": null,
+        "card_id": "Defend",
+        "cost_for_turn": null,
+        "cost_modifier": 0,
+        "current_block": 5,
+        "current_damage": 0,
+        "current_magic_number": 0,
+        "damage_by_monster_order": [],
+        "effective_cost": 1,
+        "energy_on_use": 0,
+        "exhaust_override": null,
+        "free_to_play_once": false,
+        "misc_value": 0,
+        "retain_override": null,
+        "upgrades": 0
+       },
+       {
+        "base_block_override": null,
+        "base_damage_override": null,
+        "card_id": "Bash",
+        "cost_for_turn": null,
+        "cost_modifier": 0,
+        "current_block": 0,
+        "current_damage": 8,
+        "current_magic_number": 2,
+        "damage_by_monster_order": [],
+        "effective_cost": 2,
+        "energy_on_use": 0,
+        "exhaust_override": null,
+        "free_to_play_once": false,
+        "misc_value": 0,
+        "retain_override": null,
+        "upgrades": 0
+       },
+       {
+        "base_block_override": null,
+        "base_damage_override": null,
+        "card_id": "Barricade",
+        "cost_for_turn": null,
+        "cost_modifier": 0,
+        "current_block": 0,
+        "current_damage": 0,
+        "current_magic_number": 0,
+        "damage_by_monster_order": [],
+        "effective_cost": 3,
+        "energy_on_use": 0,
+        "exhaust_override": null,
+        "free_to_play_once": false,
+        "misc_value": 0,
+        "retain_override": null,
+        "upgrades": 0
+       }
+      ],
+      "evidence": "public_unordered_collection"
+     },
+     "exhaust": {
+      "cards": [],
+      "evidence": "public_unordered_collection"
+     },
+     "hand": {
+      "cards": [
+       {
+        "base_block_override": null,
+        "base_damage_override": null,
+        "card_id": "Strike",
+        "cost_for_turn": null,
+        "cost_modifier": 0,
+        "current_block": 0,
+        "current_damage": 6,
+        "current_magic_number": 0,
+        "damage_by_monster_order": [
+         6
+        ],
+        "effective_cost": 1,
+        "energy_on_use": 0,
+        "exhaust_override": null,
+        "free_to_play_once": false,
+        "misc_value": 0,
+        "retain_override": null,
+        "upgrades": 0
+       },
+       {
+        "base_block_override": null,
+        "base_damage_override": null,
+        "card_id": "Strike",
+        "cost_for_turn": null,
+        "cost_modifier": 0,
+        "current_block": 0,
+        "current_damage": 6,
+        "current_magic_number": 0,
+        "damage_by_monster_order": [
+         6
+        ],
+        "effective_cost": 1,
+        "energy_on_use": 0,
+        "exhaust_override": null,
+        "free_to_play_once": false,
+        "misc_value": 0,
+        "retain_override": null,
+        "upgrades": 0
+       },
+       {
+        "base_block_override": null,
+        "base_damage_override": null,
+        "card_id": "Defend",
+        "cost_for_turn": null,
+        "cost_modifier": 0,
+        "current_block": 5,
+        "current_damage": 0,
+        "current_magic_number": 0,
+        "damage_by_monster_order": [],
+        "effective_cost": 1,
+        "energy_on_use": 0,
+        "exhaust_override": null,
+        "free_to_play_once": false,
+        "misc_value": 0,
+        "retain_override": null,
+        "upgrades": 0
+       },
+       {
+        "base_block_override": null,
+        "base_damage_override": null,
+        "card_id": "Strike",
+        "cost_for_turn": null,
+        "cost_modifier": 0,
+        "current_block": 0,
+        "current_damage": 6,
+        "current_magic_number": 0,
+        "damage_by_monster_order": [
+         6
+        ],
+        "effective_cost": 1,
+        "energy_on_use": 0,
+        "exhaust_override": null,
+        "free_to_play_once": false,
+        "misc_value": 0,
+        "retain_override": null,
+        "upgrades": 0
+       },
+       {
+        "base_block_override": null,
+        "base_damage_override": null,
+        "card_id": "Defend",
+        "cost_for_turn": null,
+        "cost_modifier": 0,
+        "current_block": 5,
+        "current_damage": 0,
+        "current_magic_number": 0,
+        "damage_by_monster_order": [],
+        "effective_cost": 1,
+        "energy_on_use": 0,
+        "exhaust_override": null,
+        "free_to_play_once": false,
+        "misc_value": 0,
+        "retain_override": null,
+        "upgrades": 0
+       }
+      ],
+      "evidence": "public_ordered_collection"
+     },
+     "limbo": {
+      "cards": [],
+      "evidence": "visible_exact"
+     },
+     "master_deck": {
+      "cards": [
+       {
+        "base_block_override": null,
+        "base_damage_override": null,
+        "card_id": "Strike",
+        "cost_for_turn": null,
+        "cost_modifier": 0,
+        "current_block": 0,
+        "current_damage": 6,
+        "current_magic_number": 0,
+        "damage_by_monster_order": [],
+        "effective_cost": 1,
+        "energy_on_use": 0,
+        "exhaust_override": null,
+        "free_to_play_once": false,
+        "misc_value": 0,
+        "retain_override": null,
+        "upgrades": 0
+       },
+       {
+        "base_block_override": null,
+        "base_damage_override": null,
+        "card_id": "Strike",
+        "cost_for_turn": null,
+        "cost_modifier": 0,
+        "current_block": 0,
+        "current_damage": 6,
+        "current_magic_number": 0,
+        "damage_by_monster_order": [],
+        "effective_cost": 1,
+        "energy_on_use": 0,
+        "exhaust_override": null,
+        "free_to_play_once": false,
+        "misc_value": 0,
+        "retain_override": null,
+        "upgrades": 0
+       },
+       {
+        "base_block_override": null,
+        "base_damage_override": null,
+        "card_id": "Strike",
+        "cost_for_turn": null,
+        "cost_modifier": 0,
+        "current_block": 0,
+        "current_damage": 6,
+        "current_magic_number": 0,
+        "damage_by_monster_order": [],
+        "effective_cost": 1,
+        "energy_on_use": 0,
+        "exhaust_override": null,
+        "free_to_play_once": false,
+        "misc_value": 0,
+        "retain_override": null,
+        "upgrades": 0
+       },
+       {
+        "base_block_override": null,
+        "base_damage_override": null,
+        "card_id": "Strike",
+        "cost_for_turn": null,
+        "cost_modifier": 0,
+        "current_block": 0,
+        "current_damage": 6,
+        "current_magic_number": 0,
+        "damage_by_monster_order": [],
+        "effective_cost": 1,
+        "energy_on_use": 0,
+        "exhaust_override": null,
+        "free_to_play_once": false,
+        "misc_value": 0,
+        "retain_override": null,
+        "upgrades": 0
+       },
+       {
+        "base_block_override": null,
+        "base_damage_override": null,
+        "card_id": "Strike",
+        "cost_for_turn": null,
+        "cost_modifier": 0,
+        "current_block": 0,
+        "current_damage": 6,
+        "current_magic_number": 0,
+        "damage_by_monster_order": [],
+        "effective_cost": 1,
+        "energy_on_use": 0,
+        "exhaust_override": null,
+        "free_to_play_once": false,
+        "misc_value": 0,
+        "retain_override": null,
+        "upgrades": 0
+       },
+       {
+        "base_block_override": null,
+        "base_damage_override": null,
+        "card_id": "Defend",
+        "cost_for_turn": null,
+        "cost_modifier": 0,
+        "current_block": 5,
+        "current_damage": 0,
+        "current_magic_number": 0,
+        "damage_by_monster_order": [],
+        "effective_cost": 1,
+        "energy_on_use": 0,
+        "exhaust_override": null,
+        "free_to_play_once": false,
+        "misc_value": 0,
+        "retain_override": null,
+        "upgrades": 0
+       },
+       {
+        "base_block_override": null,
+        "base_damage_override": null,
+        "card_id": "Defend",
+        "cost_for_turn": null,
+        "cost_modifier": 0,
+        "current_block": 5,
+        "current_damage": 0,
+        "current_magic_number": 0,
+        "damage_by_monster_order": [],
+        "effective_cost": 1,
+        "energy_on_use": 0,
+        "exhaust_override": null,
+        "free_to_play_once": false,
+        "misc_value": 0,
+        "retain_override": null,
+        "upgrades": 0
+       },
+       {
+        "base_block_override": null,
+        "base_damage_override": null,
+        "card_id": "Defend",
+        "cost_for_turn": null,
+        "cost_modifier": 0,
+        "current_block": 5,
+        "current_damage": 0,
+        "current_magic_number": 0,
+        "damage_by_monster_order": [],
+        "effective_cost": 1,
+        "energy_on_use": 0,
+        "exhaust_override": null,
+        "free_to_play_once": false,
+        "misc_value": 0,
+        "retain_override": null,
+        "upgrades": 0
+       },
+       {
+        "base_block_override": null,
+        "base_damage_override": null,
+        "card_id": "Defend",
+        "cost_for_turn": null,
+        "cost_modifier": 0,
+        "current_block": 5,
+        "current_damage": 0,
+        "current_magic_number": 0,
+        "damage_by_monster_order": [],
+        "effective_cost": 1,
+        "energy_on_use": 0,
+        "exhaust_override": null,
+        "free_to_play_once": false,
+        "misc_value": 0,
+        "retain_override": null,
+        "upgrades": 0
+       },
+       {
+        "base_block_override": null,
+        "base_damage_override": null,
+        "card_id": "Bash",
+        "cost_for_turn": null,
+        "cost_modifier": 0,
+        "current_block": 0,
+        "current_damage": 8,
+        "current_magic_number": 2,
+        "damage_by_monster_order": [],
+        "effective_cost": 2,
+        "energy_on_use": 0,
+        "exhaust_override": null,
+        "free_to_play_once": false,
+        "misc_value": 0,
+        "retain_override": null,
+        "upgrades": 0
+       },
+       {
+        "base_block_override": null,
+        "base_damage_override": null,
+        "card_id": "Barricade",
+        "cost_for_turn": null,
+        "cost_modifier": 0,
+        "current_block": 0,
+        "current_damage": 0,
+        "current_magic_number": 0,
+        "damage_by_monster_order": [],
+        "effective_cost": 3,
+        "energy_on_use": 0,
+        "exhaust_override": null,
+        "free_to_play_once": false,
+        "misc_value": 0,
+        "retain_override": null,
+        "upgrades": 0
+       }
+      ],
+      "evidence": "public_unordered_collection"
+     }
+    },
+    "encounter": {
+     "is_boss_fight": false,
+     "is_elite_fight": false
+    },
+    "hidden_reasons": [
+     "draw_pile_order_hidden"
+    ],
+    "information_access": "public",
+    "monsters": [
+     {
+      "alive": true,
+      "block": 0,
+      "dying": false,
+      "enemy": {
+       "enemy_id": "JawWorm",
+       "status": "known"
+      },
+      "escaped": false,
+      "executed_moves": {
+       "evidence": "public_ordered_collection",
+       "move_ids": []
+      },
+      "half_dead": false,
+      "hp": 44,
+      "intent": {
+       "evidence": "visible_exact",
+       "hidden_reason": null,
+       "intent": {
+        "Attack": {
+         "damage": 11,
+         "hits": 1
+        }
+       },
+       "preview_damage_per_hit": 11
+      },
+      "max_hp": 44,
+      "powers": [],
+      "public_counters": [],
+      "slot": 0
+     }
+    ],
+    "player": {
+     "ascension_level": 0,
+     "block": 0,
+     "energy_master": 3,
+     "facing_left": false,
+     "gold": 99,
+     "gold_delta_this_combat": 0,
+     "hp": 80,
+     "max_hp": 80,
+     "max_orbs": 0,
+     "orbs": [],
+     "player_class": "ironclad",
+     "powers": [],
+     "relics": [
+      {
+       "id": "BurningBlood"
+      }
+     ],
+     "stance": "Neutral"
+    },
+    "potions": [
+     null,
+     null,
+     null
+    ],
+    "schema_name": "PublicCombatState",
+    "schema_version": 2,
+    "turn": {
+     "counters": {
+      "attacks_played_this_turn": 0,
+      "card_ids_played_this_combat": [],
+      "card_ids_played_this_turn": [],
+      "cards_discarded_this_turn": 0,
+      "cards_played_this_turn": 0,
+      "discovery_cost_for_turn": null,
+      "mantra_gained_this_combat": 0,
+      "orbs_channeled_this_combat": [],
+      "orbs_channeled_this_turn": [],
+      "times_damaged_this_combat": 0
+     },
+     "energy": 3,
+     "phase": "PlayerTurn",
+     "turn_count": 0,
+     "turn_start_draw_modifier": 0
+    }
+   },
+   "run_context": {
+    "act": 1,
+    "ascension_level": 0,
+    "encounter_id": "JawWorm",
+    "floor": 1,
+    "keys": [
+     false,
+     false,
+     false
+    ],
+    "public_map": {
+     "boss": "Hexaghost",
+     "current_x": 0,
+     "current_y": 0,
+     "nodes": [
+      {
+       "edges": [
+        {
+         "destination_x": 0,
+         "destination_y": 1
+        }
+       ],
+       "has_emerald_key": false,
+       "room": "monster",
+       "x": 0,
+       "y": 0
+      },
+      {
+       "edges": [
+        {
+         "destination_x": 2,
+         "destination_y": 1
+        }
+       ],
+       "has_emerald_key": false,
+       "room": "monster",
+       "x": 2,
+       "y": 0
+      },
+      {
+       "edges": [
+        {
+         "destination_x": 4,
+         "destination_y": 1
+        }
+       ],
+       "has_emerald_key": false,
+       "room": "monster",
+       "x": 4,
+       "y": 0
+      },
+      {
+       "edges": [
+        {
+         "destination_x": 0,
+         "destination_y": 2
+        },
+        {
+         "destination_x": 1,
+         "destination_y": 2
+        }
+       ],
+       "has_emerald_key": false,
+       "room": "monster",
+       "x": 0,
+       "y": 1
+      },
+      {
+       "edges": [
+        {
+         "destination_x": 2,
+         "destination_y": 2
+        }
+       ],
+       "has_emerald_key": false,
+       "room": "question_mark",
+       "x": 2,
+       "y": 1
+      },
+      {
+       "edges": [
+        {
+         "destination_x": 3,
+         "destination_y": 2
+        },
+        {
+         "destination_x": 5,
+         "destination_y": 2
+        }
+       ],
+       "has_emerald_key": false,
+       "room": "shop",
+       "x": 4,
+       "y": 1
+      },
+      {
+       "edges": [
+        {
+         "destination_x": 0,
+         "destination_y": 3
+        }
+       ],
+       "has_emerald_key": false,
+       "room": "monster",
+       "x": 0,
+       "y": 2
+      },
+      {
+       "edges": [
+        {
+         "destination_x": 0,
+         "destination_y": 3
+        }
+       ],
+       "has_emerald_key": false,
+       "room": "question_mark",
+       "x": 1,
+       "y": 2
+      },
+      {
+       "edges": [
+        {
+         "destination_x": 2,
+         "destination_y": 3
+        }
+       ],
+       "has_emerald_key": false,
+       "room": "monster",
+       "x": 2,
+       "y": 2
+      },
+      {
+       "edges": [
+        {
+         "destination_x": 2,
+         "destination_y": 3
+        },
+        {
+         "destination_x": 4,
+         "destination_y": 3
+        }
+       ],
+       "has_emerald_key": false,
+       "room": "monster",
+       "x": 3,
+       "y": 2
+      },
+      {
+       "edges": [
+        {
+         "destination_x": 6,
+         "destination_y": 3
+        }
+       ],
+       "has_emerald_key": false,
+       "room": "question_mark",
+       "x": 5,
+       "y": 2
+      },
+      {
+       "edges": [
+        {
+         "destination_x": 0,
+         "destination_y": 4
+        }
+       ],
+       "has_emerald_key": false,
+       "room": "monster",
+       "x": 0,
+       "y": 3
+      },
+      {
+       "edges": [
+        {
+         "destination_x": 1,
+         "destination_y": 4
+        },
+        {
+         "destination_x": 2,
+         "destination_y": 4
+        }
+       ],
+       "has_emerald_key": false,
+       "room": "monster",
+       "x": 2,
+       "y": 3
+      },
+      {
+       "edges": [
+        {
+         "destination_x": 4,
+         "destination_y": 4
+        }
+       ],
+       "has_emerald_key": false,
+       "room": "question_mark",
+       "x": 4,
+       "y": 3
+      },
+      {
+       "edges": [
+        {
+         "destination_x": 5,
+         "destination_y": 4
+        }
+       ],
+       "has_emerald_key": false,
+       "room": "monster",
+       "x": 6,
+       "y": 3
+      },
+      {
+       "edges": [
+        {
+         "destination_x": 0,
+         "destination_y": 5
+        },
+        {
+         "destination_x": 1,
+         "destination_y": 5
+        }
+       ],
+       "has_emerald_key": false,
+       "room": "monster",
+       "x": 0,
+       "y": 4
+      },
+      {
+       "edges": [
+        {
+         "destination_x": 1,
+         "destination_y": 5
+        }
+       ],
+       "has_emerald_key": false,
+       "room": "monster",
+       "x": 1,
+       "y": 4
+      },
+      {
+       "edges": [
+        {
+         "destination_x": 3,
+         "destination_y": 5
+        }
+       ],
+       "has_emerald_key": false,
+       "room": "question_mark",
+       "x": 2,
+       "y": 4
+      },
+      {
+       "edges": [
+        {
+         "destination_x": 3,
+         "destination_y": 5
+        }
+       ],
+       "has_emerald_key": false,
+       "room": "monster",
+       "x": 4,
+       "y": 4
+      },
+      {
+       "edges": [
+        {
+         "destination_x": 5,
+         "destination_y": 5
+        }
+       ],
+       "has_emerald_key": false,
+       "room": "question_mark",
+       "x": 5,
+       "y": 4
+      },
+      {
+       "edges": [
+        {
+         "destination_x": 0,
+         "destination_y": 6
+        }
+       ],
+       "has_emerald_key": false,
+       "room": "elite",
+       "x": 0,
+       "y": 5
+      },
+      {
+       "edges": [
+        {
+         "destination_x": 1,
+         "destination_y": 6
+        },
+        {
+         "destination_x": 2,
+         "destination_y": 6
+        }
+       ],
+       "has_emerald_key": false,
+       "room": "rest",
+       "x": 1,
+       "y": 5
+      },
+      {
+       "edges": [
+        {
+         "destination_x": 2,
+         "destination_y": 6
+        },
+        {
+         "destination_x": 4,
+         "destination_y": 6
+        }
+       ],
+       "has_emerald_key": false,
+       "room": "elite",
+       "x": 3,
+       "y": 5
+      },
+      {
+       "edges": [
+        {
+         "destination_x": 5,
+         "destination_y": 6
+        }
+       ],
+       "has_emerald_key": false,
+       "room": "rest",
+       "x": 5,
+       "y": 5
+      },
+      {
+       "edges": [
+        {
+         "destination_x": 1,
+         "destination_y": 7
+        }
+       ],
+       "has_emerald_key": false,
+       "room": "rest",
+       "x": 0,
+       "y": 6
+      },
+      {
+       "edges": [
+        {
+         "destination_x": 1,
+         "destination_y": 7
+        }
+       ],
+       "has_emerald_key": false,
+       "room": "elite",
+       "x": 1,
+       "y": 6
+      },
+      {
+       "edges": [
+        {
+         "destination_x": 2,
+         "destination_y": 7
+        },
+        {
+         "destination_x": 3,
+         "destination_y": 7
+        }
+       ],
+       "has_emerald_key": false,
+       "room": "question_mark",
+       "x": 2,
+       "y": 6
+      },
+      {
+       "edges": [
+        {
+         "destination_x": 4,
+         "destination_y": 7
+        }
+       ],
+       "has_emerald_key": false,
+       "room": "rest",
+       "x": 4,
+       "y": 6
+      },
+      {
+       "edges": [
+        {
+         "destination_x": 5,
+         "destination_y": 7
+        }
+       ],
+       "has_emerald_key": false,
+       "room": "elite",
+       "x": 5,
+       "y": 6
+      },
+      {
+       "edges": [
+        {
+         "destination_x": 0,
+         "destination_y": 8
+        },
+        {
+         "destination_x": 1,
+         "destination_y": 8
+        }
+       ],
+       "has_emerald_key": false,
+       "room": "question_mark",
+       "x": 1,
+       "y": 7
+      },
+      {
+       "edges": [
+        {
+         "destination_x": 2,
+         "destination_y": 8
+        }
+       ],
+       "has_emerald_key": false,
+       "room": "monster",
+       "x": 2,
+       "y": 7
+      },
+      {
+       "edges": [
+        {
+         "destination_x": 3,
+         "destination_y": 8
+        }
+       ],
+       "has_emerald_key": false,
+       "room": "question_mark",
+       "x": 3,
+       "y": 7
+      },
+      {
+       "edges": [
+        {
+         "destination_x": 3,
+         "destination_y": 8
+        }
+       ],
+       "has_emerald_key": false,
+       "room": "monster",
+       "x": 4,
+       "y": 7
+      },
+      {
+       "edges": [
+        {
+         "destination_x": 5,
+         "destination_y": 8
+        }
+       ],
+       "has_emerald_key": false,
+       "room": "monster",
+       "x": 5,
+       "y": 7
+      },
+      {
+       "edges": [
+        {
+         "destination_x": 0,
+         "destination_y": 9
+        }
+       ],
+       "has_emerald_key": false,
+       "room": "treasure",
+       "x": 0,
+       "y": 8
+      },
+      {
+       "edges": [
+        {
+         "destination_x": 1,
+         "destination_y": 9
+        }
+       ],
+       "has_emerald_key": false,
+       "room": "treasure",
+       "x": 1,
+       "y": 8
+      },
+      {
+       "edges": [
+        {
+         "destination_x": 1,
+         "destination_y": 9
+        }
+       ],
+       "has_emerald_key": false,
+       "room": "treasure",
+       "x": 2,
+       "y": 8
+      },
+      {
+       "edges": [
+        {
+         "destination_x": 3,
+         "destination_y": 9
+        },
+        {
+         "destination_x": 4,
+         "destination_y": 9
+        }
+       ],
+       "has_emerald_key": false,
+       "room": "treasure",
+       "x": 3,
+       "y": 8
+      },
+      {
+       "edges": [
+        {
+         "destination_x": 5,
+         "destination_y": 9
+        }
+       ],
+       "has_emerald_key": false,
+       "room": "treasure",
+       "x": 5,
+       "y": 8
+      },
+      {
+       "edges": [
+        {
+         "destination_x": 1,
+         "destination_y": 10
+        }
+       ],
+       "has_emerald_key": false,
+       "room": "monster",
+       "x": 0,
+       "y": 9
+      },
+      {
+       "edges": [
+        {
+         "destination_x": 1,
+         "destination_y": 10
+        },
+        {
+         "destination_x": 2,
+         "destination_y": 10
+        }
+       ],
+       "has_emerald_key": false,
+       "room": "monster",
+       "x": 1,
+       "y": 9
+      },
+      {
+       "edges": [
+        {
+         "destination_x": 3,
+         "destination_y": 10
+        }
+       ],
+       "has_emerald_key": false,
+       "room": "rest",
+       "x": 3,
+       "y": 9
+      },
+      {
+       "edges": [
+        {
+         "destination_x": 3,
+         "destination_y": 10
+        }
+       ],
+       "has_emerald_key": false,
+       "room": "shop",
+       "x": 4,
+       "y": 9
+      },
+      {
+       "edges": [
+        {
+         "destination_x": 4,
+         "destination_y": 10
+        }
+       ],
+       "has_emerald_key": false,
+       "room": "monster",
+       "x": 5,
+       "y": 9
+      },
+      {
+       "edges": [
+        {
+         "destination_x": 0,
+         "destination_y": 11
+        },
+        {
+         "destination_x": 2,
+         "destination_y": 11
+        }
+       ],
+       "has_emerald_key": false,
+       "room": "monster",
+       "x": 1,
+       "y": 10
+      },
+      {
+       "edges": [
+        {
+         "destination_x": 2,
+         "destination_y": 11
+        }
+       ],
+       "has_emerald_key": false,
+       "room": "question_mark",
+       "x": 2,
+       "y": 10
+      },
+      {
+       "edges": [
+        {
+         "destination_x": 2,
+         "destination_y": 11
+        }
+       ],
+       "has_emerald_key": false,
+       "room": "question_mark",
+       "x": 3,
+       "y": 10
+      },
+      {
+       "edges": [
+        {
+         "destination_x": 3,
+         "destination_y": 11
+        }
+       ],
+       "has_emerald_key": false,
+       "room": "monster",
+       "x": 4,
+       "y": 10
+      },
+      {
+       "edges": [
+        {
+         "destination_x": 0,
+         "destination_y": 12
+        }
+       ],
+       "has_emerald_key": false,
+       "room": "rest",
+       "x": 0,
+       "y": 11
+      },
+      {
+       "edges": [
+        {
+         "destination_x": 1,
+         "destination_y": 12
+        },
+        {
+         "destination_x": 2,
+         "destination_y": 12
+        },
+        {
+         "destination_x": 3,
+         "destination_y": 12
+        }
+       ],
+       "has_emerald_key": false,
+       "room": "shop",
+       "x": 2,
+       "y": 11
+      },
+      {
+       "edges": [
+        {
+         "destination_x": 4,
+         "destination_y": 12
+        }
+       ],
+       "has_emerald_key": false,
+       "room": "question_mark",
+       "x": 3,
+       "y": 11
+      },
+      {
+       "edges": [
+        {
+         "destination_x": 0,
+         "destination_y": 13
+        }
+       ],
+       "has_emerald_key": false,
+       "room": "monster",
+       "x": 0,
+       "y": 12
+      },
+      {
+       "edges": [
+        {
+         "destination_x": 0,
+         "destination_y": 13
+        },
+        {
+         "destination_x": 1,
+         "destination_y": 13
+        }
+       ],
+       "has_emerald_key": false,
+       "room": "monster",
+       "x": 1,
+       "y": 12
+      },
+      {
+       "edges": [
+        {
+         "destination_x": 1,
+         "destination_y": 13
+        }
+       ],
+       "has_emerald_key": false,
+       "room": "elite",
+       "x": 2,
+       "y": 12
+      },
+      {
+       "edges": [
+        {
+         "destination_x": 2,
+         "destination_y": 13
+        }
+       ],
+       "has_emerald_key": false,
+       "room": "question_mark",
+       "x": 3,
+       "y": 12
+      },
+      {
+       "edges": [
+        {
+         "destination_x": 4,
+         "destination_y": 13
+        }
+       ],
+       "has_emerald_key": false,
+       "room": "monster",
+       "x": 4,
+       "y": 12
+      },
+      {
+       "edges": [
+        {
+         "destination_x": 0,
+         "destination_y": 14
+        },
+        {
+         "destination_x": 1,
+         "destination_y": 14
+        }
+       ],
+       "has_emerald_key": false,
+       "room": "monster",
+       "x": 0,
+       "y": 13
+      },
+      {
+       "edges": [
+        {
+         "destination_x": 1,
+         "destination_y": 14
+        },
+        {
+         "destination_x": 2,
+         "destination_y": 14
+        }
+       ],
+       "has_emerald_key": false,
+       "room": "monster",
+       "x": 1,
+       "y": 13
+      },
+      {
+       "edges": [
+        {
+         "destination_x": 3,
+         "destination_y": 14
+        }
+       ],
+       "has_emerald_key": false,
+       "room": "monster",
+       "x": 2,
+       "y": 13
+      },
+      {
+       "edges": [
+        {
+         "destination_x": 5,
+         "destination_y": 14
+        }
+       ],
+       "has_emerald_key": false,
+       "room": "monster",
+       "x": 4,
+       "y": 13
+      },
+      {
+       "edges": [
+        {
+         "destination_x": 0,
+         "destination_y": 15
+        }
+       ],
+       "has_emerald_key": false,
+       "room": "rest",
+       "x": 0,
+       "y": 14
+      },
+      {
+       "edges": [
+        {
+         "destination_x": 0,
+         "destination_y": 15
+        }
+       ],
+       "has_emerald_key": false,
+       "room": "rest",
+       "x": 1,
+       "y": 14
+      },
+      {
+       "edges": [
+        {
+         "destination_x": 0,
+         "destination_y": 15
+        }
+       ],
+       "has_emerald_key": false,
+       "room": "rest",
+       "x": 2,
+       "y": 14
+      },
+      {
+       "edges": [
+        {
+         "destination_x": 0,
+         "destination_y": 15
+        }
+       ],
+       "has_emerald_key": false,
+       "room": "rest",
+       "x": 3,
+       "y": 14
+      },
+      {
+       "edges": [
+        {
+         "destination_x": 0,
+         "destination_y": 15
+        }
+       ],
+       "has_emerald_key": false,
+       "room": "rest",
+       "x": 5,
+       "y": 14
+      },
+      {
+       "edges": [],
+       "has_emerald_key": false,
+       "room": "boss",
+       "x": 0,
+       "y": 15
+      }
+     ]
+    },
+    "run_goal": "act_three_victory",
+    "status": "available"
+   }
+  },
+  "site": "combat"
+ },
+ "semantic_actions": [
+  "end",
+  "play:Strike+0#0@0",
+  "play:Strike+0#1@0",
+  "play:Defend+0#0",
+  "play:Strike+0#2@0",
+  "play:Defend+0#1"
+ ]
+}

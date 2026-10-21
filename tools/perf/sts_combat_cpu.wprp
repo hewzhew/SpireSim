@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<WindowsPerformanceRecorder Version="1.0">
+  <Profiles>
+    <SystemCollector
+      Id="StsCombatCpuSystemCollector"
+      Name="STS Combat CPU System Collector">
+      <BufferSize Value="1024" />
+      <Buffers Value="256" />
+    </SystemCollector>
+
+    <SystemProvider Id="StsCombatCpuSystemProvider">
+      <Keywords>
+        <Keyword Value="Loader" />
+        <Keyword Value="ProcessThread" />
+        <Keyword Value="SampledProfile" />
+      </Keywords>
+      <Stacks>
+        <Stack Value="SampledProfile" />
+      </Stacks>
+    </SystemProvider>
+
+    <Profile
+      Id="StsCombatCpu.Verbose.Memory"
+      Name="StsCombatCpu"
+      Description="Sampled CPU stacks for the STS combat contract"
+      LoggingMode="Memory"
+      DetailLevel="Verbose">
+      <Collectors>
+        <SystemCollectorId Value="StsCombatCpuSystemCollector">
+          <SystemProviderId Value="StsCombatCpuSystemProvider" />
+        </SystemCollectorId>
+      </Collectors>
+    </Profile>
+  </Profiles>
+</WindowsPerformanceRecorder>

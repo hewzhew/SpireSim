@@ -1,0 +1,43 @@
+{
+  "scope": "Raw adjacent Headbutt and grid-selection evidence; constructed Rust comparison covers only facing, monster sides, BackAttack markers and selection lifecycle. No card binding, full combat/RNG parity, restoration or certification authority.",
+  "source_session": "manual-b5dada8a28a84454948ddee9985260ad",
+  "capture_scope": "accelerated_sts_wrapper_rng_ledger_and_declared_snapshot_domains",
+  "certifying_rust_source": "c834689c43c08f43fde0f90f213fcbe9e192d9b6",
+  "files": {
+    "before.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-b5dada8a28a84454948ddee9985260ad/java-evidence/boundaries/00000024-frame-2026.json",
+      "sha256": "bf86e7db7aa006b5750d40ef5616672b04a7c0729155673392daf25688b6ebae",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "19DB8497D557D1F61C3BC85B00536E8B020DF4B2B932FD8790E2C366CE0E901F",
+        "session_epoch": "5153f9b4-b0b5-4c53-acd8-47fdc1f099c6:c744c74f-9f94-4f57-8acb-71c81554bbc5:574b4d63-b94b-4021-85eb-9b35f3e96dfa"
+      }
+    },
+    "pending.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-b5dada8a28a84454948ddee9985260ad/java-evidence/boundaries/00000025-frame-2027.json",
+      "sha256": "796037a1f3bab2e919f3902d9c905ecc59984364f6861b25c5a2c5277d1ddb72",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "19DB8497D557D1F61C3BC85B00536E8B020DF4B2B932FD8790E2C366CE0E901F",
+        "session_epoch": "5153f9b4-b0b5-4c53-acd8-47fdc1f099c6:c744c74f-9f94-4f57-8acb-71c81554bbc5:574b4d63-b94b-4021-85eb-9b35f3e96dfa"
+      }
+    },
+    "settled.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-b5dada8a28a84454948ddee9985260ad/java-evidence/boundaries/00000026-frame-2028.json",
+      "sha256": "5823d99588735471e95fb08ca818f024b7c89abf539ecce25651472f107f6bfa",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "19DB8497D557D1F61C3BC85B00536E8B020DF4B2B932FD8790E2C366CE0E901F",
+        "session_epoch": "5153f9b4-b0b5-4c53-acd8-47fdc1f099c6:c744c74f-9f94-4f57-8acb-71c81554bbc5:574b4d63-b94b-4021-85eb-9b35f3e96dfa"
+      }
+    },
+    "play.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-b5dada8a28a84454948ddee9985260ad/java-evidence/actions/00000024-from-frame-2026.json",
+      "sha256": "d5bffde9b4ae6d5dcafcbd455c8a7e169aac94f86888676ddae36248843598d4"
+    },
+    "select.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-b5dada8a28a84454948ddee9985260ad/java-evidence/actions/00000025-from-frame-2027.json",
+      "sha256": "5ee84d355f942806286c873e4f9b5599316def05a875a95929d6625cd0bfd944"
+    }
+  }
+}

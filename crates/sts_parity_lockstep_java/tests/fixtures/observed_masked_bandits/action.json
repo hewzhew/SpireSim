@@ -1,0 +1,1 @@
+{"schema":"sts-recorded-java-action-v1","phase":"committed","action":{"kind":"select","surface":"map","choice":{"kind":"map_node","id":"F14X04","occurrence":0,"attributes":{"room":"question_mark","x":4,"y":13}}},"receipt":{"status":"completed","request_id":"89adcd0e-460c-41a3-a64c-2acf547aa1ae","based_on_frame_id":459,"action_id":"map_node:4:13","successor_frame_id":460}}

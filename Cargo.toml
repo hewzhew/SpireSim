@@ -1,0 +1,408 @@
+[package]
+name = "sts_simulator"
+version = "0.1.0"
+edition = "2021"
+autotests = false
+autobins = false
+description = "Unofficial Rust Slay the Spire simulator and AI-search workspace"
+readme = "README.md"
+repository = "https://github.com/hewzhew/sts-sim"
+license = "MIT"
+
+[workspace]
+members = [
+    ".",
+    "crates/oracle_artifact_contract",
+    "crates/oracle_lab_client",
+    "crates/sts_oracle_lab",
+    "crates/sts_oracle_v2_cli",
+    "crates/sts_oracle_eval",
+    "crates/sts_oracle_learning",
+    "crates/sts_oracle_learning_projection",
+    "crates/sts_oracle_learning_env",
+    "crates/sts_oracle_run_control",
+    "crates/sts_oracle_report",
+    "crates/sts_oracle_runtime",
+    "crates/sts_oracle_strategic_owner",
+    "crates/oracle_lab_protocol",
+    "crates/sts_agent",
+    "crates/sts_card_semantics",
+    "crates/sts_combat_evidence",
+    "crates/sts_combat_atomic",
+    "crates/sts_combat_outcome",
+    "crates/sts_combat_option_grounder",
+    "crates/sts_complete_turn_env",
+    "crates/sts_complete_turn_proposal",
+    "crates/sts_complete_turn_view",
+    "crates/sts_combat_knowledge",
+    "crates/sts_combat_contract",
+    "crates/sts_combat_planner",
+    "crates/sts_guided_search",
+    "crates/sts_combat_play",
+    "crates/sts_run_play",
+    "crates/sts_run_checkpoint",
+    "crates/sts_content_bundle",
+    "crates/sts_paired_root",
+    "crates/sts_workbench_artifact_store",
+    "crates/sts_workbench_engine_protocol",
+    "crates/sts_workbench_engine",
+    "crates/sts_workbench_supervisor",
+    "crates/sts_workbench_runtime",
+    "crates/sts_run_strategy",
+    "crates/sts_combat_search_driver",
+    "crates/sts_combat_storyboard",
+    "crates/sts_combat_strategy",
+    "crates/sts_combat_tactics",
+    "crates/sts_java_parity_capture",
+    "crates/sts_java_parity_compare",
+    "crates/sts_java_parity_live",
+    "crates/sts_java_parity_runtime",
+    "crates/sts_java_parity_projection",
+    "crates/sts_java_parity_protocol",
+    "crates/sts_parity_lockstep",
+    "crates/sts_parity_lockstep_java",
+    "crates/sts_parity_lockstep_rust",
+    "crates/sts_parity_lockstep_runner",
+    "crates/sts_oracle_tools",
+]
+default-members = ["."]
+exclude = ["bindings/python_learning"]
+resolver = "2"
+
+[dependencies]
+blake2 = "0.10"
+flate2 = "1.0"
+rustc-hash = { version = "2.1", default-features = false }
+smallvec = { version = "1.11", features = ["serde"] }
+serde = { version = "1.0", features = ["derive", "rc"] }
+serde_json = "1.0"
+clap = { version = "4.0", features = ["derive"] }
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = ["Win32_Storage_FileSystem"] }
+
+[build-dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+[profile.test]
+debug = 0
+
+[profile.release]
+opt-level = 3
+debug = false
+debug-assertions = false
+overflow-checks = false
+lto = "off"
+incremental = true
+codegen-units = 64
+panic = "abort"
+
+# The command tools are thin adapters over the separately compiled runtime.
+# Keep their code generation cheap without weakening the hot simulator,
+# planner, or runtime crates.
+[profile.release.package.sts_oracle_tools]
+opt-level = 0
+codegen-units = 256
+
+[profile.release.package.sts_combat_search_driver]
+opt-level = 0
+codegen-units = 256
+
+[profile.release.package.sts_combat_play]
+opt-level = 0
+codegen-units = 256
+
+[profile.release.package.sts_run_play]
+opt-level = 0
+codegen-units = 256
+
+[profile.release.package.sts_oracle_lab]
+opt-level = 0
+codegen-units = 256
+
+[profile.release.package.sts_oracle_v2_cli]
+opt-level = 0
+codegen-units = 256
+
+[profile.release.package.sts_oracle_eval]
+# Combat evaluation contains hot exact-search orchestration. Keep its optimized
+# code generation independent from run-control, branch persistence, and command IO.
+opt-level = 2
+codegen-units = 64
+
+[profile.release.package.sts_agent]
+# Agent information/belief iteration is independent from the O3 simulator
+# mechanics owner. O2 retains hot-path optimization with faster codegen.
+opt-level = 2
+codegen-units = 64
+
+[profile.release.package.sts_oracle_run_control]
+# Run-control consumes combat evaluation but owns a separate invalidation unit.
+# Preserve its existing optimized behavior while the remaining domains are split.
+opt-level = 2
+codegen-units = 64
+
+[profile.release.package.sts_oracle_learning]
+# Model projections and batched adapters retain optimized execution. Their
+# smaller downstream owner now rebuilds independently from exact environments.
+opt-level = 2
+codegen-units = 64
+
+[profile.release.package.sts_oracle_learning_projection]
+opt-level = 2
+codegen-units = 64
+
+[profile.release.package.sts_oracle_learning_env]
+# Exact environment transitions remain on the training hot path while model
+# projection edits compile in the downstream adapter package.
+opt-level = 2
+codegen-units = 64
+
+[profile.release.package.sts_run_checkpoint]
+# Durable serde and archive joins need O1 runtime performance, but do not
+# belong to the O2 exact-environment invalidation unit.
+opt-level = 1
+codegen-units = 256
+
+[profile.release.package.sts_paired_root]
+opt-level = 0
+codegen-units = 256
+
+[profile.release.package.sts_content_bundle]
+opt-level = 0
+codegen-units = 256
+
+[profile.release.package.sts_workbench_runtime]
+opt-level = 0
+codegen-units = 256
+
+[profile.release.package.sts_workbench_engine]
+opt-level = 0
+codegen-units = 256
+
+[profile.release.package.sts_workbench_engine_protocol]
+opt-level = 0
+codegen-units = 256
+
+[profile.release.package.sts_java_parity_projection]
+opt-level = 0
+codegen-units = 256
+
+[profile.release.package.sts_java_parity_runtime]
+opt-level = 0
+codegen-units = 256
+
+[profile.release.package.sts_parity_lockstep]
+opt-level = 0
+codegen-units = 256
+
+[profile.release.package.sts_parity_lockstep_java]
+opt-level = 0
+codegen-units = 256
+
+[profile.release.package.sts_parity_lockstep_rust]
+opt-level = 0
+codegen-units = 256
+
+[profile.release.package.sts_parity_lockstep_runner]
+opt-level = 0
+codegen-units = 256
+
+[profile.release.package.sts_oracle_runtime]
+# Branch persistence and command orchestration sit outside the optimized
+# simulator, planner, and evaluation kernels. Keep this adapter cheap to
+# rebuild; exact search remains O2 in sts_oracle_eval and O3 below it.
+opt-level = 0
+codegen-units = 256
+
+[profile.release.package.sts_oracle_strategic_owner]
+opt-level = 2
+codegen-units = 64
+
+[profile.release.package.sts_combat_contract]
+opt-level = 0
+codegen-units = 256
+
+# Symbolized optimized binaries for ETW/WPR sampling. Keeping this separate
+# from `release` avoids invalidating canonical artifacts or making ordinary
+# builds carry PDB generation cost.
+[profile.profiling]
+inherits = "release"
+debug = 1
+strip = "none"
+
+[profile.release-final]
+inherits = "release"
+opt-level = 3
+debug = false
+debug-assertions = false
+overflow-checks = false
+lto = "thin"
+incremental = false
+codegen-units = 1
+panic = "abort"
+
+[profile.release-final.package.sts_oracle_tools]
+opt-level = 3
+codegen-units = 1
+
+[profile.release-final.package.sts_combat_search_driver]
+opt-level = 3
+codegen-units = 1
+
+[profile.release-final.package.sts_oracle_lab]
+opt-level = 3
+codegen-units = 1
+
+[profile.release-final.package.sts_oracle_eval]
+opt-level = 3
+codegen-units = 1
+
+[profile.release-final.package.sts_agent]
+opt-level = 3
+codegen-units = 1
+
+[profile.release-final.package.sts_oracle_run_control]
+opt-level = 3
+codegen-units = 1
+
+[profile.release-final.package.sts_oracle_learning]
+opt-level = 3
+codegen-units = 1
+
+[profile.release-final.package.sts_oracle_learning_projection]
+opt-level = 3
+codegen-units = 1
+
+[profile.release-final.package.sts_oracle_learning_env]
+opt-level = 3
+codegen-units = 1
+
+[profile.release-final.package.sts_run_checkpoint]
+opt-level = 3
+codegen-units = 1
+
+[profile.release-final.package.sts_paired_root]
+opt-level = 3
+codegen-units = 1
+
+[profile.release-final.package.sts_workbench_runtime]
+opt-level = 3
+codegen-units = 1
+
+[profile.release-final.package.sts_oracle_runtime]
+opt-level = 3
+codegen-units = 1
+
+[profile.release-final.package.sts_oracle_strategic_owner]
+opt-level = 3
+codegen-units = 1
+
+[profile.dev-opt]
+inherits = "dev"
+opt-level = 1
+debug = false
+debug-assertions = true
+overflow-checks = true
+incremental = true
+codegen-units = 256
+
+# Interactive search needs optimized simulator and search kernels, not O1
+# command IO, durable serde, public projection, and facade glue. Keeping these
+# adapters at O0 shortens the rebuild fan-out after a shared public type moves
+# while preserving O1 for sts_simulator, sts_combat_planner, and the retained
+# tactical-policy kernels.  The complete-turn and oracle-evaluation packages
+# below are orchestration adapters in this profile; their hot simulator/search
+# dependencies remain independently optimized.
+[profile.dev-opt.package.sts_run_play]
+opt-level = 0
+codegen-units = 256
+
+[profile.dev-opt.package.sts_agent]
+opt-level = 0
+codegen-units = 256
+
+[profile.dev-opt.package.sts_card_semantics]
+opt-level = 0
+codegen-units = 256
+
+[profile.dev-opt.package.sts_combat_storyboard]
+opt-level = 0
+codegen-units = 256
+
+[profile.dev-opt.package.sts_combat_option_grounder]
+opt-level = 0
+codegen-units = 256
+
+[profile.dev-opt.package.sts_complete_turn_view]
+opt-level = 0
+codegen-units = 256
+
+[profile.dev-opt.package.sts_complete_turn_env]
+opt-level = 0
+codegen-units = 256
+
+[profile.dev-opt.package.sts_run_strategy]
+opt-level = 0
+codegen-units = 256
+
+[profile.dev-opt.package.sts_oracle_run_control]
+opt-level = 0
+codegen-units = 256
+
+[profile.dev-opt.package.sts_oracle_eval]
+opt-level = 0
+codegen-units = 256
+
+[profile.dev-opt.package.sts_oracle_strategic_owner]
+opt-level = 0
+codegen-units = 256
+
+[profile.dev-opt.package.sts_oracle_learning_env]
+opt-level = 0
+codegen-units = 256
+
+[profile.dev-opt.package.sts_run_checkpoint]
+opt-level = 0
+codegen-units = 256
+
+[profile.dev-opt.package.sts_paired_root]
+opt-level = 0
+codegen-units = 256
+
+[profile.dev-opt.package.sts_workbench_runtime]
+opt-level = 0
+codegen-units = 256
+
+[profile.dev-opt.package.sts_workbench_engine]
+opt-level = 0
+codegen-units = 256
+
+[profile.dev-opt.package.sts_workbench_engine_protocol]
+opt-level = 0
+codegen-units = 256
+
+[profile.dev-opt.package.sts_java_parity_projection]
+opt-level = 0
+codegen-units = 256
+
+[profile.dev-opt.package.sts_parity_lockstep]
+opt-level = 0
+codegen-units = 256
+
+[profile.dev-opt.package.sts_parity_lockstep_java]
+opt-level = 0
+codegen-units = 256
+
+[profile.dev-opt.package.sts_parity_lockstep_rust]
+opt-level = 0
+codegen-units = 256
+
+[profile.dev-opt.package.sts_parity_lockstep_runner]
+opt-level = 0
+codegen-units = 256
+
+[profile.dev-opt.package.sts_oracle_learning]
+opt-level = 0
+codegen-units = 256

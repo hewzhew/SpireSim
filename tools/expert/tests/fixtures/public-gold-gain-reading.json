@@ -1,0 +1,477 @@
+{
+  "payload": {
+    "card_mechanics": {
+      "basis": "simulator_definition_and_reviewed_effects",
+      "candidates": [],
+      "coverage": "partial",
+      "public_snapshot_id": "public_information_snapshot_v1:0976aa1013272483738ef5893ad13fea5a87d4cb",
+      "schema": "sts-card-acquisition-reading-v1"
+    },
+    "decision": {
+      "candidates": [
+        {
+          "action": {
+            "kind": "take_boss_relic",
+            "option_index": 0,
+            "relic": "Ectoplasm"
+          },
+          "domain": "strategic"
+        },
+        {
+          "action": {
+            "kind": "take_boss_relic",
+            "option_index": 1,
+            "relic": "BustedCrown"
+          },
+          "domain": "strategic"
+        },
+        {
+          "action": {
+            "kind": "take_boss_relic",
+            "option_index": 2,
+            "relic": "CursedKey"
+          },
+          "domain": "strategic"
+        },
+        {
+          "action": {
+            "kind": "skip_boss_relic"
+          },
+          "domain": "strategic"
+        }
+      ],
+      "information": {
+        "candidate_surface": {
+          "candidate_surface_id": "public_candidate_surface_v1:90a09fa3b9fdce729ce460b57d0f47e40b2eed9e",
+          "kind": "deployable_policy",
+          "ordered_candidate_ids": [
+            "task_public_candidate_v1:221a2a52df5139245714570f2f5e86939758caa1",
+            "task_public_candidate_v1:2138d93365e965dffeff71aded4cbd78525a63c7",
+            "task_public_candidate_v1:fb98e6c73bb36b5920db61ea13ff78ada834b581",
+            "task_public_candidate_v1:b95e3e451f92dddbd69238faa43189c8d3e0e835"
+          ],
+          "schema_name": "TaskPublicCandidateSurfaceV1",
+          "schema_version": 1
+        },
+        "domain": "strategic",
+        "history_snapshot": {
+          "history_snapshot_id": "public_history_snapshot_v1:6693c80a196e79ffd3ad98e8555f9928d6f69390",
+          "schema_name": "TaskPublicHistorySnapshotV1",
+          "schema_version": 1
+        },
+        "observation": {
+          "observation_id": "public_observation_v1:339d5512d411c741c4d873cee7871763503eabe0",
+          "schema_name": "TaskStrategicPublicObservationV3",
+          "schema_version": 3,
+          "scope": "strategic_run_decision"
+        },
+        "schema_name": "PublicInformationSnapshotV1",
+        "schema_version": 1,
+        "snapshot_id": "public_information_snapshot_v1:0976aa1013272483738ef5893ad13fea5a87d4cb"
+      },
+      "observation": {
+        "domain": "strategic",
+        "observation": {
+          "cards": [
+            {
+              "base_block_override": null,
+              "base_damage_override": null,
+              "card": "Strike",
+              "cost_modifier": 0,
+              "misc_value": 0,
+              "ordinal": 0,
+              "upgrades": 0
+            },
+            {
+              "base_block_override": null,
+              "base_damage_override": null,
+              "card": "Strike",
+              "cost_modifier": 0,
+              "misc_value": 0,
+              "ordinal": 1,
+              "upgrades": 1
+            }
+          ],
+          "context": {
+            "kind": "boss_relic"
+          },
+          "decision_site": "boss_relic",
+          "mechanics": {
+            "mechanics_id": "constructed-reading-contract",
+            "mechanics_version": 1
+          },
+          "potions": [
+            {
+              "potion": {
+                "can_discard": true,
+                "can_use": false,
+                "potion": "FirePotion",
+                "requires_target": true
+              },
+              "slot": 0
+            },
+            {
+              "potion": null,
+              "slot": 1
+            }
+          ],
+          "public_history": {
+            "recent_combat_hp_loss": null,
+            "recent_combat_potions_used": null,
+            "recent_combat_turns": null,
+            "shop_purge_count": 0
+          },
+          "public_map": {
+            "boss": null,
+            "current_x": 1,
+            "current_y": 5,
+            "nodes": [
+              {
+                "edges": [
+                  {
+                    "destination_x": 0,
+                    "destination_y": 6
+                  },
+                  {
+                    "destination_x": 2,
+                    "destination_y": 6
+                  }
+                ],
+                "has_emerald_key": false,
+                "room": "monster",
+                "x": 1,
+                "y": 5
+              },
+              {
+                "edges": [],
+                "has_emerald_key": true,
+                "room": "elite",
+                "x": 0,
+                "y": 6
+              },
+              {
+                "edges": [],
+                "has_emerald_key": false,
+                "room": "question_mark",
+                "x": 2,
+                "y": 6
+              }
+            ]
+          },
+          "relics": [
+            {
+              "amount": 0,
+              "counter": -1,
+              "relic": "BloodyIdol",
+              "used_up": false
+            },
+            {
+              "amount": 0,
+              "counter": -1,
+              "relic": "QuestionCard",
+              "used_up": false
+            },
+            {
+              "amount": 0,
+              "counter": -1,
+              "relic": "PrayerWheel",
+              "used_up": false
+            }
+          ],
+          "run": {
+            "act": 1,
+            "ascension_level": 20,
+            "current_hp": 22,
+            "floor": 7,
+            "gold": 120,
+            "keys": [
+              false,
+              false,
+              false
+            ],
+            "max_hp": 80,
+            "player_class": "ironclad",
+            "potion_capacity": 2
+          },
+          "run_goal": "heart_victory"
+        }
+      },
+      "site": "boss_relic"
+    },
+    "deck_mechanics": {
+      "basis": "public_instance_and_shared_card_mechanics",
+      "cards": [
+        {
+          "card_sha256": "fea993e81934c780734b1127365e2ae7ec7f95876d4244b0e0f89b9b564c8108",
+          "facts": {
+            "current": {
+              "definition": {
+                "base_cost": 1,
+                "card": "Strike",
+                "card_type": "Attack",
+                "definition_numbers": {
+                  "block": 0,
+                  "damage": 6
+                },
+                "ethereal": false,
+                "exhausts": false,
+                "innate": false,
+                "play_target": "one_enemy",
+                "rarity": "Basic",
+                "reviewed_effects": {
+                  "base_damage_delivery": {
+                    "amount": {
+                      "kind": "base"
+                    },
+                    "hits": {
+                      "count": 1,
+                      "kind": "fixed"
+                    },
+                    "kind": "attack",
+                    "play_condition": null,
+                    "targets": "selected_enemy"
+                  },
+                  "end_of_turn_block_each_turn": null,
+                  "enemy_strength_reduction": null,
+                  "self_hp_loss_on_play": null,
+                  "unconditional_draw_request": null
+                },
+                "upgrades": 0
+              },
+              "misc_value": 0,
+              "persistent_block": 0,
+              "persistent_cost": 1,
+              "persistent_damage": 6
+            },
+            "next_upgrade": {
+              "definition": {
+                "base_cost": 1,
+                "card": "Strike",
+                "card_type": "Attack",
+                "definition_numbers": {
+                  "block": 0,
+                  "damage": 9
+                },
+                "ethereal": false,
+                "exhausts": false,
+                "innate": false,
+                "play_target": "one_enemy",
+                "rarity": "Basic",
+                "reviewed_effects": {
+                  "base_damage_delivery": {
+                    "amount": {
+                      "kind": "base"
+                    },
+                    "hits": {
+                      "count": 1,
+                      "kind": "fixed"
+                    },
+                    "kind": "attack",
+                    "play_condition": null,
+                    "targets": "selected_enemy"
+                  },
+                  "end_of_turn_block_each_turn": null,
+                  "enemy_strength_reduction": null,
+                  "self_hp_loss_on_play": null,
+                  "unconditional_draw_request": null
+                },
+                "upgrades": 1
+              },
+              "misc_value": 0,
+              "persistent_block": 0,
+              "persistent_cost": 1,
+              "persistent_damage": 9
+            }
+          },
+          "ordinal": 0
+        },
+        {
+          "card_sha256": "0b18905da661f3ab3ec7533f1db055f85605b044757d878e3dcc5415029ac318",
+          "facts": {
+            "current": {
+              "definition": {
+                "base_cost": 1,
+                "card": "Strike",
+                "card_type": "Attack",
+                "definition_numbers": {
+                  "block": 0,
+                  "damage": 9
+                },
+                "ethereal": false,
+                "exhausts": false,
+                "innate": false,
+                "play_target": "one_enemy",
+                "rarity": "Basic",
+                "reviewed_effects": {
+                  "base_damage_delivery": {
+                    "amount": {
+                      "kind": "base"
+                    },
+                    "hits": {
+                      "count": 1,
+                      "kind": "fixed"
+                    },
+                    "kind": "attack",
+                    "play_condition": null,
+                    "targets": "selected_enemy"
+                  },
+                  "end_of_turn_block_each_turn": null,
+                  "enemy_strength_reduction": null,
+                  "self_hp_loss_on_play": null,
+                  "unconditional_draw_request": null
+                },
+                "upgrades": 1
+              },
+              "misc_value": 0,
+              "persistent_block": 0,
+              "persistent_cost": 1,
+              "persistent_damage": 9
+            },
+            "next_upgrade": null
+          },
+          "ordinal": 1
+        }
+      ],
+      "coverage": "partial",
+      "public_snapshot_id": "public_information_snapshot_v1:0976aa1013272483738ef5893ad13fea5a87d4cb",
+      "schema": "sts-owned-card-reading-v1"
+    },
+    "potion_mechanics": {
+      "basis": "simulator_definition_and_reviewed_effects",
+      "candidates": [],
+      "coverage": "partial",
+      "public_snapshot_id": "public_information_snapshot_v1:0976aa1013272483738ef5893ad13fea5a87d4cb",
+      "schema": "sts-potion-acquisition-reading-v1"
+    },
+    "producer": {
+      "component": "sts_run_play",
+      "evidence_identity": {
+        "build_source": {
+          "configuration": {
+            "CARGO_CFG_FEATURE": "",
+            "CARGO_CFG_PANIC": "unwind",
+            "CARGO_CFG_TARGET_ABI": "",
+            "CARGO_CFG_TARGET_ARCH": "x86_64",
+            "CARGO_CFG_TARGET_ENDIAN": "little",
+            "CARGO_CFG_TARGET_ENV": "msvc",
+            "CARGO_CFG_TARGET_FAMILY": "windows",
+            "CARGO_CFG_TARGET_FEATURE": "cmpxchg16b,fxsr,sse,sse2,sse3",
+            "CARGO_CFG_TARGET_HAS_ATOMIC": "128,16,32,64,8,ptr",
+            "CARGO_CFG_TARGET_OS": "windows",
+            "CARGO_CFG_TARGET_POINTER_WIDTH": "64",
+            "CARGO_CFG_TARGET_VENDOR": "pc",
+            "CARGO_CFG_WINDOWS": "",
+            "CARGO_ENCODED_RUSTFLAGS": "",
+            "DEBUG": "false",
+            "HOST": "x86_64-pc-windows-msvc",
+            "OPT_LEVEL": "0",
+            "TARGET": "x86_64-pc-windows-msvc",
+            "profile": "debug",
+            "rustc": "rustc 1.91.1 (ed61e7d7e 2025-11-07)\nbinary: rustc\ncommit-hash: ed61e7d7e242494fb7057f2657300d9e77bb4fcb\ncommit-date: 2025-11-07\nhost: x86_64-pc-windows-msvc\nrelease: 1.91.1\nLLVM version: 21.1.2\n"
+          },
+          "input_scope": "workspace-rust-source-v1",
+          "schema": "sts-rust-build-source-v1",
+          "source_sha256": "660318a278092dca8f08cbcb78298bc620446970a26e5aa9c659a19f806a3d55"
+        },
+        "public_observation_id": "sts-run-play-public-observation-20260906-v4",
+        "rng_semantics_id": "sts-simulator-run-rng-neow-card-parity-20260829-v1",
+        "run_play_head_schema": "sts-run-play-head-v1",
+        "schema": "sts-run-play-evidence-identity-v1",
+        "simulator_semantics_id": "sts-simulator-run-semantics-20260902-v14"
+      },
+      "version": "0.1.0"
+    },
+    "relic_mechanics": {
+      "basis": "simulator_definition_and_reviewed_effects",
+      "coverage": "partial",
+      "definitions": [
+        {
+          "battle_start_power": null,
+          "combat_victory_healing": null,
+          "gold_gain_healing": 5,
+          "relic": "BloodyIdol",
+          "shuffle_energy": null
+        },
+        {
+          "battle_start_power": null,
+          "card_reward_choice_delta": 1,
+          "combat_victory_healing": null,
+          "relic": "QuestionCard",
+          "shuffle_energy": null
+        },
+        {
+          "additional_normal_monster_card_reward_rows": 1,
+          "battle_start_power": null,
+          "combat_victory_healing": null,
+          "relic": "PrayerWheel",
+          "shuffle_energy": null
+        },
+        {
+          "battle_start_power": null,
+          "combat_victory_healing": null,
+          "energy_per_turn_delta": 1,
+          "gold_gain_rule": "prevent_gold_gain",
+          "relic": "Ectoplasm",
+          "shuffle_energy": null
+        },
+        {
+          "battle_start_power": null,
+          "card_reward_choice_delta": -2,
+          "combat_victory_healing": null,
+          "energy_per_turn_delta": 1,
+          "relic": "BustedCrown",
+          "shuffle_energy": null
+        },
+        {
+          "battle_start_power": null,
+          "combat_victory_healing": null,
+          "energy_per_turn_delta": 1,
+          "relic": "CursedKey",
+          "shuffle_energy": null
+        }
+      ],
+      "public_snapshot_id": "public_information_snapshot_v1:0976aa1013272483738ef5893ad13fea5a87d4cb",
+      "schema": "sts-visible-relic-reading-v1"
+    },
+    "source": {
+      "case_id": "boss-relic-gold-gain-restriction",
+      "kind": "constructed_contract_case"
+    },
+    "strategic_reading": {
+      "candidates": [
+        {
+          "brief": "take Ectoplasm",
+          "candidate_id": "task_public_candidate_v1:221a2a52df5139245714570f2f5e86939758caa1",
+          "candidate_sha256": "7ed5d419b27ea4a335bbc893c1e0762da2b95bbe862d5b75ebf54d6e3674aaa1",
+          "detail": "take Ectoplasm"
+        },
+        {
+          "brief": "take Busted Crown",
+          "candidate_id": "task_public_candidate_v1:2138d93365e965dffeff71aded4cbd78525a63c7",
+          "candidate_sha256": "dd326035b4c251df9a25fb0c4a292abfd10891017368cdd6becc1822f670985e",
+          "detail": "take Busted Crown"
+        },
+        {
+          "brief": "take Cursed Key",
+          "candidate_id": "task_public_candidate_v1:fb98e6c73bb36b5920db61ea13ff78ada834b581",
+          "candidate_sha256": "e577c0e301542f18afd10a8485c93220bdde109c97de75e97dfa91ce9999317d",
+          "detail": "take Cursed Key"
+        },
+        {
+          "brief": "skip boss relic",
+          "candidate_id": "task_public_candidate_v1:b95e3e451f92dddbd69238faa43189c8d3e0e835",
+          "candidate_sha256": "6a63f496da189922f5fdb8391807bc7982edb88fcc19f63019819f761e8da2c8",
+          "detail": "skip boss relic"
+        }
+      ],
+      "context_detail": "",
+      "context_summary": "Boss relic choice",
+      "decision_site": "boss_relic",
+      "observation_sha256": "046ac204317cad3e30880d2caeeaeab3ecfda88b11310ebcfd4b8b06688a17c4",
+      "public_snapshot_id": "public_information_snapshot_v1:0976aa1013272483738ef5893ad13fea5a87d4cb",
+      "schema": "sts-strategic-reading-surface-v1"
+    }
+  },
+  "payload_sha256": "3645cba69990508fa48c180a73f199d09b2f3b0f98dc5c466b09a9abf1868a3e",
+  "schema": "sts-public-decision-export-v3"
+}

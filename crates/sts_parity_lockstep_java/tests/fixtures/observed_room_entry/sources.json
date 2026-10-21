@@ -1,0 +1,46 @@
+{
+  "scope": "Natural boss chest room entry pays MawBank once, then opening the chest keeps gold unchanged",
+  "capture_scope": "accelerated_sts_wrapper_rng_ledger_and_declared_snapshot_domains",
+  "files": {
+    "boss-chest-before.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-136dd531c5784da489f7798ba5b07dc6/java-evidence/boundaries/00000287-frame-713.json",
+      "sha256": "02a232e2b37d89edf427e4c2f7e6d3e4a2b7ecfb0a646164e09ab03246fd85a8",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "B96FAEE5FDDCFCA4A929F6BDDD6D17076D091E18E7BC013C9099B600C9E27E87",
+        "session_epoch": "abc47ce4-8625-42e5-8445-c87bb69c4214:a596dbea-44b9-4863-9de9-96dadce1ba13:503cca2f-cd80-40af-afbb-b2b8e7eb4959"
+      },
+      "capturing_rust_source": "0ea76b31f-dirty (Anger native queue priority repair)"
+    },
+    "boss-chest-after.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-136dd531c5784da489f7798ba5b07dc6/java-evidence/boundaries/00000288-frame-714.json",
+      "sha256": "a7078b0a183d3e42958d0c74d57ba5680a2b0dc3d9eb97e1cca28eb30430afeb",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "B96FAEE5FDDCFCA4A929F6BDDD6D17076D091E18E7BC013C9099B600C9E27E87",
+        "session_epoch": "abc47ce4-8625-42e5-8445-c87bb69c4214:a596dbea-44b9-4863-9de9-96dadce1ba13:503cca2f-cd80-40af-afbb-b2b8e7eb4959"
+      },
+      "capturing_rust_source": "0ea76b31f-dirty (Anger native queue priority repair)"
+    },
+    "boss-chest-action.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-136dd531c5784da489f7798ba5b07dc6/java-evidence/actions/00000287-from-frame-713.json",
+      "sha256": "d1849a8300f48ead89d90fa5c9d9719696e7e9233b67f0cf45cdf79caf9b23c9",
+      "capturing_rust_source": "0ea76b31f-dirty (Anger native queue priority repair)"
+    },
+    "boss-chest-open-after.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-136dd531c5784da489f7798ba5b07dc6/java-evidence/boundaries/00000289-frame-715.json",
+      "sha256": "af7c7dff0b8b7be5a19b3202bd14e198f52089e22094cbdd30144db85a93a31c",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "B96FAEE5FDDCFCA4A929F6BDDD6D17076D091E18E7BC013C9099B600C9E27E87",
+        "session_epoch": "abc47ce4-8625-42e5-8445-c87bb69c4214:a596dbea-44b9-4863-9de9-96dadce1ba13:503cca2f-cd80-40af-afbb-b2b8e7eb4959"
+      },
+      "capturing_rust_source": "0ea76b31f-dirty (Anger native queue priority repair)"
+    },
+    "boss-chest-open-action.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-136dd531c5784da489f7798ba5b07dc6/java-evidence/actions/00000288-from-frame-714.json",
+      "sha256": "1fdef2f0be691cc941157793843e69493d76ab4545e341df8c6bfc4e2ef56f23",
+      "capturing_rust_source": "0ea76b31f-dirty (Anger native queue priority repair)"
+    }
+  }
+}

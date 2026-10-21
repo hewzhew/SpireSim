@@ -1,0 +1,31 @@
+{
+  "scope": "Natural Lagavulin Dagger Throw damage interrupts at discard selection before the queued OPEN state change",
+  "capture_scope": "accelerated_sts_wrapper_rng_ledger_and_declared_snapshot_domains",
+  "files": {
+    "wake-before.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-136dd531c5784da489f7798ba5b07dc6/java-evidence/boundaries/00000139-frame-565.json",
+      "sha256": "4a1db48ab5eff76120c6385e1ac17984aaf464b08ae52652ef22f7a83475805c",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "B96FAEE5FDDCFCA4A929F6BDDD6D17076D091E18E7BC013C9099B600C9E27E87",
+        "session_epoch": "abc47ce4-8625-42e5-8445-c87bb69c4214:a596dbea-44b9-4863-9de9-96dadce1ba13:503cca2f-cd80-40af-afbb-b2b8e7eb4959"
+      },
+      "capturing_rust_source": "6908f3a38-dirty (Ritual constructor flag repair)"
+    },
+    "wake-after.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-136dd531c5784da489f7798ba5b07dc6/java-evidence/boundaries/00000140-frame-566.json",
+      "sha256": "2f98240f3e5fc4c44d8ffb92726325008fe9a618dc4786d45e2b8f3e7edc5b2e",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "B96FAEE5FDDCFCA4A929F6BDDD6D17076D091E18E7BC013C9099B600C9E27E87",
+        "session_epoch": "abc47ce4-8625-42e5-8445-c87bb69c4214:a596dbea-44b9-4863-9de9-96dadce1ba13:503cca2f-cd80-40af-afbb-b2b8e7eb4959"
+      },
+      "capturing_rust_source": "6908f3a38-dirty (Ritual constructor flag repair)"
+    },
+    "wake-action.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-136dd531c5784da489f7798ba5b07dc6/java-evidence/actions/00000139-from-frame-565.json",
+      "sha256": "7a6b714b30fc89ce08ca1c617fbdba3009a07bca765d302950583458000f17b6",
+      "capturing_rust_source": "6908f3a38-dirty (Ritual constructor flag repair)"
+    }
+  }
+}

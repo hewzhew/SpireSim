@@ -1,0 +1,256 @@
+{
+  "scope": "Constructed A20 Rupture+ EndTurn with Regret or Brutality, optional Buffer/Tungsten Rod: creatures, AI/shuffle states and complete RNG calls only; no card bindings, full relic/deck comparison or natural certification",
+  "constructed_input_scope": "Eight A20 Ironclad first-EndTurn cases. Rupture+ is played normally; Regret alone or with two Wounds exercises self DamageInfo, and empty hand plus played Brutality exercises next-turn LoseHPAction. Optional Buffer/Tungsten Rod prevention. Independent Rust scenario identities; no Java UUID bindings.",
+  "capture_status": "Complete bounded batch: eight live and eight immediate offline Exact.",
+  "collector_executable_sha256": "8e3d2ccf93182e5652217cbed783e174f37e287c371986413f74c9e23be2afec",
+  "files": {
+    "brutality-buffer-action.json": {
+      "source": ".oracle-lab/diagnostics/20260907-rupture-hp-loss-live/brutality-buffer/action.json",
+      "sha256": "b69a0ba61687fd5e6ffc51a53709eecbeb436543d953475b85e23f5f4ae77004"
+    },
+    "brutality-buffer-after.json": {
+      "source": ".oracle-lab/diagnostics/20260907-rupture-hp-loss-live/brutality-buffer/after.json",
+      "sha256": "c29d342a4e8edbc839d5e883147b06435807a8ddb54d36f264c75387347a7a1f",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "19DB8497D557D1F61C3BC85B00536E8B020DF4B2B932FD8790E2C366CE0E901F",
+        "session_epoch": "7aa2428e-1e07-4e22-8c83-cbc3147e8b76:0062903a-fdf3-4916-92d8-435611529f9a:2d77efe0-eeef-4495-9323-d99639d12bff"
+      }
+    },
+    "brutality-buffer-before.json": {
+      "source": ".oracle-lab/diagnostics/20260907-rupture-hp-loss-live/brutality-buffer/before.json",
+      "sha256": "0d44c1b7f15da0ba1ce72046d4a7ccaf0c56e81ac2f153a1fde96e907df2d60d",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "19DB8497D557D1F61C3BC85B00536E8B020DF4B2B932FD8790E2C366CE0E901F",
+        "session_epoch": "7aa2428e-1e07-4e22-8c83-cbc3147e8b76:0062903a-fdf3-4916-92d8-435611529f9a:2d77efe0-eeef-4495-9323-d99639d12bff"
+      }
+    },
+    "brutality-one-action.json": {
+      "source": ".oracle-lab/diagnostics/20260907-rupture-hp-loss-live/brutality-one/action.json",
+      "sha256": "e2196d6ffa79d4dd7553bb0593d537a5e25927ee51fe1f854e5a05fec64ed37d"
+    },
+    "brutality-one-after.json": {
+      "source": ".oracle-lab/diagnostics/20260907-rupture-hp-loss-live/brutality-one/after.json",
+      "sha256": "65244e0d575cf216f4e8b5c2508dfd1aa3c6db4ac604c2ab4a7dd1d618998141",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "19DB8497D557D1F61C3BC85B00536E8B020DF4B2B932FD8790E2C366CE0E901F",
+        "session_epoch": "7aa2428e-1e07-4e22-8c83-cbc3147e8b76:0062903a-fdf3-4916-92d8-435611529f9a:2d77efe0-eeef-4495-9323-d99639d12bff"
+      }
+    },
+    "brutality-one-before.json": {
+      "source": ".oracle-lab/diagnostics/20260907-rupture-hp-loss-live/brutality-one/before.json",
+      "sha256": "33c0b45d70b336b3453b196dbbaa74bd2e7efddd534263090fb6dce3f49b384f",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "19DB8497D557D1F61C3BC85B00536E8B020DF4B2B932FD8790E2C366CE0E901F",
+        "session_epoch": "7aa2428e-1e07-4e22-8c83-cbc3147e8b76:0062903a-fdf3-4916-92d8-435611529f9a:2d77efe0-eeef-4495-9323-d99639d12bff"
+      }
+    },
+    "brutality-tungsten-action.json": {
+      "source": ".oracle-lab/diagnostics/20260907-rupture-hp-loss-live/brutality-tungsten/action.json",
+      "sha256": "63ff7eae7ba31fceacce5f01264d19c2746d4c26d484c6e4a74b3775afa41862"
+    },
+    "brutality-tungsten-after.json": {
+      "source": ".oracle-lab/diagnostics/20260907-rupture-hp-loss-live/brutality-tungsten/after.json",
+      "sha256": "f8270533634832e4590b068024a72d2126bf20f441ff67aa2573425dc9fa4a07",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "19DB8497D557D1F61C3BC85B00536E8B020DF4B2B932FD8790E2C366CE0E901F",
+        "session_epoch": "7aa2428e-1e07-4e22-8c83-cbc3147e8b76:0062903a-fdf3-4916-92d8-435611529f9a:2d77efe0-eeef-4495-9323-d99639d12bff"
+      }
+    },
+    "brutality-tungsten-before.json": {
+      "source": ".oracle-lab/diagnostics/20260907-rupture-hp-loss-live/brutality-tungsten/before.json",
+      "sha256": "ef940b461cfec1135af4be3af9e48e8cc42b8c97ef8092285f114a53d5e6fed6",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "19DB8497D557D1F61C3BC85B00536E8B020DF4B2B932FD8790E2C366CE0E901F",
+        "session_epoch": "7aa2428e-1e07-4e22-8c83-cbc3147e8b76:0062903a-fdf3-4916-92d8-435611529f9a:2d77efe0-eeef-4495-9323-d99639d12bff"
+      }
+    },
+    "regret-buffer-tungsten-action.json": {
+      "source": ".oracle-lab/diagnostics/20260907-rupture-hp-loss-live/regret-buffer-tungsten/action.json",
+      "sha256": "aa41e14cc2e7922ff09d16101c12ebe0ea9a91f8716d9d055e155999a81e30b3"
+    },
+    "regret-buffer-tungsten-after.json": {
+      "source": ".oracle-lab/diagnostics/20260907-rupture-hp-loss-live/regret-buffer-tungsten/after.json",
+      "sha256": "904c014bb7e04f974955d407beab413b1b3d1615ba9f98da561b443311fdf655",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "19DB8497D557D1F61C3BC85B00536E8B020DF4B2B932FD8790E2C366CE0E901F",
+        "session_epoch": "7aa2428e-1e07-4e22-8c83-cbc3147e8b76:0062903a-fdf3-4916-92d8-435611529f9a:2d77efe0-eeef-4495-9323-d99639d12bff"
+      }
+    },
+    "regret-buffer-tungsten-before.json": {
+      "source": ".oracle-lab/diagnostics/20260907-rupture-hp-loss-live/regret-buffer-tungsten/before.json",
+      "sha256": "db1ab35e2e05ea225c50c137ca6ade18ad3c7aa2e6474c11b0598782b52ca483",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "19DB8497D557D1F61C3BC85B00536E8B020DF4B2B932FD8790E2C366CE0E901F",
+        "session_epoch": "7aa2428e-1e07-4e22-8c83-cbc3147e8b76:0062903a-fdf3-4916-92d8-435611529f9a:2d77efe0-eeef-4495-9323-d99639d12bff"
+      }
+    },
+    "regret-buffer-action.json": {
+      "source": ".oracle-lab/diagnostics/20260907-rupture-hp-loss-live/regret-buffer/action.json",
+      "sha256": "369e781d1b3b89ef130f97f53528f01fb877242aacba5c1b4edf8e0f8b5abb99"
+    },
+    "regret-buffer-after.json": {
+      "source": ".oracle-lab/diagnostics/20260907-rupture-hp-loss-live/regret-buffer/after.json",
+      "sha256": "5ab61b84a81b463086a2061085d2a898d641e3754ec701152a26ae6c4fe09ca6",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "19DB8497D557D1F61C3BC85B00536E8B020DF4B2B932FD8790E2C366CE0E901F",
+        "session_epoch": "7aa2428e-1e07-4e22-8c83-cbc3147e8b76:0062903a-fdf3-4916-92d8-435611529f9a:2d77efe0-eeef-4495-9323-d99639d12bff"
+      }
+    },
+    "regret-buffer-before.json": {
+      "source": ".oracle-lab/diagnostics/20260907-rupture-hp-loss-live/regret-buffer/before.json",
+      "sha256": "1dffd3d6353c8cf0335b927753cb2aeec55a1c8fafbf1b73af76d9c0d110a34e",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "19DB8497D557D1F61C3BC85B00536E8B020DF4B2B932FD8790E2C366CE0E901F",
+        "session_epoch": "7aa2428e-1e07-4e22-8c83-cbc3147e8b76:0062903a-fdf3-4916-92d8-435611529f9a:2d77efe0-eeef-4495-9323-d99639d12bff"
+      }
+    },
+    "regret-one-action.json": {
+      "source": ".oracle-lab/diagnostics/20260907-rupture-hp-loss-live/regret-one/action.json",
+      "sha256": "22346f37156ef8cc5fafd254a349858ae956420dd572dcc42b13a74d0b1ed6ab"
+    },
+    "regret-one-after.json": {
+      "source": ".oracle-lab/diagnostics/20260907-rupture-hp-loss-live/regret-one/after.json",
+      "sha256": "e22a5b42180cd4d0c6251b133070afc0dfa1f046b04fda3906dde0e73da4e2af",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "19DB8497D557D1F61C3BC85B00536E8B020DF4B2B932FD8790E2C366CE0E901F",
+        "session_epoch": "7aa2428e-1e07-4e22-8c83-cbc3147e8b76:0062903a-fdf3-4916-92d8-435611529f9a:2d77efe0-eeef-4495-9323-d99639d12bff"
+      }
+    },
+    "regret-one-before.json": {
+      "source": ".oracle-lab/diagnostics/20260907-rupture-hp-loss-live/regret-one/before.json",
+      "sha256": "f209f9c9c472b9dcd0c38a4b21e52529ba30e7ceec730d61667288135f5724ef",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "19DB8497D557D1F61C3BC85B00536E8B020DF4B2B932FD8790E2C366CE0E901F",
+        "session_epoch": "7aa2428e-1e07-4e22-8c83-cbc3147e8b76:0062903a-fdf3-4916-92d8-435611529f9a:2d77efe0-eeef-4495-9323-d99639d12bff"
+      }
+    },
+    "regret-three-action.json": {
+      "source": ".oracle-lab/diagnostics/20260907-rupture-hp-loss-live/regret-three/action.json",
+      "sha256": "0986f48b6955e6721a3417de79c305bee9cbf722119c80cde6878cc535376635"
+    },
+    "regret-three-after.json": {
+      "source": ".oracle-lab/diagnostics/20260907-rupture-hp-loss-live/regret-three/after.json",
+      "sha256": "599f2fa0cfd8513b0bca282bc3e0de1745030e20358365b2c060c4966fbc5324",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "19DB8497D557D1F61C3BC85B00536E8B020DF4B2B932FD8790E2C366CE0E901F",
+        "session_epoch": "7aa2428e-1e07-4e22-8c83-cbc3147e8b76:0062903a-fdf3-4916-92d8-435611529f9a:2d77efe0-eeef-4495-9323-d99639d12bff"
+      }
+    },
+    "regret-three-before.json": {
+      "source": ".oracle-lab/diagnostics/20260907-rupture-hp-loss-live/regret-three/before.json",
+      "sha256": "7b2ab10f0b41425ea603272be901a73575749898e3674eaa432c789109ec4786",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "19DB8497D557D1F61C3BC85B00536E8B020DF4B2B932FD8790E2C366CE0E901F",
+        "session_epoch": "7aa2428e-1e07-4e22-8c83-cbc3147e8b76:0062903a-fdf3-4916-92d8-435611529f9a:2d77efe0-eeef-4495-9323-d99639d12bff"
+      }
+    },
+    "regret-tungsten-action.json": {
+      "source": ".oracle-lab/diagnostics/20260907-rupture-hp-loss-live/regret-tungsten/action.json",
+      "sha256": "a73c1e485848501c71657b202b42219b56d217927b16c020c0bc595ee9244033"
+    },
+    "regret-tungsten-after.json": {
+      "source": ".oracle-lab/diagnostics/20260907-rupture-hp-loss-live/regret-tungsten/after.json",
+      "sha256": "2a142cc30dee38ab5491ae1e689a51e55d5c2c1a80f90e32843a3e08e96ff9fb",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "19DB8497D557D1F61C3BC85B00536E8B020DF4B2B932FD8790E2C366CE0E901F",
+        "session_epoch": "7aa2428e-1e07-4e22-8c83-cbc3147e8b76:0062903a-fdf3-4916-92d8-435611529f9a:2d77efe0-eeef-4495-9323-d99639d12bff"
+      }
+    },
+    "regret-tungsten-before.json": {
+      "source": ".oracle-lab/diagnostics/20260907-rupture-hp-loss-live/regret-tungsten/before.json",
+      "sha256": "33df878792fba7e6a56b61bd975c4ce9dc0c43dbd4abf8705ace66961331af64",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "19DB8497D557D1F61C3BC85B00536E8B020DF4B2B932FD8790E2C366CE0E901F",
+        "session_epoch": "7aa2428e-1e07-4e22-8c83-cbc3147e8b76:0062903a-fdf3-4916-92d8-435611529f9a:2d77efe0-eeef-4495-9323-d99639d12bff"
+      }
+    }
+  },
+  "capture_manifest_source": ".oracle-lab/diagnostics/20260907-rupture-hp-loss-live/complete.json",
+  "capture_manifest_sha256": "ac6685445650dffd4a5b8f927eec71468535b677a8d81646933f12252a3fea8d",
+  "capture_launch_plan_source": ".oracle-lab/diagnostics/20260907-rupture-hp-loss-live/launch-plan.json",
+  "capture_launch_plan_sha256": "4429beb1dbbf18f8cf95fe699e7a2a2e0056d472c0b2e50f15791ea918e0f9ce",
+  "runtime_provenance": {
+    "schema": "sts_java_play_launch_plan_v4",
+    "profile": "accelerated",
+    "control_profile": "parity_scenario_control",
+    "game_java": {
+      "length": 206912,
+      "path": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\SlayTheSpire\\jre\\bin\\javaw.exe",
+      "sha256": "036584C1C8321FF67E4933CC9072797A2FD4CFE8EF02460F4621A7CFEA9D1091"
+    },
+    "mod_the_spire": {
+      "length": 10252951,
+      "path": "\\\\?\\D:\\rust\\lib\\ModTheSpire.jar",
+      "sha256": "541B5E8A875D2A404A5A6D54F4A6F814284B0CF71ACB9245239D9C5EF50EA604"
+    },
+    "selected_mods": [
+      {
+        "id": "basemod",
+        "jar": {
+          "length": 7659408,
+          "path": "C:\\Program Files (x86)\\Steam\\steamapps\\workshop\\content\\646570\\1605833019\\BaseMod.jar",
+          "sha256": "C3353C10E64C621B723E9FD7D0502DFA796F828B101B68513594A5F5EF83FBAF"
+        },
+        "version": "5.56.0"
+      },
+      {
+        "id": "superfastmode",
+        "jar": {
+          "length": 25877,
+          "path": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\SlayTheSpire\\mods\\SuperFastMode.jar",
+          "sha256": "CECDC2A54D0B2DB8AA66857098D4740E5D74EC3361CD12416629019438D25C60"
+        },
+        "version": "1.0.8"
+      },
+      {
+        "id": "CommunicationMod",
+        "jar": {
+          "length": 704884,
+          "path": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\SlayTheSpire\\mods\\CommunicationMod.jar",
+          "sha256": "19DB8497D557D1F61C3BC85B00536E8B020DF4B2B932FD8790E2C366CE0E901F"
+        },
+        "version": "1.2.1"
+      }
+    ],
+    "acceleration": {
+      "game_fast_mode": true,
+      "mod": {
+        "id": "superfastmode",
+        "jar": {
+          "length": 25877,
+          "path": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\SlayTheSpire\\mods\\SuperFastMode.jar",
+          "sha256": "CECDC2A54D0B2DB8AA66857098D4740E5D74EC3361CD12416629019438D25C60"
+        },
+        "version": "1.0.8"
+      },
+      "settings": {
+        "config": {
+          "length": 123,
+          "path": "C:\\Users\\17239\\AppData\\Local\\ModTheSpire\\SuperFastMode\\SuperFastModeConfig.properties",
+          "sha256": "C9AC6FA74C9EDC8FB3F59EC6AC6CBE6B83CD77D012C0A129D297D4276ACE2931"
+        },
+        "values": {
+          "delta_multiplier": 5.0,
+          "is_delta_multiplied": true,
+          "is_instant_lerp": true
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,147 @@
+{
+  "schema_version": 1,
+  "root_fixture": {
+    "name": "seed006_pre_transient_reconstructed_campfire",
+    "player_class": "Ironclad",
+    "ascension_level": 0,
+    "encounter_id": "Transient",
+    "room_type": "monster",
+    "seed": 20260713006,
+    "player_current_hp": 87,
+    "player_max_hp": 110,
+    "relics": [
+      "Black Blood",
+      "Frozen Egg 2",
+      "Odd Mushroom",
+      "Toxic Egg 2",
+      "Runic Pyramid",
+      "The Courier"
+    ],
+    "potions": [
+      "LiquidBronze"
+    ],
+    "master_deck": [
+      {
+        "id": "Strike_R",
+        "count": 2
+      },
+      {
+        "id": "Defend_R",
+        "count": 4
+      },
+      {
+        "id": "Bash",
+        "upgrades": 1
+      },
+      "Berserk",
+      {
+        "id": "Clothesline",
+        "upgrades": 1
+      },
+      "Feed",
+      {
+        "id": "BattleTrance",
+        "upgrades": 1
+      },
+      {
+        "id": "Armaments",
+        "upgrades": 1
+      },
+      {
+        "id": "ShrugItOff",
+        "upgrades": 1
+      },
+      {
+        "id": "MasterOfStrategy",
+        "upgrades": 1
+      },
+      {
+        "id": "Inflame",
+        "upgrades": 1
+      },
+      {
+        "id": "DarkShackles",
+        "upgrades": 1
+      },
+      "HeavyBlade",
+      {
+        "id": "Disarm",
+        "upgrades": 1
+      }
+    ]
+  },
+  "root_public_state": {
+    "act_num": 3,
+    "floor_num": 38,
+    "gold": 0,
+    "shop_purge_count": 0,
+    "keys": [
+      false,
+      false,
+      false
+    ],
+    "is_final_act_available": false,
+    "card_upgraded_chance": 0.5,
+    "boss_key": null
+  },
+  "evaluation_spec": {
+    "run_goal": "act3_victory",
+    "horizon": {
+      "kind": "until_next_campfire_or_act_terminal",
+      "route_horizon_nodes": 5
+    },
+    "route_path_budget": 2000,
+    "continuation_profile": {
+      "profile_id": "seed006_reconstructed_offline_panel_v1",
+      "source_identity": "local_source_identity_recorded_in_manifest"
+    },
+    "public_scenario_distribution_id": "act3_strong_public_pool_v1",
+    "mechanics_version": "sts_simulator_2026_07_15"
+  },
+  "panel_spec": {
+    "schema_version": 1,
+    "experiment_id": "seed006_pre_transient_reconstructed_threat_panel_v1",
+    "analysis_seed": 20260713006,
+    "encounter_sources": [
+      {
+        "kind": "public_pool",
+        "act": 3,
+        "tier": "strong"
+      }
+    ],
+    "schedule": {
+      "generator": "split_mix64_v1",
+      "seed": 20260715006
+    },
+    "lenses": [
+      "actual_consequence",
+      "root_hp_capability"
+    ],
+    "include_unchanged_root": true,
+    "profile": {
+      "id": "immediate",
+      "label": "Immediate fixed offline panel profile",
+      "information_scope": "exact_state_oracle",
+      "potion_policy": "semantic_budgeted",
+      "rollout_policy": "enemy_mechanics_adaptive_no_potion",
+      "child_rollout_policy": "immediate",
+      "turn_plan_policy": "disabled",
+      "phase_guard_policy": "default",
+      "setup_bias_policy": "default"
+    },
+    "common_budget": {
+      "max_nodes": 64,
+      "max_actions_per_line": 200,
+      "max_engine_steps_per_action": 250,
+      "wall_ms": null,
+      "satisfaction": "zero_loss_or_budget",
+      "max_potions_used": 1,
+      "rollout_max_evaluations": 64,
+      "rollout_max_actions": 40,
+      "rollout_beam_width": 2,
+      "turn_plan_probe_max_inner_nodes": null,
+      "turn_plan_probe_max_end_states": null,
+      "turn_plan_probe_per_bucket_limit": null
+    }
+  }
+}

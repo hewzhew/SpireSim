@@ -1,0 +1,52 @@
+{
+  "schema": "sts_java_play_scenario_draft_v3",
+  "provenance": "constructed_validated",
+  "case_id": "cultist-corruption-power-through-second-wind-root",
+  "run": {
+    "character": "IRONCLAD",
+    "ascension": 20,
+    "seed": "0",
+    "content_profile": "all_unlocked"
+  },
+  "recipe": {
+    "recipe_id": "fresh_neow_to_combat_root.v1",
+    "capabilities": [
+      {
+        "capability_id": "combat.encounter.exact.v1",
+        "payload": {
+          "encounter_id": "Cultist"
+        }
+      },
+      {
+        "capability_id": "player.health.v1",
+        "payload": {
+          "current_hp": 80,
+          "max_hp": 80
+        }
+      },
+      {
+        "capability_id": "player.master_deck.exact.v1",
+        "payload": {
+          "cards": [
+            {
+              "card_id": "Corruption",
+              "upgrades": 0
+            },
+            {
+              "card_id": "Power Through",
+              "upgrades": 0
+            },
+            {
+              "card_id": "Second Wind",
+              "upgrades": 0
+            },
+            {
+              "card_id": "Strike_R",
+              "upgrades": 0
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

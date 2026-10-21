@@ -1,0 +1,14 @@
+[package]
+name = "sts_oracle_learning_projection"
+version = "0.1.0"
+edition = "2021"
+publish = false
+autobins = false
+autotests = false
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+sts_oracle_learning = { path = "../sts_oracle_learning" }
+sts_oracle_strategic_owner = { path = "../sts_oracle_strategic_owner" }

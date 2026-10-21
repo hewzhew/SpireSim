@@ -1,0 +1,14 @@
+{
+  "schema": "sts_java_parity_shared_runtime_trajectory_suite_manifest_v1",
+  "provenance": "constructed_validated",
+  "suite_id": "cultist-shared-runtime-trajectories",
+  "launch_profile": "accelerated",
+  "members": [
+    {
+      "trajectory_case_id": "cultist-two-strikes"
+    },
+    {
+      "trajectory_case_id": "cultist-corruption-power-through-second-wind"
+    }
+  ]
+}

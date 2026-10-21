@@ -1,0 +1,72 @@
+{
+  "schema_name": "StsCombatPerformancePanelV1",
+  "schema_version": 1,
+  "cases": [
+    {
+      "name": "hexaghost",
+      "path": ".oracle-lab/cases/seed011-f16-hexaghost.combat.json",
+      "expected": {
+        "status": "Partial(GenerationWorkBudget)",
+        "generation_work": 20000,
+        "applied_action_transitions": 13016,
+        "exact_nodes": 1516,
+        "completed_turn_options": 5243,
+        "unique_successor_states": 12732,
+        "duplicate_exact_successors": 284,
+        "terminal_win_options": 0,
+        "witness": null
+      }
+    },
+    {
+      "name": "champ",
+      "path": ".oracle-lab/cases/seed014-owner-champ.combat.json",
+      "expected": {
+        "status": "Partial(GenerationWorkBudget)",
+        "generation_work": 20000,
+        "applied_action_transitions": 13139,
+        "exact_nodes": 1143,
+        "completed_turn_options": 5372,
+        "unique_successor_states": 12843,
+        "duplicate_exact_successors": 296,
+        "terminal_win_options": 0,
+        "witness": null
+      }
+    },
+    {
+      "name": "bronze_automaton",
+      "path": ".oracle-lab/cases/seed015-a2f32-bronze-automaton.combat.json",
+      "expected": {
+        "status": "Partial(GenerationWorkBudget)",
+        "generation_work": 20000,
+        "applied_action_transitions": 12199,
+        "exact_nodes": 2047,
+        "completed_turn_options": 4652,
+        "unique_successor_states": 12126,
+        "duplicate_exact_successors": 73,
+        "terminal_win_options": 1899,
+        "witness": {
+          "final_hp": 19,
+          "actions": 59
+        }
+      }
+    },
+    {
+      "name": "collector_witness",
+      "path": ".oracle-lab/cases/seed022-a2f32-collector-full-hp.combat.json",
+      "expected": {
+        "status": "Partial(GenerationWorkBudget)",
+        "generation_work": 20000,
+        "applied_action_transitions": 13953,
+        "exact_nodes": 3843,
+        "completed_turn_options": 6966,
+        "unique_successor_states": 13730,
+        "duplicate_exact_successors": 223,
+        "terminal_win_options": 2790,
+        "witness": {
+          "final_hp": 70,
+          "actions": 24
+        }
+      }
+    }
+  ]
+}

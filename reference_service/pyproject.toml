@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sts-reference-service"
+version = "0.4.0"
+description = "Typed evidence-only local reference service for Slay the Spire"
+requires-python = ">=3.12"
+dependencies = [
+    "pydantic>=2.10,<3",
+]
+
+[project.optional-dependencies]
+semantic = ["txtai>=9,<10"]
+test = ["pytest>=8.3"]
+
+[project.scripts]
+sts-reference = "sts_reference.cli:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--strict-config --strict-markers"
+
+[tool.setuptools.packages.find]
+where = ["src"]

@@ -1,0 +1,29 @@
+[package]
+name = "sts_combat_search_driver"
+version = "0.1.0"
+edition = "2021"
+publish = false
+autobins = false
+autotests = false
+
+[features]
+default = []
+backend = ["dep:serde", "dep:serde_json", "dep:sts_oracle_eval"]
+
+[dependencies]
+clap = { version = "4.0", features = ["derive"] }
+serde = { version = "1.0", features = ["derive"], optional = true }
+serde_json = { version = "1.0", optional = true }
+sts_oracle_eval = { path = "../sts_oracle_eval", default-features = false, features = ["combat-search-driver"], optional = true }
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "combat_search_v2"
+path = "src/bin/combat_search_v2.rs"
+
+[[bin]]
+name = "combat_search_v2_worker"
+path = "src/bin/combat_search_v2_worker.rs"
+required-features = ["backend"]

@@ -1,0 +1,20 @@
+[build-system]
+requires = ["maturin>=1.12,<2"]
+build-backend = "maturin"
+
+[project]
+name = "sts-learning-bridge"
+version = "0.1.0"
+description = "Batched Slay the Spire simulator environments with public observations and original-game replay verification"
+license = "MIT"
+requires-python = ">=3.12"
+dependencies = ["numpy>=2.0"]
+
+[project.urls]
+Repository = "https://github.com/hewzhew/sts-sim"
+Issues = "https://github.com/hewzhew/sts-sim/issues"
+
+[tool.maturin]
+manifest-path = "Cargo.toml"
+module-name = "sts_learning_bridge._native"
+python-source = "python"

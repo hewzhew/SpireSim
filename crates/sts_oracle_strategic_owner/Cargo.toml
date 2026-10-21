@@ -1,0 +1,15 @@
+[package]
+name = "sts_oracle_strategic_owner"
+version = "0.1.0"
+edition = "2021"
+publish = false
+autobins = false
+autotests = false
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+sts_oracle_run_control = { path = "../sts_oracle_run_control", default-features = false }
+sts_run_strategy = { path = "../sts_run_strategy" }

@@ -1,0 +1,51 @@
+{
+  "schema": "sts_java_play_scenario_trajectory_draft_v1",
+  "provenance": "constructed_validated",
+  "trajectory_case_id": "cultist-letter-opener-reset-and-trigger",
+  "scenario_case_id": "cultist-letter-opener-root",
+  "steps": [
+    {
+      "transition_id": "combat.play_card.v1",
+      "card": {
+        "card_id": "Defend_R",
+        "upgrades": 0,
+        "occurrence": 0
+      }
+    },
+    {
+      "transition_id": "combat.play_card.v1",
+      "card": {
+        "card_id": "Defend_R",
+        "upgrades": 0,
+        "occurrence": 0
+      }
+    },
+    {
+      "transition_id": "combat.end_turn.v1"
+    },
+    {
+      "transition_id": "combat.play_card.v1",
+      "card": {
+        "card_id": "Defend_R",
+        "upgrades": 0,
+        "occurrence": 0
+      }
+    },
+    {
+      "transition_id": "combat.play_card.v1",
+      "card": {
+        "card_id": "Defend_R",
+        "upgrades": 0,
+        "occurrence": 0
+      }
+    },
+    {
+      "transition_id": "combat.play_card.v1",
+      "card": {
+        "card_id": "Defend_R",
+        "upgrades": 0,
+        "occurrence": 0
+      }
+    }
+  ]
+}

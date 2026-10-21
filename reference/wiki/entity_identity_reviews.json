@@ -1,0 +1,166 @@
+{
+  "schema": "sts-wiki-entity-identity-reviews-v1",
+  "project": "sts-simulator",
+  "reviews": [
+    {
+      "decision": "accept",
+      "entity_key": "event:AccursedBlacksmith",
+      "record": {
+        "record_source_id": "slaythespire-wikigg-en",
+        "record_page_id": 3063,
+        "record_page_title": "Ominous Forge",
+        "record_revision_id": 35658,
+        "record_locator": {
+          "claim_line": 40
+        },
+        "record_identity": {
+          "english_title": "Ominous Forge",
+          "internal_name": "Accursed_Blacksmith"
+        }
+      },
+      "rationale": "The unique typed wiki.gg event record explicitly names Accursed_Blacksmith as its internal identity; the Rust EventId differs only by identifier separators, and the exact English title uniquely joins the typed Fandom and Huiji event pages.",
+      "reviewer": "sts-simulator-project",
+      "reviewed_on": "2026-08-20"
+    },
+    {
+      "decision": "accept",
+      "entity_key": "event:DrugDealer",
+      "record": {
+        "record_source_id": "slaythespire-wikigg-en",
+        "record_page_id": 3196,
+        "record_page_title": "Augmenter",
+        "record_revision_id": 35702,
+        "record_locator": {
+          "claim_line": 50
+        },
+        "record_identity": {
+          "english_title": "Augmenter",
+          "internal_name": "Drug_Dealer"
+        }
+      },
+      "rationale": "The unique typed wiki.gg event record explicitly names Drug_Dealer as its internal identity; the Rust EventId differs only by identifier separators, and the exact English title uniquely joins the typed Fandom and Huiji event pages.",
+      "reviewer": "sts-simulator-project",
+      "reviewed_on": "2026-08-20"
+    },
+    {
+      "decision": "accept",
+      "entity_key": "event:GoldenWing",
+      "record": {
+        "record_source_id": "slaythespire-wikigg-en",
+        "record_page_id": 3176,
+        "record_page_title": "Wing Statue",
+        "record_revision_id": 35663,
+        "record_locator": {
+          "claim_line": 127
+        },
+        "record_identity": {
+          "english_title": "Wing Statue",
+          "internal_name": "Golden_Wing"
+        }
+      },
+      "rationale": "The unique typed wiki.gg event record explicitly names Golden_Wing as its internal identity; the Rust EventId differs only by identifier separators, and the exact English title uniquely joins the typed Fandom and Huiji event pages.",
+      "reviewer": "sts-simulator-project",
+      "reviewed_on": "2026-08-20"
+    },
+    {
+      "decision": "accept",
+      "entity_key": "event:GoldenIdol",
+      "record": {
+        "record_source_id": "slay-the-spire-fandom-en",
+        "record_page_id": 536,
+        "record_page_title": "Golden Idol (Event)",
+        "record_revision_id": 22729,
+        "record_locator": {
+          "field": "title"
+        },
+        "record_identity": {
+          "kind": "event",
+          "title": "Golden Idol (Event)"
+        }
+      },
+      "rationale": "The source page is independently typed as an event, and its title is the exact live display name Golden Idol plus the matching Event disambiguation suffix; the source also has a separate Golden Idol (Relic) page, so this revision-bound title record identifies the event without widening the runtime alias parser.",
+      "reviewer": "sts-simulator-project",
+      "reviewed_on": "2026-08-20"
+    },
+    {
+      "decision": "accept",
+      "entity_key": "event:GoldenIdol",
+      "record": {
+        "record_source_id": "slaythespire-wikigg-en",
+        "record_page_id": 3167,
+        "record_page_title": "Golden Idol (Event)",
+        "record_revision_id": 35653,
+        "record_locator": {
+          "field": "title"
+        },
+        "record_identity": {
+          "kind": "event",
+          "title": "Golden Idol (Event)"
+        }
+      },
+      "rationale": "The source page is independently typed as an event, and its title is the exact live display name Golden Idol plus the matching Event disambiguation suffix; the source also has a separate Golden Idol (Relic) page, so this revision-bound title record identifies the event without widening the runtime alias parser.",
+      "reviewer": "sts-simulator-project",
+      "reviewed_on": "2026-08-20"
+    },
+    {
+      "decision": "accept",
+      "entity_key": "card:BecomeAlmighty",
+      "record": {
+        "record_source_id": "slaythespire-wikigg-en",
+        "record_page_id": 2378,
+        "record_page_title": "Become Almighty",
+        "record_revision_id": 43825,
+        "record_locator": {
+          "field": "title"
+        },
+        "record_identity": {
+          "kind": "card",
+          "title": "Become Almighty"
+        }
+      },
+      "rationale": "The independently typed card page describes the unplayable Special Power offered only by Wish, matching the simulator's active BecomeAlmighty choice-card identity; the title differs from the exact Java card ID only by identifier spacing.",
+      "reviewer": "sts-simulator-project",
+      "reviewed_on": "2026-08-20"
+    },
+    {
+      "decision": "accept",
+      "entity_key": "card:FameAndFortune",
+      "record": {
+        "record_source_id": "slaythespire-wikigg-en",
+        "record_page_id": 2377,
+        "record_page_title": "Fame and Fortune",
+        "record_revision_id": 36443,
+        "record_locator": {
+          "field": "title"
+        },
+        "record_identity": {
+          "kind": "card",
+          "title": "Fame and Fortune"
+        }
+      },
+      "rationale": "The independently typed card page describes the unplayable Special card offered only by Wish, matching the simulator's active FameAndFortune choice-card identity; the title differs from the exact Java card ID only by identifier spacing and case.",
+      "reviewer": "sts-simulator-project",
+      "reviewed_on": "2026-08-20"
+    },
+    {
+      "decision": "accept",
+      "entity_key": "card:LiveForever",
+      "record": {
+        "record_source_id": "slaythespire-wikigg-en",
+        "record_page_id": 2379,
+        "record_page_title": "Live Forever",
+        "record_revision_id": 36444,
+        "record_locator": {
+          "field": "title"
+        },
+        "record_identity": {
+          "kind": "card",
+          "title": "Live Forever"
+        }
+      },
+      "rationale": "The independently typed card page describes the unplayable Special Power offered only by Wish, matching the simulator's active LiveForever choice-card identity; the title differs from the exact Java card ID only by identifier spacing.",
+      "reviewer": "sts-simulator-project",
+      "reviewed_on": "2026-08-20"
+    }
+  ]
+}

@@ -1,0 +1,98 @@
+{
+  "scope": "Constructed A20 Spire Growth: original source, first application without premature HP loss, 12 damage through 0/5 block despite player Vulnerable and monster negative Strength. Current verifier compares player scalars/powers, monster state, AI/shuffle streams and complete RNG calls. No natural card bindings or full combat/certification authority.",
+  "constructed_input_scope": "Fresh A20 Spire Growth, 80 HP, five explicitly chosen cards and Runic Pyramid. First EndTurn applies Constricted. Normal Dark Shackles+, Piercing Wail+, Disarm+ suppress the next attack; Berserk+ adds Vulnerable. Defend supplies 5 block in one case. Rust uses its own starter identities and rebuilds the single Defend discard when present.",
+  "capture_status": "Complete bounded batch: four live and four immediate offline Exact transitions. These reviewed fixtures grant only the declared mechanism scope.",
+  "collector_executable_sha256": "fb9703f3dbb9e87733c8ed47348c1d02643980678c85232dee253a688df30f99",
+  "capture_manifest_source": ".oracle-lab/diagnostics/20260907-constricted-low-block-verified/complete.json",
+  "capture_manifest_sha256": "9bc56a82a1c64b342a40816828bb1f067264fca2078a47f370fea849242b06b3",
+  "files": {
+    "block-0-apply-before.json": {
+      "source": ".oracle-lab/diagnostics/20260907-constricted-low-block-verified/block-0/apply-before.json",
+      "sha256": "968c15915f191d079066a126fc4f1d7d2d06d1c3f0cf575cab3d5c27d6de62d6",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "19DB8497D557D1F61C3BC85B00536E8B020DF4B2B932FD8790E2C366CE0E901F",
+        "session_epoch": "810ff33c-06a2-44c9-ad0e-49a171764e8f:9b61ffd5-6aa6-406d-bb84-0580cd9b7559:3378ed8b-12b0-4731-89ce-848a340ee598"
+      }
+    },
+    "block-0-apply-action.json": {
+      "source": ".oracle-lab/diagnostics/20260907-constricted-low-block-verified/block-0/apply-action.json",
+      "sha256": "85b987e0b2880fb667babde7c280ae02dff2081492bc16cc05a0d1f8cd7324ec"
+    },
+    "block-0-apply-after.json": {
+      "source": ".oracle-lab/diagnostics/20260907-constricted-low-block-verified/block-0/apply-after.json",
+      "sha256": "71220306b166321f0a31eb1b41df9817abca3496efeed80ea1f9f63aab397450",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "19DB8497D557D1F61C3BC85B00536E8B020DF4B2B932FD8790E2C366CE0E901F",
+        "session_epoch": "810ff33c-06a2-44c9-ad0e-49a171764e8f:9b61ffd5-6aa6-406d-bb84-0580cd9b7559:3378ed8b-12b0-4731-89ce-848a340ee598"
+      }
+    },
+    "block-0-tick-before.json": {
+      "source": ".oracle-lab/diagnostics/20260907-constricted-low-block-verified/block-0/tick-before.json",
+      "sha256": "1d887b1901a097fd21365e612167526f40ebef09c5a800cec8991aedd582b5b0",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "19DB8497D557D1F61C3BC85B00536E8B020DF4B2B932FD8790E2C366CE0E901F",
+        "session_epoch": "810ff33c-06a2-44c9-ad0e-49a171764e8f:9b61ffd5-6aa6-406d-bb84-0580cd9b7559:3378ed8b-12b0-4731-89ce-848a340ee598"
+      }
+    },
+    "block-0-tick-action.json": {
+      "source": ".oracle-lab/diagnostics/20260907-constricted-low-block-verified/block-0/tick-action.json",
+      "sha256": "0fc77b3c9586723238a1959f7a38d7bc0d264430cb12c614b4c048ddf36479cc"
+    },
+    "block-0-tick-after.json": {
+      "source": ".oracle-lab/diagnostics/20260907-constricted-low-block-verified/block-0/tick-after.json",
+      "sha256": "152990313a07cb18fd743fc239fff07349b26d64bdf82e3e8edcedaa9c11b24e",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "19DB8497D557D1F61C3BC85B00536E8B020DF4B2B932FD8790E2C366CE0E901F",
+        "session_epoch": "810ff33c-06a2-44c9-ad0e-49a171764e8f:9b61ffd5-6aa6-406d-bb84-0580cd9b7559:3378ed8b-12b0-4731-89ce-848a340ee598"
+      }
+    },
+    "block-5-apply-before.json": {
+      "source": ".oracle-lab/diagnostics/20260907-constricted-low-block-verified/block-5/apply-before.json",
+      "sha256": "a20608cdcedfe239d186e649c70a564bb27e06bc162101efd11d383ebe6b9e1a",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "19DB8497D557D1F61C3BC85B00536E8B020DF4B2B932FD8790E2C366CE0E901F",
+        "session_epoch": "810ff33c-06a2-44c9-ad0e-49a171764e8f:9b61ffd5-6aa6-406d-bb84-0580cd9b7559:3378ed8b-12b0-4731-89ce-848a340ee598"
+      }
+    },
+    "block-5-apply-action.json": {
+      "source": ".oracle-lab/diagnostics/20260907-constricted-low-block-verified/block-5/apply-action.json",
+      "sha256": "07c9af8130ffbda9606f93b9cc2f00a9c632a1017621dc7649c481fddbc34fde"
+    },
+    "block-5-apply-after.json": {
+      "source": ".oracle-lab/diagnostics/20260907-constricted-low-block-verified/block-5/apply-after.json",
+      "sha256": "4219f340e832c79f4ab5e58f2262af1ed503282129db7eb020332717e7d02db0",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "19DB8497D557D1F61C3BC85B00536E8B020DF4B2B932FD8790E2C366CE0E901F",
+        "session_epoch": "810ff33c-06a2-44c9-ad0e-49a171764e8f:9b61ffd5-6aa6-406d-bb84-0580cd9b7559:3378ed8b-12b0-4731-89ce-848a340ee598"
+      }
+    },
+    "block-5-tick-before.json": {
+      "source": ".oracle-lab/diagnostics/20260907-constricted-low-block-verified/block-5/tick-before.json",
+      "sha256": "1a8f3319f09bfd74861d92b488c56980e3b6d4746c6dfa014062fb035a7585a8",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "19DB8497D557D1F61C3BC85B00536E8B020DF4B2B932FD8790E2C366CE0E901F",
+        "session_epoch": "810ff33c-06a2-44c9-ad0e-49a171764e8f:9b61ffd5-6aa6-406d-bb84-0580cd9b7559:3378ed8b-12b0-4731-89ce-848a340ee598"
+      }
+    },
+    "block-5-tick-action.json": {
+      "source": ".oracle-lab/diagnostics/20260907-constricted-low-block-verified/block-5/tick-action.json",
+      "sha256": "2da698a131b3cf5edc40c251739c0b1e1fbc366b475e3a3c8468e393e25fe6f1"
+    },
+    "block-5-tick-after.json": {
+      "source": ".oracle-lab/diagnostics/20260907-constricted-low-block-verified/block-5/tick-after.json",
+      "sha256": "f81100c71a36a8dc2e687b0cf80ceb036153bf7f92367182e47c205fc63d659d",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "19DB8497D557D1F61C3BC85B00536E8B020DF4B2B932FD8790E2C366CE0E901F",
+        "session_epoch": "810ff33c-06a2-44c9-ad0e-49a171764e8f:9b61ffd5-6aa6-406d-bb84-0580cd9b7559:3378ed8b-12b0-4731-89ce-848a340ee598"
+      }
+    }
+  }
+}

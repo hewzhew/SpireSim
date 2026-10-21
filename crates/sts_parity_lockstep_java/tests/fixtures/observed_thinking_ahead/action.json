@@ -1,0 +1,1 @@
+{"schema":"sts-recorded-java-action-v1","phase":"committed","action":{"kind":"play_card","card_binding":"natural_run/card_reward/F04X02/1","card_id":"thinkingahead","target":null},"receipt":{"status":"completed","request_id":"86735c5c-2fec-4387-bf68-e2ead0cc0078","based_on_frame_id":419,"action_id":"play_card:0b6dc080-adf0-4c8a-bfc7-2dd17f4c9eb7:none","successor_frame_id":420}}

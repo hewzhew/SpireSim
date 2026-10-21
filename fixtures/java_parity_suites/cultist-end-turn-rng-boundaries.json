@@ -1,0 +1,19 @@
+{
+  "schema": "sts_java_parity_constructed_suite_manifest_v2",
+  "provenance": "constructed_validated",
+  "suite_id": "cultist-end-turn-rng-boundaries",
+  "members": [
+    {
+      "probe_case_id": "cultist-base-end-turn",
+      "launch_profile": "accelerated"
+    },
+    {
+      "probe_case_id": "cultist-five-card-remainder-end-turn",
+      "launch_profile": "accelerated"
+    },
+    {
+      "probe_case_id": "cultist-base-end-turn",
+      "launch_profile": "strict"
+    }
+  ]
+}

@@ -1,0 +1,1632 @@
+[
+  {
+    "case": "shop",
+    "document": {
+      "payload": {
+        "card_mechanics": {
+          "basis": "simulator_definition_and_reviewed_effects",
+          "candidates": [
+            {
+              "candidate_id": "task_public_candidate_v1:53d7368de78a20554bb2cfdd25fe8073df42372c",
+              "facts": {
+                "current": {
+                  "base_cost": 0,
+                  "card": "Anger",
+                  "card_type": "Attack",
+                  "definition_numbers": {
+                    "block": 0,
+                    "damage": 6
+                  },
+                  "ethereal": false,
+                  "exhausts": false,
+                  "innate": false,
+                  "play_target": "one_enemy",
+                  "rarity": "Common",
+                  "reviewed_effects": {
+                    "base_damage_delivery": {
+                      "amount": {
+                        "kind": "base"
+                      },
+                      "hits": {
+                        "count": 1,
+                        "kind": "fixed"
+                      },
+                      "kind": "attack",
+                      "play_condition": null,
+                      "targets": "selected_enemy"
+                    },
+                    "copy_to_discard_after_damage": 1,
+                    "end_of_turn_block_each_turn": null,
+                    "enemy_strength_reduction": null,
+                    "self_hp_loss_on_play": null,
+                    "unconditional_draw_request": null
+                  },
+                  "upgrades": 0
+                },
+                "next_upgrade": {
+                  "base_cost": 0,
+                  "card": "Anger",
+                  "card_type": "Attack",
+                  "definition_numbers": {
+                    "block": 0,
+                    "damage": 8
+                  },
+                  "ethereal": false,
+                  "exhausts": false,
+                  "innate": false,
+                  "play_target": "one_enemy",
+                  "rarity": "Common",
+                  "reviewed_effects": {
+                    "base_damage_delivery": {
+                      "amount": {
+                        "kind": "base"
+                      },
+                      "hits": {
+                        "count": 1,
+                        "kind": "fixed"
+                      },
+                      "kind": "attack",
+                      "play_condition": null,
+                      "targets": "selected_enemy"
+                    },
+                    "copy_to_discard_after_damage": 1,
+                    "end_of_turn_block_each_turn": null,
+                    "enemy_strength_reduction": null,
+                    "self_hp_loss_on_play": null,
+                    "unconditional_draw_request": null
+                  },
+                  "upgrades": 1
+                }
+              }
+            }
+          ],
+          "coverage": "partial",
+          "public_snapshot_id": "public_information_snapshot_v1:650d474d51f937daedba86ba5b03ca84731cb872",
+          "schema": "sts-card-acquisition-reading-v1"
+        },
+        "decision": {
+          "candidates": [
+            {
+              "action": {
+                "kind": "discard_run_potion",
+                "potion": "LiquidBronze",
+                "slot": 0
+              },
+              "domain": "strategic"
+            },
+            {
+              "action": {
+                "kind": "buy_potion",
+                "potion": "BloodPotion",
+                "price": 55,
+                "shop_slot": 0
+              },
+              "domain": "strategic"
+            },
+            {
+              "action": {
+                "kind": "buy_potion",
+                "potion": "Elixir",
+                "price": 83,
+                "shop_slot": 1
+              },
+              "domain": "strategic"
+            },
+            {
+              "action": {
+                "kind": "buy_potion",
+                "potion": "WeakenPotion",
+                "price": 55,
+                "shop_slot": 2
+              },
+              "domain": "strategic"
+            },
+            {
+              "action": {
+                "card": "Anger",
+                "kind": "buy_card",
+                "price": 26,
+                "shop_slot": 0,
+                "upgrades": 0
+              },
+              "domain": "strategic"
+            },
+            {
+              "action": {
+                "kind": "buy_relic",
+                "price": 165,
+                "relic": "BronzeScales",
+                "shop_slot": 0
+              },
+              "domain": "strategic"
+            },
+            {
+              "action": {
+                "kind": "leave_shop"
+              },
+              "domain": "strategic"
+            }
+          ],
+          "information": {
+            "candidate_surface": {
+              "candidate_surface_id": "public_candidate_surface_v1:2da9c35fee593942cc39c9747ccecc998a9aa51f",
+              "kind": "deployable_policy",
+              "ordered_candidate_ids": [
+                "task_public_candidate_v1:8f66a122dcc8a6f60fd10ee6735f75e649e4afaa",
+                "task_public_candidate_v1:c2a5242c033d54498dd0cc29ed0375becd2dcee8",
+                "task_public_candidate_v1:a3dde234bd29c7e3fdb5f39e67924318ec2ff5db",
+                "task_public_candidate_v1:4f7964d8ca53361461c264429e81d46949f056eb",
+                "task_public_candidate_v1:53d7368de78a20554bb2cfdd25fe8073df42372c",
+                "task_public_candidate_v1:1792cbb8a4847e6dcd9890502dfe3a95c7e534cd",
+                "task_public_candidate_v1:1cfa71c57e2f678d0425e54dfd1e309cfd46e307"
+              ],
+              "schema_name": "TaskPublicCandidateSurfaceV1",
+              "schema_version": 1
+            },
+            "domain": "strategic",
+            "history_snapshot": {
+              "history_snapshot_id": "public_history_snapshot_v1:6693c80a196e79ffd3ad98e8555f9928d6f69390",
+              "schema_name": "TaskPublicHistorySnapshotV1",
+              "schema_version": 1
+            },
+            "observation": {
+              "observation_id": "public_observation_v1:4f90a7b31a16684b4004ab4aff658f1891bb378a",
+              "schema_name": "TaskStrategicPublicObservationV3",
+              "schema_version": 3,
+              "scope": "strategic_run_decision"
+            },
+            "schema_name": "PublicInformationSnapshotV1",
+            "schema_version": 1,
+            "snapshot_id": "public_information_snapshot_v1:650d474d51f937daedba86ba5b03ca84731cb872"
+          },
+          "observation": {
+            "domain": "strategic",
+            "observation": {
+              "cards": [
+                {
+                  "base_block_override": null,
+                  "base_damage_override": null,
+                  "card": "Strike",
+                  "cost_modifier": 0,
+                  "misc_value": 0,
+                  "ordinal": 0,
+                  "upgrades": 0
+                },
+                {
+                  "base_block_override": null,
+                  "base_damage_override": null,
+                  "card": "Strike",
+                  "cost_modifier": 0,
+                  "misc_value": 0,
+                  "ordinal": 1,
+                  "upgrades": 1
+                }
+              ],
+              "context": {
+                "inventory": {
+                  "cards": [
+                    {
+                      "affordable": true,
+                      "card": "Anger",
+                      "price": 26,
+                      "purchase_status": {
+                        "status": "purchasable"
+                      },
+                      "slot": 0,
+                      "upgrades": 0
+                    }
+                  ],
+                  "potions": [
+                    {
+                      "affordable": true,
+                      "potion": "BloodPotion",
+                      "price": 55,
+                      "purchase_status": {
+                        "status": "purchasable"
+                      },
+                      "slot": 0
+                    },
+                    {
+                      "affordable": true,
+                      "potion": "Elixir",
+                      "price": 83,
+                      "purchase_status": {
+                        "status": "purchasable"
+                      },
+                      "slot": 1
+                    },
+                    {
+                      "affordable": true,
+                      "potion": "WeakenPotion",
+                      "price": 55,
+                      "purchase_status": {
+                        "status": "purchasable"
+                      },
+                      "slot": 2
+                    }
+                  ],
+                  "purge": null,
+                  "relics": [
+                    {
+                      "affordable": true,
+                      "price": 165,
+                      "purchase_status": {
+                        "status": "purchasable"
+                      },
+                      "relic": "BronzeScales",
+                      "slot": 0
+                    }
+                  ]
+                },
+                "kind": "shop",
+                "purge_available": false,
+                "purge_cost": 75
+              },
+              "decision_site": "shop",
+              "mechanics": {
+                "mechanics_id": "constructed-reading-contract",
+                "mechanics_version": 1
+              },
+              "potions": [
+                {
+                  "potion": {
+                    "can_discard": true,
+                    "can_use": false,
+                    "potion": "LiquidBronze",
+                    "requires_target": false
+                  },
+                  "slot": 0
+                },
+                {
+                  "potion": null,
+                  "slot": 1
+                }
+              ],
+              "public_history": {
+                "recent_combat_hp_loss": null,
+                "recent_combat_potions_used": null,
+                "recent_combat_turns": null,
+                "shop_purge_count": 0
+              },
+              "public_map": {
+                "boss": null,
+                "current_x": 1,
+                "current_y": 5,
+                "nodes": [
+                  {
+                    "edges": [
+                      {
+                        "destination_x": 0,
+                        "destination_y": 6
+                      },
+                      {
+                        "destination_x": 2,
+                        "destination_y": 6
+                      }
+                    ],
+                    "has_emerald_key": false,
+                    "room": "monster",
+                    "x": 1,
+                    "y": 5
+                  },
+                  {
+                    "edges": [],
+                    "has_emerald_key": true,
+                    "room": "elite",
+                    "x": 0,
+                    "y": 6
+                  },
+                  {
+                    "edges": [],
+                    "has_emerald_key": false,
+                    "room": "question_mark",
+                    "x": 2,
+                    "y": 6
+                  }
+                ]
+              },
+              "relics": [
+                {
+                  "amount": 1,
+                  "counter": -1,
+                  "relic": "BurningBlood",
+                  "used_up": false
+                }
+              ],
+              "run": {
+                "act": 1,
+                "ascension_level": 20,
+                "current_hp": 65,
+                "floor": 7,
+                "gold": 209,
+                "keys": [
+                  false,
+                  false,
+                  false
+                ],
+                "max_hp": 75,
+                "player_class": "ironclad",
+                "potion_capacity": 2
+              },
+              "run_goal": "heart_victory"
+            }
+          },
+          "site": "shop"
+        },
+        "deck_mechanics": {
+          "basis": "public_instance_and_shared_card_mechanics",
+          "cards": [
+            {
+              "card_sha256": "fea993e81934c780734b1127365e2ae7ec7f95876d4244b0e0f89b9b564c8108",
+              "facts": {
+                "current": {
+                  "definition": {
+                    "base_cost": 1,
+                    "card": "Strike",
+                    "card_type": "Attack",
+                    "definition_numbers": {
+                      "block": 0,
+                      "damage": 6
+                    },
+                    "ethereal": false,
+                    "exhausts": false,
+                    "innate": false,
+                    "play_target": "one_enemy",
+                    "rarity": "Basic",
+                    "reviewed_effects": {
+                      "base_damage_delivery": {
+                        "amount": {
+                          "kind": "base"
+                        },
+                        "hits": {
+                          "count": 1,
+                          "kind": "fixed"
+                        },
+                        "kind": "attack",
+                        "play_condition": null,
+                        "targets": "selected_enemy"
+                      },
+                      "end_of_turn_block_each_turn": null,
+                      "enemy_strength_reduction": null,
+                      "self_hp_loss_on_play": null,
+                      "unconditional_draw_request": null
+                    },
+                    "upgrades": 0
+                  },
+                  "misc_value": 0,
+                  "persistent_block": 0,
+                  "persistent_cost": 1,
+                  "persistent_damage": 6
+                },
+                "next_upgrade": {
+                  "definition": {
+                    "base_cost": 1,
+                    "card": "Strike",
+                    "card_type": "Attack",
+                    "definition_numbers": {
+                      "block": 0,
+                      "damage": 9
+                    },
+                    "ethereal": false,
+                    "exhausts": false,
+                    "innate": false,
+                    "play_target": "one_enemy",
+                    "rarity": "Basic",
+                    "reviewed_effects": {
+                      "base_damage_delivery": {
+                        "amount": {
+                          "kind": "base"
+                        },
+                        "hits": {
+                          "count": 1,
+                          "kind": "fixed"
+                        },
+                        "kind": "attack",
+                        "play_condition": null,
+                        "targets": "selected_enemy"
+                      },
+                      "end_of_turn_block_each_turn": null,
+                      "enemy_strength_reduction": null,
+                      "self_hp_loss_on_play": null,
+                      "unconditional_draw_request": null
+                    },
+                    "upgrades": 1
+                  },
+                  "misc_value": 0,
+                  "persistent_block": 0,
+                  "persistent_cost": 1,
+                  "persistent_damage": 9
+                }
+              },
+              "ordinal": 0
+            },
+            {
+              "card_sha256": "0b18905da661f3ab3ec7533f1db055f85605b044757d878e3dcc5415029ac318",
+              "facts": {
+                "current": {
+                  "definition": {
+                    "base_cost": 1,
+                    "card": "Strike",
+                    "card_type": "Attack",
+                    "definition_numbers": {
+                      "block": 0,
+                      "damage": 9
+                    },
+                    "ethereal": false,
+                    "exhausts": false,
+                    "innate": false,
+                    "play_target": "one_enemy",
+                    "rarity": "Basic",
+                    "reviewed_effects": {
+                      "base_damage_delivery": {
+                        "amount": {
+                          "kind": "base"
+                        },
+                        "hits": {
+                          "count": 1,
+                          "kind": "fixed"
+                        },
+                        "kind": "attack",
+                        "play_condition": null,
+                        "targets": "selected_enemy"
+                      },
+                      "end_of_turn_block_each_turn": null,
+                      "enemy_strength_reduction": null,
+                      "self_hp_loss_on_play": null,
+                      "unconditional_draw_request": null
+                    },
+                    "upgrades": 1
+                  },
+                  "misc_value": 0,
+                  "persistent_block": 0,
+                  "persistent_cost": 1,
+                  "persistent_damage": 9
+                },
+                "next_upgrade": null
+              },
+              "ordinal": 1
+            }
+          ],
+          "coverage": "partial",
+          "public_snapshot_id": "public_information_snapshot_v1:650d474d51f937daedba86ba5b03ca84731cb872",
+          "schema": "sts-owned-card-reading-v1"
+        },
+        "potion_mechanics": {
+          "basis": "simulator_definition_and_reviewed_effects",
+          "candidates": [
+            {
+              "candidate_id": "task_public_candidate_v1:8f66a122dcc8a6f60fd10ee6735f75e649e4afaa",
+              "facts": {
+                "card_discovery": null,
+                "permits_out_of_combat_use": false,
+                "potion": "LiquidBronze",
+                "requires_target": false,
+                "reviewed_use": {
+                  "amount": 3,
+                  "kind": "gain_thorns"
+                }
+              }
+            },
+            {
+              "candidate_id": "task_public_candidate_v1:c2a5242c033d54498dd0cc29ed0375becd2dcee8",
+              "facts": {
+                "card_discovery": null,
+                "permits_out_of_combat_use": true,
+                "potion": "BloodPotion",
+                "requires_target": false,
+                "reviewed_use": {
+                  "kind": "heal_max_hp_percent",
+                  "percent": 20
+                }
+              }
+            },
+            {
+              "candidate_id": "task_public_candidate_v1:a3dde234bd29c7e3fdb5f39e67924318ec2ff5db",
+              "facts": {
+                "card_discovery": null,
+                "permits_out_of_combat_use": false,
+                "potion": "Elixir",
+                "requires_target": false,
+                "reviewed_use": {
+                  "kind": "choose_hand_exhaust"
+                }
+              }
+            },
+            {
+              "candidate_id": "task_public_candidate_v1:4f7964d8ca53361461c264429e81d46949f056eb",
+              "facts": {
+                "card_discovery": null,
+                "permits_out_of_combat_use": false,
+                "potion": "WeakenPotion",
+                "requires_target": true,
+                "reviewed_use": {
+                  "amount": 3,
+                  "kind": "apply_enemy_weak"
+                }
+              }
+            }
+          ],
+          "coverage": "partial",
+          "public_snapshot_id": "public_information_snapshot_v1:650d474d51f937daedba86ba5b03ca84731cb872",
+          "schema": "sts-potion-acquisition-reading-v1"
+        },
+        "producer": {
+          "component": "sts_run_play",
+          "evidence_identity": {
+            "build_source": {
+              "configuration": {
+                "CARGO_CFG_FEATURE": "",
+                "CARGO_CFG_PANIC": "unwind",
+                "CARGO_CFG_TARGET_ABI": "",
+                "CARGO_CFG_TARGET_ARCH": "x86_64",
+                "CARGO_CFG_TARGET_ENDIAN": "little",
+                "CARGO_CFG_TARGET_ENV": "msvc",
+                "CARGO_CFG_TARGET_FAMILY": "windows",
+                "CARGO_CFG_TARGET_FEATURE": "cmpxchg16b,fxsr,sse,sse2,sse3",
+                "CARGO_CFG_TARGET_HAS_ATOMIC": "128,16,32,64,8,ptr",
+                "CARGO_CFG_TARGET_OS": "windows",
+                "CARGO_CFG_TARGET_POINTER_WIDTH": "64",
+                "CARGO_CFG_TARGET_VENDOR": "pc",
+                "CARGO_CFG_WINDOWS": "",
+                "CARGO_ENCODED_RUSTFLAGS": "",
+                "DEBUG": "false",
+                "HOST": "x86_64-pc-windows-msvc",
+                "OPT_LEVEL": "0",
+                "TARGET": "x86_64-pc-windows-msvc",
+                "profile": "debug",
+                "rustc": "rustc 1.91.1 (ed61e7d7e 2025-11-07)\nbinary: rustc\ncommit-hash: ed61e7d7e242494fb7057f2657300d9e77bb4fcb\ncommit-date: 2025-11-07\nhost: x86_64-pc-windows-msvc\nrelease: 1.91.1\nLLVM version: 21.1.2\n"
+              },
+              "input_scope": "workspace-rust-source-v1",
+              "schema": "sts-rust-build-source-v1",
+              "source_sha256": "660318a278092dca8f08cbcb78298bc620446970a26e5aa9c659a19f806a3d55"
+            },
+            "public_observation_id": "sts-run-play-public-observation-20260906-v4",
+            "rng_semantics_id": "sts-simulator-run-rng-neow-card-parity-20260829-v1",
+            "run_play_head_schema": "sts-run-play-head-v1",
+            "schema": "sts-run-play-evidence-identity-v1",
+            "simulator_semantics_id": "sts-simulator-run-semantics-20260902-v14"
+          },
+          "version": "0.1.0"
+        },
+        "relic_mechanics": {
+          "basis": "simulator_definition_and_reviewed_effects",
+          "coverage": "partial",
+          "definitions": [
+            {
+              "battle_start_power": null,
+              "combat_victory_healing": {
+                "affected_by_healing_modifiers": true,
+                "base_hp": 6,
+                "capped_at_max_hp": true,
+                "requires_player_alive": true
+              },
+              "relic": "BurningBlood",
+              "shuffle_energy": null
+            },
+            {
+              "battle_start_power": {
+                "amount": 3,
+                "power": "thorns",
+                "scope": "every_combat"
+              },
+              "combat_victory_healing": null,
+              "relic": "BronzeScales",
+              "shuffle_energy": null
+            }
+          ],
+          "public_snapshot_id": "public_information_snapshot_v1:650d474d51f937daedba86ba5b03ca84731cb872",
+          "schema": "sts-visible-relic-reading-v1"
+        },
+        "source": {
+          "case_id": "potion-reading-shop",
+          "kind": "constructed_contract_case"
+        },
+        "strategic_reading": {
+          "candidates": [
+            {
+              "brief": "discard potion[0] Liquid Bronze",
+              "candidate_id": "task_public_candidate_v1:8f66a122dcc8a6f60fd10ee6735f75e649e4afaa",
+              "candidate_sha256": "da8c74c25822b5b613b5dd11809aa53270c6f12a1966b79bdec0e5c931944ec6",
+              "detail": "discard potion[0] Liquid Bronze"
+            },
+            {
+              "brief": "buy Blood Potion 55g",
+              "candidate_id": "task_public_candidate_v1:c2a5242c033d54498dd0cc29ed0375becd2dcee8",
+              "candidate_sha256": "2c8b7424f3ba270a800b31309f4e50dfa1c28d7a05b2978a0f16af93bef6d3c7",
+              "detail": "buy Blood Potion 55g"
+            },
+            {
+              "brief": "buy Elixir 83g",
+              "candidate_id": "task_public_candidate_v1:a3dde234bd29c7e3fdb5f39e67924318ec2ff5db",
+              "candidate_sha256": "b758f7a5c562ba4377da73b58f4b4ec01cd1a5f3b7d1f8a1a52fb51c72a21ff9",
+              "detail": "buy Elixir 83g"
+            },
+            {
+              "brief": "buy Weak Potion 55g",
+              "candidate_id": "task_public_candidate_v1:4f7964d8ca53361461c264429e81d46949f056eb",
+              "candidate_sha256": "3c6d1ed908615e6a0dc65c584c9e79f43bbbfa5907f6929704238b2edab1ba61",
+              "detail": "buy Weak Potion 55g"
+            },
+            {
+              "brief": "buy Anger 26g",
+              "candidate_id": "task_public_candidate_v1:53d7368de78a20554bb2cfdd25fe8073df42372c",
+              "candidate_sha256": "afd5d0c2857de880f836e96fec2c31260dc81bbdee368ce3aef9e59fdac23435",
+              "detail": "buy Anger 26g"
+            },
+            {
+              "brief": "buy Bronze Scales 165g",
+              "candidate_id": "task_public_candidate_v1:1792cbb8a4847e6dcd9890502dfe3a95c7e534cd",
+              "candidate_sha256": "6a61efe72e62113a06db01e4e3d80ea1eda562bcb26ed632b01809816ec614d8",
+              "detail": "buy Bronze Scales 165g"
+            },
+            {
+              "brief": "leave shop",
+              "candidate_id": "task_public_candidate_v1:1cfa71c57e2f678d0425e54dfd1e309cfd46e307",
+              "candidate_sha256": "3360a255cde35ee019621fa090d746f229f05d6e3f4e9ed657738d311eae60f9",
+              "detail": "leave shop"
+            }
+          ],
+          "context_detail": "shop_inventory public_remaining=true action_slots=current\n  cards [0:Anger 26g affordable=true status=purchasable]\n  relics [0:Bronze Scales 165g affordable=true status=purchasable]\n  potions [0:Blood Potion 55g affordable=true status=purchasable; 1:Elixir 83g affordable=true status=purchasable; 2:Weak Potion 55g affordable=true status=purchasable]\n",
+          "context_summary": "Shop · removal 75g / available=false · cards/relics/potions remaining=1/1/3; expand inventory for details",
+          "decision_site": "shop",
+          "observation_sha256": "e2c85e182fffb8e26735ba3a18e185860fa0ee6df161a58eb5f80b8d36378815",
+          "public_snapshot_id": "public_information_snapshot_v1:650d474d51f937daedba86ba5b03ca84731cb872",
+          "schema": "sts-strategic-reading-surface-v1"
+        }
+      },
+      "payload_sha256": "8e46434a5811dbeb002888d828257f31a6e559a94e3c2630df7fc9a37b860f49",
+      "schema": "sts-public-decision-export-v3"
+    }
+  },
+  {
+    "case": "reward",
+    "document": {
+      "payload": {
+        "card_mechanics": {
+          "basis": "simulator_definition_and_reviewed_effects",
+          "candidates": [],
+          "coverage": "partial",
+          "public_snapshot_id": "public_information_snapshot_v1:7a17c58dd59f81fd462b8dccb8d4f632d21f0a1f",
+          "schema": "sts-card-acquisition-reading-v1"
+        },
+        "decision": {
+          "candidates": [
+            {
+              "action": {
+                "kind": "claim_reward",
+                "reward": {
+                  "kind": "potion",
+                  "potion": "PowerPotion"
+                },
+                "reward_item_index": 0
+              },
+              "domain": "strategic"
+            },
+            {
+              "action": {
+                "kind": "claim_reward",
+                "reward": {
+                  "kind": "potion",
+                  "potion": "ColorlessPotion"
+                },
+                "reward_item_index": 1
+              },
+              "domain": "strategic"
+            },
+            {
+              "action": {
+                "kind": "claim_reward",
+                "reward": {
+                  "kind": "potion",
+                  "potion": "FairyPotion"
+                },
+                "reward_item_index": 2
+              },
+              "domain": "strategic"
+            },
+            {
+              "action": {
+                "kind": "proceed",
+                "site": "reward"
+              },
+              "domain": "strategic"
+            }
+          ],
+          "information": {
+            "candidate_surface": {
+              "candidate_surface_id": "public_candidate_surface_v1:755d35ec46d8da8014256856760c73cc32f49972",
+              "kind": "deployable_policy",
+              "ordered_candidate_ids": [
+                "task_public_candidate_v1:a441e0caca5a3f7bba5c8c16e82059dda35feaf8",
+                "task_public_candidate_v1:78a4ec873ac43fd0290bf499f45531c2d24ee1d9",
+                "task_public_candidate_v1:13e3dfab0c23de0377296af2683787b3817e6a4f",
+                "task_public_candidate_v1:03e74b475175db4b2e1940628c0bbb38e9c48291"
+              ],
+              "schema_name": "TaskPublicCandidateSurfaceV1",
+              "schema_version": 1
+            },
+            "domain": "strategic",
+            "history_snapshot": {
+              "history_snapshot_id": "public_history_snapshot_v1:6693c80a196e79ffd3ad98e8555f9928d6f69390",
+              "schema_name": "TaskPublicHistorySnapshotV1",
+              "schema_version": 1
+            },
+            "observation": {
+              "observation_id": "public_observation_v1:0f0aa7c782e8521a271a5b7b6840eca2f28288a3",
+              "schema_name": "TaskStrategicPublicObservationV3",
+              "schema_version": 3,
+              "scope": "strategic_run_decision"
+            },
+            "schema_name": "PublicInformationSnapshotV1",
+            "schema_version": 1,
+            "snapshot_id": "public_information_snapshot_v1:7a17c58dd59f81fd462b8dccb8d4f632d21f0a1f"
+          },
+          "observation": {
+            "domain": "strategic",
+            "observation": {
+              "cards": [
+                {
+                  "base_block_override": null,
+                  "base_damage_override": null,
+                  "card": "Strike",
+                  "cost_modifier": 0,
+                  "misc_value": 0,
+                  "ordinal": 0,
+                  "upgrades": 0
+                },
+                {
+                  "base_block_override": null,
+                  "base_damage_override": null,
+                  "card": "Strike",
+                  "cost_modifier": 0,
+                  "misc_value": 0,
+                  "ordinal": 1,
+                  "upgrades": 1
+                }
+              ],
+              "context": {
+                "kind": "reward",
+                "pending_rewards": [
+                  {
+                    "kind": "potion",
+                    "potion": "PowerPotion"
+                  },
+                  {
+                    "kind": "potion",
+                    "potion": "ColorlessPotion"
+                  },
+                  {
+                    "kind": "potion",
+                    "potion": "FairyPotion"
+                  }
+                ]
+              },
+              "decision_site": "reward",
+              "mechanics": {
+                "mechanics_id": "constructed-reading-contract",
+                "mechanics_version": 1
+              },
+              "potions": [
+                {
+                  "potion": {
+                    "can_discard": true,
+                    "can_use": false,
+                    "potion": "LiquidBronze",
+                    "requires_target": false
+                  },
+                  "slot": 0
+                },
+                {
+                  "potion": null,
+                  "slot": 1
+                }
+              ],
+              "public_history": {
+                "recent_combat_hp_loss": null,
+                "recent_combat_potions_used": null,
+                "recent_combat_turns": null,
+                "shop_purge_count": 0
+              },
+              "public_map": {
+                "boss": null,
+                "current_x": 1,
+                "current_y": 5,
+                "nodes": [
+                  {
+                    "edges": [
+                      {
+                        "destination_x": 0,
+                        "destination_y": 6
+                      },
+                      {
+                        "destination_x": 2,
+                        "destination_y": 6
+                      }
+                    ],
+                    "has_emerald_key": false,
+                    "room": "monster",
+                    "x": 1,
+                    "y": 5
+                  },
+                  {
+                    "edges": [],
+                    "has_emerald_key": true,
+                    "room": "elite",
+                    "x": 0,
+                    "y": 6
+                  },
+                  {
+                    "edges": [],
+                    "has_emerald_key": false,
+                    "room": "question_mark",
+                    "x": 2,
+                    "y": 6
+                  }
+                ]
+              },
+              "relics": [
+                {
+                  "amount": 1,
+                  "counter": -1,
+                  "relic": "BurningBlood",
+                  "used_up": false
+                }
+              ],
+              "run": {
+                "act": 1,
+                "ascension_level": 20,
+                "current_hp": 65,
+                "floor": 7,
+                "gold": 209,
+                "keys": [
+                  false,
+                  false,
+                  false
+                ],
+                "max_hp": 75,
+                "player_class": "ironclad",
+                "potion_capacity": 2
+              },
+              "run_goal": "heart_victory"
+            }
+          },
+          "site": "reward"
+        },
+        "deck_mechanics": {
+          "basis": "public_instance_and_shared_card_mechanics",
+          "cards": [
+            {
+              "card_sha256": "fea993e81934c780734b1127365e2ae7ec7f95876d4244b0e0f89b9b564c8108",
+              "facts": {
+                "current": {
+                  "definition": {
+                    "base_cost": 1,
+                    "card": "Strike",
+                    "card_type": "Attack",
+                    "definition_numbers": {
+                      "block": 0,
+                      "damage": 6
+                    },
+                    "ethereal": false,
+                    "exhausts": false,
+                    "innate": false,
+                    "play_target": "one_enemy",
+                    "rarity": "Basic",
+                    "reviewed_effects": {
+                      "base_damage_delivery": {
+                        "amount": {
+                          "kind": "base"
+                        },
+                        "hits": {
+                          "count": 1,
+                          "kind": "fixed"
+                        },
+                        "kind": "attack",
+                        "play_condition": null,
+                        "targets": "selected_enemy"
+                      },
+                      "end_of_turn_block_each_turn": null,
+                      "enemy_strength_reduction": null,
+                      "self_hp_loss_on_play": null,
+                      "unconditional_draw_request": null
+                    },
+                    "upgrades": 0
+                  },
+                  "misc_value": 0,
+                  "persistent_block": 0,
+                  "persistent_cost": 1,
+                  "persistent_damage": 6
+                },
+                "next_upgrade": {
+                  "definition": {
+                    "base_cost": 1,
+                    "card": "Strike",
+                    "card_type": "Attack",
+                    "definition_numbers": {
+                      "block": 0,
+                      "damage": 9
+                    },
+                    "ethereal": false,
+                    "exhausts": false,
+                    "innate": false,
+                    "play_target": "one_enemy",
+                    "rarity": "Basic",
+                    "reviewed_effects": {
+                      "base_damage_delivery": {
+                        "amount": {
+                          "kind": "base"
+                        },
+                        "hits": {
+                          "count": 1,
+                          "kind": "fixed"
+                        },
+                        "kind": "attack",
+                        "play_condition": null,
+                        "targets": "selected_enemy"
+                      },
+                      "end_of_turn_block_each_turn": null,
+                      "enemy_strength_reduction": null,
+                      "self_hp_loss_on_play": null,
+                      "unconditional_draw_request": null
+                    },
+                    "upgrades": 1
+                  },
+                  "misc_value": 0,
+                  "persistent_block": 0,
+                  "persistent_cost": 1,
+                  "persistent_damage": 9
+                }
+              },
+              "ordinal": 0
+            },
+            {
+              "card_sha256": "0b18905da661f3ab3ec7533f1db055f85605b044757d878e3dcc5415029ac318",
+              "facts": {
+                "current": {
+                  "definition": {
+                    "base_cost": 1,
+                    "card": "Strike",
+                    "card_type": "Attack",
+                    "definition_numbers": {
+                      "block": 0,
+                      "damage": 9
+                    },
+                    "ethereal": false,
+                    "exhausts": false,
+                    "innate": false,
+                    "play_target": "one_enemy",
+                    "rarity": "Basic",
+                    "reviewed_effects": {
+                      "base_damage_delivery": {
+                        "amount": {
+                          "kind": "base"
+                        },
+                        "hits": {
+                          "count": 1,
+                          "kind": "fixed"
+                        },
+                        "kind": "attack",
+                        "play_condition": null,
+                        "targets": "selected_enemy"
+                      },
+                      "end_of_turn_block_each_turn": null,
+                      "enemy_strength_reduction": null,
+                      "self_hp_loss_on_play": null,
+                      "unconditional_draw_request": null
+                    },
+                    "upgrades": 1
+                  },
+                  "misc_value": 0,
+                  "persistent_block": 0,
+                  "persistent_cost": 1,
+                  "persistent_damage": 9
+                },
+                "next_upgrade": null
+              },
+              "ordinal": 1
+            }
+          ],
+          "coverage": "partial",
+          "public_snapshot_id": "public_information_snapshot_v1:7a17c58dd59f81fd462b8dccb8d4f632d21f0a1f",
+          "schema": "sts-owned-card-reading-v1"
+        },
+        "potion_mechanics": {
+          "basis": "simulator_definition_and_reviewed_effects",
+          "candidates": [
+            {
+              "candidate_id": "task_public_candidate_v1:a441e0caca5a3f7bba5c8c16e82059dda35feaf8",
+              "facts": {
+                "card_discovery": {
+                  "base_selected_card_copies": 1,
+                  "can_skip": true,
+                  "offered_choices": 3,
+                  "pool": "power",
+                  "selected_card_cost_this_turn": 0
+                },
+                "permits_out_of_combat_use": false,
+                "potion": "PowerPotion",
+                "requires_target": false,
+                "reviewed_use": null
+              }
+            },
+            {
+              "candidate_id": "task_public_candidate_v1:78a4ec873ac43fd0290bf499f45531c2d24ee1d9",
+              "facts": {
+                "card_discovery": {
+                  "base_selected_card_copies": 1,
+                  "can_skip": false,
+                  "offered_choices": 3,
+                  "pool": "colorless",
+                  "selected_card_cost_this_turn": 0
+                },
+                "permits_out_of_combat_use": false,
+                "potion": "ColorlessPotion",
+                "requires_target": false,
+                "reviewed_use": null
+              }
+            },
+            {
+              "candidate_id": "task_public_candidate_v1:13e3dfab0c23de0377296af2683787b3817e6a4f",
+              "facts": {
+                "card_discovery": null,
+                "permits_out_of_combat_use": false,
+                "potion": "FairyPotion",
+                "requires_target": false,
+                "reviewed_use": null
+              }
+            }
+          ],
+          "coverage": "partial",
+          "public_snapshot_id": "public_information_snapshot_v1:7a17c58dd59f81fd462b8dccb8d4f632d21f0a1f",
+          "schema": "sts-potion-acquisition-reading-v1"
+        },
+        "producer": {
+          "component": "sts_run_play",
+          "evidence_identity": {
+            "build_source": {
+              "configuration": {
+                "CARGO_CFG_FEATURE": "",
+                "CARGO_CFG_PANIC": "unwind",
+                "CARGO_CFG_TARGET_ABI": "",
+                "CARGO_CFG_TARGET_ARCH": "x86_64",
+                "CARGO_CFG_TARGET_ENDIAN": "little",
+                "CARGO_CFG_TARGET_ENV": "msvc",
+                "CARGO_CFG_TARGET_FAMILY": "windows",
+                "CARGO_CFG_TARGET_FEATURE": "cmpxchg16b,fxsr,sse,sse2,sse3",
+                "CARGO_CFG_TARGET_HAS_ATOMIC": "128,16,32,64,8,ptr",
+                "CARGO_CFG_TARGET_OS": "windows",
+                "CARGO_CFG_TARGET_POINTER_WIDTH": "64",
+                "CARGO_CFG_TARGET_VENDOR": "pc",
+                "CARGO_CFG_WINDOWS": "",
+                "CARGO_ENCODED_RUSTFLAGS": "",
+                "DEBUG": "false",
+                "HOST": "x86_64-pc-windows-msvc",
+                "OPT_LEVEL": "0",
+                "TARGET": "x86_64-pc-windows-msvc",
+                "profile": "debug",
+                "rustc": "rustc 1.91.1 (ed61e7d7e 2025-11-07)\nbinary: rustc\ncommit-hash: ed61e7d7e242494fb7057f2657300d9e77bb4fcb\ncommit-date: 2025-11-07\nhost: x86_64-pc-windows-msvc\nrelease: 1.91.1\nLLVM version: 21.1.2\n"
+              },
+              "input_scope": "workspace-rust-source-v1",
+              "schema": "sts-rust-build-source-v1",
+              "source_sha256": "660318a278092dca8f08cbcb78298bc620446970a26e5aa9c659a19f806a3d55"
+            },
+            "public_observation_id": "sts-run-play-public-observation-20260906-v4",
+            "rng_semantics_id": "sts-simulator-run-rng-neow-card-parity-20260829-v1",
+            "run_play_head_schema": "sts-run-play-head-v1",
+            "schema": "sts-run-play-evidence-identity-v1",
+            "simulator_semantics_id": "sts-simulator-run-semantics-20260902-v14"
+          },
+          "version": "0.1.0"
+        },
+        "relic_mechanics": {
+          "basis": "simulator_definition_and_reviewed_effects",
+          "coverage": "partial",
+          "definitions": [
+            {
+              "battle_start_power": null,
+              "combat_victory_healing": {
+                "affected_by_healing_modifiers": true,
+                "base_hp": 6,
+                "capped_at_max_hp": true,
+                "requires_player_alive": true
+              },
+              "relic": "BurningBlood",
+              "shuffle_energy": null
+            }
+          ],
+          "public_snapshot_id": "public_information_snapshot_v1:7a17c58dd59f81fd462b8dccb8d4f632d21f0a1f",
+          "schema": "sts-visible-relic-reading-v1"
+        },
+        "source": {
+          "case_id": "potion-reading-reward",
+          "kind": "constructed_contract_case"
+        },
+        "strategic_reading": {
+          "candidates": [
+            {
+              "brief": "claim reward[0] potion Power Potion",
+              "candidate_id": "task_public_candidate_v1:a441e0caca5a3f7bba5c8c16e82059dda35feaf8",
+              "candidate_sha256": "a0ca0393d2d7df46d5ff16449dd9f5290e47d91efb4638cced67d877ac7cd369",
+              "detail": "claim reward[0] potion Power Potion"
+            },
+            {
+              "brief": "claim reward[1] potion Colorless Potion",
+              "candidate_id": "task_public_candidate_v1:78a4ec873ac43fd0290bf499f45531c2d24ee1d9",
+              "candidate_sha256": "0a85b121a042b7bc5c7aa62d688e6c07a4fe3f2ab5867a7103cd6b6f99d6a94c",
+              "detail": "claim reward[1] potion Colorless Potion"
+            },
+            {
+              "brief": "claim reward[2] potion Fairy in a Bottle",
+              "candidate_id": "task_public_candidate_v1:13e3dfab0c23de0377296af2683787b3817e6a4f",
+              "candidate_sha256": "d571449b00d03279da66b78601019257fdd274a2cd1ef8982515e7e90c2bb660",
+              "detail": "claim reward[2] potion Fairy in a Bottle"
+            },
+            {
+              "brief": "proceed Reward",
+              "candidate_id": "task_public_candidate_v1:03e74b475175db4b2e1940628c0bbb38e9c48291",
+              "candidate_sha256": "a856a615c98576106d16a2e839175c6d17346a72c869cbb6a82b51c7facf183a",
+              "detail": "proceed Reward"
+            }
+          ],
+          "context_detail": "Reward item 0: potion Power Potion\nReward item 1: potion Colorless Potion\nReward item 2: potion Fairy in a Bottle\n",
+          "context_summary": "Rewards · 3 items remaining; visible rewards may not be claimable yet",
+          "decision_site": "reward",
+          "observation_sha256": "1e2054c319b737c0f94b95e6a859a1e6309108b1b0b79fce27b8d46ead39f941",
+          "public_snapshot_id": "public_information_snapshot_v1:7a17c58dd59f81fd462b8dccb8d4f632d21f0a1f",
+          "schema": "sts-strategic-reading-surface-v1"
+        }
+      },
+      "payload_sha256": "e53c3c278c56bfbac90b67c7c4ccfc388bfff092e3cb4fe8cd8d642a1a57dcf1",
+      "schema": "sts-public-decision-export-v3"
+    }
+  },
+  {
+    "case": "owned",
+    "document": {
+      "payload": {
+        "card_mechanics": {
+          "basis": "simulator_definition_and_reviewed_effects",
+          "candidates": [],
+          "coverage": "partial",
+          "public_snapshot_id": "public_information_snapshot_v1:ee2b6540da799ff06e10c0cc273a9b3ab888dc45",
+          "schema": "sts-card-acquisition-reading-v1"
+        },
+        "decision": {
+          "candidates": [
+            {
+              "action": {
+                "kind": "use_run_potion",
+                "potion": "BloodPotion",
+                "slot": 0
+              },
+              "domain": "strategic"
+            },
+            {
+              "action": {
+                "kind": "discard_run_potion",
+                "potion": "BloodPotion",
+                "slot": 0
+              },
+              "domain": "strategic"
+            },
+            {
+              "action": {
+                "kind": "leave_shop"
+              },
+              "domain": "strategic"
+            }
+          ],
+          "information": {
+            "candidate_surface": {
+              "candidate_surface_id": "public_candidate_surface_v1:a9891796aef852b85508e4cf5befc98e7ef478a5",
+              "kind": "deployable_policy",
+              "ordered_candidate_ids": [
+                "task_public_candidate_v1:5a96685b47c213f71c8fd1771597d030a02154e3",
+                "task_public_candidate_v1:6e0a9b570e4e779498fede3b8237a8bc6b44f6cc",
+                "task_public_candidate_v1:f7377c57557a057392e0bfc509b6d2a99ce97106"
+              ],
+              "schema_name": "TaskPublicCandidateSurfaceV1",
+              "schema_version": 1
+            },
+            "domain": "strategic",
+            "history_snapshot": {
+              "history_snapshot_id": "public_history_snapshot_v1:6693c80a196e79ffd3ad98e8555f9928d6f69390",
+              "schema_name": "TaskPublicHistorySnapshotV1",
+              "schema_version": 1
+            },
+            "observation": {
+              "observation_id": "public_observation_v1:83f32088b25c5c2d51a67db02226e10aea38fda2",
+              "schema_name": "TaskStrategicPublicObservationV3",
+              "schema_version": 3,
+              "scope": "strategic_run_decision"
+            },
+            "schema_name": "PublicInformationSnapshotV1",
+            "schema_version": 1,
+            "snapshot_id": "public_information_snapshot_v1:ee2b6540da799ff06e10c0cc273a9b3ab888dc45"
+          },
+          "observation": {
+            "domain": "strategic",
+            "observation": {
+              "cards": [
+                {
+                  "base_block_override": null,
+                  "base_damage_override": null,
+                  "card": "Strike",
+                  "cost_modifier": 0,
+                  "misc_value": 0,
+                  "ordinal": 0,
+                  "upgrades": 0
+                },
+                {
+                  "base_block_override": null,
+                  "base_damage_override": null,
+                  "card": "Strike",
+                  "cost_modifier": 0,
+                  "misc_value": 0,
+                  "ordinal": 1,
+                  "upgrades": 1
+                }
+              ],
+              "context": {
+                "kind": "shop",
+                "purge_available": false,
+                "purge_cost": 75
+              },
+              "decision_site": "shop",
+              "mechanics": {
+                "mechanics_id": "constructed-reading-contract",
+                "mechanics_version": 1
+              },
+              "potions": [
+                {
+                  "potion": {
+                    "can_discard": true,
+                    "can_use": true,
+                    "potion": "BloodPotion",
+                    "requires_target": false
+                  },
+                  "slot": 0
+                },
+                {
+                  "potion": null,
+                  "slot": 1
+                }
+              ],
+              "public_history": {
+                "recent_combat_hp_loss": null,
+                "recent_combat_potions_used": null,
+                "recent_combat_turns": null,
+                "shop_purge_count": 0
+              },
+              "public_map": {
+                "boss": null,
+                "current_x": 1,
+                "current_y": 5,
+                "nodes": [
+                  {
+                    "edges": [
+                      {
+                        "destination_x": 0,
+                        "destination_y": 6
+                      },
+                      {
+                        "destination_x": 2,
+                        "destination_y": 6
+                      }
+                    ],
+                    "has_emerald_key": false,
+                    "room": "monster",
+                    "x": 1,
+                    "y": 5
+                  },
+                  {
+                    "edges": [],
+                    "has_emerald_key": true,
+                    "room": "elite",
+                    "x": 0,
+                    "y": 6
+                  },
+                  {
+                    "edges": [],
+                    "has_emerald_key": false,
+                    "room": "question_mark",
+                    "x": 2,
+                    "y": 6
+                  }
+                ]
+              },
+              "relics": [
+                {
+                  "amount": 1,
+                  "counter": -1,
+                  "relic": "BurningBlood",
+                  "used_up": false
+                }
+              ],
+              "run": {
+                "act": 1,
+                "ascension_level": 20,
+                "current_hp": 65,
+                "floor": 7,
+                "gold": 209,
+                "keys": [
+                  false,
+                  false,
+                  false
+                ],
+                "max_hp": 75,
+                "player_class": "ironclad",
+                "potion_capacity": 2
+              },
+              "run_goal": "heart_victory"
+            }
+          },
+          "site": "shop"
+        },
+        "deck_mechanics": {
+          "basis": "public_instance_and_shared_card_mechanics",
+          "cards": [
+            {
+              "card_sha256": "fea993e81934c780734b1127365e2ae7ec7f95876d4244b0e0f89b9b564c8108",
+              "facts": {
+                "current": {
+                  "definition": {
+                    "base_cost": 1,
+                    "card": "Strike",
+                    "card_type": "Attack",
+                    "definition_numbers": {
+                      "block": 0,
+                      "damage": 6
+                    },
+                    "ethereal": false,
+                    "exhausts": false,
+                    "innate": false,
+                    "play_target": "one_enemy",
+                    "rarity": "Basic",
+                    "reviewed_effects": {
+                      "base_damage_delivery": {
+                        "amount": {
+                          "kind": "base"
+                        },
+                        "hits": {
+                          "count": 1,
+                          "kind": "fixed"
+                        },
+                        "kind": "attack",
+                        "play_condition": null,
+                        "targets": "selected_enemy"
+                      },
+                      "end_of_turn_block_each_turn": null,
+                      "enemy_strength_reduction": null,
+                      "self_hp_loss_on_play": null,
+                      "unconditional_draw_request": null
+                    },
+                    "upgrades": 0
+                  },
+                  "misc_value": 0,
+                  "persistent_block": 0,
+                  "persistent_cost": 1,
+                  "persistent_damage": 6
+                },
+                "next_upgrade": {
+                  "definition": {
+                    "base_cost": 1,
+                    "card": "Strike",
+                    "card_type": "Attack",
+                    "definition_numbers": {
+                      "block": 0,
+                      "damage": 9
+                    },
+                    "ethereal": false,
+                    "exhausts": false,
+                    "innate": false,
+                    "play_target": "one_enemy",
+                    "rarity": "Basic",
+                    "reviewed_effects": {
+                      "base_damage_delivery": {
+                        "amount": {
+                          "kind": "base"
+                        },
+                        "hits": {
+                          "count": 1,
+                          "kind": "fixed"
+                        },
+                        "kind": "attack",
+                        "play_condition": null,
+                        "targets": "selected_enemy"
+                      },
+                      "end_of_turn_block_each_turn": null,
+                      "enemy_strength_reduction": null,
+                      "self_hp_loss_on_play": null,
+                      "unconditional_draw_request": null
+                    },
+                    "upgrades": 1
+                  },
+                  "misc_value": 0,
+                  "persistent_block": 0,
+                  "persistent_cost": 1,
+                  "persistent_damage": 9
+                }
+              },
+              "ordinal": 0
+            },
+            {
+              "card_sha256": "0b18905da661f3ab3ec7533f1db055f85605b044757d878e3dcc5415029ac318",
+              "facts": {
+                "current": {
+                  "definition": {
+                    "base_cost": 1,
+                    "card": "Strike",
+                    "card_type": "Attack",
+                    "definition_numbers": {
+                      "block": 0,
+                      "damage": 9
+                    },
+                    "ethereal": false,
+                    "exhausts": false,
+                    "innate": false,
+                    "play_target": "one_enemy",
+                    "rarity": "Basic",
+                    "reviewed_effects": {
+                      "base_damage_delivery": {
+                        "amount": {
+                          "kind": "base"
+                        },
+                        "hits": {
+                          "count": 1,
+                          "kind": "fixed"
+                        },
+                        "kind": "attack",
+                        "play_condition": null,
+                        "targets": "selected_enemy"
+                      },
+                      "end_of_turn_block_each_turn": null,
+                      "enemy_strength_reduction": null,
+                      "self_hp_loss_on_play": null,
+                      "unconditional_draw_request": null
+                    },
+                    "upgrades": 1
+                  },
+                  "misc_value": 0,
+                  "persistent_block": 0,
+                  "persistent_cost": 1,
+                  "persistent_damage": 9
+                },
+                "next_upgrade": null
+              },
+              "ordinal": 1
+            }
+          ],
+          "coverage": "partial",
+          "public_snapshot_id": "public_information_snapshot_v1:ee2b6540da799ff06e10c0cc273a9b3ab888dc45",
+          "schema": "sts-owned-card-reading-v1"
+        },
+        "potion_mechanics": {
+          "basis": "simulator_definition_and_reviewed_effects",
+          "candidates": [
+            {
+              "candidate_id": "task_public_candidate_v1:5a96685b47c213f71c8fd1771597d030a02154e3",
+              "facts": {
+                "card_discovery": null,
+                "permits_out_of_combat_use": true,
+                "potion": "BloodPotion",
+                "requires_target": false,
+                "reviewed_use": {
+                  "kind": "heal_max_hp_percent",
+                  "percent": 20
+                }
+              }
+            },
+            {
+              "candidate_id": "task_public_candidate_v1:6e0a9b570e4e779498fede3b8237a8bc6b44f6cc",
+              "facts": {
+                "card_discovery": null,
+                "permits_out_of_combat_use": true,
+                "potion": "BloodPotion",
+                "requires_target": false,
+                "reviewed_use": {
+                  "kind": "heal_max_hp_percent",
+                  "percent": 20
+                }
+              }
+            }
+          ],
+          "coverage": "partial",
+          "public_snapshot_id": "public_information_snapshot_v1:ee2b6540da799ff06e10c0cc273a9b3ab888dc45",
+          "schema": "sts-potion-acquisition-reading-v1"
+        },
+        "producer": {
+          "component": "sts_run_play",
+          "evidence_identity": {
+            "build_source": {
+              "configuration": {
+                "CARGO_CFG_FEATURE": "",
+                "CARGO_CFG_PANIC": "unwind",
+                "CARGO_CFG_TARGET_ABI": "",
+                "CARGO_CFG_TARGET_ARCH": "x86_64",
+                "CARGO_CFG_TARGET_ENDIAN": "little",
+                "CARGO_CFG_TARGET_ENV": "msvc",
+                "CARGO_CFG_TARGET_FAMILY": "windows",
+                "CARGO_CFG_TARGET_FEATURE": "cmpxchg16b,fxsr,sse,sse2,sse3",
+                "CARGO_CFG_TARGET_HAS_ATOMIC": "128,16,32,64,8,ptr",
+                "CARGO_CFG_TARGET_OS": "windows",
+                "CARGO_CFG_TARGET_POINTER_WIDTH": "64",
+                "CARGO_CFG_TARGET_VENDOR": "pc",
+                "CARGO_CFG_WINDOWS": "",
+                "CARGO_ENCODED_RUSTFLAGS": "",
+                "DEBUG": "false",
+                "HOST": "x86_64-pc-windows-msvc",
+                "OPT_LEVEL": "0",
+                "TARGET": "x86_64-pc-windows-msvc",
+                "profile": "debug",
+                "rustc": "rustc 1.91.1 (ed61e7d7e 2025-11-07)\nbinary: rustc\ncommit-hash: ed61e7d7e242494fb7057f2657300d9e77bb4fcb\ncommit-date: 2025-11-07\nhost: x86_64-pc-windows-msvc\nrelease: 1.91.1\nLLVM version: 21.1.2\n"
+              },
+              "input_scope": "workspace-rust-source-v1",
+              "schema": "sts-rust-build-source-v1",
+              "source_sha256": "660318a278092dca8f08cbcb78298bc620446970a26e5aa9c659a19f806a3d55"
+            },
+            "public_observation_id": "sts-run-play-public-observation-20260906-v4",
+            "rng_semantics_id": "sts-simulator-run-rng-neow-card-parity-20260829-v1",
+            "run_play_head_schema": "sts-run-play-head-v1",
+            "schema": "sts-run-play-evidence-identity-v1",
+            "simulator_semantics_id": "sts-simulator-run-semantics-20260902-v14"
+          },
+          "version": "0.1.0"
+        },
+        "relic_mechanics": {
+          "basis": "simulator_definition_and_reviewed_effects",
+          "coverage": "partial",
+          "definitions": [
+            {
+              "battle_start_power": null,
+              "combat_victory_healing": {
+                "affected_by_healing_modifiers": true,
+                "base_hp": 6,
+                "capped_at_max_hp": true,
+                "requires_player_alive": true
+              },
+              "relic": "BurningBlood",
+              "shuffle_energy": null
+            }
+          ],
+          "public_snapshot_id": "public_information_snapshot_v1:ee2b6540da799ff06e10c0cc273a9b3ab888dc45",
+          "schema": "sts-visible-relic-reading-v1"
+        },
+        "source": {
+          "case_id": "potion-reading-owned",
+          "kind": "constructed_contract_case"
+        },
+        "strategic_reading": {
+          "candidates": [
+            {
+              "brief": "use potion[0] Blood Potion",
+              "candidate_id": "task_public_candidate_v1:5a96685b47c213f71c8fd1771597d030a02154e3",
+              "candidate_sha256": "42a594980f9fb4fa622cd4550466f3fcf36fb76983b7e575cb1f80b0c47874ab",
+              "detail": "use potion[0] Blood Potion"
+            },
+            {
+              "brief": "discard potion[0] Blood Potion",
+              "candidate_id": "task_public_candidate_v1:6e0a9b570e4e779498fede3b8237a8bc6b44f6cc",
+              "candidate_sha256": "ddcd23b5f85cfcdd4ecb3618191ad2d3139e5e94620f0f1dba48ca38ed956b92",
+              "detail": "discard potion[0] Blood Potion"
+            },
+            {
+              "brief": "leave shop",
+              "candidate_id": "task_public_candidate_v1:f7377c57557a057392e0bfc509b6d2a99ce97106",
+              "candidate_sha256": "3360a255cde35ee019621fa090d746f229f05d6e3f4e9ed657738d311eae60f9",
+              "detail": "leave shop"
+            }
+          ],
+          "context_detail": "shop_inventory unavailable_in_legacy_observation\n",
+          "context_summary": "Shop · removal 75g / available=false · cards/relics/potions remaining=0/0/0; expand inventory for details",
+          "decision_site": "shop",
+          "observation_sha256": "c6e0726b1fe934aa500d6d52252ed7444e750e35d8ec6d060835d9299c8424da",
+          "public_snapshot_id": "public_information_snapshot_v1:ee2b6540da799ff06e10c0cc273a9b3ab888dc45",
+          "schema": "sts-strategic-reading-surface-v1"
+        }
+      },
+      "payload_sha256": "70c7575ac924eecae53bb69cc92a2191f2d70faa68bfba441c0c3f97ab41d0e0",
+      "schema": "sts-public-decision-export-v3"
+    }
+  }
+]

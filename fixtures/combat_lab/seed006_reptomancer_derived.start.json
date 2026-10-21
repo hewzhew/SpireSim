@@ -1,0 +1,62 @@
+{
+  "name": "seed006_derived_reptomancer",
+  "player_class": "Ironclad",
+  "ascension_level": 0,
+  "encounter_id": "Reptomancer",
+  "room_type": "elite",
+  "seed": 20260713006,
+  "player_current_hp": 88,
+  "player_max_hp": 110,
+  "relics": [
+    "Black Blood",
+    "Frozen Egg 2",
+    "Odd Mushroom",
+    "Toxic Egg 2",
+    "Runic Pyramid",
+    "The Courier"
+  ],
+  "potions": [
+    "LiquidBronze"
+  ],
+  "master_deck": [
+    {
+      "id": "Strike_R",
+      "count": 2
+    },
+    {
+      "id": "Defend_R",
+      "count": 4
+    },
+    {
+      "id": "Bash",
+      "upgrades": 1
+    },
+    "Berserk",
+    {
+      "id": "Clothesline",
+      "upgrades": 1
+    },
+    "Feed",
+    {
+      "id": "BattleTrance",
+      "upgrades": 1
+    },
+    {
+      "id": "Armaments",
+      "upgrades": 1
+    },
+    {
+      "id": "ShrugItOff",
+      "upgrades": 1
+    },
+    {
+      "id": "MasterOfStrategy",
+      "upgrades": 1
+    },
+    {
+      "id": "Inflame",
+      "upgrades": 1
+    },
+    "HeavyBlade"
+  ]
+}

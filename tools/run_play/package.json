@@ -1,0 +1,16 @@
+{
+  "name": "@sts-simulator/run-play",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Shared command and pipe client for the Rust run-play controller",
+  "type": "module",
+  "exports": {
+    ".": "./workbench.mjs"
+  },
+  "files": [
+    "*.mjs",
+    "!*.test.mjs",
+    "commands/*.mjs",
+    "README.md"
+  ]
+}

@@ -1,0 +1,54 @@
+{
+  "scope": "Two separate raw EndTurn fragments: initial Constricted application and an existing Constricted with Flame Barrier. Constructed Rust comparisons cover player HP/block/powers, monster HP/block/powers/move/history and the complete single floor.ai call with state/counter. No natural card binding, full combat reconstruction, restoration or certification authority.",
+  "source_session": "manual-4f1d866084124af58a517e757e532148",
+  "capture_scope": "accelerated_sts_wrapper_rng_ledger_and_declared_snapshot_domains",
+  "certifying_rust_source": "8637779a1af849c4046619c62225d6ec519a335c",
+  "constructed_input_scope": "One Spire Growth using observed monster state and floor.ai, observed player HP/block and powers, empty hand plus eight scenario Strikes for safe draw. Other relics and original card zones are omitted. The canonical Spire Growth occurrence zero explicitly denotes local scenario entity 73, not its Java runtime number.",
+  "evidence_limit": "The large recorded block masks the exact amount consumed by Constricted. These samples protect source retention, observed round-boundary state and Flame Barrier retaliation behavior, but cannot independently prove the block decrement, all tick timing, or detect omission/addition of a fully blocked tick. Dedicated Rust mechanism tests cover damage amount; a low-block Java sample would add coverage.",
+  "files": {
+    "apply-before.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-4f1d866084124af58a517e757e532148/java-evidence/boundaries/00000221-frame-557.json",
+      "sha256": "3d4af740ebf6f5ece96151f9f7179788f08f080d2f54a9f68f824c7325f5c1b1",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "19DB8497D557D1F61C3BC85B00536E8B020DF4B2B932FD8790E2C366CE0E901F",
+        "session_epoch": "5153f9b4-b0b5-4c53-acd8-47fdc1f099c6:c744c74f-9f94-4f57-8acb-71c81554bbc5:574b4d63-b94b-4021-85eb-9b35f3e96dfa"
+      }
+    },
+    "apply-end-turn.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-4f1d866084124af58a517e757e532148/java-evidence/actions/00000221-from-frame-557.json",
+      "sha256": "dcd60bcdb7b74c520e90a996be4065f950294d5bd0cbbdeb5002c9d21df37b0b"
+    },
+    "apply-after.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-4f1d866084124af58a517e757e532148/java-evidence/boundaries/00000222-frame-558.json",
+      "sha256": "e47da33b6e81f4eb3cbcd8fde50d00b07c05454e968415947cce61ea401a0888",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "19DB8497D557D1F61C3BC85B00536E8B020DF4B2B932FD8790E2C366CE0E901F",
+        "session_epoch": "5153f9b4-b0b5-4c53-acd8-47fdc1f099c6:c744c74f-9f94-4f57-8acb-71c81554bbc5:574b4d63-b94b-4021-85eb-9b35f3e96dfa"
+      }
+    },
+    "tick-before.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-4f1d866084124af58a517e757e532148/java-evidence/boundaries/00000236-frame-572.json",
+      "sha256": "ec2b91f212b8ee596312d517a63823ca00ab4c30c2bba343433b9188c6932945",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "19DB8497D557D1F61C3BC85B00536E8B020DF4B2B932FD8790E2C366CE0E901F",
+        "session_epoch": "5153f9b4-b0b5-4c53-acd8-47fdc1f099c6:c744c74f-9f94-4f57-8acb-71c81554bbc5:574b4d63-b94b-4021-85eb-9b35f3e96dfa"
+      }
+    },
+    "tick-end-turn.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-4f1d866084124af58a517e757e532148/java-evidence/actions/00000236-from-frame-572.json",
+      "sha256": "4ebddc35ee25d2c21cf37f41d307d63be46cd14b72ed46f40e7120501169a2ae"
+    },
+    "tick-after.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-4f1d866084124af58a517e757e532148/java-evidence/boundaries/00000237-frame-573.json",
+      "sha256": "47e1c97392862ad82e422c36d6680a3abde70901aae9b30b8a58e982c16c1134",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "19DB8497D557D1F61C3BC85B00536E8B020DF4B2B932FD8790E2C366CE0E901F",
+        "session_epoch": "5153f9b4-b0b5-4c53-acd8-47fdc1f099c6:c744c74f-9f94-4f57-8acb-71c81554bbc5:574b4d63-b94b-4021-85eb-9b35f3e96dfa"
+      }
+    }
+  }
+}

@@ -1,0 +1,1108 @@
+{
+  "schema_name": "RelicIdentityContract",
+  "schema_version": 1,
+  "entries": [
+    {
+      "stable_id": "Abacus",
+      "runtime_symbol": "Abacus",
+      "external_id": "TheAbacus",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "Akabeko",
+      "runtime_symbol": "Akabeko",
+      "external_id": "Akabeko",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "Anchor",
+      "runtime_symbol": "Anchor",
+      "external_id": "Anchor",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "AncientTeaSet",
+      "runtime_symbol": "AncientTeaSet",
+      "external_id": "Ancient Tea Set",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "ArtOfWar",
+      "runtime_symbol": "ArtOfWar",
+      "external_id": "Art of War",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "Astrolabe",
+      "runtime_symbol": "Astrolabe",
+      "external_id": "Astrolabe",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "BagOfMarbles",
+      "runtime_symbol": "BagOfMarbles",
+      "external_id": "Bag of Marbles",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "BagOfPreparation",
+      "runtime_symbol": "BagOfPreparation",
+      "external_id": "Bag of Preparation",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "BirdFacedUrn",
+      "runtime_symbol": "BirdFacedUrn",
+      "external_id": "Bird Faced Urn",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "BlackBlood",
+      "runtime_symbol": "BlackBlood",
+      "external_id": "Black Blood",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "BlackStar",
+      "runtime_symbol": "BlackStar",
+      "external_id": "Black Star",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "BloodVial",
+      "runtime_symbol": "BloodVial",
+      "external_id": "Blood Vial",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "BloodyIdol",
+      "runtime_symbol": "BloodyIdol",
+      "external_id": "Bloody Idol",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "BlueCandle",
+      "runtime_symbol": "BlueCandle",
+      "external_id": "Blue Candle",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "Boot",
+      "runtime_symbol": "Boot",
+      "external_id": "Boot",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "BottledFlame",
+      "runtime_symbol": "BottledFlame",
+      "external_id": "Bottled Flame",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "BottledLightning",
+      "runtime_symbol": "BottledLightning",
+      "external_id": "Bottled Lightning",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "BottledTornado",
+      "runtime_symbol": "BottledTornado",
+      "external_id": "Bottled Tornado",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "Brimstone",
+      "runtime_symbol": "Brimstone",
+      "external_id": "Brimstone",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "BronzeScales",
+      "runtime_symbol": "BronzeScales",
+      "external_id": "Bronze Scales",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "BurningBlood",
+      "runtime_symbol": "BurningBlood",
+      "external_id": "Burning Blood",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "BustedCrown",
+      "runtime_symbol": "BustedCrown",
+      "external_id": "Busted Crown",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "Calipers",
+      "runtime_symbol": "Calipers",
+      "external_id": "Calipers",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "CallingBell",
+      "runtime_symbol": "CallingBell",
+      "external_id": "Calling Bell",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "CaptainsWheel",
+      "runtime_symbol": "CaptainsWheel",
+      "external_id": "CaptainsWheel",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "Cauldron",
+      "runtime_symbol": "Cauldron",
+      "external_id": "Cauldron",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "CentennialPuzzle",
+      "runtime_symbol": "CentennialPuzzle",
+      "external_id": "Centennial Puzzle",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "CeramicFish",
+      "runtime_symbol": "CeramicFish",
+      "external_id": "CeramicFish",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "ChampionBelt",
+      "runtime_symbol": "ChampionBelt",
+      "external_id": "Champion Belt",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "CharonsAshes",
+      "runtime_symbol": "CharonsAshes",
+      "external_id": "Charon's Ashes",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "ChemicalX",
+      "runtime_symbol": "ChemicalX",
+      "external_id": "Chemical X",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "Circlet",
+      "runtime_symbol": "Circlet",
+      "external_id": "Circlet",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "CloakClasp",
+      "runtime_symbol": "CloakClasp",
+      "external_id": "CloakClasp",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "ClockworkSouvenir",
+      "runtime_symbol": "ClockworkSouvenir",
+      "external_id": "ClockworkSouvenir",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "CoffeeDripper",
+      "runtime_symbol": "CoffeeDripper",
+      "external_id": "Coffee Dripper",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "Courier",
+      "runtime_symbol": "Courier",
+      "external_id": "The Courier",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "CrackedCore",
+      "runtime_symbol": "CrackedCore",
+      "external_id": "Cracked Core",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "CultistMask",
+      "runtime_symbol": "CultistMask",
+      "external_id": "CultistMask",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "CursedKey",
+      "runtime_symbol": "CursedKey",
+      "external_id": "Cursed Key",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "Damaru",
+      "runtime_symbol": "Damaru",
+      "external_id": "Damaru",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "DarkstonePeriapt",
+      "runtime_symbol": "DarkstonePeriapt",
+      "external_id": "Darkstone Periapt",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "DataDisk",
+      "runtime_symbol": "DataDisk",
+      "external_id": "DataDisk",
+      "external_aliases": [
+        "Data Disk"
+      ]
+    },
+    {
+      "stable_id": "DeadBranch",
+      "runtime_symbol": "DeadBranch",
+      "external_id": "Dead Branch",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "DiscerningMonocle",
+      "runtime_symbol": "DiscerningMonocle",
+      "external_id": "Discerning Monocle",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "Dodecahedron",
+      "runtime_symbol": "Dodecahedron",
+      "external_id": "Dodecahedron",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "DollysMirror",
+      "runtime_symbol": "DollysMirror",
+      "external_id": "DollysMirror",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "DreamCatcher",
+      "runtime_symbol": "DreamCatcher",
+      "external_id": "Dream Catcher",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "DuVuDoll",
+      "runtime_symbol": "DuVuDoll",
+      "external_id": "Du-Vu Doll",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "Duality",
+      "runtime_symbol": "Duality",
+      "external_id": "Yang",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "Ectoplasm",
+      "runtime_symbol": "Ectoplasm",
+      "external_id": "Ectoplasm",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "EmotionChip",
+      "runtime_symbol": "EmotionChip",
+      "external_id": "Emotion Chip",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "EmptyCage",
+      "runtime_symbol": "EmptyCage",
+      "external_id": "Empty Cage",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "Enchiridion",
+      "runtime_symbol": "Enchiridion",
+      "external_id": "Enchiridion",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "EternalFeather",
+      "runtime_symbol": "EternalFeather",
+      "external_id": "Eternal Feather",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "FaceOfCleric",
+      "runtime_symbol": "FaceOfCleric",
+      "external_id": "FaceOfCleric",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "FossilizedHelix",
+      "runtime_symbol": "FossilizedHelix",
+      "external_id": "FossilizedHelix",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "FrozenCore",
+      "runtime_symbol": "FrozenCore",
+      "external_id": "FrozenCore",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "FrozenEye",
+      "runtime_symbol": "FrozenEye",
+      "external_id": "Frozen Eye",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "FusionHammer",
+      "runtime_symbol": "FusionHammer",
+      "external_id": "Fusion Hammer",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "GamblingChip",
+      "runtime_symbol": "GamblingChip",
+      "external_id": "Gambling Chip",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "Ginger",
+      "runtime_symbol": "Ginger",
+      "external_id": "Ginger",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "Girya",
+      "runtime_symbol": "Girya",
+      "external_id": "Girya",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "GoldPlatedCables",
+      "runtime_symbol": "GoldPlatedCables",
+      "external_id": "Cables",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "GoldenEye",
+      "runtime_symbol": "GoldenEye",
+      "external_id": "GoldenEye",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "GoldenIdol",
+      "runtime_symbol": "GoldenIdol",
+      "external_id": "Golden Idol",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "GremlinHorn",
+      "runtime_symbol": "GremlinHorn",
+      "external_id": "Gremlin Horn",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "GremlinMask",
+      "runtime_symbol": "GremlinMask",
+      "external_id": "GremlinMask",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "HandDrill",
+      "runtime_symbol": "HandDrill",
+      "external_id": "HandDrill",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "HappyFlower",
+      "runtime_symbol": "HappyFlower",
+      "external_id": "HappyFlower",
+      "external_aliases": [
+        "Happy Flower"
+      ]
+    },
+    {
+      "stable_id": "HolyWater",
+      "runtime_symbol": "HolyWater",
+      "external_id": "HolyWater",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "HornCleat",
+      "runtime_symbol": "HornCleat",
+      "external_id": "HornCleat",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "HoveringKite",
+      "runtime_symbol": "HoveringKite",
+      "external_id": "HoveringKite",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "IceCream",
+      "runtime_symbol": "IceCream",
+      "external_id": "Ice Cream",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "IncenseBurner",
+      "runtime_symbol": "IncenseBurner",
+      "external_id": "Incense Burner",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "InkBottle",
+      "runtime_symbol": "InkBottle",
+      "external_id": "InkBottle",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "Inserter",
+      "runtime_symbol": "Inserter",
+      "external_id": "Inserter",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "JuzuBracelet",
+      "runtime_symbol": "JuzuBracelet",
+      "external_id": "Juzu Bracelet",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "Kunai",
+      "runtime_symbol": "Kunai",
+      "external_id": "Kunai",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "Lantern",
+      "runtime_symbol": "Lantern",
+      "external_id": "Lantern",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "LetterOpener",
+      "runtime_symbol": "LetterOpener",
+      "external_id": "Letter Opener",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "LizardTail",
+      "runtime_symbol": "LizardTail",
+      "external_id": "Lizard Tail",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "MagicFlower",
+      "runtime_symbol": "MagicFlower",
+      "external_id": "Magic Flower",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "Mango",
+      "runtime_symbol": "Mango",
+      "external_id": "Mango",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "MarkOfPain",
+      "runtime_symbol": "MarkOfPain",
+      "external_id": "Mark of Pain",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "MarkOfTheBloom",
+      "runtime_symbol": "MarkOfTheBloom",
+      "external_id": "Mark of the Bloom",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "Matryoshka",
+      "runtime_symbol": "Matryoshka",
+      "external_id": "Matryoshka",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "MawBank",
+      "runtime_symbol": "MawBank",
+      "external_id": "MawBank",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "MealTicket",
+      "runtime_symbol": "MealTicket",
+      "external_id": "MealTicket",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "MeatOnTheBone",
+      "runtime_symbol": "MeatOnTheBone",
+      "external_id": "Meat on the Bone",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "MedicalKit",
+      "runtime_symbol": "MedicalKit",
+      "external_id": "Medical Kit",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "Melange",
+      "runtime_symbol": "Melange",
+      "external_id": "Melange",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "MembershipCard",
+      "runtime_symbol": "MembershipCard",
+      "external_id": "Membership Card",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "MercuryHourglass",
+      "runtime_symbol": "MercuryHourglass",
+      "external_id": "Mercury Hourglass",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "MummifiedHand",
+      "runtime_symbol": "MummifiedHand",
+      "external_id": "Mummified Hand",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "MutagenicStrength",
+      "runtime_symbol": "MutagenicStrength",
+      "external_id": "MutagenicStrength",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "Necronomicon",
+      "runtime_symbol": "Necronomicon",
+      "external_id": "Necronomicon",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "NeowsLament",
+      "runtime_symbol": "NeowsLament",
+      "external_id": "NeowsBlessing",
+      "external_aliases": [
+        "Neow's Lament"
+      ]
+    },
+    {
+      "stable_id": "NilrysCodex",
+      "runtime_symbol": "NilrysCodex",
+      "external_id": "Nilry's Codex",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "NinjaScroll",
+      "runtime_symbol": "NinjaScroll",
+      "external_id": "Ninja Scroll",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "NlothsGift",
+      "runtime_symbol": "NlothsGift",
+      "external_id": "Nloth's Gift",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "NlothsMask",
+      "runtime_symbol": "NlothsMask",
+      "external_id": "NlothsMask",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "NuclearBattery",
+      "runtime_symbol": "NuclearBattery",
+      "external_id": "Nuclear Battery",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "Nunchaku",
+      "runtime_symbol": "Nunchaku",
+      "external_id": "Nunchaku",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "OddMushroom",
+      "runtime_symbol": "OddMushroom",
+      "external_id": "Odd Mushroom",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "OddlySmoothStone",
+      "runtime_symbol": "OddlySmoothStone",
+      "external_id": "Oddly Smooth Stone",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "OldCoin",
+      "runtime_symbol": "OldCoin",
+      "external_id": "Old Coin",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "Omamori",
+      "runtime_symbol": "Omamori",
+      "external_id": "Omamori",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "OrangePellets",
+      "runtime_symbol": "OrangePellets",
+      "external_id": "OrangePellets",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "Orichalcum",
+      "runtime_symbol": "Orichalcum",
+      "external_id": "Orichalcum",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "OrnamentalFan",
+      "runtime_symbol": "OrnamentalFan",
+      "external_id": "Ornamental Fan",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "Orrery",
+      "runtime_symbol": "Orrery",
+      "external_id": "Orrery",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "PandorasBox",
+      "runtime_symbol": "PandorasBox",
+      "external_id": "Pandora's Box",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "Pantograph",
+      "runtime_symbol": "Pantograph",
+      "external_id": "Pantograph",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "PaperCrane",
+      "runtime_symbol": "PaperCrane",
+      "external_id": "Paper Crane",
+      "external_aliases": [
+        "Paper Krane"
+      ]
+    },
+    {
+      "stable_id": "PaperFrog",
+      "runtime_symbol": "PaperFrog",
+      "external_id": "Paper Frog",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "PeacePipe",
+      "runtime_symbol": "PeacePipe",
+      "external_id": "Peace Pipe",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "Pear",
+      "runtime_symbol": "Pear",
+      "external_id": "Pear",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "PenNib",
+      "runtime_symbol": "PenNib",
+      "external_id": "Pen Nib",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "PhilosopherStone",
+      "runtime_symbol": "PhilosopherStone",
+      "external_id": "Philosopher's Stone",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "Pocketwatch",
+      "runtime_symbol": "Pocketwatch",
+      "external_id": "Pocketwatch",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "PotionBelt",
+      "runtime_symbol": "PotionBelt",
+      "external_id": "Potion Belt",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "PrayerWheel",
+      "runtime_symbol": "PrayerWheel",
+      "external_id": "Prayer Wheel",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "PreservedInsect",
+      "runtime_symbol": "PreservedInsect",
+      "external_id": "PreservedInsect",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "PrismaticShard",
+      "runtime_symbol": "PrismaticShard",
+      "external_id": "PrismaticShard",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "PureWater",
+      "runtime_symbol": "PureWater",
+      "external_id": "PureWater",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "QuestionCard",
+      "runtime_symbol": "QuestionCard",
+      "external_id": "Question Card",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "RedMask",
+      "runtime_symbol": "RedMask",
+      "external_id": "Red Mask",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "RedSkull",
+      "runtime_symbol": "RedSkull",
+      "external_id": "Red Skull",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "RegalPillow",
+      "runtime_symbol": "RegalPillow",
+      "external_id": "Regal Pillow",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "RingOfTheSerpent",
+      "runtime_symbol": "RingOfTheSerpent",
+      "external_id": "Ring of the Serpent",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "RunicCapacitor",
+      "runtime_symbol": "RunicCapacitor",
+      "external_id": "Runic Capacitor",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "RunicCube",
+      "runtime_symbol": "RunicCube",
+      "external_id": "Runic Cube",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "RunicDome",
+      "runtime_symbol": "RunicDome",
+      "external_id": "Runic Dome",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "RunicPyramid",
+      "runtime_symbol": "RunicPyramid",
+      "external_id": "Runic Pyramid",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "SacredBark",
+      "runtime_symbol": "SacredBark",
+      "external_id": "SacredBark",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "SelfFormingClay",
+      "runtime_symbol": "SelfFormingClay",
+      "external_id": "Self Forming Clay",
+      "external_aliases": [
+        "SelfFormingClay"
+      ]
+    },
+    {
+      "stable_id": "Shovel",
+      "runtime_symbol": "Shovel",
+      "external_id": "Shovel",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "Shuriken",
+      "runtime_symbol": "Shuriken",
+      "external_id": "Shuriken",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "SingingBowl",
+      "runtime_symbol": "SingingBowl",
+      "external_id": "Singing Bowl",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "SlaversCollar",
+      "runtime_symbol": "SlaversCollar",
+      "external_id": "SlaversCollar",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "Sling",
+      "runtime_symbol": "Sling",
+      "external_id": "Sling",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "SmilingMask",
+      "runtime_symbol": "SmilingMask",
+      "external_id": "Smiling Mask",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "SnakeRing",
+      "runtime_symbol": "SnakeRing",
+      "external_id": "Ring of the Snake",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "SneckoEye",
+      "runtime_symbol": "SneckoEye",
+      "external_id": "Snecko Eye",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "SneckoSkull",
+      "runtime_symbol": "SneckoSkull",
+      "external_id": "Snake Skull",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "Sozu",
+      "runtime_symbol": "Sozu",
+      "external_id": "Sozu",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "SpiritPoop",
+      "runtime_symbol": "SpiritPoop",
+      "external_id": "Spirit Poop",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "SsserpentHead",
+      "runtime_symbol": "SsserpentHead",
+      "external_id": "SsserpentHead",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "StoneCalendar",
+      "runtime_symbol": "StoneCalendar",
+      "external_id": "StoneCalendar",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "StrangeSpoon",
+      "runtime_symbol": "StrangeSpoon",
+      "external_id": "Strange Spoon",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "Strawberry",
+      "runtime_symbol": "Strawberry",
+      "external_id": "Strawberry",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "StrikeDummy",
+      "runtime_symbol": "StrikeDummy",
+      "external_id": "StrikeDummy",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "Sundial",
+      "runtime_symbol": "Sundial",
+      "external_id": "Sundial",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "SymbioticVirus",
+      "runtime_symbol": "SymbioticVirus",
+      "external_id": "Symbiotic Virus",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "TeardropLocket",
+      "runtime_symbol": "TeardropLocket",
+      "external_id": "TeardropLocket",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "TheSpecimen",
+      "runtime_symbol": "TheSpecimen",
+      "external_id": "The Specimen",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "ThreadAndNeedle",
+      "runtime_symbol": "ThreadAndNeedle",
+      "external_id": "Thread and Needle",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "Tingsha",
+      "runtime_symbol": "Tingsha",
+      "external_id": "Tingsha",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "TinyChest",
+      "runtime_symbol": "TinyChest",
+      "external_id": "Tiny Chest",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "TinyHouse",
+      "runtime_symbol": "TinyHouse",
+      "external_id": "Tiny House",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "Toolbox",
+      "runtime_symbol": "Toolbox",
+      "external_id": "Toolbox",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "Torii",
+      "runtime_symbol": "Torii",
+      "external_id": "Torii",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "ToughBandages",
+      "runtime_symbol": "ToughBandages",
+      "external_id": "Tough Bandages",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "ToyOrnithopter",
+      "runtime_symbol": "ToyOrnithopter",
+      "external_id": "Toy Ornithopter",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "TungstenRod",
+      "runtime_symbol": "TungstenRod",
+      "external_id": "TungstenRod",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "Turnip",
+      "runtime_symbol": "Turnip",
+      "external_id": "Turnip",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "TwistedFunnel",
+      "runtime_symbol": "TwistedFunnel",
+      "external_id": "TwistedFunnel",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "UnceasingTop",
+      "runtime_symbol": "UnceasingTop",
+      "external_id": "Unceasing Top",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "Vajra",
+      "runtime_symbol": "Vajra",
+      "external_id": "Vajra",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "VelvetChoker",
+      "runtime_symbol": "VelvetChoker",
+      "external_id": "Velvet Choker",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "VioletLotus",
+      "runtime_symbol": "VioletLotus",
+      "external_id": "VioletLotus",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "Waffle",
+      "runtime_symbol": "Waffle",
+      "external_id": "Lee's Waffle",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "WarPaint",
+      "runtime_symbol": "WarPaint",
+      "external_id": "War Paint",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "WarpedTongs",
+      "runtime_symbol": "WarpedTongs",
+      "external_id": "WarpedTongs",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "Whetstone",
+      "runtime_symbol": "Whetstone",
+      "external_id": "Whetstone",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "WhiteBeastStatue",
+      "runtime_symbol": "WhiteBeastStatue",
+      "external_id": "White Beast Statue",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "WingBoots",
+      "runtime_symbol": "WingBoots",
+      "external_id": "WingedGreaves",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "WristBlade",
+      "runtime_symbol": "WristBlade",
+      "external_id": "WristBlade",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "ToxicEgg",
+      "runtime_symbol": "ToxicEgg",
+      "external_id": "Toxic Egg 2",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "FrozenEgg",
+      "runtime_symbol": "FrozenEgg",
+      "external_id": "Frozen Egg 2",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "MoltenEgg",
+      "runtime_symbol": "MoltenEgg",
+      "external_id": "Molten Egg 2",
+      "external_aliases": []
+    },
+    {
+      "stable_id": "RedCirclet",
+      "runtime_symbol": "RedCirclet",
+      "external_id": "Red Circlet",
+      "external_aliases": []
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+[package]
+name = "sts_combat_play"
+version = "0.1.0"
+edition = "2021"
+publish = false
+autobins = false
+autotests = false
+
+[dependencies]
+sts_core = { package = "sts_simulator", path = "../.." }
+sts_combat_atomic = { path = "../sts_combat_atomic" }
+sts_combat_knowledge = { path = "../sts_combat_knowledge" }
+sts_combat_planner = { path = "../sts_combat_planner" }
+sts_combat_strategy = { path = "../sts_combat_strategy" }
+sts_agent = { path = "../sts_agent" }
+sts_combat_option_grounder = { path = "../sts_combat_option_grounder" }
+sts_combat_storyboard = { path = "../sts_combat_storyboard" }
+sts_complete_turn_env = { path = "../sts_complete_turn_env" }
+sts_complete_turn_proposal = { path = "../sts_complete_turn_proposal" }
+sts_complete_turn_view = { path = "../sts_complete_turn_view" }
+sts_oracle_report = { path = "../sts_oracle_report" }
+clap = { version = "4.0", features = ["derive"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+[[bin]]
+name = "combat_play"
+path = "src/main.rs"

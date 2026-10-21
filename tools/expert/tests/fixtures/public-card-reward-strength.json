@@ -1,0 +1,642 @@
+{
+  "payload": {
+    "card_mechanics": {
+      "basis": "simulator_definition_and_reviewed_effects",
+      "candidates": [
+        {
+          "candidate_id": "task_public_candidate_v1:f11408704f6f1240f38ffaa23fb70b1ef75ce6a2",
+          "facts": {
+            "current": {
+              "base_cost": 1,
+              "card": "ShrugItOff",
+              "card_type": "Skill",
+              "definition_numbers": {
+                "block": 8,
+                "damage": 0
+              },
+              "ethereal": false,
+              "exhausts": false,
+              "innate": false,
+              "play_target": "player",
+              "rarity": "Common",
+              "reviewed_effects": {
+                "base_block_delivery": "once_on_play",
+                "end_of_turn_block_each_turn": null,
+                "enemy_strength_reduction": null,
+                "self_hp_loss_on_play": null,
+                "unconditional_draw_request": 1
+              },
+              "upgrades": 0
+            },
+            "next_upgrade": {
+              "base_cost": 1,
+              "card": "ShrugItOff",
+              "card_type": "Skill",
+              "definition_numbers": {
+                "block": 11,
+                "damage": 0
+              },
+              "ethereal": false,
+              "exhausts": false,
+              "innate": false,
+              "play_target": "player",
+              "rarity": "Common",
+              "reviewed_effects": {
+                "base_block_delivery": "once_on_play",
+                "end_of_turn_block_each_turn": null,
+                "enemy_strength_reduction": null,
+                "self_hp_loss_on_play": null,
+                "unconditional_draw_request": 1
+              },
+              "upgrades": 1
+            }
+          }
+        },
+        {
+          "candidate_id": "task_public_candidate_v1:1ce2d35aa2c011eabd6e94c53ec8f42759c61a91",
+          "facts": {
+            "current": {
+              "base_cost": 1,
+              "card": "SpotWeakness",
+              "card_type": "Skill",
+              "definition_numbers": {
+                "block": 0,
+                "damage": 0
+              },
+              "ethereal": false,
+              "exhausts": false,
+              "innate": false,
+              "play_target": "player_and_one_enemy",
+              "rarity": "Uncommon",
+              "reviewed_effects": {
+                "end_of_turn_block_each_turn": null,
+                "enemy_strength_reduction": null,
+                "player_strength_gain": {
+                  "amount": 3,
+                  "delivery": "if_target_intent_base_damage_nonnegative_at_resolution"
+                },
+                "self_hp_loss_on_play": null,
+                "unconditional_draw_request": null
+              },
+              "upgrades": 0
+            },
+            "next_upgrade": {
+              "base_cost": 1,
+              "card": "SpotWeakness",
+              "card_type": "Skill",
+              "definition_numbers": {
+                "block": 0,
+                "damage": 0
+              },
+              "ethereal": false,
+              "exhausts": false,
+              "innate": false,
+              "play_target": "player_and_one_enemy",
+              "rarity": "Uncommon",
+              "reviewed_effects": {
+                "end_of_turn_block_each_turn": null,
+                "enemy_strength_reduction": null,
+                "player_strength_gain": {
+                  "amount": 4,
+                  "delivery": "if_target_intent_base_damage_nonnegative_at_resolution"
+                },
+                "self_hp_loss_on_play": null,
+                "unconditional_draw_request": null
+              },
+              "upgrades": 1
+            }
+          }
+        },
+        {
+          "candidate_id": "task_public_candidate_v1:2d56c68773c9e9297c2f1fe393b4abd66ecf17c9",
+          "facts": {
+            "current": {
+              "base_cost": 1,
+              "card": "Disarm",
+              "card_type": "Skill",
+              "definition_numbers": {
+                "block": 0,
+                "damage": 0
+              },
+              "ethereal": false,
+              "exhausts": true,
+              "innate": false,
+              "play_target": "one_enemy",
+              "rarity": "Uncommon",
+              "reviewed_effects": {
+                "end_of_turn_block_each_turn": null,
+                "enemy_strength_reduction": {
+                  "amount": 2,
+                  "restoration": "no_scheduled_restoration"
+                },
+                "self_hp_loss_on_play": null,
+                "unconditional_draw_request": null
+              },
+              "upgrades": 0
+            },
+            "next_upgrade": {
+              "base_cost": 1,
+              "card": "Disarm",
+              "card_type": "Skill",
+              "definition_numbers": {
+                "block": 0,
+                "damage": 0
+              },
+              "ethereal": false,
+              "exhausts": true,
+              "innate": false,
+              "play_target": "one_enemy",
+              "rarity": "Uncommon",
+              "reviewed_effects": {
+                "end_of_turn_block_each_turn": null,
+                "enemy_strength_reduction": {
+                  "amount": 3,
+                  "restoration": "no_scheduled_restoration"
+                },
+                "self_hp_loss_on_play": null,
+                "unconditional_draw_request": null
+              },
+              "upgrades": 1
+            }
+          }
+        },
+        {
+          "candidate_id": "task_public_candidate_v1:6177ea0b1c5dfe2ee37981dd5ca18662c64196ba",
+          "facts": {
+            "current": {
+              "base_cost": 1,
+              "card": "Inflame",
+              "card_type": "Power",
+              "definition_numbers": {
+                "block": 0,
+                "damage": 0
+              },
+              "ethereal": false,
+              "exhausts": false,
+              "innate": false,
+              "play_target": "player",
+              "rarity": "Uncommon",
+              "reviewed_effects": {
+                "end_of_turn_block_each_turn": null,
+                "enemy_strength_reduction": null,
+                "player_strength_gain": {
+                  "amount": 2,
+                  "delivery": "on_play"
+                },
+                "self_hp_loss_on_play": null,
+                "unconditional_draw_request": null
+              },
+              "upgrades": 0
+            },
+            "next_upgrade": {
+              "base_cost": 1,
+              "card": "Inflame",
+              "card_type": "Power",
+              "definition_numbers": {
+                "block": 0,
+                "damage": 0
+              },
+              "ethereal": false,
+              "exhausts": false,
+              "innate": false,
+              "play_target": "player",
+              "rarity": "Uncommon",
+              "reviewed_effects": {
+                "end_of_turn_block_each_turn": null,
+                "enemy_strength_reduction": null,
+                "player_strength_gain": {
+                  "amount": 3,
+                  "delivery": "on_play"
+                },
+                "self_hp_loss_on_play": null,
+                "unconditional_draw_request": null
+              },
+              "upgrades": 1
+            }
+          }
+        },
+        {
+          "candidate_id": "task_public_candidate_v1:45c833e19c8801db64749e38474c45c2e6dc3ace",
+          "facts": {
+            "current": {
+              "base_cost": 0,
+              "card": "Flex",
+              "card_type": "Skill",
+              "definition_numbers": {
+                "block": 0,
+                "damage": 0
+              },
+              "ethereal": false,
+              "exhausts": false,
+              "innate": false,
+              "play_target": "player",
+              "rarity": "Common",
+              "reviewed_effects": {
+                "end_of_turn_block_each_turn": null,
+                "enemy_strength_reduction": null,
+                "player_strength_gain": {
+                  "amount": 2,
+                  "delivery": "on_play_with_separate_lose_strength"
+                },
+                "self_hp_loss_on_play": null,
+                "unconditional_draw_request": null
+              },
+              "upgrades": 0
+            },
+            "next_upgrade": {
+              "base_cost": 0,
+              "card": "Flex",
+              "card_type": "Skill",
+              "definition_numbers": {
+                "block": 0,
+                "damage": 0
+              },
+              "ethereal": false,
+              "exhausts": false,
+              "innate": false,
+              "play_target": "player",
+              "rarity": "Common",
+              "reviewed_effects": {
+                "end_of_turn_block_each_turn": null,
+                "enemy_strength_reduction": null,
+                "player_strength_gain": {
+                  "amount": 4,
+                  "delivery": "on_play_with_separate_lose_strength"
+                },
+                "self_hp_loss_on_play": null,
+                "unconditional_draw_request": null
+              },
+              "upgrades": 1
+            }
+          }
+        },
+        {
+          "candidate_id": "task_public_candidate_v1:a62ed72d89ddd0bb21fa9aef55bd126ee69d5144",
+          "facts": {
+            "current": {
+              "base_cost": 3,
+              "card": "DemonForm",
+              "card_type": "Power",
+              "definition_numbers": {
+                "block": 0,
+                "damage": 0
+              },
+              "ethereal": false,
+              "exhausts": false,
+              "innate": false,
+              "play_target": "no_explicit_target",
+              "rarity": "Rare",
+              "reviewed_effects": {
+                "end_of_turn_block_each_turn": null,
+                "enemy_strength_reduction": null,
+                "player_strength_gain": {
+                  "amount": 2,
+                  "delivery": "each_player_turn_start_post_draw"
+                },
+                "self_hp_loss_on_play": null,
+                "unconditional_draw_request": null
+              },
+              "upgrades": 0
+            },
+            "next_upgrade": {
+              "base_cost": 3,
+              "card": "DemonForm",
+              "card_type": "Power",
+              "definition_numbers": {
+                "block": 0,
+                "damage": 0
+              },
+              "ethereal": false,
+              "exhausts": false,
+              "innate": false,
+              "play_target": "no_explicit_target",
+              "rarity": "Rare",
+              "reviewed_effects": {
+                "end_of_turn_block_each_turn": null,
+                "enemy_strength_reduction": null,
+                "player_strength_gain": {
+                  "amount": 3,
+                  "delivery": "each_player_turn_start_post_draw"
+                },
+                "self_hp_loss_on_play": null,
+                "unconditional_draw_request": null
+              },
+              "upgrades": 1
+            }
+          }
+        }
+      ],
+      "coverage": "partial",
+      "public_snapshot_id": "public_information_snapshot_v1:4962be9888386e505d9960d50d1e26e497de5b4c",
+      "schema": "sts-card-acquisition-reading-v1"
+    },
+    "decision": {
+      "candidates": [
+        {
+          "action": {
+            "card": "ShrugItOff",
+            "kind": "take_card",
+            "option_index": 0,
+            "reward_item_index": 0,
+            "upgrades": 0
+          },
+          "domain": "strategic"
+        },
+        {
+          "action": {
+            "card": "SpotWeakness",
+            "kind": "take_card",
+            "option_index": 1,
+            "reward_item_index": 0,
+            "upgrades": 0
+          },
+          "domain": "strategic"
+        },
+        {
+          "action": {
+            "card": "Disarm",
+            "kind": "take_card",
+            "option_index": 2,
+            "reward_item_index": 0,
+            "upgrades": 0
+          },
+          "domain": "strategic"
+        },
+        {
+          "action": {
+            "card": "Inflame",
+            "kind": "take_card",
+            "option_index": 3,
+            "reward_item_index": 0,
+            "upgrades": 0
+          },
+          "domain": "strategic"
+        },
+        {
+          "action": {
+            "card": "Flex",
+            "kind": "take_card",
+            "option_index": 4,
+            "reward_item_index": 0,
+            "upgrades": 0
+          },
+          "domain": "strategic"
+        },
+        {
+          "action": {
+            "card": "DemonForm",
+            "kind": "take_card",
+            "option_index": 5,
+            "reward_item_index": 0,
+            "upgrades": 0
+          },
+          "domain": "strategic"
+        }
+      ],
+      "information": {
+        "candidate_surface": {
+          "candidate_surface_id": "public_candidate_surface_v1:fbb9692d5c1cf966d196cb67cba5b15b627a6fc7",
+          "kind": "deployable_policy",
+          "ordered_candidate_ids": [
+            "task_public_candidate_v1:f11408704f6f1240f38ffaa23fb70b1ef75ce6a2",
+            "task_public_candidate_v1:1ce2d35aa2c011eabd6e94c53ec8f42759c61a91",
+            "task_public_candidate_v1:2d56c68773c9e9297c2f1fe393b4abd66ecf17c9",
+            "task_public_candidate_v1:6177ea0b1c5dfe2ee37981dd5ca18662c64196ba",
+            "task_public_candidate_v1:45c833e19c8801db64749e38474c45c2e6dc3ace",
+            "task_public_candidate_v1:a62ed72d89ddd0bb21fa9aef55bd126ee69d5144"
+          ],
+          "schema_name": "TaskPublicCandidateSurfaceV1",
+          "schema_version": 1
+        },
+        "domain": "strategic",
+        "history_snapshot": {
+          "history_snapshot_id": "public_history_snapshot_v1:6693c80a196e79ffd3ad98e8555f9928d6f69390",
+          "schema_name": "TaskPublicHistorySnapshotV1",
+          "schema_version": 1
+        },
+        "observation": {
+          "observation_id": "public_observation_v1:3220d29b0a37222703b3f1a2645279699e7bab68",
+          "schema_name": "TaskStrategicPublicObservationV3",
+          "schema_version": 3,
+          "scope": "strategic_run_decision"
+        },
+        "schema_name": "PublicInformationSnapshotV1",
+        "schema_version": 1,
+        "snapshot_id": "public_information_snapshot_v1:4962be9888386e505d9960d50d1e26e497de5b4c"
+      },
+      "observation": {
+        "domain": "strategic",
+        "observation": {
+          "cards": [
+            {
+              "base_block_override": null,
+              "base_damage_override": null,
+              "card": "Strike",
+              "cost_modifier": 0,
+              "misc_value": 0,
+              "ordinal": 0,
+              "upgrades": 0
+            },
+            {
+              "base_block_override": null,
+              "base_damage_override": null,
+              "card": "Strike",
+              "cost_modifier": 0,
+              "misc_value": 0,
+              "ordinal": 1,
+              "upgrades": 1
+            }
+          ],
+          "context": {
+            "kind": "card_reward",
+            "reward_item_index": 0
+          },
+          "decision_site": "card_reward",
+          "mechanics": {
+            "mechanics_id": "constructed-reading-contract",
+            "mechanics_version": 1
+          },
+          "potions": [
+            {
+              "potion": {
+                "can_discard": true,
+                "can_use": false,
+                "potion": "FirePotion",
+                "requires_target": true
+              },
+              "slot": 0
+            },
+            {
+              "potion": null,
+              "slot": 1
+            }
+          ],
+          "public_history": {
+            "recent_combat_hp_loss": null,
+            "recent_combat_potions_used": null,
+            "recent_combat_turns": null,
+            "shop_purge_count": 0
+          },
+          "public_map": {
+            "boss": null,
+            "current_x": 1,
+            "current_y": 5,
+            "nodes": [
+              {
+                "edges": [
+                  {
+                    "destination_x": 0,
+                    "destination_y": 6
+                  },
+                  {
+                    "destination_x": 2,
+                    "destination_y": 6
+                  }
+                ],
+                "has_emerald_key": false,
+                "room": "monster",
+                "x": 1,
+                "y": 5
+              },
+              {
+                "edges": [],
+                "has_emerald_key": true,
+                "room": "elite",
+                "x": 0,
+                "y": 6
+              },
+              {
+                "edges": [],
+                "has_emerald_key": false,
+                "room": "question_mark",
+                "x": 2,
+                "y": 6
+              }
+            ]
+          },
+          "relics": [
+            {
+              "amount": 1,
+              "counter": -1,
+              "relic": "BurningBlood",
+              "used_up": false
+            },
+            {
+              "amount": 1,
+              "counter": -1,
+              "relic": "SingingBowl",
+              "used_up": false
+            }
+          ],
+          "run": {
+            "act": 1,
+            "ascension_level": 20,
+            "current_hp": 22,
+            "floor": 7,
+            "gold": 131,
+            "keys": [
+              false,
+              false,
+              false
+            ],
+            "max_hp": 80,
+            "player_class": "ironclad",
+            "potion_capacity": 2
+          },
+          "run_goal": "heart_victory"
+        }
+      },
+      "site": "card_reward"
+    },
+    "producer": {
+      "component": "sts_run_play",
+      "evidence_identity": {
+        "build_source": {
+          "configuration": {
+            "CARGO_CFG_FEATURE": "",
+            "CARGO_CFG_PANIC": "unwind",
+            "CARGO_CFG_TARGET_ABI": "",
+            "CARGO_CFG_TARGET_ARCH": "x86_64",
+            "CARGO_CFG_TARGET_ENDIAN": "little",
+            "CARGO_CFG_TARGET_ENV": "msvc",
+            "CARGO_CFG_TARGET_FAMILY": "windows",
+            "CARGO_CFG_TARGET_FEATURE": "cmpxchg16b,fxsr,sse,sse2,sse3",
+            "CARGO_CFG_TARGET_HAS_ATOMIC": "128,16,32,64,8,ptr",
+            "CARGO_CFG_TARGET_OS": "windows",
+            "CARGO_CFG_TARGET_POINTER_WIDTH": "64",
+            "CARGO_CFG_TARGET_VENDOR": "pc",
+            "CARGO_CFG_WINDOWS": "",
+            "CARGO_ENCODED_RUSTFLAGS": "",
+            "DEBUG": "false",
+            "HOST": "x86_64-pc-windows-msvc",
+            "OPT_LEVEL": "0",
+            "TARGET": "x86_64-pc-windows-msvc",
+            "profile": "debug",
+            "rustc": "rustc 1.91.1 (ed61e7d7e 2025-11-07)\nbinary: rustc\ncommit-hash: ed61e7d7e242494fb7057f2657300d9e77bb4fcb\ncommit-date: 2025-11-07\nhost: x86_64-pc-windows-msvc\nrelease: 1.91.1\nLLVM version: 21.1.2\n"
+          },
+          "input_scope": "workspace-rust-source-v1",
+          "schema": "sts-rust-build-source-v1",
+          "source_sha256": "fe8bd28ae21b3dc74a07c038760264f9cc37e6e26561fcd21c79dac5f1e8763f"
+        },
+        "public_observation_id": "sts-run-play-public-observation-20260906-v4",
+        "rng_semantics_id": "sts-simulator-run-rng-neow-card-parity-20260829-v1",
+        "run_play_head_schema": "sts-run-play-head-v1",
+        "schema": "sts-run-play-evidence-identity-v1",
+        "simulator_semantics_id": "sts-simulator-run-semantics-20260902-v14"
+      },
+      "version": "0.1.0"
+    },
+    "source": {
+      "case_id": "strength-delivery-reading-contract",
+      "kind": "constructed_contract_case"
+    },
+    "strategic_reading": {
+      "candidates": [
+        {
+          "brief": "take Shrug It Off",
+          "candidate_id": "task_public_candidate_v1:f11408704f6f1240f38ffaa23fb70b1ef75ce6a2",
+          "candidate_sha256": "5e2fdc83ebf111225ac215d3713c14ee661134eedbefe4bf61e7195f4ead3351",
+          "detail": "take Shrug It Off"
+        },
+        {
+          "brief": "take Spot Weakness",
+          "candidate_id": "task_public_candidate_v1:1ce2d35aa2c011eabd6e94c53ec8f42759c61a91",
+          "candidate_sha256": "d1e139c54505121aec3eddb138e4acaa0374fb2fb5cceb673c5512f8fb0c8fb1",
+          "detail": "take Spot Weakness"
+        },
+        {
+          "brief": "take Disarm",
+          "candidate_id": "task_public_candidate_v1:2d56c68773c9e9297c2f1fe393b4abd66ecf17c9",
+          "candidate_sha256": "bf0ec02494dc424c8da30690b385fe86548b5927eac2d6eb363297d31720d266",
+          "detail": "take Disarm"
+        },
+        {
+          "brief": "take Inflame",
+          "candidate_id": "task_public_candidate_v1:6177ea0b1c5dfe2ee37981dd5ca18662c64196ba",
+          "candidate_sha256": "f7d7319592c60e83cefae02e2fa1239349cf8e903ee3a7b6f4e7f6811b73b658",
+          "detail": "take Inflame"
+        },
+        {
+          "brief": "take Flex",
+          "candidate_id": "task_public_candidate_v1:45c833e19c8801db64749e38474c45c2e6dc3ace",
+          "candidate_sha256": "5237b41917cf9c5a923d7ca38ba7c1542df8fca7e916e555a38a1150c8b1078b",
+          "detail": "take Flex"
+        },
+        {
+          "brief": "take Demon Form",
+          "candidate_id": "task_public_candidate_v1:a62ed72d89ddd0bb21fa9aef55bd126ee69d5144",
+          "candidate_sha256": "b2e218c0836331b3b022c079462455d996ac113a52bb5141355cdfa2163fe283",
+          "detail": "take Demon Form"
+        }
+      ],
+      "context_detail": "",
+      "context_summary": "选牌 · 奖励项 Some(0)",
+      "decision_site": "card_reward",
+      "observation_sha256": "0547cf3871e8779498319711e045bab8a67f9447bddbd49a7468510df0c0938e",
+      "public_snapshot_id": "public_information_snapshot_v1:4962be9888386e505d9960d50d1e26e497de5b4c",
+      "schema": "sts-strategic-reading-surface-v1"
+    }
+  },
+  "payload_sha256": "905229b2069c6985a8e39f096cb50a11e1187c17861c217bd01aee40c37242fd",
+  "schema": "sts-public-decision-export-v3"
+}

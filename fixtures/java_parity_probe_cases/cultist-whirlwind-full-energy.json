@@ -1,0 +1,15 @@
+{
+  "schema": "sts_java_play_scenario_probe_draft_v1",
+  "provenance": "constructed_validated",
+  "probe_case_id": "cultist-whirlwind-full-energy",
+  "scenario_case_id": "cultist-whirlwind-root",
+  "transition": {
+    "transition_id": "combat.play_card.v1",
+    "card": {
+      "card_id": "Whirlwind",
+      "upgrades": 0,
+      "occurrence": 0
+    },
+    "target": null
+  }
+}

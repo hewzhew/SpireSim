@@ -1,0 +1,16 @@
+[package]
+name = "sts_complete_turn_proposal"
+version = "0.1.0"
+edition = "2021"
+publish = false
+autobins = false
+autotests = false
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+sts_card_semantics = { path = "../sts_card_semantics" }
+sts_core = { package = "sts_simulator", path = "../.." }
+sts_combat_atomic = { path = "../sts_combat_atomic" }
+serde = { version = "1.0", features = ["derive"] }

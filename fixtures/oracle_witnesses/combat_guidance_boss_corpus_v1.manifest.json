@@ -1,0 +1,48 @@
+{
+  "schema_name": "CombatActionImitationCorpusManifestV1",
+  "schema_version": 1,
+  "demonstrations": [
+    {
+      "id": "seed006-awakened-one",
+      "case": "seed20260713006_a0_awakened_one.combat-case.json",
+      "actions": [
+        "seed20260713006_a0_awakened_one.actions.json"
+      ]
+    },
+    {
+      "id": "seed007-relevant-capability-awakened-one",
+      "case": "seed20260713007_a0_relevant_capability_awakened_one.combat-case.json",
+      "actions": [
+        "seed20260713007_a0_relevant_capability_awakened_one.v2-donor.actions.json"
+      ]
+    },
+    {
+      "id": "seed008-donu-deca",
+      "case": "seed20260713008_a0_donu_deca.combat-case.json",
+      "actions": [
+        "seed20260713008_a0_donu_deca.layered-proof-cache.actions.json"
+      ]
+    },
+    {
+      "id": "seed008-body-slam-fiend-fire-donu-deca",
+      "case": "seed20260713008_a0_body_slam_fiend_fire_donu_deca.combat-case.json",
+      "actions": [
+        "seed20260713008_a0_body_slam_fiend_fire_donu_deca.policy-discrepancy.actions.json"
+      ]
+    },
+    {
+      "id": "seed009-slime-boss",
+      "case": "seed20260713009_a0_slime_boss.combat-case.json",
+      "actions": [
+        "seed20260713009_a0_slime_boss.local-turn-graph.actions.json"
+      ]
+    },
+    {
+      "id": "seed009-time-eater",
+      "case": "seed20260713009_a0_time_eater.combat-case.json",
+      "actions": [
+        "seed20260713009_a0_time_eater.local-turn-graph.actions.json"
+      ]
+    }
+  ]
+}

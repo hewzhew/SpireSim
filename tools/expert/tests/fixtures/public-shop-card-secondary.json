@@ -1,0 +1,1033 @@
+{
+  "payload": {
+    "card_mechanics": {
+      "basis": "simulator_definition_and_reviewed_effects",
+      "candidates": [
+        {
+          "candidate_id": "task_public_candidate_v1:f3f04524bece7535e5012bebb9603267e3a39f71",
+          "facts": {
+            "current": {
+              "base_cost": 0,
+              "card": "Anger",
+              "card_type": "Attack",
+              "definition_numbers": {
+                "block": 0,
+                "damage": 6
+              },
+              "ethereal": false,
+              "exhausts": false,
+              "innate": false,
+              "play_target": "one_enemy",
+              "rarity": "Common",
+              "reviewed_effects": {
+                "base_damage_delivery": {
+                  "amount": {
+                    "kind": "base"
+                  },
+                  "hits": {
+                    "count": 1,
+                    "kind": "fixed"
+                  },
+                  "kind": "attack",
+                  "play_condition": null,
+                  "targets": "selected_enemy"
+                },
+                "copy_to_discard_after_damage": 1,
+                "end_of_turn_block_each_turn": null,
+                "enemy_strength_reduction": null,
+                "self_hp_loss_on_play": null,
+                "unconditional_draw_request": null
+              },
+              "upgrades": 0
+            },
+            "next_upgrade": {
+              "base_cost": 0,
+              "card": "Anger",
+              "card_type": "Attack",
+              "definition_numbers": {
+                "block": 0,
+                "damage": 8
+              },
+              "ethereal": false,
+              "exhausts": false,
+              "innate": false,
+              "play_target": "one_enemy",
+              "rarity": "Common",
+              "reviewed_effects": {
+                "base_damage_delivery": {
+                  "amount": {
+                    "kind": "base"
+                  },
+                  "hits": {
+                    "count": 1,
+                    "kind": "fixed"
+                  },
+                  "kind": "attack",
+                  "play_condition": null,
+                  "targets": "selected_enemy"
+                },
+                "copy_to_discard_after_damage": 1,
+                "end_of_turn_block_each_turn": null,
+                "enemy_strength_reduction": null,
+                "self_hp_loss_on_play": null,
+                "unconditional_draw_request": null
+              },
+              "upgrades": 1
+            }
+          }
+        },
+        {
+          "candidate_id": "task_public_candidate_v1:a7e55f8c213a6667b58c7440ca22c5443516cf1b",
+          "facts": {
+            "current": {
+              "base_cost": 1,
+              "card": "BodySlam",
+              "card_type": "Attack",
+              "definition_numbers": {
+                "block": 0,
+                "damage": 0
+              },
+              "ethereal": false,
+              "exhausts": false,
+              "innate": false,
+              "play_target": "one_enemy",
+              "rarity": "Common",
+              "reviewed_effects": {
+                "base_damage_delivery": {
+                  "amount": {
+                    "kind": "player_block"
+                  },
+                  "hits": {
+                    "count": 1,
+                    "kind": "fixed"
+                  },
+                  "kind": "attack",
+                  "play_condition": null,
+                  "targets": "selected_enemy"
+                },
+                "end_of_turn_block_each_turn": null,
+                "enemy_strength_reduction": null,
+                "self_hp_loss_on_play": null,
+                "unconditional_draw_request": null
+              },
+              "upgrades": 0
+            },
+            "next_upgrade": {
+              "base_cost": 0,
+              "card": "BodySlam",
+              "card_type": "Attack",
+              "definition_numbers": {
+                "block": 0,
+                "damage": 0
+              },
+              "ethereal": false,
+              "exhausts": false,
+              "innate": false,
+              "play_target": "one_enemy",
+              "rarity": "Common",
+              "reviewed_effects": {
+                "base_damage_delivery": {
+                  "amount": {
+                    "kind": "player_block"
+                  },
+                  "hits": {
+                    "count": 1,
+                    "kind": "fixed"
+                  },
+                  "kind": "attack",
+                  "play_condition": null,
+                  "targets": "selected_enemy"
+                },
+                "end_of_turn_block_each_turn": null,
+                "enemy_strength_reduction": null,
+                "self_hp_loss_on_play": null,
+                "unconditional_draw_request": null
+              },
+              "upgrades": 1
+            }
+          }
+        },
+        {
+          "candidate_id": "task_public_candidate_v1:cb3fab0206448f24af9f05dd595f11f3da5dfdcb",
+          "facts": {
+            "current": {
+              "base_cost": 2,
+              "card": "Shockwave",
+              "card_type": "Skill",
+              "definition_numbers": {
+                "block": 0,
+                "damage": 0
+              },
+              "ethereal": false,
+              "exhausts": true,
+              "innate": false,
+              "play_target": "all_enemies",
+              "rarity": "Uncommon",
+              "reviewed_effects": {
+                "end_of_turn_block_each_turn": null,
+                "enemy_debuffs_in_monster_order": [
+                  {
+                    "amount": 3,
+                    "debuff": "weak"
+                  },
+                  {
+                    "amount": 3,
+                    "debuff": "vulnerable"
+                  }
+                ],
+                "enemy_strength_reduction": null,
+                "self_hp_loss_on_play": null,
+                "unconditional_draw_request": null
+              },
+              "upgrades": 0
+            },
+            "next_upgrade": {
+              "base_cost": 2,
+              "card": "Shockwave",
+              "card_type": "Skill",
+              "definition_numbers": {
+                "block": 0,
+                "damage": 0
+              },
+              "ethereal": false,
+              "exhausts": true,
+              "innate": false,
+              "play_target": "all_enemies",
+              "rarity": "Uncommon",
+              "reviewed_effects": {
+                "end_of_turn_block_each_turn": null,
+                "enemy_debuffs_in_monster_order": [
+                  {
+                    "amount": 5,
+                    "debuff": "weak"
+                  },
+                  {
+                    "amount": 5,
+                    "debuff": "vulnerable"
+                  }
+                ],
+                "enemy_strength_reduction": null,
+                "self_hp_loss_on_play": null,
+                "unconditional_draw_request": null
+              },
+              "upgrades": 1
+            }
+          }
+        },
+        {
+          "candidate_id": "task_public_candidate_v1:e4766a723649aa691efaf497045990ce34e7268b",
+          "facts": {
+            "current": {
+              "base_cost": 0,
+              "card": "Flex",
+              "card_type": "Skill",
+              "definition_numbers": {
+                "block": 0,
+                "damage": 0
+              },
+              "ethereal": false,
+              "exhausts": false,
+              "innate": false,
+              "play_target": "player",
+              "rarity": "Common",
+              "reviewed_effects": {
+                "end_of_turn_block_each_turn": null,
+                "enemy_strength_reduction": null,
+                "player_strength_gain": {
+                  "amount": 2,
+                  "delivery": "on_play_with_separate_lose_strength"
+                },
+                "self_hp_loss_on_play": null,
+                "unconditional_draw_request": null
+              },
+              "upgrades": 0
+            },
+            "next_upgrade": {
+              "base_cost": 0,
+              "card": "Flex",
+              "card_type": "Skill",
+              "definition_numbers": {
+                "block": 0,
+                "damage": 0
+              },
+              "ethereal": false,
+              "exhausts": false,
+              "innate": false,
+              "play_target": "player",
+              "rarity": "Common",
+              "reviewed_effects": {
+                "end_of_turn_block_each_turn": null,
+                "enemy_strength_reduction": null,
+                "player_strength_gain": {
+                  "amount": 4,
+                  "delivery": "on_play_with_separate_lose_strength"
+                },
+                "self_hp_loss_on_play": null,
+                "unconditional_draw_request": null
+              },
+              "upgrades": 1
+            }
+          }
+        },
+        {
+          "candidate_id": "task_public_candidate_v1:d6a1cc68b3bf8ccef3ba6a01ac172f4d304bc94e",
+          "facts": {
+            "current": {
+              "base_cost": 1,
+              "card": "Rupture",
+              "card_type": "Power",
+              "definition_numbers": {
+                "block": 0,
+                "damage": 0
+              },
+              "ethereal": false,
+              "exhausts": false,
+              "innate": false,
+              "play_target": "player",
+              "rarity": "Uncommon",
+              "reviewed_effects": {
+                "end_of_turn_block_each_turn": null,
+                "enemy_strength_reduction": null,
+                "hp_loss_strength_power": 1,
+                "self_hp_loss_on_play": null,
+                "unconditional_draw_request": null
+              },
+              "upgrades": 0
+            },
+            "next_upgrade": {
+              "base_cost": 1,
+              "card": "Rupture",
+              "card_type": "Power",
+              "definition_numbers": {
+                "block": 0,
+                "damage": 0
+              },
+              "ethereal": false,
+              "exhausts": false,
+              "innate": false,
+              "play_target": "player",
+              "rarity": "Uncommon",
+              "reviewed_effects": {
+                "end_of_turn_block_each_turn": null,
+                "enemy_strength_reduction": null,
+                "hp_loss_strength_power": 2,
+                "self_hp_loss_on_play": null,
+                "unconditional_draw_request": null
+              },
+              "upgrades": 1
+            }
+          }
+        },
+        {
+          "candidate_id": "task_public_candidate_v1:7b98cb79d668254c9f837886cc35147e6a8f8d9a",
+          "facts": {
+            "current": {
+              "base_cost": 0,
+              "card": "FlashOfSteel",
+              "card_type": "Attack",
+              "definition_numbers": {
+                "block": 0,
+                "damage": 3
+              },
+              "ethereal": false,
+              "exhausts": false,
+              "innate": false,
+              "play_target": "one_enemy",
+              "rarity": "Uncommon",
+              "reviewed_effects": {
+                "base_damage_delivery": {
+                  "amount": {
+                    "kind": "base"
+                  },
+                  "hits": {
+                    "count": 1,
+                    "kind": "fixed"
+                  },
+                  "kind": "attack",
+                  "play_condition": null,
+                  "targets": "selected_enemy"
+                },
+                "end_of_turn_block_each_turn": null,
+                "enemy_strength_reduction": null,
+                "self_hp_loss_on_play": null,
+                "unconditional_draw_request": 1
+              },
+              "upgrades": 0
+            },
+            "next_upgrade": {
+              "base_cost": 0,
+              "card": "FlashOfSteel",
+              "card_type": "Attack",
+              "definition_numbers": {
+                "block": 0,
+                "damage": 6
+              },
+              "ethereal": false,
+              "exhausts": false,
+              "innate": false,
+              "play_target": "one_enemy",
+              "rarity": "Uncommon",
+              "reviewed_effects": {
+                "base_damage_delivery": {
+                  "amount": {
+                    "kind": "base"
+                  },
+                  "hits": {
+                    "count": 1,
+                    "kind": "fixed"
+                  },
+                  "kind": "attack",
+                  "play_condition": null,
+                  "targets": "selected_enemy"
+                },
+                "end_of_turn_block_each_turn": null,
+                "enemy_strength_reduction": null,
+                "self_hp_loss_on_play": null,
+                "unconditional_draw_request": 1
+              },
+              "upgrades": 1
+            }
+          }
+        },
+        {
+          "candidate_id": "task_public_candidate_v1:0c457d70ffcc161025fe662ce9c61f5f00eae769",
+          "facts": {
+            "current": {
+              "base_cost": 0,
+              "card": "SecretTechnique",
+              "card_type": "Skill",
+              "definition_numbers": {
+                "block": 0,
+                "damage": 0
+              },
+              "ethereal": false,
+              "exhausts": true,
+              "innate": false,
+              "play_target": "no_explicit_target",
+              "rarity": "Rare",
+              "reviewed_effects": {
+                "draw_pile_skill_to_hand": 1,
+                "end_of_turn_block_each_turn": null,
+                "enemy_strength_reduction": null,
+                "self_hp_loss_on_play": null,
+                "unconditional_draw_request": null
+              },
+              "upgrades": 0
+            },
+            "next_upgrade": {
+              "base_cost": 0,
+              "card": "SecretTechnique",
+              "card_type": "Skill",
+              "definition_numbers": {
+                "block": 0,
+                "damage": 0
+              },
+              "ethereal": false,
+              "exhausts": false,
+              "innate": false,
+              "play_target": "no_explicit_target",
+              "rarity": "Rare",
+              "reviewed_effects": {
+                "draw_pile_skill_to_hand": 1,
+                "end_of_turn_block_each_turn": null,
+                "enemy_strength_reduction": null,
+                "self_hp_loss_on_play": null,
+                "unconditional_draw_request": null
+              },
+              "upgrades": 1
+            }
+          }
+        }
+      ],
+      "coverage": "partial",
+      "public_snapshot_id": "public_information_snapshot_v1:2d2c60396a1caae7894188c0519eb407ec7b21e2",
+      "schema": "sts-card-acquisition-reading-v1"
+    },
+    "decision": {
+      "candidates": [
+        {
+          "action": {
+            "card": "Anger",
+            "kind": "buy_card",
+            "price": 26,
+            "shop_slot": 0,
+            "upgrades": 0
+          },
+          "domain": "strategic"
+        },
+        {
+          "action": {
+            "card": "BodySlam",
+            "kind": "buy_card",
+            "price": 55,
+            "shop_slot": 1,
+            "upgrades": 0
+          },
+          "domain": "strategic"
+        },
+        {
+          "action": {
+            "card": "Shockwave",
+            "kind": "buy_card",
+            "price": 83,
+            "shop_slot": 2,
+            "upgrades": 0
+          },
+          "domain": "strategic"
+        },
+        {
+          "action": {
+            "card": "Flex",
+            "kind": "buy_card",
+            "price": 58,
+            "shop_slot": 3,
+            "upgrades": 0
+          },
+          "domain": "strategic"
+        },
+        {
+          "action": {
+            "card": "Rupture",
+            "kind": "buy_card",
+            "price": 74,
+            "shop_slot": 4,
+            "upgrades": 0
+          },
+          "domain": "strategic"
+        },
+        {
+          "action": {
+            "card": "FlashOfSteel",
+            "kind": "buy_card",
+            "price": 107,
+            "shop_slot": 5,
+            "upgrades": 0
+          },
+          "domain": "strategic"
+        },
+        {
+          "action": {
+            "card": "SecretTechnique",
+            "kind": "buy_card",
+            "price": 194,
+            "shop_slot": 6,
+            "upgrades": 0
+          },
+          "domain": "strategic"
+        },
+        {
+          "action": {
+            "kind": "leave_shop"
+          },
+          "domain": "strategic"
+        }
+      ],
+      "information": {
+        "candidate_surface": {
+          "candidate_surface_id": "public_candidate_surface_v1:238ad129b548aea5a6be4adcb4ebe549ba7b85bb",
+          "kind": "deployable_policy",
+          "ordered_candidate_ids": [
+            "task_public_candidate_v1:f3f04524bece7535e5012bebb9603267e3a39f71",
+            "task_public_candidate_v1:a7e55f8c213a6667b58c7440ca22c5443516cf1b",
+            "task_public_candidate_v1:cb3fab0206448f24af9f05dd595f11f3da5dfdcb",
+            "task_public_candidate_v1:e4766a723649aa691efaf497045990ce34e7268b",
+            "task_public_candidate_v1:d6a1cc68b3bf8ccef3ba6a01ac172f4d304bc94e",
+            "task_public_candidate_v1:7b98cb79d668254c9f837886cc35147e6a8f8d9a",
+            "task_public_candidate_v1:0c457d70ffcc161025fe662ce9c61f5f00eae769",
+            "task_public_candidate_v1:20a3cccf87166c3b8370fdf196d0cc6748d10c4e"
+          ],
+          "schema_name": "TaskPublicCandidateSurfaceV1",
+          "schema_version": 1
+        },
+        "domain": "strategic",
+        "history_snapshot": {
+          "history_snapshot_id": "public_history_snapshot_v1:6693c80a196e79ffd3ad98e8555f9928d6f69390",
+          "schema_name": "TaskPublicHistorySnapshotV1",
+          "schema_version": 1
+        },
+        "observation": {
+          "observation_id": "public_observation_v1:49d2f29bc083c1c71ef77caa906a421f7cb58cc7",
+          "schema_name": "TaskStrategicPublicObservationV3",
+          "schema_version": 3,
+          "scope": "strategic_run_decision"
+        },
+        "schema_name": "PublicInformationSnapshotV1",
+        "schema_version": 1,
+        "snapshot_id": "public_information_snapshot_v1:2d2c60396a1caae7894188c0519eb407ec7b21e2"
+      },
+      "observation": {
+        "domain": "strategic",
+        "observation": {
+          "cards": [
+            {
+              "base_block_override": null,
+              "base_damage_override": null,
+              "card": "Strike",
+              "cost_modifier": 0,
+              "misc_value": 0,
+              "ordinal": 0,
+              "upgrades": 0
+            },
+            {
+              "base_block_override": null,
+              "base_damage_override": null,
+              "card": "Strike",
+              "cost_modifier": 0,
+              "misc_value": 0,
+              "ordinal": 1,
+              "upgrades": 1
+            }
+          ],
+          "context": {
+            "inventory": {
+              "cards": [
+                {
+                  "affordable": true,
+                  "card": "Anger",
+                  "price": 26,
+                  "purchase_status": {
+                    "status": "purchasable"
+                  },
+                  "slot": 0,
+                  "upgrades": 0
+                },
+                {
+                  "affordable": true,
+                  "card": "BodySlam",
+                  "price": 55,
+                  "purchase_status": {
+                    "status": "purchasable"
+                  },
+                  "slot": 1,
+                  "upgrades": 0
+                },
+                {
+                  "affordable": true,
+                  "card": "Shockwave",
+                  "price": 83,
+                  "purchase_status": {
+                    "status": "purchasable"
+                  },
+                  "slot": 2,
+                  "upgrades": 0
+                },
+                {
+                  "affordable": true,
+                  "card": "Flex",
+                  "price": 58,
+                  "purchase_status": {
+                    "status": "purchasable"
+                  },
+                  "slot": 3,
+                  "upgrades": 0
+                },
+                {
+                  "affordable": true,
+                  "card": "Rupture",
+                  "price": 74,
+                  "purchase_status": {
+                    "status": "purchasable"
+                  },
+                  "slot": 4,
+                  "upgrades": 0
+                },
+                {
+                  "affordable": true,
+                  "card": "FlashOfSteel",
+                  "price": 107,
+                  "purchase_status": {
+                    "status": "purchasable"
+                  },
+                  "slot": 5,
+                  "upgrades": 0
+                },
+                {
+                  "affordable": true,
+                  "card": "SecretTechnique",
+                  "price": 194,
+                  "purchase_status": {
+                    "status": "purchasable"
+                  },
+                  "slot": 6,
+                  "upgrades": 0
+                }
+              ],
+              "potions": [],
+              "purge": null,
+              "relics": []
+            },
+            "kind": "shop",
+            "purge_available": false,
+            "purge_cost": 75
+          },
+          "decision_site": "shop",
+          "mechanics": {
+            "mechanics_id": "constructed-reading-contract",
+            "mechanics_version": 1
+          },
+          "potions": [
+            {
+              "potion": {
+                "can_discard": true,
+                "can_use": false,
+                "potion": "FirePotion",
+                "requires_target": true
+              },
+              "slot": 0
+            },
+            {
+              "potion": null,
+              "slot": 1
+            }
+          ],
+          "public_history": {
+            "recent_combat_hp_loss": null,
+            "recent_combat_potions_used": null,
+            "recent_combat_turns": null,
+            "shop_purge_count": 0
+          },
+          "public_map": {
+            "boss": null,
+            "current_x": 1,
+            "current_y": 5,
+            "nodes": [
+              {
+                "edges": [
+                  {
+                    "destination_x": 0,
+                    "destination_y": 6
+                  },
+                  {
+                    "destination_x": 2,
+                    "destination_y": 6
+                  }
+                ],
+                "has_emerald_key": false,
+                "room": "monster",
+                "x": 1,
+                "y": 5
+              },
+              {
+                "edges": [],
+                "has_emerald_key": true,
+                "room": "elite",
+                "x": 0,
+                "y": 6
+              },
+              {
+                "edges": [],
+                "has_emerald_key": false,
+                "room": "question_mark",
+                "x": 2,
+                "y": 6
+              }
+            ]
+          },
+          "relics": [
+            {
+              "amount": 1,
+              "counter": -1,
+              "relic": "BurningBlood",
+              "used_up": false
+            },
+            {
+              "amount": 1,
+              "counter": -1,
+              "relic": "SingingBowl",
+              "used_up": false
+            }
+          ],
+          "run": {
+            "act": 1,
+            "ascension_level": 20,
+            "current_hp": 22,
+            "floor": 7,
+            "gold": 209,
+            "keys": [
+              false,
+              false,
+              false
+            ],
+            "max_hp": 80,
+            "player_class": "ironclad",
+            "potion_capacity": 2
+          },
+          "run_goal": "heart_victory"
+        }
+      },
+      "site": "shop"
+    },
+    "deck_mechanics": {
+      "basis": "public_instance_and_shared_card_mechanics",
+      "cards": [
+        {
+          "card_sha256": "fea993e81934c780734b1127365e2ae7ec7f95876d4244b0e0f89b9b564c8108",
+          "facts": {
+            "current": {
+              "definition": {
+                "base_cost": 1,
+                "card": "Strike",
+                "card_type": "Attack",
+                "definition_numbers": {
+                  "block": 0,
+                  "damage": 6
+                },
+                "ethereal": false,
+                "exhausts": false,
+                "innate": false,
+                "play_target": "one_enemy",
+                "rarity": "Basic",
+                "reviewed_effects": {
+                  "base_damage_delivery": {
+                    "amount": {
+                      "kind": "base"
+                    },
+                    "hits": {
+                      "count": 1,
+                      "kind": "fixed"
+                    },
+                    "kind": "attack",
+                    "play_condition": null,
+                    "targets": "selected_enemy"
+                  },
+                  "end_of_turn_block_each_turn": null,
+                  "enemy_strength_reduction": null,
+                  "self_hp_loss_on_play": null,
+                  "unconditional_draw_request": null
+                },
+                "upgrades": 0
+              },
+              "misc_value": 0,
+              "persistent_block": 0,
+              "persistent_cost": 1,
+              "persistent_damage": 6
+            },
+            "next_upgrade": {
+              "definition": {
+                "base_cost": 1,
+                "card": "Strike",
+                "card_type": "Attack",
+                "definition_numbers": {
+                  "block": 0,
+                  "damage": 9
+                },
+                "ethereal": false,
+                "exhausts": false,
+                "innate": false,
+                "play_target": "one_enemy",
+                "rarity": "Basic",
+                "reviewed_effects": {
+                  "base_damage_delivery": {
+                    "amount": {
+                      "kind": "base"
+                    },
+                    "hits": {
+                      "count": 1,
+                      "kind": "fixed"
+                    },
+                    "kind": "attack",
+                    "play_condition": null,
+                    "targets": "selected_enemy"
+                  },
+                  "end_of_turn_block_each_turn": null,
+                  "enemy_strength_reduction": null,
+                  "self_hp_loss_on_play": null,
+                  "unconditional_draw_request": null
+                },
+                "upgrades": 1
+              },
+              "misc_value": 0,
+              "persistent_block": 0,
+              "persistent_cost": 1,
+              "persistent_damage": 9
+            }
+          },
+          "ordinal": 0
+        },
+        {
+          "card_sha256": "0b18905da661f3ab3ec7533f1db055f85605b044757d878e3dcc5415029ac318",
+          "facts": {
+            "current": {
+              "definition": {
+                "base_cost": 1,
+                "card": "Strike",
+                "card_type": "Attack",
+                "definition_numbers": {
+                  "block": 0,
+                  "damage": 9
+                },
+                "ethereal": false,
+                "exhausts": false,
+                "innate": false,
+                "play_target": "one_enemy",
+                "rarity": "Basic",
+                "reviewed_effects": {
+                  "base_damage_delivery": {
+                    "amount": {
+                      "kind": "base"
+                    },
+                    "hits": {
+                      "count": 1,
+                      "kind": "fixed"
+                    },
+                    "kind": "attack",
+                    "play_condition": null,
+                    "targets": "selected_enemy"
+                  },
+                  "end_of_turn_block_each_turn": null,
+                  "enemy_strength_reduction": null,
+                  "self_hp_loss_on_play": null,
+                  "unconditional_draw_request": null
+                },
+                "upgrades": 1
+              },
+              "misc_value": 0,
+              "persistent_block": 0,
+              "persistent_cost": 1,
+              "persistent_damage": 9
+            },
+            "next_upgrade": null
+          },
+          "ordinal": 1
+        }
+      ],
+      "coverage": "partial",
+      "public_snapshot_id": "public_information_snapshot_v1:2d2c60396a1caae7894188c0519eb407ec7b21e2",
+      "schema": "sts-owned-card-reading-v1"
+    },
+    "potion_mechanics": {
+      "basis": "simulator_definition_and_reviewed_effects",
+      "candidates": [],
+      "coverage": "partial",
+      "public_snapshot_id": "public_information_snapshot_v1:2d2c60396a1caae7894188c0519eb407ec7b21e2",
+      "schema": "sts-potion-acquisition-reading-v1"
+    },
+    "producer": {
+      "component": "sts_run_play",
+      "evidence_identity": {
+        "build_source": {
+          "configuration": {
+            "CARGO_CFG_FEATURE": "",
+            "CARGO_CFG_PANIC": "unwind",
+            "CARGO_CFG_TARGET_ABI": "",
+            "CARGO_CFG_TARGET_ARCH": "x86_64",
+            "CARGO_CFG_TARGET_ENDIAN": "little",
+            "CARGO_CFG_TARGET_ENV": "msvc",
+            "CARGO_CFG_TARGET_FAMILY": "windows",
+            "CARGO_CFG_TARGET_FEATURE": "cmpxchg16b,fxsr,sse,sse2,sse3",
+            "CARGO_CFG_TARGET_HAS_ATOMIC": "128,16,32,64,8,ptr",
+            "CARGO_CFG_TARGET_OS": "windows",
+            "CARGO_CFG_TARGET_POINTER_WIDTH": "64",
+            "CARGO_CFG_TARGET_VENDOR": "pc",
+            "CARGO_CFG_WINDOWS": "",
+            "CARGO_ENCODED_RUSTFLAGS": "",
+            "DEBUG": "false",
+            "HOST": "x86_64-pc-windows-msvc",
+            "OPT_LEVEL": "0",
+            "TARGET": "x86_64-pc-windows-msvc",
+            "profile": "debug",
+            "rustc": "rustc 1.91.1 (ed61e7d7e 2025-11-07)\nbinary: rustc\ncommit-hash: ed61e7d7e242494fb7057f2657300d9e77bb4fcb\ncommit-date: 2025-11-07\nhost: x86_64-pc-windows-msvc\nrelease: 1.91.1\nLLVM version: 21.1.2\n"
+          },
+          "input_scope": "workspace-rust-source-v1",
+          "schema": "sts-rust-build-source-v1",
+          "source_sha256": "660318a278092dca8f08cbcb78298bc620446970a26e5aa9c659a19f806a3d55"
+        },
+        "public_observation_id": "sts-run-play-public-observation-20260906-v4",
+        "rng_semantics_id": "sts-simulator-run-rng-neow-card-parity-20260829-v1",
+        "run_play_head_schema": "sts-run-play-head-v1",
+        "schema": "sts-run-play-evidence-identity-v1",
+        "simulator_semantics_id": "sts-simulator-run-semantics-20260902-v14"
+      },
+      "version": "0.1.0"
+    },
+    "relic_mechanics": {
+      "basis": "simulator_definition_and_reviewed_effects",
+      "coverage": "partial",
+      "definitions": [
+        {
+          "battle_start_power": null,
+          "combat_victory_healing": {
+            "affected_by_healing_modifiers": true,
+            "base_hp": 6,
+            "capped_at_max_hp": true,
+            "requires_player_alive": true
+          },
+          "relic": "BurningBlood",
+          "shuffle_energy": null
+        },
+        {
+          "battle_start_power": null,
+          "combat_victory_healing": null,
+          "relic": "SingingBowl",
+          "shuffle_energy": null
+        }
+      ],
+      "public_snapshot_id": "public_information_snapshot_v1:2d2c60396a1caae7894188c0519eb407ec7b21e2",
+      "schema": "sts-visible-relic-reading-v1"
+    },
+    "source": {
+      "case_id": "ordered-and-secondary-shop-card-readings",
+      "kind": "constructed_contract_case"
+    },
+    "strategic_reading": {
+      "candidates": [
+        {
+          "brief": "buy Anger 26g",
+          "candidate_id": "task_public_candidate_v1:f3f04524bece7535e5012bebb9603267e3a39f71",
+          "candidate_sha256": "afd5d0c2857de880f836e96fec2c31260dc81bbdee368ce3aef9e59fdac23435",
+          "detail": "buy Anger 26g"
+        },
+        {
+          "brief": "buy Body Slam 55g",
+          "candidate_id": "task_public_candidate_v1:a7e55f8c213a6667b58c7440ca22c5443516cf1b",
+          "candidate_sha256": "092162eff449b935839b78b4e5947c88d325e3477fc5e0371286367efe79853b",
+          "detail": "buy Body Slam 55g"
+        },
+        {
+          "brief": "buy Shockwave 83g",
+          "candidate_id": "task_public_candidate_v1:cb3fab0206448f24af9f05dd595f11f3da5dfdcb",
+          "candidate_sha256": "cedfcd0c4e2f872006e80059f982edb695498e77048c00a1cbcdd35d0ab04a0c",
+          "detail": "buy Shockwave 83g"
+        },
+        {
+          "brief": "buy Flex 58g",
+          "candidate_id": "task_public_candidate_v1:e4766a723649aa691efaf497045990ce34e7268b",
+          "candidate_sha256": "0e86c398127bdb18728da6fde96bb858c36578305caae842009d121974c6f3b4",
+          "detail": "buy Flex 58g"
+        },
+        {
+          "brief": "buy Rupture 74g",
+          "candidate_id": "task_public_candidate_v1:d6a1cc68b3bf8ccef3ba6a01ac172f4d304bc94e",
+          "candidate_sha256": "c446908667e9ea453e944a94c285cc827ccbfab2f5d4a9c206c3ac92c77dc81a",
+          "detail": "buy Rupture 74g"
+        },
+        {
+          "brief": "buy Flash of Steel 107g",
+          "candidate_id": "task_public_candidate_v1:7b98cb79d668254c9f837886cc35147e6a8f8d9a",
+          "candidate_sha256": "5c3903878f935447dbc4e34e2f21321aca4cee33a46edad2a09f1353422c99b9",
+          "detail": "buy Flash of Steel 107g"
+        },
+        {
+          "brief": "buy Secret Technique 194g",
+          "candidate_id": "task_public_candidate_v1:0c457d70ffcc161025fe662ce9c61f5f00eae769",
+          "candidate_sha256": "47498221467e317d5d87858ccdb9f041d92a30c2f5d171b01fed87e89db7fb25",
+          "detail": "buy Secret Technique 194g"
+        },
+        {
+          "brief": "leave shop",
+          "candidate_id": "task_public_candidate_v1:20a3cccf87166c3b8370fdf196d0cc6748d10c4e",
+          "candidate_sha256": "3360a255cde35ee019621fa090d746f229f05d6e3f4e9ed657738d311eae60f9",
+          "detail": "leave shop"
+        }
+      ],
+      "context_detail": "shop_inventory public_remaining=true action_slots=current\n  cards [0:Anger 26g affordable=true status=purchasable; 1:Body Slam 55g affordable=true status=purchasable; 2:Shockwave 83g affordable=true status=purchasable; 3:Flex 58g affordable=true status=purchasable; 4:Rupture 74g affordable=true status=purchasable; 5:Flash of Steel 107g affordable=true status=purchasable; 6:Secret Technique 194g affordable=true status=purchasable]\n  relics []\n  potions []\n",
+      "context_summary": "Shop · removal 75g / available=false · cards/relics/potions remaining=7/0/0; expand inventory for details",
+      "decision_site": "shop",
+      "observation_sha256": "10de9008e5ab04f2e8e74ecfcb8f7fd92d6369282a1374d4a0a00a889c0f27d9",
+      "public_snapshot_id": "public_information_snapshot_v1:2d2c60396a1caae7894188c0519eb407ec7b21e2",
+      "schema": "sts-strategic-reading-surface-v1"
+    }
+  },
+  "payload_sha256": "2628b4c895f2b4ba983d937b72d703a2d31b0cfef7817757caab14337a8a9374",
+  "schema": "sts-public-decision-export-v3"
+}

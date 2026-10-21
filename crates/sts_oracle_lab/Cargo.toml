@@ -1,0 +1,39 @@
+[package]
+name = "sts_oracle_lab"
+version = "0.1.0"
+edition = "2021"
+publish = false
+build = "build.rs"
+autobins = false
+autotests = false
+
+[features]
+# The two heavy command hosts are build products, not ordinary workspace
+# binaries. Requiring an explicit feature makes unsupported ad-hoc builds fail
+# during Cargo target selection, before compiling and linking the runtime.
+canonical-oracle-artifacts = []
+
+[dependencies]
+oracle_artifact_contract = { path = "../oracle_artifact_contract", default-features = false, features = ["oracle-host"] }
+sts_oracle_runtime = { path = "../sts_oracle_runtime" }
+sts_oracle_learning = { path = "../sts_oracle_learning" }
+sts_combat_planner = { path = "../sts_combat_planner" }
+sts_combat_strategy = { path = "../sts_combat_strategy" }
+sts_complete_turn_proposal = { path = "../sts_complete_turn_proposal" }
+sts_complete_turn_view = { path = "../sts_complete_turn_view" }
+sts_oracle_v2_cli = { path = "../sts_oracle_v2_cli" }
+blake2 = "0.10"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+clap = { version = "4.0", features = ["derive"] }
+flate2 = "1.0"
+
+[[bin]]
+name = "oracle_lab"
+path = "src/bin/oracle_lab.rs"
+required-features = ["canonical-oracle-artifacts"]
+
+[[bin]]
+name = "oracle_lab_service"
+path = "src/bin/oracle_lab_service.rs"
+required-features = ["canonical-oracle-artifacts"]

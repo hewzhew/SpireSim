@@ -1,0 +1,1065 @@
+{
+  "payload": {
+    "card_mechanics": {
+      "basis": "simulator_definition_and_reviewed_effects",
+      "candidates": [
+        {
+          "candidate_id": "task_public_candidate_v1:e508b3977fe7979e83c24f1f470e9a7c5ac9649b",
+          "facts": {
+            "current": {
+              "base_cost": 3,
+              "card": "Wish",
+              "card_type": "Skill",
+              "definition_numbers": {
+                "block": 6,
+                "damage": 3
+              },
+              "ethereal": false,
+              "exhausts": true,
+              "innate": false,
+              "play_target": "no_explicit_target",
+              "rarity": "Rare",
+              "reviewed_effects": {
+                "base_block_delivery": "plated_armor_if_chosen",
+                "base_damage_delivery": {
+                  "kind": "strength_if_chosen"
+                },
+                "end_of_turn_block_each_turn": null,
+                "enemy_strength_reduction": null,
+                "self_hp_loss_on_play": null,
+                "unconditional_draw_request": null
+              },
+              "upgrades": 0
+            },
+            "next_upgrade": {
+              "base_cost": 3,
+              "card": "Wish",
+              "card_type": "Skill",
+              "definition_numbers": {
+                "block": 8,
+                "damage": 4
+              },
+              "ethereal": false,
+              "exhausts": true,
+              "innate": false,
+              "play_target": "no_explicit_target",
+              "rarity": "Rare",
+              "reviewed_effects": {
+                "base_block_delivery": "plated_armor_if_chosen",
+                "base_damage_delivery": {
+                  "kind": "strength_if_chosen"
+                },
+                "end_of_turn_block_each_turn": null,
+                "enemy_strength_reduction": null,
+                "self_hp_loss_on_play": null,
+                "unconditional_draw_request": null
+              },
+              "upgrades": 1
+            }
+          }
+        },
+        {
+          "candidate_id": "task_public_candidate_v1:bb273fe21ca8580229e9c71b735284ff9f7a62c9",
+          "facts": {
+            "current": {
+              "base_cost": 1,
+              "card": "Pummel",
+              "card_type": "Attack",
+              "definition_numbers": {
+                "block": 0,
+                "damage": 2
+              },
+              "ethereal": false,
+              "exhausts": true,
+              "innate": false,
+              "play_target": "one_enemy",
+              "rarity": "Uncommon",
+              "reviewed_effects": {
+                "base_damage_delivery": {
+                  "amount": {
+                    "kind": "base"
+                  },
+                  "hits": {
+                    "count": 4,
+                    "kind": "fixed"
+                  },
+                  "kind": "attack",
+                  "play_condition": null,
+                  "targets": "selected_enemy"
+                },
+                "end_of_turn_block_each_turn": null,
+                "enemy_strength_reduction": null,
+                "self_hp_loss_on_play": null,
+                "unconditional_draw_request": null
+              },
+              "upgrades": 0
+            },
+            "next_upgrade": {
+              "base_cost": 1,
+              "card": "Pummel",
+              "card_type": "Attack",
+              "definition_numbers": {
+                "block": 0,
+                "damage": 2
+              },
+              "ethereal": false,
+              "exhausts": true,
+              "innate": false,
+              "play_target": "one_enemy",
+              "rarity": "Uncommon",
+              "reviewed_effects": {
+                "base_damage_delivery": {
+                  "amount": {
+                    "kind": "base"
+                  },
+                  "hits": {
+                    "count": 5,
+                    "kind": "fixed"
+                  },
+                  "kind": "attack",
+                  "play_condition": null,
+                  "targets": "selected_enemy"
+                },
+                "end_of_turn_block_each_turn": null,
+                "enemy_strength_reduction": null,
+                "self_hp_loss_on_play": null,
+                "unconditional_draw_request": null
+              },
+              "upgrades": 1
+            }
+          }
+        },
+        {
+          "candidate_id": "task_public_candidate_v1:b400ebba871432593a911efbc8e06f4c08bda4d9",
+          "facts": {
+            "current": {
+              "base_cost": 3,
+              "card": "Ragnarok",
+              "card_type": "Attack",
+              "definition_numbers": {
+                "block": 0,
+                "damage": 5
+              },
+              "ethereal": false,
+              "exhausts": false,
+              "innate": false,
+              "play_target": "all_enemies",
+              "rarity": "Rare",
+              "reviewed_effects": {
+                "base_damage_delivery": {
+                  "amount": {
+                    "kind": "base"
+                  },
+                  "hits": {
+                    "count": 5,
+                    "kind": "fixed"
+                  },
+                  "kind": "attack",
+                  "play_condition": null,
+                  "targets": "random_enemy_per_hit"
+                },
+                "end_of_turn_block_each_turn": null,
+                "enemy_strength_reduction": null,
+                "self_hp_loss_on_play": null,
+                "unconditional_draw_request": null
+              },
+              "upgrades": 0
+            },
+            "next_upgrade": {
+              "base_cost": 3,
+              "card": "Ragnarok",
+              "card_type": "Attack",
+              "definition_numbers": {
+                "block": 0,
+                "damage": 6
+              },
+              "ethereal": false,
+              "exhausts": false,
+              "innate": false,
+              "play_target": "all_enemies",
+              "rarity": "Rare",
+              "reviewed_effects": {
+                "base_damage_delivery": {
+                  "amount": {
+                    "kind": "base"
+                  },
+                  "hits": {
+                    "count": 6,
+                    "kind": "fixed"
+                  },
+                  "kind": "attack",
+                  "play_condition": null,
+                  "targets": "random_enemy_per_hit"
+                },
+                "end_of_turn_block_each_turn": null,
+                "enemy_strength_reduction": null,
+                "self_hp_loss_on_play": null,
+                "unconditional_draw_request": null
+              },
+              "upgrades": 1
+            }
+          }
+        },
+        {
+          "candidate_id": "task_public_candidate_v1:c34565baaa21a72d431b2fbea62306fde6f5f4a5",
+          "facts": {
+            "current": {
+              "base_cost": 1,
+              "card": "DaggerSpray",
+              "card_type": "Attack",
+              "definition_numbers": {
+                "block": 0,
+                "damage": 4
+              },
+              "ethereal": false,
+              "exhausts": false,
+              "innate": false,
+              "play_target": "all_enemies",
+              "rarity": "Common",
+              "reviewed_effects": {
+                "base_damage_delivery": {
+                  "amount": {
+                    "kind": "base"
+                  },
+                  "hits": {
+                    "count": 2,
+                    "kind": "fixed"
+                  },
+                  "kind": "attack",
+                  "play_condition": null,
+                  "targets": "each_enemy"
+                },
+                "end_of_turn_block_each_turn": null,
+                "enemy_strength_reduction": null,
+                "self_hp_loss_on_play": null,
+                "unconditional_draw_request": null
+              },
+              "upgrades": 0
+            },
+            "next_upgrade": {
+              "base_cost": 1,
+              "card": "DaggerSpray",
+              "card_type": "Attack",
+              "definition_numbers": {
+                "block": 0,
+                "damage": 6
+              },
+              "ethereal": false,
+              "exhausts": false,
+              "innate": false,
+              "play_target": "all_enemies",
+              "rarity": "Common",
+              "reviewed_effects": {
+                "base_damage_delivery": {
+                  "amount": {
+                    "kind": "base"
+                  },
+                  "hits": {
+                    "count": 2,
+                    "kind": "fixed"
+                  },
+                  "kind": "attack",
+                  "play_condition": null,
+                  "targets": "each_enemy"
+                },
+                "end_of_turn_block_each_turn": null,
+                "enemy_strength_reduction": null,
+                "self_hp_loss_on_play": null,
+                "unconditional_draw_request": null
+              },
+              "upgrades": 1
+            }
+          }
+        },
+        {
+          "candidate_id": "task_public_candidate_v1:8a869a50840b61aba5cc694448557132d9ce3a88",
+          "facts": {
+            "current": {
+              "base_cost": 2,
+              "card": "FiendFire",
+              "card_type": "Attack",
+              "definition_numbers": {
+                "block": 0,
+                "damage": 7
+              },
+              "ethereal": false,
+              "exhausts": true,
+              "innate": false,
+              "play_target": "one_enemy",
+              "rarity": "Rare",
+              "reviewed_effects": {
+                "base_damage_delivery": {
+                  "amount": {
+                    "kind": "base"
+                  },
+                  "hits": {
+                    "kind": "per_hand_card_at_resolution_before_exhaust"
+                  },
+                  "kind": "attack",
+                  "play_condition": null,
+                  "targets": "selected_enemy"
+                },
+                "end_of_turn_block_each_turn": null,
+                "enemy_strength_reduction": null,
+                "self_hp_loss_on_play": null,
+                "unconditional_draw_request": null
+              },
+              "upgrades": 0
+            },
+            "next_upgrade": {
+              "base_cost": 2,
+              "card": "FiendFire",
+              "card_type": "Attack",
+              "definition_numbers": {
+                "block": 0,
+                "damage": 10
+              },
+              "ethereal": false,
+              "exhausts": true,
+              "innate": false,
+              "play_target": "one_enemy",
+              "rarity": "Rare",
+              "reviewed_effects": {
+                "base_damage_delivery": {
+                  "amount": {
+                    "kind": "base"
+                  },
+                  "hits": {
+                    "kind": "per_hand_card_at_resolution_before_exhaust"
+                  },
+                  "kind": "attack",
+                  "play_condition": null,
+                  "targets": "selected_enemy"
+                },
+                "end_of_turn_block_each_turn": null,
+                "enemy_strength_reduction": null,
+                "self_hp_loss_on_play": null,
+                "unconditional_draw_request": null
+              },
+              "upgrades": 1
+            }
+          }
+        },
+        {
+          "candidate_id": "task_public_candidate_v1:7ce94efa1109dabe2eb58e02f2b85b500819e8fd",
+          "facts": {
+            "current": {
+              "base_cost": -1,
+              "card": "Whirlwind",
+              "card_type": "Attack",
+              "definition_numbers": {
+                "block": 0,
+                "damage": 5
+              },
+              "ethereal": false,
+              "exhausts": false,
+              "innate": false,
+              "play_target": "all_enemies",
+              "rarity": "Uncommon",
+              "reviewed_effects": {
+                "base_damage_delivery": {
+                  "amount": {
+                    "kind": "base"
+                  },
+                  "hits": {
+                    "kind": "per_effective_x"
+                  },
+                  "kind": "attack",
+                  "play_condition": null,
+                  "targets": "each_enemy"
+                },
+                "end_of_turn_block_each_turn": null,
+                "enemy_strength_reduction": null,
+                "self_hp_loss_on_play": null,
+                "unconditional_draw_request": null
+              },
+              "upgrades": 0
+            },
+            "next_upgrade": {
+              "base_cost": -1,
+              "card": "Whirlwind",
+              "card_type": "Attack",
+              "definition_numbers": {
+                "block": 0,
+                "damage": 8
+              },
+              "ethereal": false,
+              "exhausts": false,
+              "innate": false,
+              "play_target": "all_enemies",
+              "rarity": "Uncommon",
+              "reviewed_effects": {
+                "base_damage_delivery": {
+                  "amount": {
+                    "kind": "base"
+                  },
+                  "hits": {
+                    "kind": "per_effective_x"
+                  },
+                  "kind": "attack",
+                  "play_condition": null,
+                  "targets": "each_enemy"
+                },
+                "end_of_turn_block_each_turn": null,
+                "enemy_strength_reduction": null,
+                "self_hp_loss_on_play": null,
+                "unconditional_draw_request": null
+              },
+              "upgrades": 1
+            }
+          }
+        },
+        {
+          "candidate_id": "task_public_candidate_v1:a85e24103c98274c76bbe81a2f8949f3185daa43",
+          "facts": {
+            "current": {
+              "base_cost": 1,
+              "card": "BodySlam",
+              "card_type": "Attack",
+              "definition_numbers": {
+                "block": 0,
+                "damage": 0
+              },
+              "ethereal": false,
+              "exhausts": false,
+              "innate": false,
+              "play_target": "one_enemy",
+              "rarity": "Common",
+              "reviewed_effects": {
+                "base_damage_delivery": {
+                  "amount": {
+                    "kind": "player_block"
+                  },
+                  "hits": {
+                    "count": 1,
+                    "kind": "fixed"
+                  },
+                  "kind": "attack",
+                  "play_condition": null,
+                  "targets": "selected_enemy"
+                },
+                "end_of_turn_block_each_turn": null,
+                "enemy_strength_reduction": null,
+                "self_hp_loss_on_play": null,
+                "unconditional_draw_request": null
+              },
+              "upgrades": 0
+            },
+            "next_upgrade": {
+              "base_cost": 0,
+              "card": "BodySlam",
+              "card_type": "Attack",
+              "definition_numbers": {
+                "block": 0,
+                "damage": 0
+              },
+              "ethereal": false,
+              "exhausts": false,
+              "innate": false,
+              "play_target": "one_enemy",
+              "rarity": "Common",
+              "reviewed_effects": {
+                "base_damage_delivery": {
+                  "amount": {
+                    "kind": "player_block"
+                  },
+                  "hits": {
+                    "count": 1,
+                    "kind": "fixed"
+                  },
+                  "kind": "attack",
+                  "play_condition": null,
+                  "targets": "selected_enemy"
+                },
+                "end_of_turn_block_each_turn": null,
+                "enemy_strength_reduction": null,
+                "self_hp_loss_on_play": null,
+                "unconditional_draw_request": null
+              },
+              "upgrades": 1
+            }
+          }
+        },
+        {
+          "candidate_id": "task_public_candidate_v1:a93d8aedef4e4bb225066d0cf47e40a25653ffbb",
+          "facts": {
+            "current": {
+              "base_cost": 1,
+              "card": "Bane",
+              "card_type": "Attack",
+              "definition_numbers": {
+                "block": 0,
+                "damage": 7
+              },
+              "ethereal": false,
+              "exhausts": false,
+              "innate": false,
+              "play_target": "one_enemy",
+              "rarity": "Common",
+              "reviewed_effects": {
+                "base_damage_delivery": {
+                  "amount": {
+                    "kind": "base"
+                  },
+                  "hits": {
+                    "kind": "once_plus_if_target_poisoned_at_resolution"
+                  },
+                  "kind": "attack",
+                  "play_condition": null,
+                  "targets": "selected_enemy"
+                },
+                "end_of_turn_block_each_turn": null,
+                "enemy_strength_reduction": null,
+                "self_hp_loss_on_play": null,
+                "unconditional_draw_request": null
+              },
+              "upgrades": 0
+            },
+            "next_upgrade": {
+              "base_cost": 1,
+              "card": "Bane",
+              "card_type": "Attack",
+              "definition_numbers": {
+                "block": 0,
+                "damage": 10
+              },
+              "ethereal": false,
+              "exhausts": false,
+              "innate": false,
+              "play_target": "one_enemy",
+              "rarity": "Common",
+              "reviewed_effects": {
+                "base_damage_delivery": {
+                  "amount": {
+                    "kind": "base"
+                  },
+                  "hits": {
+                    "kind": "once_plus_if_target_poisoned_at_resolution"
+                  },
+                  "kind": "attack",
+                  "play_condition": null,
+                  "targets": "selected_enemy"
+                },
+                "end_of_turn_block_each_turn": null,
+                "enemy_strength_reduction": null,
+                "self_hp_loss_on_play": null,
+                "unconditional_draw_request": null
+              },
+              "upgrades": 1
+            }
+          }
+        },
+        {
+          "candidate_id": "task_public_candidate_v1:9cdc3984f00d864267f921889d3971d9c3a7b6b8",
+          "facts": {
+            "current": {
+              "base_cost": 2,
+              "card": "PerfectedStrike",
+              "card_type": "Attack",
+              "definition_numbers": {
+                "block": 0,
+                "damage": 6
+              },
+              "ethereal": false,
+              "exhausts": false,
+              "innate": false,
+              "play_target": "one_enemy",
+              "rarity": "Common",
+              "reviewed_effects": {
+                "base_damage_delivery": {
+                  "amount": {
+                    "kind": "base_plus_strike_cards",
+                    "per_card": 2
+                  },
+                  "hits": {
+                    "count": 1,
+                    "kind": "fixed"
+                  },
+                  "kind": "attack",
+                  "play_condition": null,
+                  "targets": "selected_enemy"
+                },
+                "end_of_turn_block_each_turn": null,
+                "enemy_strength_reduction": null,
+                "self_hp_loss_on_play": null,
+                "unconditional_draw_request": null
+              },
+              "upgrades": 0
+            },
+            "next_upgrade": {
+              "base_cost": 2,
+              "card": "PerfectedStrike",
+              "card_type": "Attack",
+              "definition_numbers": {
+                "block": 0,
+                "damage": 6
+              },
+              "ethereal": false,
+              "exhausts": false,
+              "innate": false,
+              "play_target": "one_enemy",
+              "rarity": "Common",
+              "reviewed_effects": {
+                "base_damage_delivery": {
+                  "amount": {
+                    "kind": "base_plus_strike_cards",
+                    "per_card": 3
+                  },
+                  "hits": {
+                    "count": 1,
+                    "kind": "fixed"
+                  },
+                  "kind": "attack",
+                  "play_condition": null,
+                  "targets": "selected_enemy"
+                },
+                "end_of_turn_block_each_turn": null,
+                "enemy_strength_reduction": null,
+                "self_hp_loss_on_play": null,
+                "unconditional_draw_request": null
+              },
+              "upgrades": 1
+            }
+          }
+        },
+        {
+          "candidate_id": "task_public_candidate_v1:bf2835074d979b0ca0a1ceb20531ffbb9407366a",
+          "facts": {
+            "current": {
+              "base_cost": 1,
+              "card": "Blizzard",
+              "card_type": "Attack",
+              "definition_numbers": {
+                "block": 0,
+                "damage": 0
+              },
+              "ethereal": false,
+              "exhausts": false,
+              "innate": false,
+              "play_target": "all_enemies",
+              "rarity": "Uncommon",
+              "reviewed_effects": {
+                "base_damage_delivery": {
+                  "amount": {
+                    "kind": "frost_channeled_this_combat",
+                    "per_orb": 2
+                  },
+                  "hits": {
+                    "count": 1,
+                    "kind": "fixed"
+                  },
+                  "kind": "attack",
+                  "play_condition": null,
+                  "targets": "each_enemy"
+                },
+                "end_of_turn_block_each_turn": null,
+                "enemy_strength_reduction": null,
+                "self_hp_loss_on_play": null,
+                "unconditional_draw_request": null
+              },
+              "upgrades": 0
+            },
+            "next_upgrade": {
+              "base_cost": 1,
+              "card": "Blizzard",
+              "card_type": "Attack",
+              "definition_numbers": {
+                "block": 0,
+                "damage": 0
+              },
+              "ethereal": false,
+              "exhausts": false,
+              "innate": false,
+              "play_target": "all_enemies",
+              "rarity": "Uncommon",
+              "reviewed_effects": {
+                "base_damage_delivery": {
+                  "amount": {
+                    "kind": "frost_channeled_this_combat",
+                    "per_orb": 3
+                  },
+                  "hits": {
+                    "count": 1,
+                    "kind": "fixed"
+                  },
+                  "kind": "attack",
+                  "play_condition": null,
+                  "targets": "each_enemy"
+                },
+                "end_of_turn_block_each_turn": null,
+                "enemy_strength_reduction": null,
+                "self_hp_loss_on_play": null,
+                "unconditional_draw_request": null
+              },
+              "upgrades": 1
+            }
+          }
+        },
+        {
+          "candidate_id": "task_public_candidate_v1:be16a2a31bab4aaff038d8846c336eae4c79fed0",
+          "facts": {
+            "current": {
+              "base_cost": 2,
+              "card": "SignatureMove",
+              "card_type": "Attack",
+              "definition_numbers": {
+                "block": 0,
+                "damage": 30
+              },
+              "ethereal": false,
+              "exhausts": false,
+              "innate": false,
+              "play_target": "one_enemy",
+              "rarity": "Uncommon",
+              "reviewed_effects": {
+                "base_damage_delivery": {
+                  "amount": {
+                    "kind": "base"
+                  },
+                  "hits": {
+                    "count": 1,
+                    "kind": "fixed"
+                  },
+                  "kind": "attack",
+                  "play_condition": "no_other_attack_in_hand",
+                  "targets": "selected_enemy"
+                },
+                "end_of_turn_block_each_turn": null,
+                "enemy_strength_reduction": null,
+                "self_hp_loss_on_play": null,
+                "unconditional_draw_request": null
+              },
+              "upgrades": 0
+            },
+            "next_upgrade": {
+              "base_cost": 2,
+              "card": "SignatureMove",
+              "card_type": "Attack",
+              "definition_numbers": {
+                "block": 0,
+                "damage": 40
+              },
+              "ethereal": false,
+              "exhausts": false,
+              "innate": false,
+              "play_target": "one_enemy",
+              "rarity": "Uncommon",
+              "reviewed_effects": {
+                "base_damage_delivery": {
+                  "amount": {
+                    "kind": "base"
+                  },
+                  "hits": {
+                    "count": 1,
+                    "kind": "fixed"
+                  },
+                  "kind": "attack",
+                  "play_condition": "no_other_attack_in_hand",
+                  "targets": "selected_enemy"
+                },
+                "end_of_turn_block_each_turn": null,
+                "enemy_strength_reduction": null,
+                "self_hp_loss_on_play": null,
+                "unconditional_draw_request": null
+              },
+              "upgrades": 1
+            }
+          }
+        }
+      ],
+      "coverage": "partial",
+      "public_snapshot_id": "public_information_snapshot_v1:270d8393df704cba98720929e8020fb2450e81c0",
+      "schema": "sts-card-acquisition-reading-v1"
+    },
+    "decision": {
+      "candidates": [
+        {
+          "action": {
+            "card": "Wish",
+            "kind": "take_card",
+            "option_index": 0,
+            "reward_item_index": 0,
+            "upgrades": 0
+          },
+          "domain": "strategic"
+        },
+        {
+          "action": {
+            "card": "Pummel",
+            "kind": "take_card",
+            "option_index": 1,
+            "reward_item_index": 0,
+            "upgrades": 0
+          },
+          "domain": "strategic"
+        },
+        {
+          "action": {
+            "card": "Ragnarok",
+            "kind": "take_card",
+            "option_index": 2,
+            "reward_item_index": 0,
+            "upgrades": 0
+          },
+          "domain": "strategic"
+        },
+        {
+          "action": {
+            "card": "DaggerSpray",
+            "kind": "take_card",
+            "option_index": 3,
+            "reward_item_index": 0,
+            "upgrades": 0
+          },
+          "domain": "strategic"
+        },
+        {
+          "action": {
+            "card": "FiendFire",
+            "kind": "take_card",
+            "option_index": 4,
+            "reward_item_index": 0,
+            "upgrades": 0
+          },
+          "domain": "strategic"
+        },
+        {
+          "action": {
+            "card": "Whirlwind",
+            "kind": "take_card",
+            "option_index": 5,
+            "reward_item_index": 0,
+            "upgrades": 0
+          },
+          "domain": "strategic"
+        },
+        {
+          "action": {
+            "card": "BodySlam",
+            "kind": "take_card",
+            "option_index": 6,
+            "reward_item_index": 0,
+            "upgrades": 0
+          },
+          "domain": "strategic"
+        },
+        {
+          "action": {
+            "card": "Bane",
+            "kind": "take_card",
+            "option_index": 7,
+            "reward_item_index": 0,
+            "upgrades": 0
+          },
+          "domain": "strategic"
+        },
+        {
+          "action": {
+            "card": "PerfectedStrike",
+            "kind": "take_card",
+            "option_index": 8,
+            "reward_item_index": 0,
+            "upgrades": 0
+          },
+          "domain": "strategic"
+        },
+        {
+          "action": {
+            "card": "Blizzard",
+            "kind": "take_card",
+            "option_index": 9,
+            "reward_item_index": 0,
+            "upgrades": 0
+          },
+          "domain": "strategic"
+        },
+        {
+          "action": {
+            "card": "SignatureMove",
+            "kind": "take_card",
+            "option_index": 10,
+            "reward_item_index": 0,
+            "upgrades": 0
+          },
+          "domain": "strategic"
+        }
+      ],
+      "information": {
+        "candidate_surface": {
+          "candidate_surface_id": "public_candidate_surface_v1:ef42f51cdd0c9dc329d9d33fb5068c13ab05ea44",
+          "kind": "deployable_policy",
+          "ordered_candidate_ids": [
+            "task_public_candidate_v1:e508b3977fe7979e83c24f1f470e9a7c5ac9649b",
+            "task_public_candidate_v1:bb273fe21ca8580229e9c71b735284ff9f7a62c9",
+            "task_public_candidate_v1:b400ebba871432593a911efbc8e06f4c08bda4d9",
+            "task_public_candidate_v1:c34565baaa21a72d431b2fbea62306fde6f5f4a5",
+            "task_public_candidate_v1:8a869a50840b61aba5cc694448557132d9ce3a88",
+            "task_public_candidate_v1:7ce94efa1109dabe2eb58e02f2b85b500819e8fd",
+            "task_public_candidate_v1:a85e24103c98274c76bbe81a2f8949f3185daa43",
+            "task_public_candidate_v1:a93d8aedef4e4bb225066d0cf47e40a25653ffbb",
+            "task_public_candidate_v1:9cdc3984f00d864267f921889d3971d9c3a7b6b8",
+            "task_public_candidate_v1:bf2835074d979b0ca0a1ceb20531ffbb9407366a",
+            "task_public_candidate_v1:be16a2a31bab4aaff038d8846c336eae4c79fed0"
+          ],
+          "schema_name": "TaskPublicCandidateSurfaceV1",
+          "schema_version": 1
+        },
+        "domain": "strategic",
+        "history_snapshot": {
+          "history_snapshot_id": "public_history_snapshot_v1:6693c80a196e79ffd3ad98e8555f9928d6f69390",
+          "schema_name": "TaskPublicHistorySnapshotV1",
+          "schema_version": 1
+        },
+        "observation": {
+          "observation_id": "public_observation_v1:3220d29b0a37222703b3f1a2645279699e7bab68",
+          "schema_name": "TaskStrategicPublicObservationV3",
+          "schema_version": 3,
+          "scope": "strategic_run_decision"
+        },
+        "schema_name": "PublicInformationSnapshotV1",
+        "schema_version": 1,
+        "snapshot_id": "public_information_snapshot_v1:270d8393df704cba98720929e8020fb2450e81c0"
+      },
+      "observation": {
+        "domain": "strategic",
+        "observation": {
+          "cards": [
+            {
+              "base_block_override": null,
+              "base_damage_override": null,
+              "card": "Strike",
+              "cost_modifier": 0,
+              "misc_value": 0,
+              "ordinal": 0,
+              "upgrades": 0
+            },
+            {
+              "base_block_override": null,
+              "base_damage_override": null,
+              "card": "Strike",
+              "cost_modifier": 0,
+              "misc_value": 0,
+              "ordinal": 1,
+              "upgrades": 1
+            }
+          ],
+          "context": {
+            "kind": "card_reward",
+            "reward_item_index": 0
+          },
+          "decision_site": "card_reward",
+          "mechanics": {
+            "mechanics_id": "constructed-reading-contract",
+            "mechanics_version": 1
+          },
+          "potions": [
+            {
+              "potion": {
+                "can_discard": true,
+                "can_use": false,
+                "potion": "FirePotion",
+                "requires_target": true
+              },
+              "slot": 0
+            },
+            {
+              "potion": null,
+              "slot": 1
+            }
+          ],
+          "public_history": {
+            "recent_combat_hp_loss": null,
+            "recent_combat_potions_used": null,
+            "recent_combat_turns": null,
+            "shop_purge_count": 0
+          },
+          "public_map": {
+            "boss": null,
+            "current_x": 1,
+            "current_y": 5,
+            "nodes": [
+              {
+                "edges": [
+                  {
+                    "destination_x": 0,
+                    "destination_y": 6
+                  },
+                  {
+                    "destination_x": 2,
+                    "destination_y": 6
+                  }
+                ],
+                "has_emerald_key": false,
+                "room": "monster",
+                "x": 1,
+                "y": 5
+              },
+              {
+                "edges": [],
+                "has_emerald_key": true,
+                "room": "elite",
+                "x": 0,
+                "y": 6
+              },
+              {
+                "edges": [],
+                "has_emerald_key": false,
+                "room": "question_mark",
+                "x": 2,
+                "y": 6
+              }
+            ]
+          },
+          "relics": [
+            {
+              "amount": 1,
+              "counter": -1,
+              "relic": "BurningBlood",
+              "used_up": false
+            },
+            {
+              "amount": 1,
+              "counter": -1,
+              "relic": "SingingBowl",
+              "used_up": false
+            }
+          ],
+          "run": {
+            "act": 1,
+            "ascension_level": 20,
+            "current_hp": 22,
+            "floor": 7,
+            "gold": 131,
+            "keys": [
+              false,
+              false,
+              false
+            ],
+            "max_hp": 80,
+            "player_class": "ironclad",
+            "potion_capacity": 2
+          },
+          "run_goal": "heart_victory"
+        }
+      },
+      "site": "card_reward"
+    },
+    "producer": {
+      "component": "sts_run_play",
+      "evidence_identity": {
+        "public_observation_id": "sts-run-play-public-observation-20260830-v3",
+        "rng_semantics_id": "sts-simulator-run-rng-neow-card-parity-20260829-v1",
+        "run_play_head_schema": "sts-run-play-head-v1",
+        "schema": "sts-run-play-evidence-identity-v1",
+        "simulator_semantics_id": "sts-simulator-run-semantics-20260902-v14"
+      },
+      "version": "0.1.0"
+    },
+    "source": {
+      "case_id": "damage-delivery-reading-contract",
+      "kind": "constructed_contract_case"
+    }
+  },
+  "payload_sha256": "7fcf464f5c858d1cd62d429fa3bc6b404a2ccd87049baad807a4a82958576504",
+  "schema": "sts-public-decision-export-v2"
+}

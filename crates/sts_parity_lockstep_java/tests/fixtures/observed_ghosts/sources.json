@@ -1,0 +1,34 @@
+{
+  "scope": "Natural Ghosts refusal enters original result screen 2 with unchanged run resources",
+  "capture_scope": "accelerated_sts_wrapper_rng_ledger_and_declared_snapshot_domains",
+  "files": {
+    "before.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-627a5dec58b44e5ea61182c817e17a67/java-evidence/boundaries/00000337-frame-339.json",
+      "sha256": "5a57cc24017d2cead57edd8562421710c25cb6b1a7fc9c66009314c97bdced19",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "1C91255EE2E63B358364DA7195B09427B8948A61327E97A9A70E6A4D84BD9173",
+        "session_epoch": "d0fae10f-5d29-49d7-b83d-e0e682d0c6c9:be602476-e062-4fee-84a1-798227e1376b:ded9c61e-0a1d-4263-887d-9576b5b04302"
+      },
+      "capturing_rust_source": "e57060838 plus Loop projection",
+      "capturing_runner_sha256": "f79929900f7b4dd11787697353ad1a053944ab929827608769bcce81f74c0646"
+    },
+    "after.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-627a5dec58b44e5ea61182c817e17a67/java-evidence/boundaries/00000338-frame-340.json",
+      "sha256": "491110ca2370e33ff30fd8834ff5fd29971627459c9776417fa6fbf44048ed5a",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "1C91255EE2E63B358364DA7195B09427B8948A61327E97A9A70E6A4D84BD9173",
+        "session_epoch": "d0fae10f-5d29-49d7-b83d-e0e682d0c6c9:be602476-e062-4fee-84a1-798227e1376b:ded9c61e-0a1d-4263-887d-9576b5b04302"
+      },
+      "capturing_rust_source": "e57060838 plus Loop projection",
+      "capturing_runner_sha256": "f79929900f7b4dd11787697353ad1a053944ab929827608769bcce81f74c0646"
+    },
+    "action.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-627a5dec58b44e5ea61182c817e17a67/java-evidence/actions/00000337-from-frame-339.json",
+      "sha256": "4499f613f777997be8a76a4cf4a987e328dd6689d9ad10660bad99c4f49797f2",
+      "capturing_rust_source": "e57060838 plus Loop projection",
+      "capturing_runner_sha256": "f79929900f7b4dd11787697353ad1a053944ab929827608769bcce81f74c0646"
+    }
+  }
+}

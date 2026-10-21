@@ -1,0 +1,36 @@
+{
+  "scope": "Natural Giant Head Thinking Ahead draw-to-hand-topdeck transition",
+  "capture_scope": "accelerated_sts_wrapper_rng_ledger_and_declared_snapshot_domains",
+  "files": {
+    "before.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-867620b4d6ea4407af71713aa734688b/java-evidence/boundaries/00000417-frame-419.json",
+      "sha256": "5b2163f5ddc8fd30cc62c23f42b14f96bd9182f26f78863a3cee98ac1cd4ffa4",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "DCF1F6CB0B45F4E29ECB2708FC22B0F30E2556354BB153DD3098A8B05CC021B4",
+        "session_epoch": "c74f76ae-42b8-4af3-985d-fe2cebfa9174:cf67063c-7aac-44a2-bcf6-3de6c5fd72ea:38c78cfd-32ef-41be-b983-efcbb3db6fdf"
+      },
+      "capturing_rust_source": "4b783ab2f"
+    },
+    "after.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-867620b4d6ea4407af71713aa734688b/java-evidence/boundaries/00000418-frame-420.json",
+      "sha256": "950a2cd5c068318be9c986df3335c82ee9c442479cde5570e0fc4efb98df1e72",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "DCF1F6CB0B45F4E29ECB2708FC22B0F30E2556354BB153DD3098A8B05CC021B4",
+        "session_epoch": "c74f76ae-42b8-4af3-985d-fe2cebfa9174:cf67063c-7aac-44a2-bcf6-3de6c5fd72ea:38c78cfd-32ef-41be-b983-efcbb3db6fdf"
+      },
+      "capturing_rust_source": "4b783ab2f"
+    },
+    "action.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-867620b4d6ea4407af71713aa734688b/java-evidence/actions/00000417-from-frame-419.json",
+      "sha256": "aa82c149521efa4ca6ac9d1fab2715fee0281b600adc33611b28aa5e304865f6",
+      "capturing_rust_source": "4b783ab2f"
+    },
+    "manifest.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-867620b4d6ea4407af71713aa734688b/java-evidence/manifest.json",
+      "sha256": "a6971f226adcf902d614c38f54d22036475d46f307341dbd1d2986c9d51306cc",
+      "capturing_rust_source": "4b783ab2f"
+    }
+  }
+}

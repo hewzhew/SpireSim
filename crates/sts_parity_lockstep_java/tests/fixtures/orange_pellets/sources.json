@@ -1,0 +1,83 @@
+{
+  "scope": "Two independent raw oracle fragments: EndTurn then Dark Embrace for combo reset, and Anger completing a combo for debuff removal. Constructed Rust comparisons cover Orange Pellets flags and, in the cleanse case, player powers. No natural card bindings, full combat reconstruction, RNG parity, restoration or certification authority.",
+  "constructed_input_scope": "Reset: one Bellow Jaw Worm, Orange Pellets seeded from observed flags, then a constructed draw of Dark Embrace+ and four Strikes. Cleanse: one living Cultist, Orange Pellets seeded from observed flags, observed Strength/LoseStrength/DarkEmbrace, and one scenario Anger. Original other relics/cards/monsters and non-compared resources are omitted.",
+  "cases": {
+    "reset": {
+      "source_session": "manual-b5dada8a28a84454948ddee9985260ad",
+      "capture_scope": "accelerated_sts_wrapper_rng_ledger_and_declared_snapshot_domains",
+      "certifying_rust_source": "c834689c43c08f43fde0f90f213fcbe9e192d9b6"
+    },
+    "cleanse": {
+      "source_session": "manual-4f1d866084124af58a517e757e532148",
+      "capture_scope": "accelerated_sts_wrapper_rng_ledger_and_declared_snapshot_domains",
+      "certifying_rust_source": "8637779a1af849c4046619c62225d6ec519a335c"
+    }
+  },
+  "files": {
+    "reset-before.json": {
+      "case": "reset",
+      "source": ".oracle-lab/parity-manual/sessions/manual-b5dada8a28a84454948ddee9985260ad/java-evidence/boundaries/00000016-frame-2018.json",
+      "sha256": "0cc20e370e95c7808675d1bedd728785d6660c4ec90776be372c74bf529b0096",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "19DB8497D557D1F61C3BC85B00536E8B020DF4B2B932FD8790E2C366CE0E901F",
+        "session_epoch": "5153f9b4-b0b5-4c53-acd8-47fdc1f099c6:c744c74f-9f94-4f57-8acb-71c81554bbc5:574b4d63-b94b-4021-85eb-9b35f3e96dfa"
+      }
+    },
+    "end-turn.json": {
+      "case": "reset",
+      "source": ".oracle-lab/parity-manual/sessions/manual-b5dada8a28a84454948ddee9985260ad/java-evidence/actions/00000016-from-frame-2018.json",
+      "sha256": "30461843d27ecacaa70fc484d962e07f446299e07925a3abd376b8f7d3d93ec9"
+    },
+    "reset-after.json": {
+      "case": "reset",
+      "source": ".oracle-lab/parity-manual/sessions/manual-b5dada8a28a84454948ddee9985260ad/java-evidence/boundaries/00000017-frame-2019.json",
+      "sha256": "3883afefe002bd680fc5a53cfa80cf262edcb00798ded4405ac282f4020962d7",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "19DB8497D557D1F61C3BC85B00536E8B020DF4B2B932FD8790E2C366CE0E901F",
+        "session_epoch": "5153f9b4-b0b5-4c53-acd8-47fdc1f099c6:c744c74f-9f94-4f57-8acb-71c81554bbc5:574b4d63-b94b-4021-85eb-9b35f3e96dfa"
+      }
+    },
+    "dark-embrace.json": {
+      "case": "reset",
+      "source": ".oracle-lab/parity-manual/sessions/manual-b5dada8a28a84454948ddee9985260ad/java-evidence/actions/00000017-from-frame-2019.json",
+      "sha256": "9d3a9ac2644405fb983822d8162fbafe2e31d1f8133f1c21d54bfe513014d614"
+    },
+    "power-after.json": {
+      "case": "reset",
+      "source": ".oracle-lab/parity-manual/sessions/manual-b5dada8a28a84454948ddee9985260ad/java-evidence/boundaries/00000018-frame-2020.json",
+      "sha256": "fc75165cefca0482c4fdd5dd2d341bf6f918f6dc1df2d93f34218d5541f99146",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "19DB8497D557D1F61C3BC85B00536E8B020DF4B2B932FD8790E2C366CE0E901F",
+        "session_epoch": "5153f9b4-b0b5-4c53-acd8-47fdc1f099c6:c744c74f-9f94-4f57-8acb-71c81554bbc5:574b4d63-b94b-4021-85eb-9b35f3e96dfa"
+      }
+    },
+    "cleanse-before.json": {
+      "case": "cleanse",
+      "source": ".oracle-lab/parity-manual/sessions/manual-4f1d866084124af58a517e757e532148/java-evidence/boundaries/00000288-frame-624.json",
+      "sha256": "e3918d2631fbd54a38cadbbcaa322665bb5a53835288d2782f0c307eb6501fc8",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "19DB8497D557D1F61C3BC85B00536E8B020DF4B2B932FD8790E2C366CE0E901F",
+        "session_epoch": "5153f9b4-b0b5-4c53-acd8-47fdc1f099c6:c744c74f-9f94-4f57-8acb-71c81554bbc5:574b4d63-b94b-4021-85eb-9b35f3e96dfa"
+      }
+    },
+    "anger.json": {
+      "case": "cleanse",
+      "source": ".oracle-lab/parity-manual/sessions/manual-4f1d866084124af58a517e757e532148/java-evidence/actions/00000288-from-frame-624.json",
+      "sha256": "4237ec8bbc5fd226d4136f93e914378d710b0f74eef46c029e029f18a7ee88b7"
+    },
+    "cleanse-after.json": {
+      "case": "cleanse",
+      "source": ".oracle-lab/parity-manual/sessions/manual-4f1d866084124af58a517e757e532148/java-evidence/boundaries/00000289-frame-625.json",
+      "sha256": "2eb4c6b55483dc01748fd8f1dc5348608cf3308574f4986302ff7b32e51cab68",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "19DB8497D557D1F61C3BC85B00536E8B020DF4B2B932FD8790E2C366CE0E901F",
+        "session_epoch": "5153f9b4-b0b5-4c53-acd8-47fdc1f099c6:c744c74f-9f94-4f57-8acb-71c81554bbc5:574b4d63-b94b-4021-85eb-9b35f3e96dfa"
+      }
+    }
+  }
+}

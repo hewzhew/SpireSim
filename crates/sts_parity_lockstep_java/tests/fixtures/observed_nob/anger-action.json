@@ -1,0 +1,1 @@
+{"schema":"sts-recorded-java-action-v1","phase":"committed","action":{"kind":"play_card","card_binding":"natural_run/starter/10","card_id":"survivor","target":null},"receipt":{"status":"completed","request_id":"8e7a3e0e-df67-4447-bf40-064cfecf53a8","based_on_frame_id":627,"action_id":"play_card:af886592-76f4-4e6c-aa6b-d021fc2cf3ea:none","successor_frame_id":628}}

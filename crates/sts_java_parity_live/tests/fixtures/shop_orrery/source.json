@@ -1,0 +1,20 @@
+{
+  "schema": "sts-original-boundary-source-v1",
+  "status": "actual successor rejected by live action whitelist before receipt",
+  "seed": 2026101901,
+  "scope": "natural Act3 F37 Orrery purchase",
+  "rawSha256": "887a23a012ff66ef2b215c002867ed1c6338cb9ded38674f0d3f7d8a6bab013d",
+  "protocol": {
+    "name": "communicationmod.parity",
+    "major": 1,
+    "minor": 100,
+    "schema_id": "communicationmod.parity-frame.v1"
+  },
+  "producer": {
+    "commit": "741a922322aeee6639d5b3d2024b2937ba3603ba",
+    "jar_sha256": "8AEE7A7A30BC96C608F0CD9DA5BF8C963327D2F62C67815C88D802C784A0319A",
+    "game_jar_sha256": "CFAD868AC8D65A88E71A0BF096FB09F78811E553EFFE0787C5309A655E081673"
+  },
+  "artifact": "defect-a20h-alignment-20261019/orrery-mod100-resume-2.jsonl",
+  "originalRejection": "run control action kind does not match its typed decision"
+}

@@ -1,0 +1,1159 @@
+{
+  "payload": {
+    "card_mechanics": {
+      "basis": "simulator_definition_and_reviewed_effects",
+      "candidates": [],
+      "coverage": "partial",
+      "public_snapshot_id": "public_information_snapshot_v1:08478aba823bb5e13bed1f261179caf326b9640b",
+      "schema": "sts-card-acquisition-reading-v1"
+    },
+    "decision": {
+      "candidates": [
+        {
+          "action": {
+            "card": "Corruption",
+            "card_ordinal": 0,
+            "kind": "smith",
+            "upgrades": 0
+          },
+          "domain": "strategic"
+        },
+        {
+          "action": {
+            "card": "Corruption",
+            "card_ordinal": 1,
+            "kind": "smith",
+            "upgrades": 0
+          },
+          "domain": "strategic"
+        },
+        {
+          "action": {
+            "card": "Strike",
+            "card_ordinal": 2,
+            "kind": "smith",
+            "upgrades": 0
+          },
+          "domain": "strategic"
+        },
+        {
+          "action": {
+            "card": "Defend",
+            "card_ordinal": 3,
+            "kind": "smith",
+            "upgrades": 0
+          },
+          "domain": "strategic"
+        },
+        {
+          "action": {
+            "card": "SearingBlow",
+            "card_ordinal": 4,
+            "kind": "smith",
+            "upgrades": 5
+          },
+          "domain": "strategic"
+        },
+        {
+          "action": {
+            "card": "RitualDagger",
+            "card_ordinal": 5,
+            "kind": "smith",
+            "upgrades": 0
+          },
+          "domain": "strategic"
+        },
+        {
+          "action": {
+            "card": "GeneticAlgorithm",
+            "card_ordinal": 6,
+            "kind": "smith",
+            "upgrades": 0
+          },
+          "domain": "strategic"
+        },
+        {
+          "action": {
+            "card": "SecretTechnique",
+            "card_ordinal": 7,
+            "kind": "smith",
+            "upgrades": 0
+          },
+          "domain": "strategic"
+        },
+        {
+          "action": {
+            "card": "Whirlwind",
+            "card_ordinal": 8,
+            "kind": "smith",
+            "upgrades": 0
+          },
+          "domain": "strategic"
+        },
+        {
+          "action": {
+            "kind": "rest"
+          },
+          "domain": "strategic"
+        }
+      ],
+      "information": {
+        "candidate_surface": {
+          "candidate_surface_id": "public_candidate_surface_v1:b5ba2f0be6a56968535b711bac4319fbb89cee72",
+          "kind": "deployable_policy",
+          "ordered_candidate_ids": [
+            "task_public_candidate_v1:f7abf72d478ad3d0bb9d7b9737132af1829fc457",
+            "task_public_candidate_v1:e71d06b5a8e129dd7f633f52ec17af5eefcf6f07",
+            "task_public_candidate_v1:ea4eda6e5d718e3218e539e21e08e0a762a5f47c",
+            "task_public_candidate_v1:3b5a075350ff75dda46d79bce9d810180938475a",
+            "task_public_candidate_v1:fd02d775137643d2b567c272a951a5db0281be54",
+            "task_public_candidate_v1:7ad722723fc4f35dfa7905ddc1c3b4769d9e88a1",
+            "task_public_candidate_v1:f22532c2d98adcd68372290ef474f0c4c4909c33",
+            "task_public_candidate_v1:891b1d1073b95698b9d4d191ccb7d9980f4792fe",
+            "task_public_candidate_v1:27dce2b21f01057ea94530d21fef63f6e0d44579",
+            "task_public_candidate_v1:6cbf6cbb54fa0fc3570ceadb4362fef1022af8dd"
+          ],
+          "schema_name": "TaskPublicCandidateSurfaceV1",
+          "schema_version": 1
+        },
+        "domain": "strategic",
+        "history_snapshot": {
+          "history_snapshot_id": "public_history_snapshot_v1:6693c80a196e79ffd3ad98e8555f9928d6f69390",
+          "schema_name": "TaskPublicHistorySnapshotV1",
+          "schema_version": 1
+        },
+        "observation": {
+          "observation_id": "public_observation_v1:ced3d4d7f2675bfc28b61912741497395bd74154",
+          "schema_name": "TaskStrategicPublicObservationV3",
+          "schema_version": 3,
+          "scope": "strategic_run_decision"
+        },
+        "schema_name": "PublicInformationSnapshotV1",
+        "schema_version": 1,
+        "snapshot_id": "public_information_snapshot_v1:08478aba823bb5e13bed1f261179caf326b9640b"
+      },
+      "observation": {
+        "domain": "strategic",
+        "observation": {
+          "cards": [
+            {
+              "base_block_override": null,
+              "base_damage_override": null,
+              "card": "Corruption",
+              "cost_modifier": -3,
+              "misc_value": 0,
+              "ordinal": 0,
+              "upgrades": 0
+            },
+            {
+              "base_block_override": null,
+              "base_damage_override": null,
+              "card": "Corruption",
+              "cost_modifier": 0,
+              "misc_value": 0,
+              "ordinal": 1,
+              "upgrades": 0
+            },
+            {
+              "base_block_override": null,
+              "base_damage_override": 20,
+              "card": "Strike",
+              "cost_modifier": 0,
+              "misc_value": 0,
+              "ordinal": 2,
+              "upgrades": 0
+            },
+            {
+              "base_block_override": 17,
+              "base_damage_override": null,
+              "card": "Defend",
+              "cost_modifier": 0,
+              "misc_value": 0,
+              "ordinal": 3,
+              "upgrades": 0
+            },
+            {
+              "base_block_override": null,
+              "base_damage_override": null,
+              "card": "SearingBlow",
+              "cost_modifier": 0,
+              "misc_value": 0,
+              "ordinal": 4,
+              "upgrades": 5
+            },
+            {
+              "base_block_override": null,
+              "base_damage_override": null,
+              "card": "RitualDagger",
+              "cost_modifier": 0,
+              "misc_value": 42,
+              "ordinal": 5,
+              "upgrades": 0
+            },
+            {
+              "base_block_override": null,
+              "base_damage_override": null,
+              "card": "GeneticAlgorithm",
+              "cost_modifier": 0,
+              "misc_value": 31,
+              "ordinal": 6,
+              "upgrades": 0
+            },
+            {
+              "base_block_override": null,
+              "base_damage_override": null,
+              "card": "SecretTechnique",
+              "cost_modifier": 0,
+              "misc_value": 0,
+              "ordinal": 7,
+              "upgrades": 0
+            },
+            {
+              "base_block_override": null,
+              "base_damage_override": null,
+              "card": "Whirlwind",
+              "cost_modifier": 0,
+              "misc_value": 0,
+              "ordinal": 8,
+              "upgrades": 0
+            },
+            {
+              "base_block_override": null,
+              "base_damage_override": null,
+              "card": "Pain",
+              "cost_modifier": 0,
+              "misc_value": 0,
+              "ordinal": 9,
+              "upgrades": 0
+            }
+          ],
+          "context": {
+            "kind": "campfire"
+          },
+          "decision_site": "campfire",
+          "mechanics": {
+            "mechanics_id": "constructed-reading-contract",
+            "mechanics_version": 1
+          },
+          "potions": [
+            {
+              "potion": {
+                "can_discard": true,
+                "can_use": false,
+                "potion": "FirePotion",
+                "requires_target": true
+              },
+              "slot": 0
+            },
+            {
+              "potion": null,
+              "slot": 1
+            }
+          ],
+          "public_history": {
+            "recent_combat_hp_loss": null,
+            "recent_combat_potions_used": null,
+            "recent_combat_turns": null,
+            "shop_purge_count": 0
+          },
+          "public_map": {
+            "boss": null,
+            "current_x": 1,
+            "current_y": 5,
+            "nodes": [
+              {
+                "edges": [
+                  {
+                    "destination_x": 0,
+                    "destination_y": 6
+                  },
+                  {
+                    "destination_x": 2,
+                    "destination_y": 6
+                  }
+                ],
+                "has_emerald_key": false,
+                "room": "monster",
+                "x": 1,
+                "y": 5
+              },
+              {
+                "edges": [],
+                "has_emerald_key": true,
+                "room": "elite",
+                "x": 0,
+                "y": 6
+              },
+              {
+                "edges": [],
+                "has_emerald_key": false,
+                "room": "question_mark",
+                "x": 2,
+                "y": 6
+              }
+            ]
+          },
+          "relics": [
+            {
+              "amount": 1,
+              "counter": -1,
+              "relic": "BurningBlood",
+              "used_up": false
+            },
+            {
+              "amount": 1,
+              "counter": -1,
+              "relic": "SingingBowl",
+              "used_up": false
+            }
+          ],
+          "run": {
+            "act": 1,
+            "ascension_level": 20,
+            "current_hp": 22,
+            "floor": 7,
+            "gold": 131,
+            "keys": [
+              false,
+              false,
+              false
+            ],
+            "max_hp": 80,
+            "player_class": "ironclad",
+            "potion_capacity": 2
+          },
+          "run_goal": "heart_victory"
+        }
+      },
+      "site": "campfire"
+    },
+    "deck_mechanics": {
+      "basis": "public_instance_and_shared_card_mechanics",
+      "cards": [
+        {
+          "card_sha256": "2862303f770d7fb5317bb709a44721b8bd4cc2632cd374f2f9abee8b854cbb3a",
+          "facts": {
+            "current": {
+              "definition": {
+                "base_cost": 3,
+                "card": "Corruption",
+                "card_type": "Power",
+                "definition_numbers": {
+                  "block": 0,
+                  "damage": 0
+                },
+                "ethereal": false,
+                "exhausts": false,
+                "innate": false,
+                "play_target": "player",
+                "rarity": "Rare",
+                "reviewed_effects": {
+                  "end_of_turn_block_each_turn": null,
+                  "enemy_strength_reduction": null,
+                  "self_hp_loss_on_play": null,
+                  "unconditional_draw_request": null
+                },
+                "upgrades": 0
+              },
+              "misc_value": 0,
+              "persistent_block": 0,
+              "persistent_cost": 0,
+              "persistent_damage": 0
+            },
+            "next_upgrade": {
+              "definition": {
+                "base_cost": 2,
+                "card": "Corruption",
+                "card_type": "Power",
+                "definition_numbers": {
+                  "block": 0,
+                  "damage": 0
+                },
+                "ethereal": false,
+                "exhausts": false,
+                "innate": false,
+                "play_target": "player",
+                "rarity": "Rare",
+                "reviewed_effects": {
+                  "end_of_turn_block_each_turn": null,
+                  "enemy_strength_reduction": null,
+                  "self_hp_loss_on_play": null,
+                  "unconditional_draw_request": null
+                },
+                "upgrades": 1
+              },
+              "misc_value": 0,
+              "persistent_block": 0,
+              "persistent_cost": 2,
+              "persistent_damage": 0
+            }
+          },
+          "ordinal": 0
+        },
+        {
+          "card_sha256": "6717d855ee8a5f6d1076c56cbcbcc5779918d1c3e8392a386462ec570115c5e4",
+          "facts": {
+            "current": {
+              "definition": {
+                "base_cost": 3,
+                "card": "Corruption",
+                "card_type": "Power",
+                "definition_numbers": {
+                  "block": 0,
+                  "damage": 0
+                },
+                "ethereal": false,
+                "exhausts": false,
+                "innate": false,
+                "play_target": "player",
+                "rarity": "Rare",
+                "reviewed_effects": {
+                  "end_of_turn_block_each_turn": null,
+                  "enemy_strength_reduction": null,
+                  "self_hp_loss_on_play": null,
+                  "unconditional_draw_request": null
+                },
+                "upgrades": 0
+              },
+              "misc_value": 0,
+              "persistent_block": 0,
+              "persistent_cost": 3,
+              "persistent_damage": 0
+            },
+            "next_upgrade": {
+              "definition": {
+                "base_cost": 2,
+                "card": "Corruption",
+                "card_type": "Power",
+                "definition_numbers": {
+                  "block": 0,
+                  "damage": 0
+                },
+                "ethereal": false,
+                "exhausts": false,
+                "innate": false,
+                "play_target": "player",
+                "rarity": "Rare",
+                "reviewed_effects": {
+                  "end_of_turn_block_each_turn": null,
+                  "enemy_strength_reduction": null,
+                  "self_hp_loss_on_play": null,
+                  "unconditional_draw_request": null
+                },
+                "upgrades": 1
+              },
+              "misc_value": 0,
+              "persistent_block": 0,
+              "persistent_cost": 2,
+              "persistent_damage": 0
+            }
+          },
+          "ordinal": 1
+        },
+        {
+          "card_sha256": "eb83622a99ff5833ce5f48984e1a84d94c0cfce860be4cee54ee67d660a23585",
+          "facts": {
+            "current": {
+              "definition": {
+                "base_cost": 1,
+                "card": "Strike",
+                "card_type": "Attack",
+                "definition_numbers": {
+                  "block": 0,
+                  "damage": 6
+                },
+                "ethereal": false,
+                "exhausts": false,
+                "innate": false,
+                "play_target": "one_enemy",
+                "rarity": "Basic",
+                "reviewed_effects": {
+                  "base_damage_delivery": {
+                    "amount": {
+                      "kind": "base"
+                    },
+                    "hits": {
+                      "count": 1,
+                      "kind": "fixed"
+                    },
+                    "kind": "attack",
+                    "play_condition": null,
+                    "targets": "selected_enemy"
+                  },
+                  "end_of_turn_block_each_turn": null,
+                  "enemy_strength_reduction": null,
+                  "self_hp_loss_on_play": null,
+                  "unconditional_draw_request": null
+                },
+                "upgrades": 0
+              },
+              "misc_value": 0,
+              "persistent_block": 0,
+              "persistent_cost": 1,
+              "persistent_damage": 20
+            },
+            "next_upgrade": {
+              "definition": {
+                "base_cost": 1,
+                "card": "Strike",
+                "card_type": "Attack",
+                "definition_numbers": {
+                  "block": 0,
+                  "damage": 9
+                },
+                "ethereal": false,
+                "exhausts": false,
+                "innate": false,
+                "play_target": "one_enemy",
+                "rarity": "Basic",
+                "reviewed_effects": {
+                  "base_damage_delivery": {
+                    "amount": {
+                      "kind": "base"
+                    },
+                    "hits": {
+                      "count": 1,
+                      "kind": "fixed"
+                    },
+                    "kind": "attack",
+                    "play_condition": null,
+                    "targets": "selected_enemy"
+                  },
+                  "end_of_turn_block_each_turn": null,
+                  "enemy_strength_reduction": null,
+                  "self_hp_loss_on_play": null,
+                  "unconditional_draw_request": null
+                },
+                "upgrades": 1
+              },
+              "misc_value": 0,
+              "persistent_block": 0,
+              "persistent_cost": 1,
+              "persistent_damage": 23
+            }
+          },
+          "ordinal": 2
+        },
+        {
+          "card_sha256": "ad143fd7d6f743799cd606308b7aff5aeec7ad6edea7beb6c77d435de666ab9c",
+          "facts": {
+            "current": {
+              "definition": {
+                "base_cost": 1,
+                "card": "Defend",
+                "card_type": "Skill",
+                "definition_numbers": {
+                  "block": 5,
+                  "damage": 0
+                },
+                "ethereal": false,
+                "exhausts": false,
+                "innate": false,
+                "play_target": "player",
+                "rarity": "Basic",
+                "reviewed_effects": {
+                  "base_block_delivery": "once_on_play",
+                  "end_of_turn_block_each_turn": null,
+                  "enemy_strength_reduction": null,
+                  "self_hp_loss_on_play": null,
+                  "unconditional_draw_request": null
+                },
+                "upgrades": 0
+              },
+              "misc_value": 0,
+              "persistent_block": 17,
+              "persistent_cost": 1,
+              "persistent_damage": 0
+            },
+            "next_upgrade": {
+              "definition": {
+                "base_cost": 1,
+                "card": "Defend",
+                "card_type": "Skill",
+                "definition_numbers": {
+                  "block": 8,
+                  "damage": 0
+                },
+                "ethereal": false,
+                "exhausts": false,
+                "innate": false,
+                "play_target": "player",
+                "rarity": "Basic",
+                "reviewed_effects": {
+                  "base_block_delivery": "once_on_play",
+                  "end_of_turn_block_each_turn": null,
+                  "enemy_strength_reduction": null,
+                  "self_hp_loss_on_play": null,
+                  "unconditional_draw_request": null
+                },
+                "upgrades": 1
+              },
+              "misc_value": 0,
+              "persistent_block": 20,
+              "persistent_cost": 1,
+              "persistent_damage": 0
+            }
+          },
+          "ordinal": 3
+        },
+        {
+          "card_sha256": "188c5584252bd105cdc264b3f5a115c7d0134589e583fc567697fd86a3c3b5bb",
+          "facts": {
+            "current": {
+              "definition": {
+                "base_cost": 2,
+                "card": "SearingBlow",
+                "card_type": "Attack",
+                "definition_numbers": {
+                  "block": 0,
+                  "damage": 42
+                },
+                "ethereal": false,
+                "exhausts": false,
+                "innate": false,
+                "play_target": "one_enemy",
+                "rarity": "Uncommon",
+                "reviewed_effects": {
+                  "base_damage_delivery": {
+                    "amount": {
+                      "kind": "base"
+                    },
+                    "hits": {
+                      "count": 1,
+                      "kind": "fixed"
+                    },
+                    "kind": "attack",
+                    "play_condition": null,
+                    "targets": "selected_enemy"
+                  },
+                  "end_of_turn_block_each_turn": null,
+                  "enemy_strength_reduction": null,
+                  "self_hp_loss_on_play": null,
+                  "unconditional_draw_request": null
+                },
+                "upgrades": 5
+              },
+              "misc_value": 0,
+              "persistent_block": 0,
+              "persistent_cost": 2,
+              "persistent_damage": 42
+            },
+            "next_upgrade": {
+              "definition": {
+                "base_cost": 2,
+                "card": "SearingBlow",
+                "card_type": "Attack",
+                "definition_numbers": {
+                  "block": 0,
+                  "damage": 51
+                },
+                "ethereal": false,
+                "exhausts": false,
+                "innate": false,
+                "play_target": "one_enemy",
+                "rarity": "Uncommon",
+                "reviewed_effects": {
+                  "base_damage_delivery": {
+                    "amount": {
+                      "kind": "base"
+                    },
+                    "hits": {
+                      "count": 1,
+                      "kind": "fixed"
+                    },
+                    "kind": "attack",
+                    "play_condition": null,
+                    "targets": "selected_enemy"
+                  },
+                  "end_of_turn_block_each_turn": null,
+                  "enemy_strength_reduction": null,
+                  "self_hp_loss_on_play": null,
+                  "unconditional_draw_request": null
+                },
+                "upgrades": 6
+              },
+              "misc_value": 0,
+              "persistent_block": 0,
+              "persistent_cost": 2,
+              "persistent_damage": 51
+            }
+          },
+          "ordinal": 4
+        },
+        {
+          "card_sha256": "f1193b99c89008f2170d4ade4fdebffa06ae0e5101d10ecc9b68455c96ec0a1b",
+          "facts": {
+            "current": {
+              "definition": {
+                "base_cost": 1,
+                "card": "RitualDagger",
+                "card_type": "Attack",
+                "definition_numbers": {
+                  "block": 0,
+                  "damage": 15
+                },
+                "ethereal": false,
+                "exhausts": true,
+                "innate": false,
+                "play_target": "one_enemy",
+                "rarity": "Special",
+                "reviewed_effects": {
+                  "base_damage_delivery": {
+                    "amount": {
+                      "kind": "base"
+                    },
+                    "hits": {
+                      "count": 1,
+                      "kind": "fixed"
+                    },
+                    "kind": "attack",
+                    "play_condition": null,
+                    "targets": "selected_enemy"
+                  },
+                  "end_of_turn_block_each_turn": null,
+                  "enemy_strength_reduction": null,
+                  "self_hp_loss_on_play": null,
+                  "unconditional_draw_request": null
+                },
+                "upgrades": 0
+              },
+              "misc_value": 42,
+              "persistent_block": 0,
+              "persistent_cost": 1,
+              "persistent_damage": 42
+            },
+            "next_upgrade": {
+              "definition": {
+                "base_cost": 1,
+                "card": "RitualDagger",
+                "card_type": "Attack",
+                "definition_numbers": {
+                  "block": 0,
+                  "damage": 15
+                },
+                "ethereal": false,
+                "exhausts": true,
+                "innate": false,
+                "play_target": "one_enemy",
+                "rarity": "Special",
+                "reviewed_effects": {
+                  "base_damage_delivery": {
+                    "amount": {
+                      "kind": "base"
+                    },
+                    "hits": {
+                      "count": 1,
+                      "kind": "fixed"
+                    },
+                    "kind": "attack",
+                    "play_condition": null,
+                    "targets": "selected_enemy"
+                  },
+                  "end_of_turn_block_each_turn": null,
+                  "enemy_strength_reduction": null,
+                  "self_hp_loss_on_play": null,
+                  "unconditional_draw_request": null
+                },
+                "upgrades": 1
+              },
+              "misc_value": 42,
+              "persistent_block": 0,
+              "persistent_cost": 1,
+              "persistent_damage": 42
+            }
+          },
+          "ordinal": 5
+        },
+        {
+          "card_sha256": "3453f1750479c085593c1324fcdbe7cff57a9292f8c32aa0b80f5da65c355e32",
+          "facts": {
+            "current": {
+              "definition": {
+                "base_cost": 1,
+                "card": "GeneticAlgorithm",
+                "card_type": "Skill",
+                "definition_numbers": {
+                  "block": 1,
+                  "damage": 0
+                },
+                "ethereal": false,
+                "exhausts": true,
+                "innate": false,
+                "play_target": "player",
+                "rarity": "Uncommon",
+                "reviewed_effects": {
+                  "base_block_delivery": "once_on_play",
+                  "end_of_turn_block_each_turn": null,
+                  "enemy_strength_reduction": null,
+                  "self_hp_loss_on_play": null,
+                  "unconditional_draw_request": null
+                },
+                "upgrades": 0
+              },
+              "misc_value": 31,
+              "persistent_block": 31,
+              "persistent_cost": 1,
+              "persistent_damage": 0
+            },
+            "next_upgrade": {
+              "definition": {
+                "base_cost": 1,
+                "card": "GeneticAlgorithm",
+                "card_type": "Skill",
+                "definition_numbers": {
+                  "block": 1,
+                  "damage": 0
+                },
+                "ethereal": false,
+                "exhausts": true,
+                "innate": false,
+                "play_target": "player",
+                "rarity": "Uncommon",
+                "reviewed_effects": {
+                  "base_block_delivery": "once_on_play",
+                  "end_of_turn_block_each_turn": null,
+                  "enemy_strength_reduction": null,
+                  "self_hp_loss_on_play": null,
+                  "unconditional_draw_request": null
+                },
+                "upgrades": 1
+              },
+              "misc_value": 31,
+              "persistent_block": 31,
+              "persistent_cost": 1,
+              "persistent_damage": 0
+            }
+          },
+          "ordinal": 6
+        },
+        {
+          "card_sha256": "cdb42dae024928927e3bb68ae278e623052de1a190ca4f588afc24c66a98c113",
+          "facts": {
+            "current": {
+              "definition": {
+                "base_cost": 0,
+                "card": "SecretTechnique",
+                "card_type": "Skill",
+                "definition_numbers": {
+                  "block": 0,
+                  "damage": 0
+                },
+                "ethereal": false,
+                "exhausts": true,
+                "innate": false,
+                "play_target": "no_explicit_target",
+                "rarity": "Rare",
+                "reviewed_effects": {
+                  "draw_pile_skill_to_hand": 1,
+                  "end_of_turn_block_each_turn": null,
+                  "enemy_strength_reduction": null,
+                  "self_hp_loss_on_play": null,
+                  "unconditional_draw_request": null
+                },
+                "upgrades": 0
+              },
+              "misc_value": 0,
+              "persistent_block": 0,
+              "persistent_cost": 0,
+              "persistent_damage": 0
+            },
+            "next_upgrade": {
+              "definition": {
+                "base_cost": 0,
+                "card": "SecretTechnique",
+                "card_type": "Skill",
+                "definition_numbers": {
+                  "block": 0,
+                  "damage": 0
+                },
+                "ethereal": false,
+                "exhausts": false,
+                "innate": false,
+                "play_target": "no_explicit_target",
+                "rarity": "Rare",
+                "reviewed_effects": {
+                  "draw_pile_skill_to_hand": 1,
+                  "end_of_turn_block_each_turn": null,
+                  "enemy_strength_reduction": null,
+                  "self_hp_loss_on_play": null,
+                  "unconditional_draw_request": null
+                },
+                "upgrades": 1
+              },
+              "misc_value": 0,
+              "persistent_block": 0,
+              "persistent_cost": 0,
+              "persistent_damage": 0
+            }
+          },
+          "ordinal": 7
+        },
+        {
+          "card_sha256": "6e35ad7f982a10a80d01536c45d98b36ed45092fe4af2e259e1df83e13ae133e",
+          "facts": {
+            "current": {
+              "definition": {
+                "base_cost": -1,
+                "card": "Whirlwind",
+                "card_type": "Attack",
+                "definition_numbers": {
+                  "block": 0,
+                  "damage": 5
+                },
+                "ethereal": false,
+                "exhausts": false,
+                "innate": false,
+                "play_target": "all_enemies",
+                "rarity": "Uncommon",
+                "reviewed_effects": {
+                  "base_damage_delivery": {
+                    "amount": {
+                      "kind": "base"
+                    },
+                    "hits": {
+                      "kind": "per_effective_x"
+                    },
+                    "kind": "attack",
+                    "play_condition": null,
+                    "targets": "each_enemy"
+                  },
+                  "end_of_turn_block_each_turn": null,
+                  "enemy_strength_reduction": null,
+                  "self_hp_loss_on_play": null,
+                  "unconditional_draw_request": null
+                },
+                "upgrades": 0
+              },
+              "misc_value": 0,
+              "persistent_block": 0,
+              "persistent_cost": -1,
+              "persistent_damage": 5
+            },
+            "next_upgrade": {
+              "definition": {
+                "base_cost": -1,
+                "card": "Whirlwind",
+                "card_type": "Attack",
+                "definition_numbers": {
+                  "block": 0,
+                  "damage": 8
+                },
+                "ethereal": false,
+                "exhausts": false,
+                "innate": false,
+                "play_target": "all_enemies",
+                "rarity": "Uncommon",
+                "reviewed_effects": {
+                  "base_damage_delivery": {
+                    "amount": {
+                      "kind": "base"
+                    },
+                    "hits": {
+                      "kind": "per_effective_x"
+                    },
+                    "kind": "attack",
+                    "play_condition": null,
+                    "targets": "each_enemy"
+                  },
+                  "end_of_turn_block_each_turn": null,
+                  "enemy_strength_reduction": null,
+                  "self_hp_loss_on_play": null,
+                  "unconditional_draw_request": null
+                },
+                "upgrades": 1
+              },
+              "misc_value": 0,
+              "persistent_block": 0,
+              "persistent_cost": -1,
+              "persistent_damage": 8
+            }
+          },
+          "ordinal": 8
+        },
+        {
+          "card_sha256": "d4f4d387888e84d71e31ff9ef69e2d3bdd3f3684b860285f791f7d3d69d0caa1",
+          "facts": {
+            "current": {
+              "definition": {
+                "base_cost": -2,
+                "card": "Pain",
+                "card_type": "Curse",
+                "definition_numbers": {
+                  "block": 0,
+                  "damage": 0
+                },
+                "ethereal": false,
+                "exhausts": false,
+                "innate": false,
+                "play_target": "no_explicit_target",
+                "rarity": "Curse",
+                "reviewed_effects": {
+                  "end_of_turn_block_each_turn": null,
+                  "enemy_strength_reduction": null,
+                  "self_hp_loss_on_play": null,
+                  "unconditional_draw_request": null
+                },
+                "upgrades": 0
+              },
+              "misc_value": 0,
+              "persistent_block": 0,
+              "persistent_cost": -2,
+              "persistent_damage": 0
+            },
+            "next_upgrade": null
+          },
+          "ordinal": 9
+        }
+      ],
+      "coverage": "partial",
+      "public_snapshot_id": "public_information_snapshot_v1:08478aba823bb5e13bed1f261179caf326b9640b",
+      "schema": "sts-owned-card-reading-v1"
+    },
+    "potion_mechanics": {
+      "basis": "simulator_definition_and_reviewed_effects",
+      "candidates": [],
+      "coverage": "partial",
+      "public_snapshot_id": "public_information_snapshot_v1:08478aba823bb5e13bed1f261179caf326b9640b",
+      "schema": "sts-potion-acquisition-reading-v1"
+    },
+    "producer": {
+      "component": "sts_run_play",
+      "evidence_identity": {
+        "build_source": {
+          "configuration": {
+            "CARGO_CFG_FEATURE": "",
+            "CARGO_CFG_PANIC": "unwind",
+            "CARGO_CFG_TARGET_ABI": "",
+            "CARGO_CFG_TARGET_ARCH": "x86_64",
+            "CARGO_CFG_TARGET_ENDIAN": "little",
+            "CARGO_CFG_TARGET_ENV": "msvc",
+            "CARGO_CFG_TARGET_FAMILY": "windows",
+            "CARGO_CFG_TARGET_FEATURE": "cmpxchg16b,fxsr,sse,sse2,sse3",
+            "CARGO_CFG_TARGET_HAS_ATOMIC": "128,16,32,64,8,ptr",
+            "CARGO_CFG_TARGET_OS": "windows",
+            "CARGO_CFG_TARGET_POINTER_WIDTH": "64",
+            "CARGO_CFG_TARGET_VENDOR": "pc",
+            "CARGO_CFG_WINDOWS": "",
+            "CARGO_ENCODED_RUSTFLAGS": "",
+            "DEBUG": "false",
+            "HOST": "x86_64-pc-windows-msvc",
+            "OPT_LEVEL": "0",
+            "TARGET": "x86_64-pc-windows-msvc",
+            "profile": "debug",
+            "rustc": "rustc 1.91.1 (ed61e7d7e 2025-11-07)\nbinary: rustc\ncommit-hash: ed61e7d7e242494fb7057f2657300d9e77bb4fcb\ncommit-date: 2025-11-07\nhost: x86_64-pc-windows-msvc\nrelease: 1.91.1\nLLVM version: 21.1.2\n"
+          },
+          "input_scope": "workspace-rust-source-v1",
+          "schema": "sts-rust-build-source-v1",
+          "source_sha256": "660318a278092dca8f08cbcb78298bc620446970a26e5aa9c659a19f806a3d55"
+        },
+        "public_observation_id": "sts-run-play-public-observation-20260906-v4",
+        "rng_semantics_id": "sts-simulator-run-rng-neow-card-parity-20260829-v1",
+        "run_play_head_schema": "sts-run-play-head-v1",
+        "schema": "sts-run-play-evidence-identity-v1",
+        "simulator_semantics_id": "sts-simulator-run-semantics-20260902-v14"
+      },
+      "version": "0.1.0"
+    },
+    "relic_mechanics": {
+      "basis": "simulator_definition_and_reviewed_effects",
+      "coverage": "partial",
+      "definitions": [
+        {
+          "battle_start_power": null,
+          "combat_victory_healing": {
+            "affected_by_healing_modifiers": true,
+            "base_hp": 6,
+            "capped_at_max_hp": true,
+            "requires_player_alive": true
+          },
+          "relic": "BurningBlood",
+          "shuffle_energy": null
+        },
+        {
+          "battle_start_power": null,
+          "combat_victory_healing": null,
+          "relic": "SingingBowl",
+          "shuffle_energy": null
+        }
+      ],
+      "public_snapshot_id": "public_information_snapshot_v1:08478aba823bb5e13bed1f261179caf326b9640b",
+      "schema": "sts-visible-relic-reading-v1"
+    },
+    "source": {
+      "case_id": "campfire-persistent-card-instances",
+      "kind": "constructed_contract_case"
+    },
+    "strategic_reading": {
+      "candidates": [
+        {
+          "brief": "smith Corruption@deck[0]",
+          "candidate_id": "task_public_candidate_v1:f7abf72d478ad3d0bb9d7b9737132af1829fc457",
+          "candidate_sha256": "1018e0b28dac8330a8220a3b4ae4f0d8bcdf53dad3cc13890de75eab37a16705",
+          "detail": "smith Corruption@deck[0]"
+        },
+        {
+          "brief": "smith Corruption@deck[1]",
+          "candidate_id": "task_public_candidate_v1:e71d06b5a8e129dd7f633f52ec17af5eefcf6f07",
+          "candidate_sha256": "de1499636b628da6f4d1c58cc8210a4e1d01b31b32202509db8f3345cf97743a",
+          "detail": "smith Corruption@deck[1]"
+        },
+        {
+          "brief": "smith Strike@deck[2]",
+          "candidate_id": "task_public_candidate_v1:ea4eda6e5d718e3218e539e21e08e0a762a5f47c",
+          "candidate_sha256": "b1aecf2ea83329aa0e54074a4050e9205c38b88ed8e044c559c7a8d4c0401b12",
+          "detail": "smith Strike@deck[2]"
+        },
+        {
+          "brief": "smith Defend@deck[3]",
+          "candidate_id": "task_public_candidate_v1:3b5a075350ff75dda46d79bce9d810180938475a",
+          "candidate_sha256": "0fce5750a719854733fdb9c5a1cfacb02b657839625c2f42fe18183dc60bb915",
+          "detail": "smith Defend@deck[3]"
+        },
+        {
+          "brief": "smith Searing Blow+5@deck[4]",
+          "candidate_id": "task_public_candidate_v1:fd02d775137643d2b567c272a951a5db0281be54",
+          "candidate_sha256": "e2a95d7f88aa15db26310d15d5ae3564c9d9835b0afb76e8b6cb50bab89f167f",
+          "detail": "smith Searing Blow+5@deck[4]"
+        },
+        {
+          "brief": "smith Ritual Dagger@deck[5]",
+          "candidate_id": "task_public_candidate_v1:7ad722723fc4f35dfa7905ddc1c3b4769d9e88a1",
+          "candidate_sha256": "48ec4653925661694614a0efb5dc2f114ea5efd3a474660552fd87b20bfa325f",
+          "detail": "smith Ritual Dagger@deck[5]"
+        },
+        {
+          "brief": "smith Genetic Algorithm@deck[6]",
+          "candidate_id": "task_public_candidate_v1:f22532c2d98adcd68372290ef474f0c4c4909c33",
+          "candidate_sha256": "e5f7677391f8cd45a96062258485df45f833791cfbf1a561ee4ff18d92077344",
+          "detail": "smith Genetic Algorithm@deck[6]"
+        },
+        {
+          "brief": "smith Secret Technique@deck[7]",
+          "candidate_id": "task_public_candidate_v1:891b1d1073b95698b9d4d191ccb7d9980f4792fe",
+          "candidate_sha256": "08742fcd11213d2301d9afdb6774604bec5d436f0e5591016cd07d6ef1d53169",
+          "detail": "smith Secret Technique@deck[7]"
+        },
+        {
+          "brief": "smith Whirlwind@deck[8]",
+          "candidate_id": "task_public_candidate_v1:27dce2b21f01057ea94530d21fef63f6e0d44579",
+          "candidate_sha256": "1cf70b17c888fe4e25e9d958ea00a65d3e7981a4063edd2209582805dc58c78b",
+          "detail": "smith Whirlwind@deck[8]"
+        },
+        {
+          "brief": "rest",
+          "candidate_id": "task_public_candidate_v1:6cbf6cbb54fa0fc3570ceadb4362fef1022af8dd",
+          "candidate_sha256": "873df124734c2557b98fde81449fbb7d0f9c250768b285c4951e2a98e87d003c",
+          "detail": "rest"
+        }
+      ],
+      "context_detail": "",
+      "context_summary": "Campfire · available rest, upgrade and other actions are listed in the current candidates",
+      "decision_site": "campfire",
+      "observation_sha256": "ad1fb4ae51d84762faa7706f802d335b51eef96638441ed9eee98a9e9982c072",
+      "public_snapshot_id": "public_information_snapshot_v1:08478aba823bb5e13bed1f261179caf326b9640b",
+      "schema": "sts-strategic-reading-surface-v1"
+    }
+  },
+  "payload_sha256": "9851afad5ec94ae341ac2463ff81915f5d498aeb9c2739603bf33779b265d65c",
+  "schema": "sts-public-decision-export-v3"
+}

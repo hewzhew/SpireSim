@@ -1,0 +1,589 @@
+// A scoped dsh player capability over the shared workbench. No game rules,
+// shell evaluation, model API or source-code editing belongs to this plugin.
+import { mkdir, appendFile, readFile, writeFile, rename } from 'node:fs/promises';
+import { join, isAbsolute } from 'node:path';
+import { pathToFileURL } from 'node:url';
+import { preparationExpertGuidance } from './strategy.mjs';
+import { preparationDeckComparison } from './deck.mjs';
+import { preparationCardChoice, renderPreparationCardChoice, adoptPreparationCardChoice,
+  CARD_CHOICE_GUIDE, CARD_CHOICE_AUTOMATIC_GUIDE, CARD_CHOICE_REVIEW_GUIDE,
+  CARD_CHOICE_TOOL_DESCRIPTION, CARD_CHOICE_TOOL_PARAMETERS } from './card-choice.mjs';
+import { preparationShopBudget, currentShopPlan, bindShopPlan, shopPotionReplacementScope, bindShopPotionPlan,
+  SHOP_POTION_COMPARISON_GUIDE, measureShopPotionInputBudget, shopSpendingScope,
+  SHOP_SPENDING_GUIDE, SHOP_SPENDING_TOOL_PARAMETERS, SHOP_SPENDING_NAMING_GUIDE, measureShopSpendingInputBudget } from './shop.mjs';
+import z from '@deepseek-ai/schemastery';
+import { defineTool } from '@deepseek-ai/dsh-tools';
+import { scopeOf } from '@deepseek-ai/dsh-scope';
+import { gameContextSource, sameGameContextSource, requestBranchReset, requestDecisionReset,
+  hasPendingGameContextReset, gameDecisionTask, sameGameDecisionTask,
+  contextQueryCommand, decisionContextSource, decisionQueryReferences } from './context.mjs';
+import { needsMaintainerReview, proposePlayerCommand, readPlayerReview,
+  playerReviewOutstanding, playerPauseText, currentPlayerGuidance, currentPlayerAdoption } from './supervision.mjs';
+import { preparationReading, preparationReadingText, preparationReadingSupply, preparationStageGuide, PREPARATION_PROCEDURE, PREPARATION_TOOL_PARAMETERS, PREPARATION_SHOP_TOOL_PARAMETERS, PREPARATION_TOOL_DESCRIPTION, preparationTaskRoot, preparationTaskProgress,
+  preparationProgressText, assertPreparationCommand, restoredPreparationDecision, preparationCommandBasis,
+  preparationClassificationContext, preparationCandidateGroups, preparationConditionBindings, collectPreparationClassification,
+  preparationClassificationReceipt, preparationRecordedTable } from './preparation.mjs';
+
+export const name = 'sts-player';
+export const inject = ['tools', 'systemPrompt', 'compaction'];
+export const Config = z.object({
+  repository: z.string().required(),
+  session: z.string().required(),
+  binary: z.string().required(false),
+  // A changed-state attachment rebuilds the current decision context.
+  resetContextOnAttach: z.boolean().required(false),
+  taskScope: z.string().required(false),
+  supervised: z.boolean().required(false),
+  preparationRoot: z.object({
+    source: z.object({ schema: z.string(), session_id: z.string(), head_revision: z.number(), state_revision: z.number() }),
+    task: z.object({ location: z.string(), family: z.string(), detail: z.string() }),
+    startingGold: z.number().required(false),
+  }).default(undefined).required(false),
+});
+
+// Keep ordinary observation and personal planning tools when mounted globally.
+// The guard also covers scoped/new tools that a visibility filter cannot hide.
+const allowed = new Set(['sts', 'sts_feedback', 'read', 'read_image', 'glob', 'grep', 'skill', 'todo_write']);
+const NAMING_GUIDE = 'Keep the supplied card, enemy, encounter, relic and effect names or IDs verbatim in reasoning, comparisons and reports. Explain their effects in your chosen language while retaining those names. Use ordinary ASCII + (U+002B) for upgraded names, e.g. Disarm+; write combinations with words such as "and" or "与".';
+export const PLAYER_GUIDE = `You control the bound run toward its stated objective. Use sts with short game commands. Current readings and supplied mechanics provide the game facts; local strategy notes help reason about choices. Source-code maintenance belongs to the maintainer.
+
+Working state
+Begin from the actual reading and owned mechanics supplied for the current task. Shared rules supply run constraints and preparation links for public threats; they do not list every enemy move. Attachment already supplies a fresh source-checked reading. Each successful game action returns the resulting state; use that hand and its legal options for your next action. When a game fact or command meaning needed for your decision is unclear, briefly state what you need to clarify, query it, and use the answer for your next choice. Use read to recover missing state or a failed connection. map reads this game's public map and Boss, with routes following connected rooms; use map route X Y or map elites when inspecting a specific connection or preparation opportunity.
+Deck is the permanent master deck. Report its displayed total, including unplayable cards: they can still be drawn and occupy hand space. Use actual pile counts for a later combat cycle after cards Exhaust. Combat hand and piles also reflect generated cards, Statuses and temporary upgrades. inventory effects gives owned cards with actual upgrades/costs, relic effects and potion rules. Use it when checking the whole deck. Combat readings supply current hand rules, active power amounts/timing, resources and enemy move definitions. Current modified values describe the live state; printed base/upgraded rules describe each version. Use the actual offered upgrade and typed category in rewards and shops.
+Query info card <name>, info enemy <name>, info power <name>, info relic <name>, or info potion <name> for a missing rule needed in your decision. info encounter <name> gives starting members and their mechanics for a covered encounter. Before relying on a future enemy's damage, phase change or trigger absent from the supplied facts, query its encounter definition at the current difficulty; recognizing its name is insufficient. info powers expands current powers. Bare info is a diagnostic candidate dump; it does not reveal new room contents. When an explanation is missing, consult the local references and record the specific information needed with sts_feedback.
+
+Preparation and deck decisions
+For strategic choices, use the current deck, resources, connected route and next serious threat. Compare a proposed addition with keeping the current deck; compare shop purchases as a spending plan. Explain the relevant benefit, cost and strongest alternative briefly, then act. Routine screen transitions need no strategic comparison; evaluate routes when map choices are available. Ordinary run play does not require classification rows or rating labels. Missing Heart keys must be collected before the end of Act 3.
+The plugin rebuilds current facts on entering a new decision task and on attachment or restoration. Same-task attachment refreshes previously requested mechanics and route queries; use those supplied answers. One shop with its purchases and selections, one event with its follow-up pages, one reward bundle and one combat each retain their ongoing investigation. Use the current reading to establish the new task's assessment. Within that task, update it after a meaningful permanent deck/resource change or a change in the next serious threat; otherwise explain just the candidate's relevant tradeoff. For additions, removals, transformations, upgrades and purchases, identify which function improves, what access/resource cost changes, and what covers the weak turns afterward. Use todo_write for concrete tasks within the current investigation when useful. At a requested checkpoint, report actual resources, deck changes and any unresolved concern.
+Keep the adopted preparation reason to its approach, relevant gap and the choice's benefit, cost and strongest alternative. Query info keys when a collection rule is needed. For smith upgrades, compare the change from the owned version under the same modifiers: its existing effects are available without spending this campfire. Include the upgrade's access and setup requirements and a concrete alternative upgrade. Compare potion expenditure with the current threat, the next fight, available recovery and replenishment. Explicit deck-lab queries test fixed cases with current resources and record their full details.
+
+Combat investigation
+Read visible intentions and active effects. A current intent such as 0/hit x15 means 15 hits of 0 damage, adjusted for current powers/facing before block. Enemy move definitions show the difficulty's possible base moves; visible current intent gives the selected observable move. Query an unfamiliar enemy's rules before using its attack values or triggers in a plan.
+At the start of each combat, use research whole_combat 8000 work 200000 and compare the retained lines before committing a multi-turn plan. A visible immediate kill can be played directly. plans rereads the search report, copy the complete displayed plan ID including its @ report suffix: review <plan ID> reads it, review <plan ID> 2 expands its second turn, and commit <plan ID> adopts that candidate. A new research report replaces the prior IDs; select an ID from the current report. Candidate rows give Minimum HP at observed action boundaries alongside Settled HP after combat settlement and healing. Shared resources appear once; differences remain under each candidate. Incense Burner counters give the next combat's trigger turn. Review rows give turn-start HP and that turn's observed HP change. Inspect setup timing, survival, damage and potion use, then adopt an acceptable line.
+When investigating an expensive or failed line, identify one concrete alternative: earlier setup, a different target, delayed power deployment, a draw action or a potion. Use preview <actions> to check it privately. If useful, adopt a checked prefix with act, inspect the actual successor, and research its continuation. A finite opening can be tested before the whole combat is solved. A search miss gives the work performed and stopping reason; use the resulting information to choose the next experiment.
+Time and work are independent caps. whole_combat defaults to 30000 transitions when work is omitted. Time accepts 1..20000 ms; work accepts 1..1000000 transitions for whole_combat. Increase the cap that actually stopped a useful investigation. The same root, effort and budgets reuse the saved report. For a new attempt, change the relevant budget or test a concrete tactical premise at a changed position.
+Search uses the SL information level. piles sl displays current exact draw (next-to-last), discard (bottom-to-top shuffle input) and exhaust piles. Cards become playable when they reach Hand. Track actual draw amounts, upgrades and triggers when checking access to a later card; preview gives the resulting hypothetical state. A committed action gives the actual state. Choose an experiment's stopping point after drawing, selection or an automatic turn-end trigger, then inspect the resulting hand before extending the line.
+
+Commands and game phases
+Copy commands from current option rows, such as event:Neow:0, take:Clothesline#0 or go 3,0. A plain numbered non-reward row accepts that number alone, e.g. 0. The room reading shows its choices; options expands the named additional commands, individual upgrade copies and combat actions. Event screen N marks the current dialogue stage; follow the displayed Continue or choice commands to advance. Compare event options by their listed effects: Continue can spend HP, Gold or other resources, even when it is the only option. At a requested stop before resource decisions, stop before such a Continue too.
+loot collects gold. It collects potion rewards when all offered potions fit; under Sozu it clears potion rewards and keeps the held inventory unchanged. When potions compete for slots, choose the reward or a displayed use/discard command. Remaining relic, key and potion choices are resolved before cards open. Resolve an open card reward with take/skip to return to other rewards. For card selection, copy the full displayed act command, e.g. act select:ShrugItOff+0#1 or act select:Parasite+0#0,Strike+0#0. Join card tokens without spaces after the comma. Current legal options determine potion availability during a selection.
+For act and preview, separate semantic actions with spaces: act play:Strike@0 play:Defend end. @0 targets enemy M0; untargeted cards use play:Defend. Card+ (also Card+1) means one upgrade; Card+0 means base. Copy occurrences such as #0 from the current choice. Occurrences are counted again after each action: equivalent repeated cards can use play:Strike@0 play:Strike@0. end ends the turn reached at that step, including a new turn reached through an earlier automatic trigger. Check block, damage, powers, remaining cards and potion value before ending a turn.
+Actions that open a choice can share the same act or preview line with that choice and subsequent plays: preview play:Armaments select:PommelStrike play:PommelStrike+@0. Discovery uses choose:<card>, e.g. preview use-potion:PowerPotion#0 choose:DarkEmbrace play:DarkEmbrace; select:<card> is for choosing cards from piles. If you need its available choices first, preview only through the opening action, read the hypothetical selection, then preview again from the actual position with the selected token inserted. A comma starts a separate complete command. Copy compact card IDs from options, or quote a name containing spaces, e.g. play:"Spot Weakness"@0.
+A single act line is prepared and committed atomically. A preparation error leaves that entire line unapplied. Several complete commands can use comma-space separators, e.g. claim:Gold#0, open-card#0 or act play:Defend, act end. Each command has its own commit; Applied before error lists successful actions if a later command fails. Internal coordinate/selector commas stay within their command. A go command that stops at a route choice also stops the remaining command chain; choose the displayed route before issuing further commands. Re-read the actual state to recover from a command error.
+
+SL return points and continuation
+Use mark BeforeExperiment to preserve the exact position before research or rewinding. Saving/dropping a mark keeps the game state and saved combat report unchanged; use plans to retrieve its candidates after reconnecting. mark lists points; back list shows retained floors and marks with saved location/resources. back mark BeforeExperiment restores that point and its floor endpoints; back floor N restores a retained floor endpoint; back N counts retained decisions. A rewind replaces the active branch and discards unmarked later floors. Read the restored state before planning. Use mark drop BeforeExperiment to release a finished experiment's point. Run navigation and mark changes as separate calls; their read-only listings can accompany ordinary commands.
+For a transport failure, use read to reconnect and establish the saved position. Applied before error and the resulting reading tell you which actions took effect. Keep playing while tools are available; the launcher handles any configured time cancellation. At a requested checkpoint, terminal result or concrete blocking tool failure, report the observed result and saved position.
+Use sts_feedback for a specific missing rule, confusing command or suspected bug: what you tried, what appeared, and what information or behavior you needed. The maintainer reviews it while you continue game investigation with readings, mechanics and previews. Available read/search/skill/todo tools support that work.`;
+
+export async function apply(ctx, config) {
+  const scope = scopeOf(ctx);
+  if (!scope) throw new Error('sts-player must be mounted inside a dedicated agent/preset scope');
+  if (typeof ctx.compaction.resetDecisionContext !== 'function') {
+    throw new Error('sts-player requires its GameContextCompaction backend for decision context replacement');
+  }
+  for (const key of ['repository', 'session']) {
+    if (!isAbsolute(config[key])) throw new Error(`${key} must be an absolute path`);
+  }
+  if (config.binary && !isAbsolute(config.binary)) throw new Error('binary must be an absolute path');
+  const taskScope = config.taskScope ?? 'run';
+  if (!['run', 'preparation'].includes(taskScope)) throw new Error('taskScope must be run or preparation');
+  if (config.supervised && taskScope !== 'run') throw new Error('Coached play uses the ordinary run scope.');
+  const taskTools = taskScope === 'preparation' ? new Set(['sts', 'sts_feedback']) : allowed;
+  const { openWorkbench } = await import(pathToFileURL(join(config.repository, 'tools/run_play/workbench.mjs')));
+  const { freshRecordDirectory, commandTokens, commandGroups } = await import(pathToFileURL(join(config.repository, 'tools/run_play/session.mjs')));
+  const normalizeContextQuery = command => {
+    try {
+      const tokens = commandTokens(command);
+      return contextQueryCommand(commandGroups(tokens[0], tokens.slice(1)));
+    } catch { /* Invalid or unrecognized commands are never replayed. */ }
+  };
+  const { strategicOptionCommand } = await import(pathToFileURL(join(config.repository, 'tools/run_play/contract.mjs')));
+  const { normalizeActionTokens } = await import(pathToFileURL(join(config.repository, 'tools/run_play/tokens.mjs')));
+  const preparationChoiceGroup = choice => {
+    const tokens = commandTokens(choice), groups = commandGroups(tokens[0], tokens.slice(1));
+    if (groups.length !== 1 || ['classify', 'choose', 'read', 'options'].includes(groups[0][0])) {
+      throw new Error('choice supplies one complete current preparation command.');
+    }
+    return groups[0][0] === 'act' ? ['act', normalizeActionTokens(groups[0][1])] : groups[0];
+  };
+  const records = freshRecordDirectory(config.repository, config.session.split(/[\\/]/).at(-1), 'dsh');
+  let owner, opening, player, decisionTask, disposed = false, attempt = 0;
+  let preparationRoot = config.preparationRoot, taskProgress = '', adoptedDecision, classification, classificationDraft, preparationFailures = 0;
+  let preparationReviewCandidate, preparationContext;
+  let shopBudget;
+  let presentation;
+  let cardChoiceFrame;
+  let rulesKey, rulesText = '';
+  const shopPlanFile = join(config.session, 'dsh-shop-plan.json');
+  async function prepareReading(raw, game, signal) {
+    const reading = { ...preparationReading(raw, config.rewardProgress) };
+    if (sameGameContextSource(presentation?.source, reading)) {
+      reading.candidateReadings = presentation.candidates;
+      reading.ownedResourceReading = presentation.resourceReading;
+    }
+    if (reading.position?.observation?.observation?.context?.kind !== 'shop'
+        || (preparationRoot && preparationTaskProgress(preparationRoot, reading) !== 'pending')) return reading;
+    if (!shopBudget || !sameGameContextSource(shopBudget.source, reading)) {
+      shopBudget = await preparationShopBudget(reading, actions => game.preview(actions, { signal }), strategicOptionCommand);
+      if (shopBudget && !sameGameContextSource(shopBudget.source, await game.observe({ signal }))) {
+        throw new Error('Shop position changed while organizing its budget; recover the current reading.');
+      }
+    }
+    reading.shopBudget = shopBudget;
+    try { reading.shopPlan = currentShopPlan(JSON.parse(await readFile(shopPlanFile, 'utf8')), reading); }
+    catch (error) { if (error.code !== 'ENOENT') throw error; }
+    return reading;
+  }
+  const progressText = () => cardChoiceFrame && taskProgress === 'pending'
+    ? `Card choice task: ${cardChoiceFrame.route.kind === 'review' ? 'awaiting a strategy policy' : 'awaiting one choice'}.`
+    : preparationContext?.shopSpending && taskProgress === 'pending'
+      ? `Shop task: ${classification ? 'choose a recorded current command'
+        : classificationDraft ? `submit pending recommendation rows: ${classificationDraft.pendingCommands.join(', ')}${classificationDraft.pendingChoice ? `; saved choice ${classificationDraft.pendingChoice}` : '; choose one command from the full table'}`
+          : 'submit recommendation rows for every current option, including leave, and one choice'}.`
+    : preparationProgressText(taskProgress, adoptedDecision, preparationRoot, classification, classificationDraft);
+  const cardGuide = () => ({ automatic: CARD_CHOICE_AUTOMATIC_GUIDE, model: CARD_CHOICE_GUIDE,
+    review: CARD_CHOICE_REVIEW_GUIDE })[cardChoiceFrame.route.kind];
+  const guideText = () => (taskScope === 'preparation' && preparationContext?.shopSpending
+    ? SHOP_SPENDING_NAMING_GUIDE : NAMING_GUIDE) + '\n\n' + (taskScope === 'preparation'
+    ? (cardChoiceFrame && taskProgress === 'pending' ? cardGuide()
+      : preparationStageGuide(taskProgress, classification, preparationContext, classificationDraft))
+    : (config.supervised ? 'Coached play: continue from the supplied actual progress. Queries, search and preview are available when needed. Submit your chosen command with a brief optional reason. The host pauses before consequential execution; the maintainer accepts or replaces the proposal. A pending proposal has not been executed.\n\n' : '') + PLAYER_GUIDE);
+  const updateTaskProgress = (reading, command, basis) => {
+    if (taskScope !== 'preparation') return;
+    const context = reading.position?.observation?.observation?.context;
+    preparationContext = context ? { ...context, potionReplacement: shopPotionReplacementScope(reading, strategicOptionCommand),
+      shopSpending: shopSpendingScope(reading, strategicOptionCommand) } : context;
+    preparationRoot ??= preparationTaskRoot(reading);
+    taskProgress = preparationTaskProgress(preparationRoot, reading);
+    if (classification && !sameGameContextSource(classification.source, reading)) classification = undefined;
+    if (classificationDraft && !sameGameContextSource(classificationDraft.source, reading)) {
+      classificationDraft = undefined;
+      preparationFailures = 0;
+    }
+    if (taskProgress !== 'pending' && command && !['read', 'options'].includes(command)) adoptedDecision ??= { command, basis };
+  };
+  function resetBranch(agent) {
+    decisionTask = undefined;
+    requestBranchReset(agent);
+  }
+  const recording = () => mkdir(records, { recursive: true });
+  function authorize(exec) {
+    if (disposed) throw new Error('game plugin is disposed');
+    if (!exec.agent) throw new Error('game tool requires an initiating agent');
+    if (!owner) {
+      owner = exec.agent;
+      if (taskScope === 'preparation') adoptedDecision ??= restoredPreparationDecision(owner.session);
+      // Ordinary attachment always supplies fresh state below, while eligible
+      // queries can be refreshed within their task. Explicit rewinds discard
+      // them through resetBranch; preparation keeps its existing reset policy.
+      if (taskScope === 'preparation' && config.resetContextOnAttach !== false) requestBranchReset(owner);
+    }
+    if (owner !== exec.agent) throw new Error('this game session is already bound to another agent');
+    exec.signal.throwIfAborted();
+  }
+  async function openPlayer() {
+    opening ??= (async () => {
+      await recording();
+      player = await openWorkbench({ ...config, binary: config.binary || undefined,
+        recordDirectory: join(records, `game-${attempt++}`), commandPrefix: '' });
+      return player;
+    })();
+    try { return await opening; }
+    catch (error) { opening = undefined; throw error; }
+  }
+  async function getPlayer(exec) {
+    authorize(exec);
+    return openPlayer();
+  }
+  ctx.effect(() => async () => {
+    disposed = true;
+    try { if (opening) await opening; }
+    catch { /* a failed open has no usable game connection */ }
+    if (player) await player.close();
+  }, 'sts-player.close');
+  // Native tools avoid granting a code runtime merely to call the game.
+  const initialReading = await refreshRules();
+  updateTaskProgress(initialReading);
+  cardChoiceFrame = taskScope === 'preparation' && taskProgress === 'pending'
+    ? preparationCardChoice(initialReading, strategicOptionCommand) : undefined;
+  ctx.tools.presentAs('native');
+  ctx.tools.restrict({ allow: ctx.tools.schemas().filter(tool => taskTools.has(tool.name)).map(tool => tool.name) });
+  ctx.tools.guard(exec => taskTools.has(exec.name) ? undefined : 'Use the supplied candidates through sts; record a missing fact through sts_feedback.');
+  ctx.systemPrompt.section({ name: 'sts:player-guide', order: 300,
+    text: guideText, interpolate: false });
+  ctx.tools.register(defineTool({
+    name: 'sts',
+    description: taskScope === 'preparation'
+      ? (cardChoiceFrame ? CARD_CHOICE_TOOL_DESCRIPTION : PREPARATION_TOOL_DESCRIPTION)
+      : 'Submit a displayed game command; Effect labels describe that command, not another choice. info <query> reads rules, inventory effects reads owned resources, map [elites | route X Y] reads connected routes, and piles sl reads combat piles. read recovers missing state or a failed connection; options expands additional commands and individual copies. loot collects routine rewards; go x,y travels; preview <actions> rehearses privately; act <actions> adopts; research whole_combat <ms> work <transitions> searches; plans and review <candidate> [turn] inspect; commit <candidate> adopts. back [steps | floor N | mark NAME | list], mark [NAME | drop NAME] and jump [node] navigate saved points. deck-lab list | ENCOUNTER [scenarios N] [work N] [ms N] [potions N] [full-hp] [after <preparation actions>] diagnoses outside combat. Returns readings and rules as text.',
+    parameters: taskScope === 'preparation' ? (cardChoiceFrame ? CARD_CHOICE_TOOL_PARAMETERS
+      : preparationContext?.shopSpending ? SHOP_SPENDING_TOOL_PARAMETERS
+        : initialReading.position.observation.observation?.context?.kind === 'shop'
+          ? PREPARATION_SHOP_TOOL_PARAMETERS : PREPARATION_TOOL_PARAMETERS) : {
+      command: { type: 'string', required: true, description: 'A displayed action command, or a query about game facts, rules or command meanings.' },
+      ...(config.supervised ? { reason: { type: 'string', description: 'Brief benefit and tradeoff of the proposed choice.' } } : {}),
+    },
+    output: { schema: { type: 'object', additionalProperties: false,
+      properties: { text: { type: 'string', required: true }, query: { type: 'object', additionalProperties: true } } },
+      render: (_args, value) => [{ type: 'text', text: value.text }],
+      presentationMeta: (_args, value) => value.query ? { schema: 'sts-context-query-v1', ...value.query } : null },
+    async execute({ command, reason, basis, choice, comparison: submittedComparison }, exec) {
+      let preparationExecution;
+      try {
+        const game = await getPlayer(exec);
+        if (config.supervised) {
+          const outstanding = await readPlayerReview(config.session);
+          if (playerReviewOutstanding(outstanding)) {
+            exec.concludeTurn();
+            return { text: playerPauseText(outstanding) };
+          }
+          const tokens = commandTokens(command);
+          if (needsMaintainerReview(commandGroups(tokens[0], tokens.slice(1)))) {
+            const proposal = await proposePlayerCommand(config.session, game, command, reason);
+            exec.concludeTurn();
+            return { text: playerPauseText(proposal) };
+          }
+        }
+        if (taskScope === 'preparation') {
+          const tokens = commandTokens(command), groups = commandGroups(tokens[0], tokens.slice(1));
+          if (groups.length > 1 && groups.some(group => ['classify', 'choose'].includes(group[0]))) {
+            throw new Error('Submit classify with basis and choice in one call.');
+          }
+          const texts = [];
+          // Check each command at its actual successor. A leave followed by
+          // go in one batch cannot cross the operator's preparation boundary.
+          for (const suppliedGroup of groups) {
+            let group = suppliedGroup[0] === 'act'
+              ? ['act', normalizeActionTokens(suppliedGroup[1])] : suppliedGroup;
+            let adoptionBasis = submittedComparison ?? basis;
+            let adoptionChoice = choice;
+            let choiceComparison = submittedComparison;
+            if (preparationReviewCandidate && !['read', 'options'].includes(group[0])) {
+              throw new Error(`Record the missing fact for ${preparationReviewCandidate} through sts_feedback for maintainer review.`);
+            }
+            const reading = await prepareReading(await game.observe({ signal: exec.signal }), game, exec.signal);
+            updateTaskProgress(reading);
+            try {
+              const frame = taskProgress === 'pending' ? preparationCardChoice(reading, strategicOptionCommand) : undefined;
+              if (frame) {
+                if (['read', 'options'].includes(group[0])) {
+                  const fresh = await game.execute('read, inventory effects', { signal: exec.signal });
+                  if (!sameGameContextSource(reading, await game.observe({ signal: exec.signal }))) {
+                    throw new Error('Game position changed while supplying the card choice; read the current step.');
+                  }
+                  const supply = preparationReadingSupply(fresh.text, reading, strategicOptionCommand);
+                  presentation = { source: gameContextSource(reading), candidates: supply.candidates, resourceReading: supply.resourceReading };
+                  reading.candidateReadings = supply.candidates;
+                  reading.ownedResourceReading = supply.resourceReading;
+                  cardChoiceFrame = preparationCardChoice(reading, strategicOptionCommand);
+                  return { text: renderPreparationCardChoice(cardChoiceFrame) };
+                }
+                if (group[0] !== 'choose') throw new Error('Current card choice: submit command choose with one supplied choice.');
+                await recording();
+                const { adopted, successor } = await adoptPreparationCardChoice(game, frame, reading, {
+                  choice, owner: 'flash-card-choice', signal: exec.signal,
+                  record: row => appendFile(join(records, 'adoptions.jsonl'), JSON.stringify(row) + '\n'),
+                });
+                preparationFailures = 0;
+                updateTaskProgress(successor, adopted.command, adopted.renderedBasis);
+                if (taskProgress === 'complete') exec.concludeTurn();
+                else requestBranchReset(exec.agent);
+                return { text: `Completed: ${adopted.command}\n${progressText()}` };
+              }
+              if (taskProgress === 'pending' && (shopPotionReplacementScope(reading, strategicOptionCommand) || shopSpendingScope(reading, strategicOptionCommand))
+                  && ['read', 'options'].includes(group[0])) {
+                const fresh = await game.execute('read, inventory effects', { signal: exec.signal });
+                if (!sameGameContextSource(reading, await game.observe({ signal: exec.signal }))) {
+                  throw new Error('Game position changed while supplying the bottle comparison; read the current step.');
+                }
+                const supply = preparationReadingSupply(fresh.text, reading, strategicOptionCommand);
+                const context = preparationClassificationContext(reading, strategicOptionCommand, classificationDraft);
+                return { text: `${supply.reading}\n${context}` };
+              }
+              if (group[0] === 'choose') {
+                if (!classification) throw new Error('Current stage: submit the requested classification rows and choice with command classify.');
+              } else assertPreparationCommand(group, taskProgress, reading, strategicOptionCommand);
+              if (group[0] === 'classify') {
+                if (!classification) {
+                  let normalizedChoice, choiceIssue;
+                  if (choice?.trim()) {
+                    try {
+                      const [verb, args] = preparationChoiceGroup(choice);
+                      normalizedChoice = [verb, ...args].join(' ');
+                    } catch (error) { choiceIssue = error.message; }
+                  }
+                  const collected = collectPreparationClassification(basis, reading, strategicOptionCommand, classificationDraft,
+                    { choice: normalizedChoice, choiceIssue, comparison: submittedComparison });
+                  await recording();
+                  await appendFile(join(records, 'classification-submissions.jsonl'), JSON.stringify({
+                    schema: 'sts-preparation-classification-submission-v1', at: new Date().toISOString(),
+                    ...collected, basis, choice, comparison: submittedComparison, stage: taskProgress, taskRoot: preparationRoot,
+                  }) + '\n');
+                  classificationDraft = collected;
+                  preparationFailures = collected.acceptedCommands.length ? 0 : preparationFailures + 1;
+                  const receipt = preparationClassificationReceipt(collected);
+                  if (!collected.complete) {
+                    requestBranchReset(exec.agent);
+                    if (preparationFailures >= 3) {
+                      exec.concludeTurn();
+                      return { text: `${receipt}\nPreparation stopped after three submissions without an accepted row. Current saved position requires maintainer review.\n${progressText()}` };
+                    }
+                    return { text: `${receipt}\n\n${progressText()}` };
+                  }
+                  const rows = collected.rows;
+                  const recorded = { at: new Date().toISOString(), source: gameContextSource(reading), basis, rows,
+                    ...(collected.pendingChoice ? { pendingChoice: collected.pendingChoice,
+                      ...(collected.pendingComparison !== undefined ? { pendingComparison: collected.pendingComparison } : {}) } : {}) };
+                  await appendFile(join(records, 'classifications.jsonl'), JSON.stringify({
+                    schema: 'sts-preparation-classification-v4',
+                    ...recorded,
+                    stage: taskProgress, taskRoot: preparationRoot,
+                    observation: reading,
+                    criteria: preparationContext?.potionReplacement ? SHOP_POTION_COMPARISON_GUIDE
+                      : preparationContext?.shopSpending ? SHOP_SPENDING_GUIDE : PREPARATION_PROCEDURE,
+                    ratingMeaning: preparationContext?.potionReplacement ? 'shop-bottle-tradeoff-v1'
+                      : preparationContext?.shopSpending ? 'shop-spending-tradeoff-v1' : 'current-window-recommendation-v1',
+                    expertGuidance: preparationExpertGuidance(reading, strategicOptionCommand),
+                    deckComparison: preparationDeckComparison(reading, strategicOptionCommand),
+                    shopBudget: reading.shopBudget, shopPlan: reading.shopPlan,
+                    classificationContext: preparationClassificationContext(reading, strategicOptionCommand),
+                    runRules: rulesText,
+                    groups: preparationCandidateGroups(reading, strategicOptionCommand),
+                    conditionBindings: preparationConditionBindings(reading, strategicOptionCommand),
+                  }) + '\n');
+                  classification = recorded;
+                  classificationDraft = undefined;
+                  preparationFailures = 0;
+                  if (collected.choiceIssue) {
+                    requestBranchReset(exec.agent);
+                    throw new Error(collected.choiceIssue);
+                  }
+                  adoptionChoice = collected.pendingChoice;
+                  choiceComparison = collected.pendingComparison;
+                }
+              }
+              if (['classify', 'choose'].includes(group[0])) {
+                if (!adoptionChoice?.trim()) {
+                  requestBranchReset(exec.agent);
+                  return { text: `${preparationRecordedTable(classification, reading, strategicOptionCommand)}\n\n${progressText()}` };
+                }
+                group = preparationChoiceGroup(adoptionChoice);
+                assertPreparationCommand(group, taskProgress, reading, strategicOptionCommand);
+                adoptionBasis = choiceComparison;
+              }
+              const comparison = preparationCommandBasis(group, taskProgress, adoptionBasis, reading, classification, strategicOptionCommand);
+              const adoptedCommand = comparison?.command ?? [group[0], ...group[1]].join(' ');
+              if (comparison) {
+                await recording();
+                await appendFile(join(records, 'adoptions.jsonl'), JSON.stringify({
+                  schema: 'sts-preparation-adoption-v2', at: new Date().toISOString(), source: gameContextSource(reading),
+                  classificationAt: classification.at, selected: comparison.command,
+                  stage: taskProgress, taskRoot: preparationRoot,
+                  comparison: adoptionBasis, submittedChoice: choice, adoptedChoice: adoptionChoice, ...comparison,
+                }) + '\n');
+                if (!sameGameContextSource(reading, await game.observe({ signal: exec.signal }))) {
+                  throw new Error('Game position changed before adopting the recorded classification; recover the current reading.');
+                }
+              }
+              const result = await game.execute(adoptedCommand, { signal: exec.signal });
+              if (comparison || (taskProgress === 'selection' && !['read', 'options'].includes(group[0]))) {
+                preparationExecution = { adopted: { command: adoptedCommand, renderedBasis: comparison?.renderedBasis }, receipt: result };
+              }
+              if (comparison || taskProgress === 'selection') preparationFailures = 0;
+              texts.push(preparationReadingText(result.text));
+              const successor = await game.observe({ signal: exec.signal });
+              if (preparationExecution) preparationExecution.successor = successor;
+              updateTaskProgress(successor, adoptedCommand, comparison?.renderedBasis);
+              if (reading.position.observation.observation?.context?.kind === 'shop' && comparison) {
+                const plan = bindShopPotionPlan(shopPotionReplacementScope(reading, strategicOptionCommand),
+                  comparison.command, successor, strategicOptionCommand) ?? bindShopPlan(comparison.shopContinuation, successor);
+                const temporary = `${shopPlanFile}.tmp`;
+                await writeFile(temporary, JSON.stringify(plan ?? null, null, 2));
+                await rename(temporary, shopPlanFile);
+              }
+              if (comparison && taskProgress === 'selection') requestBranchReset(exec.agent);
+            } catch (error) {
+              if (texts.length) error.message = `${texts.join('\n')}\n${progressText()}\nError: ${error.message}`;
+              throw error;
+            }
+          }
+          if (taskProgress === 'complete') exec.concludeTurn();
+          return { text: `${texts.join('\n')}\n\n${progressText()}` };
+        }
+        const queryCommand = normalizeContextQuery(command);
+        const beforeQuery = queryCommand ? await game.observe({ signal: exec.signal }) : undefined;
+        const result = await game.execute(command, { signal: exec.signal });
+        if (beforeQuery && !sameGameContextSource(beforeQuery, await game.observe({ signal: exec.signal }))) {
+          throw new Error('Game position changed while reading the requested information; recover the current state.');
+        }
+        if (result.branchChanged) resetBranch(exec.agent);
+        return { text: result.text, ...(beforeQuery ? { query: { command: queryCommand,
+          task: gameDecisionTask(beforeQuery, decisionTask ?? decisionContextSource(owner.session)?.task) } } : {}) };
+      } catch (error) {
+        const acknowledged = error.preparationExecution ?? preparationExecution;
+        if (acknowledged) {
+          const { adopted, successor } = acknowledged;
+          adoptedDecision ??= { command: adopted.command, basis: adopted.renderedBasis };
+          if (successor) updateTaskProgress(successor, adopted.command, adopted.renderedBasis);
+          error.message += `\nAdopted preparation command: ${adopted.command}`
+            + (adopted.renderedBasis ? `\nPreparation comparison before action (recorded rows): ${adopted.renderedBasis}` : '');
+        }
+        if (cardChoiceFrame && taskProgress === 'pending') requestBranchReset(exec.agent);
+        if (error.preparationReviewCandidate) preparationReviewCandidate = error.preparationReviewCandidate;
+        if (error.branchChanged) resetBranch(exec.agent);
+        if (taskScope === 'preparation' && taskProgress !== 'complete' && ++preparationFailures >= 3) {
+          exec.concludeTurn();
+          // dsh's error materialization omits concludesTurn. A successful
+          // stop receipt preserves the failure text and official turn end.
+          return { text: `Error: ${error.message}\nPreparation stopped after three command errors. Current saved position requires maintainer review.\n${progressText()}` };
+        }
+        throw error;
+      }
+    },
+  }));
+  ctx.tools.register(defineTool({
+    name: 'sts_feedback',
+    description: 'Record a concrete information gap, confusing command or suspected game/tool bug for maintainer review.',
+    parameters: { message: { type: 'string', required: true, description: 'What you tried, observed, and needed.' } },
+    output: { schema: { type: 'string' }, render: (_args, value) => [{ type: 'text', text: value }] },
+    async execute({ message }, exec) {
+      authorize(exec);
+      if (!message.trim()) throw new Error('feedback must describe a concrete difficulty');
+      await recording();
+      await appendFile(join(records, 'feedback.jsonl'), JSON.stringify({
+        at: new Date().toISOString(), agent: exec.agent.id, message,
+        ...(preparationReviewCandidate ? { preparationReviewCandidate } : {}),
+      }) + '\n');
+      if (taskScope === 'preparation' && (preparationReviewCandidate || cardChoiceFrame)) {
+        exec.concludeTurn();
+        return `Feedback recorded. Preparation paused at ${preparationReviewCandidate ?? 'the current card choice'} for maintainer review; the saved position is ready for inspection.`;
+      }
+      return taskScope === 'preparation'
+        ? `Feedback recorded for maintainer review. ${progressText()}`
+        : 'Feedback recorded for maintainer review. Continue from the current game state.';
+    },
+  }));
+  // Public Act/Boss/difficulty/goal and held keys refresh shared constraints
+  // and preparation links. Exact enemy moves remain in combat readings and
+  // explicit info queries, rather than every ordinary model request.
+  // Ordinary deck changes leave this system prefix stable for provider caching.
+  async function refreshRules(signal) {
+    const game = await openPlayer();
+    const rawReading = await game.observe({ signal });
+    const reading = taskScope === 'preparation' ? await prepareReading(rawReading, game, signal) : rawReading;
+    const { position } = reading;
+    if (position?.kind === 'terminal') {
+      rulesText = '';
+      rulesKey = undefined;
+      return reading;
+    }
+    const observed = position?.observation;
+    const combat = observed?.domain === 'combat';
+    const strategic = observed?.domain === 'strategic';
+    if (position?.kind !== 'decision' || (!combat && !strategic)) {
+      throw new Error('bound rules require a current typed game observation');
+    }
+    const state = observed.observation;
+    if (taskScope === 'preparation' && (preparationCardChoice(reading, strategicOptionCommand)
+        || shopPotionReplacementScope(reading, strategicOptionCommand) || shopSpendingScope(reading, strategicOptionCommand))) {
+      rulesText = '';
+      rulesKey = undefined;
+      return reading;
+    }
+    const run = strategic ? state.run : observed.run_context;
+    const key = JSON.stringify([
+      strategic ? state.run.ascension_level : state.player.ascension_level,
+      run?.act ?? null, (strategic ? state.public_map : run?.public_map)?.boss ?? null,
+      (strategic ? state.run_goal : run?.run_goal) ?? null,
+      run?.keys ?? null,
+      run?.pending_act_entry ?? null,
+      strategic && run?.pending_act_entry ? [run.current_hp, run.max_hp] : null,
+      strategic && state.context?.kind === 'run_transition' ? state.context.stage : null,
+    ]);
+    if (key !== rulesKey) {
+      const rules = await game.execute('info rules preparation', { signal });
+      rulesText = rules.text;
+      rulesKey = key;
+    }
+    return reading;
+  }
+  const currentClassificationText = reading => cardChoiceFrame || !['pending', 'selection'].includes(taskProgress) ? '' : classification
+    ? preparationRecordedTable(classification, reading, strategicOptionCommand) : preparationClassificationContext(reading, strategicOptionCommand, classificationDraft);
+  let classificationText = taskScope === 'preparation' ? currentClassificationText(initialReading) : '';
+  ctx.systemPrompt.section({ name: 'sts:run-rules', order: 310,
+    text: () => rulesText, interpolate: false });
+  if (taskScope === 'preparation') ctx.systemPrompt.section({ name: 'sts:task-progress', order: 330,
+    text: progressText, interpolate: false });
+  if (taskScope === 'preparation') ctx.systemPrompt.section({ name: 'sts:classification', order: 320,
+    text: () => classificationText, interpolate: false });
+  // Assembly precedes agent/pre-step in dsh. Refresh here so the first request
+  // after an Act change or rewind receives the current definitions immediately.
+  ctx.on('system-prompt/assemble', async (assembly, context, next) => {
+    const reading = await refreshRules(context.signal);
+    updateTaskProgress(reading);
+    cardChoiceFrame = taskScope === 'preparation' && taskProgress === 'pending'
+      ? preparationCardChoice(reading, strategicOptionCommand) : undefined;
+    if (taskScope === 'preparation') classificationText = currentClassificationText(reading);
+    if (context.agent) {
+      authorize({ agent: context.agent, signal: context.signal });
+      const task = taskScope === 'preparation' ? preparationRoot.task
+        : gameDecisionTask(reading, decisionTask ?? decisionContextSource(owner.session)?.task);
+      if (!sameGameDecisionTask(decisionTask, task) || hasPendingGameContextReset(owner)) {
+        const game = await openPlayer();
+        const command = reading.position.kind === 'terminal' ? 'read' : 'read, inventory effects';
+        const fresh = await game.execute(command, { signal: context.signal });
+        const queries = [], queryRefs = [];
+        for (const query of taskScope === 'run' ? decisionQueryReferences(owner, task, normalizeContextQuery) : []) {
+          try {
+            const refreshed = await game.execute(query.command, { signal: context.signal });
+            const answer = refreshed.text.trim();
+            const text = answer && fresh.text.includes(answer) ? 'Included in the current reading above.'
+              : answer && queries.some(row => row.text === answer) ? 'Included in another refreshed query above.' : refreshed.text;
+            queries.push({ command: query.command, text });
+            queryRefs.push(query.seq);
+          } catch (error) {
+            context.signal.throwIfAborted();
+            queries.push({ command: query.command, text: `Earlier query could not be refreshed: ${error.message}\nIts old answer was not retained.` });
+          }
+        }
+        if (!sameGameContextSource(reading, await game.observe({ signal: context.signal }))) {
+          throw new Error('Game position changed while rebuilding decision context; reconnect to read the actual state.');
+        }
+        const supply = taskScope === 'preparation' && reading.position.kind !== 'terminal'
+          ? preparationReadingSupply(fresh.text, reading, strategicOptionCommand) : { reading: fresh.text };
+        if (supply.candidates) {
+          presentation = { source: gameContextSource(reading), candidates: supply.candidates, resourceReading: supply.resourceReading };
+          reading.candidateReadings = supply.candidates;
+          reading.ownedResourceReading = supply.resourceReading;
+          if (cardChoiceFrame) cardChoiceFrame = preparationCardChoice(reading, strategicOptionCommand);
+          classificationText = currentClassificationText(reading);
+        }
+        if (taskScope === 'preparation' && (shopPotionReplacementScope(reading, strategicOptionCommand) || shopSpendingScope(reading, strategicOptionCommand))) {
+          const spending = shopSpendingScope(reading, strategicOptionCommand);
+          const inputBudget = (spending ? measureShopSpendingInputBudget : measureShopPotionInputBudget)([supply.reading, guideText(), classificationText, progressText()]);
+          await recording();
+          await appendFile(join(records, 'input-budgets.jsonl'), JSON.stringify({
+            schema: 'sts-preparation-input-budget-v2', source: gameContextSource(reading),
+            kind: spending ? 'shop-spending-comparison' : 'shop-potion-comparison', ...inputBudget,
+          }) + '\n');
+        }
+        let contextReading = cardChoiceFrame ? renderPreparationCardChoice(cardChoiceFrame) : supply.reading;
+        if (config.supervised) {
+          const review = await readPlayerReview(config.session);
+          const frame = { source: gameContextSource(reading), task };
+          const handoff = [currentPlayerAdoption(review, frame), currentPlayerGuidance(review, frame)].filter(Boolean);
+          if (handoff.length) contextReading = `${handoff.join('\n\n')}\n\n${contextReading}`;
+        }
+        requestDecisionReset(owner, contextReading, gameContextSource(reading), { task, queries, queryRefs });
+        decisionTask = task;
+      }
+    }
+    const result = await next();
+    return { ...result, sections: result.sections.map(section =>
+      section.name === 'sts:player-guide' ? { ...section, text: guideText() }
+        : section.name === 'sts:run-rules' ? { ...section, text: rulesText }
+        : section.name === 'sts:classification' ? { ...section, text: classificationText }
+        : section.name === 'sts:task-progress' ? { ...section, text: progressText() } : section) };
+  });
+}

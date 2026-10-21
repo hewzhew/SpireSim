@@ -1,0 +1,46 @@
+[package]
+name = "sts_oracle_tools"
+version = "0.1.0"
+edition = "2021"
+publish = false
+autobins = false
+autotests = false
+
+[dependencies]
+sts_combat_search_driver = { path = "../sts_combat_search_driver", features = ["backend"] }
+sts_oracle_runtime = { path = "../sts_oracle_runtime", default-features = false, features = ["control-full"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+clap = { version = "4.0", features = ["derive"] }
+
+[[bin]]
+name = "combat_case_review"
+path = "../../src/bin/combat_case_review.rs"
+
+[[bin]]
+name = "combat_search_v2_driver"
+path = "../../src/bin/combat_search_v2_driver/main.rs"
+
+[[bin]]
+name = "rl_dataset_export"
+path = "../../src/bin/rl_dataset_export.rs"
+
+[[bin]]
+name = "oracle_run"
+path = "../../src/bin/oracle_run.rs"
+
+[[test]]
+name = "noncombat_strategy_contract"
+path = "tests/noncombat_strategy_contract.rs"
+
+[[test]]
+name = "strategic_encounter_probe_contract"
+path = "tests/strategic_encounter_probe_contract.rs"
+
+[[test]]
+name = "oracle_analysis_session_contract"
+path = "tests/oracle_analysis_session_contract.rs"
+
+[[test]]
+name = "oracle_analysis_service_contract"
+path = "tests/oracle_analysis_service_contract.rs"

@@ -1,0 +1,47 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { nativeBudgetUsage, nativeBudgetStopReason } from './native-budget.mjs';
+
+const budget = { baselineSeq: -1, baselineTokens: 0, maxReportedTokens: 100, maxRequests: 5 };
+const finish = (failure, prefix = []) => ({ seq: 0, type: 'assistant/attempt', data: { stream: [
+  ...prefix.map(chunk => ({ type: 'chunk', time: 1, chunk })),
+  { type: 'chunk', time: 2, chunk: { type: 'finish', reason: { kind: 'error', failure } } },
+] } });
+const meter = { totals: { uncachedInputTokens: 0, outputTokens: 0 } };
+
+test('only explicit pre-response HTTP server and rate-limit failures are unmetered retry errors', () => {
+  for (const [failure, allowed] of [
+    [{ code: 'SERVER', status: 503 }, true], [{ code: 'SERVER', status: 500 }, true],
+    [{ code: 'RATE_LIMIT', status: 429 }, true], [{ code: 'SERVER' }, false],
+    [{ code: 'SERVER', status: 200 }, false], [{ code: 'TRANSPORT' }, false],
+    [{ code: 'EMPTY_RESPONSE' }, false],
+  ]) {
+    const usage = nativeBudgetUsage([finish(failure)], budget, meter);
+    assert.equal(usage.unmeteredProviderErrors, allowed ? 1 : 0);
+    assert.equal(usage.hasUsage, false, 'HTTP errors do not pretend to have token usage');
+    assert.equal(Boolean(nativeBudgetStopReason(budget, 1, usage)), !allowed);
+  }
+});
+
+test('tool-call or reasoning output before HTTP failure remains an unmetered response', () => {
+  for (const chunk of [
+    { type: 'tool-call-delta', index: 0, id: 'call', name: 'sts', argumentsDelta: '{}' },
+    { type: 'reasoning-delta', index: 0, text: 'thinking' },
+    { type: 'block-start', index: 0, blockType: 'text' },
+  ]) {
+    const usage = nativeBudgetUsage([finish({ code: 'SERVER', status: 503 }, [chunk])], budget, meter);
+    assert.equal(usage.missingUsageResponses, 1);
+    assert.match(nativeBudgetStopReason(budget, 1, usage), /usage unavailable/);
+  }
+});
+
+test('later metered replies do not erase earlier missing usage, and unmatched admissions remain unknown', () => {
+  const missing = { seq: 0, type: 'assistant/message', data: {} };
+  const reported = { seq: 1, type: 'assistant/message', data: { usage: { inputTokens: 2, outputTokens: 3 } } };
+  const usage = nativeBudgetUsage([missing, reported], budget, meter);
+  assert.equal(usage.hasUsage, true);
+  assert.equal(usage.missingUsageResponses, 1);
+  assert.match(nativeBudgetStopReason(budget, 2, usage), /usage unavailable/);
+  const interrupted = nativeBudgetUsage([], budget, meter);
+  assert.match(nativeBudgetStopReason(budget, 1, interrupted), /usage unavailable/);
+});

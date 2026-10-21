@@ -1,0 +1,14 @@
+{
+  "schema": "sts-original-boundary-source-v1",
+  "status": "actual Seek successor rejected by live grid admission before receipt",
+  "seed": 2026101901,
+  "scope": "natural Act3 F39 Maw T3 Nilrys Codex Seek selection",
+  "originalRejection": "GRID_SELECT is outside the authorized closed atomic scope",
+  "source": "manual-55182e9381fa4db8ab17f75be1b7bd11",
+  "rawSha256": "af6ae57814f9f7f1d5953bcf850a866063e57bc8632e189ce83a9e4852c99ada",
+  "producer": {
+    "commit": "f08cd5884692eef454e85d310b086acf6faa9272",
+    "jar_sha256": "E3D5B4C8406B4AD7F6383896B02387F84EB2CE5A47A2941DD42470E8F0AB7180",
+    "game_jar_sha256": "CFAD868AC8D65A88E71A0BF096FB09F78811E553EFFE0787C5309A655E081673"
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "scope": "Unchanged adjacent Java Burning Pact, single-exhaust selection, and resolution boundaries. Java-only projection and UUID continuity regression; UUID aliases do not establish Java-to-Rust bindings or restoration authority.",
+  "source_session": "manual-8b477c4487dc4143bc65560194d47485",
+  "files": {
+    "before.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-8b477c4487dc4143bc65560194d47485/java-evidence/boundaries/00000007-frame-9.json",
+      "sha256": "f431ebab8055bcddf9a819430887b4afa3d21d420616b625d240c927966f8f79",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "3F59A9280525AE3EA9B52B758BBF431CEDC3190EE840375AC1213F3A3D3BF800",
+        "session_epoch": "7b290769-bc94-4e90-bc40-1b7c6fde9dd0:cfb9e5e9-8de2-4b25-a4c6-950a4ac1b9d2:1f78d0ce-15cc-442b-a04a-370fe73bf335"
+      }
+    },
+    "play.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-8b477c4487dc4143bc65560194d47485/java-evidence/actions/00000007-from-frame-9.json",
+      "sha256": "51a8228b34beab185d0670584279254b3385ce045c39a9c65cbe4449c468c38a"
+    },
+    "pending.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-8b477c4487dc4143bc65560194d47485/java-evidence/boundaries/00000008-frame-10.json",
+      "sha256": "4e962d86b9cdc7a5f91b1116587106192ff89e4794d3df9fd3a74b2175760108",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "3F59A9280525AE3EA9B52B758BBF431CEDC3190EE840375AC1213F3A3D3BF800",
+        "session_epoch": "7b290769-bc94-4e90-bc40-1b7c6fde9dd0:cfb9e5e9-8de2-4b25-a4c6-950a4ac1b9d2:1f78d0ce-15cc-442b-a04a-370fe73bf335"
+      }
+    },
+    "select.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-8b477c4487dc4143bc65560194d47485/java-evidence/actions/00000008-from-frame-10.json",
+      "sha256": "79b865e7ec82e025cda24175fdb62b49ae5e2bc7acb2b96b2500be2e9b35b268"
+    },
+    "after.json": {
+      "source": ".oracle-lab/parity-manual/sessions/manual-8b477c4487dc4143bc65560194d47485/java-evidence/boundaries/00000009-frame-11.json",
+      "sha256": "964a714e484c1d74b035b868669f5b356bcbf5e0c20551c190939ad4788ca16c",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "3F59A9280525AE3EA9B52B758BBF431CEDC3190EE840375AC1213F3A3D3BF800",
+        "session_epoch": "7b290769-bc94-4e90-bc40-1b7c6fde9dd0:cfb9e5e9-8de2-4b25-a4c6-950a4ac1b9d2:1f78d0ce-15cc-442b-a04a-370fe73bf335"
+      }
+    }
+  }
+}

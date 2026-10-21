@@ -1,0 +1,20 @@
+[package]
+name = "sts_parity_lockstep"
+version = "0.1.0"
+edition = "2021"
+publish = false
+autobins = false
+autotests = false
+
+[dependencies]
+base64 = "0.22"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+sha2 = "0.10"
+
+[lib]
+path = "src/lib.rs"
+
+[[test]]
+name = "lockstep_core"
+path = "tests/lockstep_core.rs"

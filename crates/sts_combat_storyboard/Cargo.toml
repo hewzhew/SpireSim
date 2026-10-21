@@ -1,0 +1,14 @@
+[package]
+name = "sts_combat_storyboard"
+version = "0.1.0"
+edition = "2021"
+publish = false
+autobins = false
+autotests = false
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+sts_core = { package = "sts_simulator", path = "../.." }
+serde = { version = "1.0", features = ["derive"] }

@@ -1,0 +1,190 @@
+{
+  "scope": "Constructed A20 EndTurn: one-point Regret with Tungsten Rod/optional Buffer, or ordered Regret/Burn/Wound with zero/five block and optional Buffer; creatures, AI/shuffle states and complete RNG calls only; no card bindings, full relic/deck comparison or natural certification",
+  "constructed_input_scope": "Five A20 Ironclad first-EndTurn cases: Regret alone with Tungsten Rod and optional Buffer; ordered Regret/Burn/Wound with five block or zero block plus Buffer. Barricade is played normally. Rust reconstructs ordered semantic ingredients at independent scenario slots; no Java UUID bindings.",
+  "capture_status": "Complete bounded batch: five live and five immediate offline Exact; both opposite Burn/Regret hand orders observed.",
+  "collector_executable_sha256": "a4dcdfbeab46d537ebcbd36de6225e7c2d1af3bf8d0dc410779422a41085a85e",
+  "files": {
+    "one-tungsten-before.json": {
+      "source": ".oracle-lab/diagnostics/20260907-regret-order-live/one-tungsten/before.json",
+      "sha256": "cf5b0cedcdffc34aaff63da863cffaee44790db6cd078eded58bcf365a78ef2a",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "19DB8497D557D1F61C3BC85B00536E8B020DF4B2B932FD8790E2C366CE0E901F",
+        "session_epoch": "2c361ac3-e90f-448a-90c3-f0d8eef3cc2a:bdf75f0c-e6bd-4fa1-a178-57a46edb8a21:6cacfee5-c2a7-42c7-8291-86f6c2463fc4"
+      }
+    },
+    "one-tungsten-action.json": {
+      "source": ".oracle-lab/diagnostics/20260907-regret-order-live/one-tungsten/action.json",
+      "sha256": "26428b5e64d3e5ab480a2ec9f0b09b5ecdfa99fae7fa8f1b52acbfe07dc586c7"
+    },
+    "one-tungsten-after.json": {
+      "source": ".oracle-lab/diagnostics/20260907-regret-order-live/one-tungsten/after.json",
+      "sha256": "c3383911e2e20cbf46c067f114f6b22a9828abcb12b0e4ad5bbff892502e0d44",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "19DB8497D557D1F61C3BC85B00536E8B020DF4B2B932FD8790E2C366CE0E901F",
+        "session_epoch": "2c361ac3-e90f-448a-90c3-f0d8eef3cc2a:bdf75f0c-e6bd-4fa1-a178-57a46edb8a21:6cacfee5-c2a7-42c7-8291-86f6c2463fc4"
+      }
+    },
+    "one-buffer-tungsten-before.json": {
+      "source": ".oracle-lab/diagnostics/20260907-regret-order-live/one-buffer-tungsten/before.json",
+      "sha256": "549e09ff4016e28e6f2688fb6340b3a50df1009bec1c5765f079ded37a028a91",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "19DB8497D557D1F61C3BC85B00536E8B020DF4B2B932FD8790E2C366CE0E901F",
+        "session_epoch": "2c361ac3-e90f-448a-90c3-f0d8eef3cc2a:bdf75f0c-e6bd-4fa1-a178-57a46edb8a21:6cacfee5-c2a7-42c7-8291-86f6c2463fc4"
+      }
+    },
+    "one-buffer-tungsten-action.json": {
+      "source": ".oracle-lab/diagnostics/20260907-regret-order-live/one-buffer-tungsten/action.json",
+      "sha256": "20cd1ea33c05f120dfbe0ae11f221adf7289cdcf8ff599660f7d8a07295cc945"
+    },
+    "one-buffer-tungsten-after.json": {
+      "source": ".oracle-lab/diagnostics/20260907-regret-order-live/one-buffer-tungsten/after.json",
+      "sha256": "7621bd28292b26cec32e75bc97fb61c070b1061504616075533e2b132f39ff0c",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "19DB8497D557D1F61C3BC85B00536E8B020DF4B2B932FD8790E2C366CE0E901F",
+        "session_epoch": "2c361ac3-e90f-448a-90c3-f0d8eef3cc2a:bdf75f0c-e6bd-4fa1-a178-57a46edb8a21:6cacfee5-c2a7-42c7-8291-86f6c2463fc4"
+      }
+    },
+    "mixed-block-before.json": {
+      "source": ".oracle-lab/diagnostics/20260907-regret-order-live/mixed-block/before.json",
+      "sha256": "9788aebfe15763f6c04cc67e72549c81b0056d1194c403f45d7bb56c6f9adb4b",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "19DB8497D557D1F61C3BC85B00536E8B020DF4B2B932FD8790E2C366CE0E901F",
+        "session_epoch": "2c361ac3-e90f-448a-90c3-f0d8eef3cc2a:bdf75f0c-e6bd-4fa1-a178-57a46edb8a21:6cacfee5-c2a7-42c7-8291-86f6c2463fc4"
+      }
+    },
+    "mixed-block-action.json": {
+      "source": ".oracle-lab/diagnostics/20260907-regret-order-live/mixed-block/action.json",
+      "sha256": "9718306400191fdb35abbe528a0201111d22aba31915e10a131ac4738de7111f"
+    },
+    "mixed-block-after.json": {
+      "source": ".oracle-lab/diagnostics/20260907-regret-order-live/mixed-block/after.json",
+      "sha256": "01c9a138a9f853e56904ee0a1853e0aa8419a5399a110beca344c1b2ee898262",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "19DB8497D557D1F61C3BC85B00536E8B020DF4B2B932FD8790E2C366CE0E901F",
+        "session_epoch": "2c361ac3-e90f-448a-90c3-f0d8eef3cc2a:bdf75f0c-e6bd-4fa1-a178-57a46edb8a21:6cacfee5-c2a7-42c7-8291-86f6c2463fc4"
+      }
+    },
+    "mixed-buffer-a-before.json": {
+      "source": ".oracle-lab/diagnostics/20260907-regret-order-live/mixed-buffer-a/before.json",
+      "sha256": "9e3028c8460ffa81ec2946f333775b1166fd18aaff43775599e50faaac20e62a",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "19DB8497D557D1F61C3BC85B00536E8B020DF4B2B932FD8790E2C366CE0E901F",
+        "session_epoch": "2c361ac3-e90f-448a-90c3-f0d8eef3cc2a:bdf75f0c-e6bd-4fa1-a178-57a46edb8a21:6cacfee5-c2a7-42c7-8291-86f6c2463fc4"
+      }
+    },
+    "mixed-buffer-a-action.json": {
+      "source": ".oracle-lab/diagnostics/20260907-regret-order-live/mixed-buffer-a/action.json",
+      "sha256": "06158def35ba35a859cf49ea21eee0cda97ebcdaa6818ab4273f41704e12324d"
+    },
+    "mixed-buffer-a-after.json": {
+      "source": ".oracle-lab/diagnostics/20260907-regret-order-live/mixed-buffer-a/after.json",
+      "sha256": "905858e850927b66421c229b9e6df2eee46e9f696e8cf83ca55bef2aa37de452",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "19DB8497D557D1F61C3BC85B00536E8B020DF4B2B932FD8790E2C366CE0E901F",
+        "session_epoch": "2c361ac3-e90f-448a-90c3-f0d8eef3cc2a:bdf75f0c-e6bd-4fa1-a178-57a46edb8a21:6cacfee5-c2a7-42c7-8291-86f6c2463fc4"
+      }
+    },
+    "mixed-buffer-b-before.json": {
+      "source": ".oracle-lab/diagnostics/20260907-regret-order-live/mixed-buffer-b/before.json",
+      "sha256": "bb17982450c1275651ee82e52afb6fafda8ddff59b3cb27569a1941a814151b6",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "19DB8497D557D1F61C3BC85B00536E8B020DF4B2B932FD8790E2C366CE0E901F",
+        "session_epoch": "2c361ac3-e90f-448a-90c3-f0d8eef3cc2a:bdf75f0c-e6bd-4fa1-a178-57a46edb8a21:6cacfee5-c2a7-42c7-8291-86f6c2463fc4"
+      }
+    },
+    "mixed-buffer-b-action.json": {
+      "source": ".oracle-lab/diagnostics/20260907-regret-order-live/mixed-buffer-b/action.json",
+      "sha256": "814e5709cbfd460a83f9e6789b1b178069a91a318ae76a3934d3ff8c9257ffd9"
+    },
+    "mixed-buffer-b-after.json": {
+      "source": ".oracle-lab/diagnostics/20260907-regret-order-live/mixed-buffer-b/after.json",
+      "sha256": "c932de4e92e173145aed51826badd65add559cf447ba672756a07020240999cc",
+      "producer": {
+        "implementation": "communicationmod",
+        "version": "19DB8497D557D1F61C3BC85B00536E8B020DF4B2B932FD8790E2C366CE0E901F",
+        "session_epoch": "2c361ac3-e90f-448a-90c3-f0d8eef3cc2a:bdf75f0c-e6bd-4fa1-a178-57a46edb8a21:6cacfee5-c2a7-42c7-8291-86f6c2463fc4"
+      }
+    }
+  },
+  "capture_manifest_source": ".oracle-lab/diagnostics/20260907-regret-order-live/complete.json",
+  "capture_manifest_sha256": "eefabc70ac42bc6e0c3fca2d1da283faafda22cdf9fdcdf8e3af6296176b447f",
+  "capture_launch_plan_source": ".oracle-lab/diagnostics/20260907-regret-order-live/launch-plan.json",
+  "capture_launch_plan_sha256": "7882e70254dc37c73fc34d6080e1b40b902c9ec246c802eeb309645477d63472",
+  "runtime_provenance": {
+    "schema": "sts_java_play_launch_plan_v4",
+    "profile": "accelerated",
+    "control_profile": "parity_scenario_control",
+    "game_java": {
+      "length": 206912,
+      "path": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\SlayTheSpire\\jre\\bin\\javaw.exe",
+      "sha256": "036584C1C8321FF67E4933CC9072797A2FD4CFE8EF02460F4621A7CFEA9D1091"
+    },
+    "mod_the_spire": {
+      "length": 10252951,
+      "path": "\\\\?\\D:\\rust\\lib\\ModTheSpire.jar",
+      "sha256": "541B5E8A875D2A404A5A6D54F4A6F814284B0CF71ACB9245239D9C5EF50EA604"
+    },
+    "selected_mods": [
+      {
+        "id": "basemod",
+        "jar": {
+          "length": 7659408,
+          "path": "C:\\Program Files (x86)\\Steam\\steamapps\\workshop\\content\\646570\\1605833019\\BaseMod.jar",
+          "sha256": "C3353C10E64C621B723E9FD7D0502DFA796F828B101B68513594A5F5EF83FBAF"
+        },
+        "version": "5.56.0"
+      },
+      {
+        "id": "superfastmode",
+        "jar": {
+          "length": 25877,
+          "path": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\SlayTheSpire\\mods\\SuperFastMode.jar",
+          "sha256": "CECDC2A54D0B2DB8AA66857098D4740E5D74EC3361CD12416629019438D25C60"
+        },
+        "version": "1.0.8"
+      },
+      {
+        "id": "CommunicationMod",
+        "jar": {
+          "length": 704884,
+          "path": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\SlayTheSpire\\mods\\CommunicationMod.jar",
+          "sha256": "19DB8497D557D1F61C3BC85B00536E8B020DF4B2B932FD8790E2C366CE0E901F"
+        },
+        "version": "1.2.1"
+      }
+    ],
+    "acceleration": {
+      "game_fast_mode": true,
+      "mod": {
+        "id": "superfastmode",
+        "jar": {
+          "length": 25877,
+          "path": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\SlayTheSpire\\mods\\SuperFastMode.jar",
+          "sha256": "CECDC2A54D0B2DB8AA66857098D4740E5D74EC3361CD12416629019438D25C60"
+        },
+        "version": "1.0.8"
+      },
+      "settings": {
+        "config": {
+          "length": 123,
+          "path": "C:\\Users\\17239\\AppData\\Local\\ModTheSpire\\SuperFastMode\\SuperFastModeConfig.properties",
+          "sha256": "C9AC6FA74C9EDC8FB3F59EC6AC6CBE6B83CD77D012C0A129D297D4276ACE2931"
+        },
+        "values": {
+          "delta_multiplier": 5.0,
+          "is_delta_multiplied": true,
+          "is_instant_lerp": true
+        }
+      }
+    }
+  }
+}

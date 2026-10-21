@@ -1,0 +1,429 @@
+{
+  "payload": {
+    "card_mechanics": {
+      "basis": "simulator_definition_and_reviewed_effects",
+      "candidates": [
+        {
+          "candidate_id": "task_public_candidate_v1:540d9909fe62c0ed29011c1ab7692e1b1bc09843",
+          "facts": {
+            "current": {
+              "base_cost": 0,
+              "card": "DarkShackles",
+              "card_type": "Skill",
+              "definition_numbers": {
+                "block": 0,
+                "damage": 0
+              },
+              "ethereal": false,
+              "exhausts": true,
+              "innate": false,
+              "play_target": "one_enemy",
+              "rarity": "Uncommon",
+              "reviewed_effects": {
+                "end_of_turn_block_each_turn": null,
+                "enemy_strength_reduction": {
+                  "amount": 9,
+                  "restoration": "shackled_at_owner_turn_end"
+                },
+                "self_hp_loss_on_play": null,
+                "unconditional_draw_request": null
+              },
+              "upgrades": 0
+            },
+            "next_upgrade": {
+              "base_cost": 0,
+              "card": "DarkShackles",
+              "card_type": "Skill",
+              "definition_numbers": {
+                "block": 0,
+                "damage": 0
+              },
+              "ethereal": false,
+              "exhausts": true,
+              "innate": false,
+              "play_target": "one_enemy",
+              "rarity": "Uncommon",
+              "reviewed_effects": {
+                "end_of_turn_block_each_turn": null,
+                "enemy_strength_reduction": {
+                  "amount": 15,
+                  "restoration": "shackled_at_owner_turn_end"
+                },
+                "self_hp_loss_on_play": null,
+                "unconditional_draw_request": null
+              },
+              "upgrades": 1
+            }
+          }
+        },
+        {
+          "candidate_id": "task_public_candidate_v1:e8c5010532a5a6b83502681b9e58b41e067ef5a9",
+          "facts": {
+            "current": {
+              "base_cost": 0,
+              "card": "DarkShackles",
+              "card_type": "Skill",
+              "definition_numbers": {
+                "block": 0,
+                "damage": 0
+              },
+              "ethereal": false,
+              "exhausts": true,
+              "innate": false,
+              "play_target": "one_enemy",
+              "rarity": "Uncommon",
+              "reviewed_effects": {
+                "end_of_turn_block_each_turn": null,
+                "enemy_strength_reduction": {
+                  "amount": 15,
+                  "restoration": "shackled_at_owner_turn_end"
+                },
+                "self_hp_loss_on_play": null,
+                "unconditional_draw_request": null
+              },
+              "upgrades": 1
+            },
+            "next_upgrade": null
+          }
+        },
+        {
+          "candidate_id": "task_public_candidate_v1:a194c4f4158b4a42bd110915f5195a8135f8bf17",
+          "facts": {
+            "current": {
+              "base_cost": 0,
+              "card": "DeepBreath",
+              "card_type": "Skill",
+              "definition_numbers": {
+                "block": 0,
+                "damage": 0
+              },
+              "ethereal": false,
+              "exhausts": false,
+              "innate": false,
+              "play_target": "player",
+              "rarity": "Uncommon",
+              "reviewed_effects": {
+                "end_of_turn_block_each_turn": null,
+                "enemy_strength_reduction": null,
+                "self_hp_loss_on_play": null,
+                "unconditional_draw_request": 1
+              },
+              "upgrades": 0
+            },
+            "next_upgrade": {
+              "base_cost": 0,
+              "card": "DeepBreath",
+              "card_type": "Skill",
+              "definition_numbers": {
+                "block": 0,
+                "damage": 0
+              },
+              "ethereal": false,
+              "exhausts": false,
+              "innate": false,
+              "play_target": "player",
+              "rarity": "Uncommon",
+              "reviewed_effects": {
+                "end_of_turn_block_each_turn": null,
+                "enemy_strength_reduction": null,
+                "self_hp_loss_on_play": null,
+                "unconditional_draw_request": 2
+              },
+              "upgrades": 1
+            }
+          }
+        },
+        {
+          "candidate_id": "task_public_candidate_v1:ae50c3469f76c11f9837563555f9c67858061d9f",
+          "facts": {
+            "current": {
+              "base_cost": 0,
+              "card": "EscapePlan",
+              "card_type": "Skill",
+              "definition_numbers": {
+                "block": 3,
+                "damage": 0
+              },
+              "ethereal": false,
+              "exhausts": false,
+              "innate": false,
+              "play_target": "player",
+              "rarity": "Uncommon",
+              "reviewed_effects": {
+                "base_block_delivery": "if_this_draw_history_contains_skill",
+                "end_of_turn_block_each_turn": null,
+                "enemy_strength_reduction": null,
+                "self_hp_loss_on_play": null,
+                "unconditional_draw_request": 1
+              },
+              "upgrades": 0
+            },
+            "next_upgrade": {
+              "base_cost": 0,
+              "card": "EscapePlan",
+              "card_type": "Skill",
+              "definition_numbers": {
+                "block": 5,
+                "damage": 0
+              },
+              "ethereal": false,
+              "exhausts": false,
+              "innate": false,
+              "play_target": "player",
+              "rarity": "Uncommon",
+              "reviewed_effects": {
+                "base_block_delivery": "if_this_draw_history_contains_skill",
+                "end_of_turn_block_each_turn": null,
+                "enemy_strength_reduction": null,
+                "self_hp_loss_on_play": null,
+                "unconditional_draw_request": 1
+              },
+              "upgrades": 1
+            }
+          }
+        }
+      ],
+      "coverage": "partial",
+      "public_snapshot_id": "public_information_snapshot_v1:a6247d3c0a80edfc71d7247941e87c61bf4f4d9a",
+      "schema": "sts-card-acquisition-reading-v1"
+    },
+    "decision": {
+      "candidates": [
+        {
+          "action": {
+            "card": "DarkShackles",
+            "kind": "take_card",
+            "option_index": 0,
+            "reward_item_index": 0,
+            "upgrades": 0
+          },
+          "domain": "strategic"
+        },
+        {
+          "action": {
+            "card": "DarkShackles",
+            "kind": "take_card",
+            "option_index": 1,
+            "reward_item_index": 0,
+            "upgrades": 1
+          },
+          "domain": "strategic"
+        },
+        {
+          "action": {
+            "kind": "skip_card_reward",
+            "reward_item_index": 0
+          },
+          "domain": "strategic"
+        },
+        {
+          "action": {
+            "kind": "singing_bowl",
+            "reward_item_index": 0
+          },
+          "domain": "strategic"
+        },
+        {
+          "action": {
+            "kind": "discard_run_potion",
+            "potion": "FirePotion",
+            "slot": 0
+          },
+          "domain": "strategic"
+        },
+        {
+          "action": {
+            "card": "DeepBreath",
+            "kind": "take_card",
+            "option_index": 2,
+            "reward_item_index": 0,
+            "upgrades": 0
+          },
+          "domain": "strategic"
+        },
+        {
+          "action": {
+            "card": "EscapePlan",
+            "kind": "take_card",
+            "option_index": 3,
+            "reward_item_index": 0,
+            "upgrades": 0
+          },
+          "domain": "strategic"
+        }
+      ],
+      "information": {
+        "candidate_surface": {
+          "candidate_surface_id": "public_candidate_surface_v1:3489d38e69cb12bd24ac97f0d563306fa525e612",
+          "kind": "deployable_policy",
+          "ordered_candidate_ids": [
+            "task_public_candidate_v1:540d9909fe62c0ed29011c1ab7692e1b1bc09843",
+            "task_public_candidate_v1:e8c5010532a5a6b83502681b9e58b41e067ef5a9",
+            "task_public_candidate_v1:6cf7db95d4073fbaa4e0e7edd3142e2bf3e6dad0",
+            "task_public_candidate_v1:06254920c2fccaab16494fbe0d55b35011f8dafb",
+            "task_public_candidate_v1:cc6d82921937df39eaf479616b6dee7d683578aa",
+            "task_public_candidate_v1:a194c4f4158b4a42bd110915f5195a8135f8bf17",
+            "task_public_candidate_v1:ae50c3469f76c11f9837563555f9c67858061d9f"
+          ],
+          "schema_name": "TaskPublicCandidateSurfaceV1",
+          "schema_version": 1
+        },
+        "domain": "strategic",
+        "history_snapshot": {
+          "history_snapshot_id": "public_history_snapshot_v1:6693c80a196e79ffd3ad98e8555f9928d6f69390",
+          "schema_name": "TaskPublicHistorySnapshotV1",
+          "schema_version": 1
+        },
+        "observation": {
+          "observation_id": "public_observation_v1:3220d29b0a37222703b3f1a2645279699e7bab68",
+          "schema_name": "TaskStrategicPublicObservationV3",
+          "schema_version": 3,
+          "scope": "strategic_run_decision"
+        },
+        "schema_name": "PublicInformationSnapshotV1",
+        "schema_version": 1,
+        "snapshot_id": "public_information_snapshot_v1:a6247d3c0a80edfc71d7247941e87c61bf4f4d9a"
+      },
+      "observation": {
+        "domain": "strategic",
+        "observation": {
+          "cards": [
+            {
+              "base_block_override": null,
+              "base_damage_override": null,
+              "card": "Strike",
+              "cost_modifier": 0,
+              "misc_value": 0,
+              "ordinal": 0,
+              "upgrades": 0
+            },
+            {
+              "base_block_override": null,
+              "base_damage_override": null,
+              "card": "Strike",
+              "cost_modifier": 0,
+              "misc_value": 0,
+              "ordinal": 1,
+              "upgrades": 1
+            }
+          ],
+          "context": {
+            "kind": "card_reward",
+            "reward_item_index": 0
+          },
+          "decision_site": "card_reward",
+          "mechanics": {
+            "mechanics_id": "constructed-reading-contract",
+            "mechanics_version": 1
+          },
+          "potions": [
+            {
+              "potion": {
+                "can_discard": true,
+                "can_use": false,
+                "potion": "FirePotion",
+                "requires_target": true
+              },
+              "slot": 0
+            },
+            {
+              "potion": null,
+              "slot": 1
+            }
+          ],
+          "public_history": {
+            "recent_combat_hp_loss": null,
+            "recent_combat_potions_used": null,
+            "recent_combat_turns": null,
+            "shop_purge_count": 0
+          },
+          "public_map": {
+            "boss": null,
+            "current_x": 1,
+            "current_y": 5,
+            "nodes": [
+              {
+                "edges": [
+                  {
+                    "destination_x": 0,
+                    "destination_y": 6
+                  },
+                  {
+                    "destination_x": 2,
+                    "destination_y": 6
+                  }
+                ],
+                "has_emerald_key": false,
+                "room": "monster",
+                "x": 1,
+                "y": 5
+              },
+              {
+                "edges": [],
+                "has_emerald_key": true,
+                "room": "elite",
+                "x": 0,
+                "y": 6
+              },
+              {
+                "edges": [],
+                "has_emerald_key": false,
+                "room": "question_mark",
+                "x": 2,
+                "y": 6
+              }
+            ]
+          },
+          "relics": [
+            {
+              "amount": 1,
+              "counter": -1,
+              "relic": "BurningBlood",
+              "used_up": false
+            },
+            {
+              "amount": 1,
+              "counter": -1,
+              "relic": "SingingBowl",
+              "used_up": false
+            }
+          ],
+          "run": {
+            "act": 1,
+            "ascension_level": 20,
+            "current_hp": 22,
+            "floor": 7,
+            "gold": 131,
+            "keys": [
+              false,
+              false,
+              false
+            ],
+            "max_hp": 80,
+            "player_class": "ironclad",
+            "potion_capacity": 2
+          },
+          "run_goal": "heart_victory"
+        }
+      },
+      "site": "card_reward"
+    },
+    "producer": {
+      "component": "sts_run_play",
+      "evidence_identity": {
+        "public_observation_id": "sts-run-play-public-observation-20260830-v3",
+        "rng_semantics_id": "sts-simulator-run-rng-neow-card-parity-20260829-v1",
+        "run_play_head_schema": "sts-run-play-head-v1",
+        "schema": "sts-run-play-evidence-identity-v1",
+        "simulator_semantics_id": "sts-simulator-run-semantics-20260902-v14"
+      },
+      "version": "0.1.0"
+    },
+    "source": {
+      "case_id": "card-reward-reading-中文",
+      "kind": "constructed_contract_case"
+    }
+  },
+  "payload_sha256": "22a03e8d59f74a59e78f0d6afb9c97f1632865bd725b53285e4f68e16aceabb6",
+  "schema": "sts-public-decision-export-v2"
+}

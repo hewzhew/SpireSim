@@ -1,0 +1,18 @@
+[package]
+name = "sts_agent"
+version = "0.1.0"
+edition = "2021"
+publish = false
+autobins = false
+autotests = false
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+sts_core = { package = "sts_simulator", path = "../.." }
+serde = { version = "1.0", features = ["derive"] }
+
+[dev-dependencies]
+serde_json = "1.0"
+smallvec = "1.11"
