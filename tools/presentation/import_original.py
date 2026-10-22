@@ -160,6 +160,10 @@ EVENT_OPTIONS = {
     "WomanInBlue": 7, "SecretPortal": 2, "Purifier": 3,
     "FountainOfCurseCleansing": 2, "ForgottenAltar": 7,
     "TombRedMask": 5, "GoldenWing": 10, "MysteriousSphere": 3,
+    "GoldenIdol": 7, "DrugDealer": 6, "Mausoleum": 3,
+    "MaskedBandits": 4, "TheLibrary": 5, "Vampires": 6,
+    "BonfireElementals": 4, "Colosseum": 4, "SpireHeart": 4,
+    "CursedTome": 8, "DeadAdventurer": 5, "ScrapOoze": 5,
 }
 # Original reserved cells are empty; their positions are part of the layout.
 EVENT_OPTION_EMPTY = {"Addict": {6, 7}, "Ghosts": {4}}

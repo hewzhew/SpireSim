@@ -139,6 +139,18 @@ fn original_event_button_bindings_preserve_public_actions_sources_and_state() {
         (EventId::TombRedMask, &[0, 1]),
         (EventId::GoldenWing, &[0, 1, 2]),
         (EventId::MysteriousSphere, &[0, 1, 2]),
+        (EventId::GoldenIdol, &[0, 1, 2]),
+        (EventId::DrugDealer, &[0, 1]),
+        (EventId::Mausoleum, &[0, 1]),
+        (EventId::MaskedBandits, &[0, 1, 2, 3]),
+        (EventId::TheLibrary, &[0, 1, 2]),
+        (EventId::Vampires, &[0, 1, 2]),
+        (EventId::BonfireElementals, &[0, 1, 2, 3]),
+        (EventId::Colosseum, &[0, 1, 2, 3]),
+        (EventId::SpireHeart, &[0, 1, 2, 3, 4]),
+        (EventId::CursedTome, &[0, 1, 2, 3, 4, 5]),
+        (EventId::DeadAdventurer, &[0, 1, 2]),
+        (EventId::ScrapOoze, &[0, 1]),
     ];
     for &(event, screens) in events {
         for &screen in screens {
@@ -158,6 +170,44 @@ fn original_event_button_bindings_preserve_public_actions_sources_and_state() {
                     23
                 };
                 session.run_state.event_state = Some(state);
+                if event == EventId::TheLibrary && screen == 1 {
+                    session
+                        .run_state
+                        .event_state
+                        .as_mut()
+                        .unwrap()
+                        .current_screen = 0;
+                    sts_oracle_learning::content::events::the_library::handle_choice(
+                        &mut session.engine_state,
+                        &mut session.run_state,
+                        0,
+                    );
+                }
+                if event == EventId::DeadAdventurer {
+                    let state = sts_oracle_learning::content::events::dead_adventurer::init_dead_adventurer_state(&mut session.run_state);
+                    session
+                        .run_state
+                        .event_state
+                        .as_mut()
+                        .unwrap()
+                        .internal_state = state;
+                }
+                if event == EventId::BonfireElementals {
+                    session
+                        .run_state
+                        .event_state
+                        .as_mut()
+                        .unwrap()
+                        .internal_state = 2;
+                }
+                if event == EventId::ScrapOoze {
+                    session
+                        .run_state
+                        .event_state
+                        .as_mut()
+                        .unwrap()
+                        .internal_state = 0;
+                }
                 let mut game = controller_with_session(&directory.0, "original-buttons", &session);
                 let before = game.head().clone();
                 let en = game
@@ -224,6 +274,26 @@ fn original_event_button_bindings_preserve_public_actions_sources_and_state() {
                 if event == EventId::WorldOfGoop && screen == 0 {
                     assert!(zh.options[1].label.contains("23"));
                 }
+                if event == EventId::Mausoleum && screen == 0 {
+                    let chance = if ascension < 15 { 50 } else { 100 };
+                    assert!(zh.options[0].label.contains(&format!("{chance}%")));
+                }
+                if event == EventId::DeadAdventurer && screen == 0 {
+                    let chance = if ascension < 15 { 25 } else { 35 };
+                    assert!(zh.options[0].label.contains(&format!("{chance}%")));
+                }
+                if event == EventId::ScrapOoze && screen == 0 {
+                    let damage = if ascension < 15 { 3 } else { 5 };
+                    assert!(zh.options[0].label.contains("25%"));
+                    assert!(zh.options[0].label.contains(&damage.to_string()));
+                }
+                if event == EventId::Colosseum && screen == 1 {
+                    assert!(en.options[0]
+                        .label
+                        .contains("No item rewards; after victory return to this event"));
+                    assert!(zh.options[0].label.contains("ColosseumSlavers"));
+                    assert!(zh.options[0].label.contains("获胜后"));
+                }
             }
         }
     }
@@ -247,6 +317,8 @@ fn original_event_variants_keep_costs_prerequisites_and_late_floor_outcomes() {
         (EventId::ForgottenAltar, "idol", "金神像"),
         (EventId::WomanInBlue, "poor", "5 点伤害"),
         (EventId::Cleric, "poor", "离开"),
+        (EventId::Vampires, "vial", "小血瓶"),
+        (EventId::ScrapOoze, "ooze_65", "65%"),
     ] {
         let directory = TestDirectory::new();
         let mut session = fixture("reward");
@@ -271,6 +343,18 @@ fn original_event_variants_keep_costs_prerequisites_and_late_floor_outcomes() {
                 .relics
                 .push(RelicState::new(RelicId::GoldenIdol)),
             "poor" => session.run_state.gold = 0,
+            "vial" => session
+                .run_state
+                .relics
+                .push(RelicState::new(RelicId::BloodVial)),
+            "ooze_65" => {
+                session
+                    .run_state
+                    .event_state
+                    .as_mut()
+                    .unwrap()
+                    .internal_state = (7 << 16) | 65
+            }
             _ => unreachable!(),
         }
         let mut game = controller_with_session(&directory.0, "event-variant-locale", &session);
@@ -301,6 +385,11 @@ fn original_event_variants_keep_costs_prerequisites_and_late_floor_outcomes() {
                 "the second original option is Leave when the mask is held"
             );
         }
+        if variant == "vial" {
+            assert_eq!(zh.options.len(), 3);
+            assert!(zh.options[1].label.contains("小血瓶"));
+            assert!(zh.options[2].label.contains("拒绝"));
+        }
         if variant == "poor" {
             // Original WomanInBlue leaves all potion purchases enabled below price.
             let (count, position, ordinal) = if event == EventId::WomanInBlue {
@@ -320,6 +409,147 @@ fn original_event_variants_keep_costs_prerequisites_and_late_floor_outcomes() {
             ));
         }
         assert_eq!(*game.head(), before);
+    }
+}
+
+#[test]
+fn original_card_and_relic_trade_buttons_preserve_upgrades_and_settlement() {
+    use sts_oracle_learning::content::{
+        cards::CardId,
+        relics::{RelicId, RelicState},
+    };
+    use sts_oracle_learning::eval::run_control::RunControlSessionCheckpointV1;
+    use sts_oracle_learning::state::{
+        core::EngineState,
+        events::{EventId, EventState},
+    };
+    for event in [EventId::TheLibrary, EventId::Vampires] {
+        let mut checkpoints = Vec::new();
+        for locale in [Locale::En, Locale::ZhCn] {
+            let directory = TestDirectory::new();
+            let mut session = fixture("reward");
+            session.engine_state = EngineState::EventRoom;
+            session.run_state.event_state = Some(EventState::new(event));
+            session
+                .run_state
+                .relics
+                .push(RelicState::new(if event == EventId::TheLibrary {
+                    RelicId::ToxicEgg
+                } else {
+                    RelicId::BloodVial
+                }));
+            let hp = session.run_state.current_hp;
+            let max_hp = session.run_state.max_hp;
+            let count = session.run_state.master_deck.len();
+            if event == EventId::TheLibrary {
+                sts_oracle_learning::content::events::the_library::handle_choice(
+                    &mut session.engine_state,
+                    &mut session.run_state,
+                    0,
+                );
+            }
+            let expected_card = session
+                .run_state
+                .event_state
+                .as_ref()
+                .unwrap()
+                .card_payload
+                .iter()
+                .position(|card| card.upgrades > 0);
+            let option_index = if event == EventId::TheLibrary {
+                expected_card.expect("Toxic Egg must upgrade a generated skill")
+            } else {
+                1
+            };
+            let offered = session
+                .run_state
+                .event_state
+                .as_ref()
+                .unwrap()
+                .card_payload
+                .get(option_index)
+                .cloned();
+            let mut game = controller_with_session(&directory.0, "translated-card-trade", &session);
+            let reading = game
+                .decision_reading_v1(&[DecisionDetailV1::Options], None, locale)
+                .unwrap();
+            if event == EventId::TheLibrary {
+                assert_eq!(reading.options.len(), 20);
+            }
+            let option = reading.options.iter().find(|option| matches!(&option.candidate,
+                TaskPublicCandidateV1::Strategic { action: TaskStrategicActionV1::ChooseEventOption { option_index: index, .. } } if *index == option_index)).unwrap();
+            if let Some(card) = &offered {
+                assert!(option
+                    .label
+                    .contains(&locale.card_name(card.card_id.stable_id(), card.upgrades)));
+                assert!(
+                    option.label.contains(if locale == Locale::En {
+                        "uncommon"
+                    } else {
+                        "罕见"
+                    }) || option.label.contains(if locale == Locale::En {
+                        "common"
+                    } else {
+                        "普通"
+                    }) || option.label.contains(if locale == Locale::En {
+                        "rare"
+                    } else {
+                        "稀有"
+                    })
+                );
+            } else {
+                assert!(option.label.contains(locale.entity("relic", "BloodVial")));
+            }
+            game.choose_bound_v1(&crate::decision::RunPlayBoundChoiceV1 {
+                source: reading.source.unwrap(),
+                choice: option.choice.clone(),
+            })
+            .unwrap();
+            let actual = game
+                .current_external_exact_checkpoint_v1()
+                .unwrap()
+                .into_session()
+                .unwrap();
+            assert_eq!(
+                (actual.run_state.current_hp, actual.run_state.max_hp),
+                (hp, max_hp)
+            );
+            if let Some(card) = offered {
+                assert_eq!(actual.run_state.master_deck.len(), count + 1);
+                assert!(actual
+                    .run_state
+                    .master_deck
+                    .iter()
+                    .any(|held| held.id == card.card_id && held.upgrades == card.upgrades));
+            } else {
+                assert!(!actual
+                    .run_state
+                    .relics
+                    .iter()
+                    .any(|held| held.id == RelicId::BloodVial));
+                assert_eq!(
+                    actual
+                        .run_state
+                        .master_deck
+                        .iter()
+                        .filter(|card| card.id == CardId::Bite)
+                        .count(),
+                    5
+                );
+                assert!(!actual
+                    .run_state
+                    .master_deck
+                    .iter()
+                    .any(|card| card.id == CardId::Strike));
+            }
+            checkpoints.push(
+                serde_json::to_value(RunControlSessionCheckpointV1::from_session(&actual)).unwrap(),
+            );
+        }
+        assert_eq!(
+            checkpoints[0], checkpoints[1],
+            "{event:?}: translated choices must settle identically"
+        );
     }
 }
 
@@ -354,6 +584,18 @@ fn choices_from_original_translated_buttons_execute_the_same_actions_and_rng() {
         (EventId::TombRedMask, 0, 1),
         (EventId::GoldenWing, 0, 0),
         (EventId::MysteriousSphere, 0, 1),
+        (EventId::GoldenIdol, 0, 0),
+        (EventId::DrugDealer, 0, 0),
+        (EventId::Mausoleum, 0, 0),
+        (EventId::MaskedBandits, 0, 0),
+        (EventId::TheLibrary, 0, 1),
+        (EventId::Vampires, 0, 0),
+        (EventId::BonfireElementals, 1, 0),
+        (EventId::Colosseum, 1, 0),
+        (EventId::SpireHeart, 0, 0),
+        (EventId::CursedTome, 4, 0),
+        (EventId::DeadAdventurer, 0, 1),
+        (EventId::ScrapOoze, 0, 1),
     ] {
         let mut checkpoints = Vec::new();
         let mut labels = Vec::new();
@@ -394,10 +636,9 @@ fn choices_from_original_translated_buttons_execute_the_same_actions_and_rng() {
                 }
                 EventId::BigFish => assert_eq!(actual.run_state.current_hp, 40),
                 EventId::WorldOfGoop => assert_eq!(actual.run_state.gold, 227),
-                EventId::LivingWall | EventId::Purifier => assert!(matches!(
-                    actual.engine_state,
-                    EngineState::RunPendingChoice(_)
-                )),
+                EventId::LivingWall | EventId::Purifier | EventId::BonfireElementals => assert!(
+                    matches!(actual.engine_state, EngineState::RunPendingChoice(_))
+                ),
                 EventId::Mushrooms => {
                     assert_eq!(actual.run_state.current_hp, 37);
                     assert!(actual.run_state.master_deck.iter().any(
@@ -500,6 +741,62 @@ fn choices_from_original_translated_buttons_execute_the_same_actions_and_rng() {
                         .current_screen,
                     2
                 ),
+                EventId::GoldenIdol => assert!(actual
+                    .run_state
+                    .relics
+                    .iter()
+                    .any(|relic| relic.id == RelicId::GoldenIdol)),
+                EventId::DrugDealer => assert!(actual
+                    .run_state
+                    .master_deck
+                    .iter()
+                    .any(|card| card.id == CardId::JAX)),
+                EventId::Mausoleum => assert_eq!(
+                    actual
+                        .run_state
+                        .event_state
+                        .as_ref()
+                        .unwrap()
+                        .current_screen,
+                    1
+                ),
+                EventId::MaskedBandits => assert_eq!(actual.run_state.gold, 0),
+                EventId::TheLibrary => assert_eq!(actual.run_state.current_hp, 34),
+                EventId::Vampires => {
+                    assert_eq!(actual.run_state.max_hp, 58);
+                    assert_eq!(
+                        actual
+                            .run_state
+                            .master_deck
+                            .iter()
+                            .filter(|card| card.id == CardId::Bite)
+                            .count(),
+                        5
+                    );
+                }
+                EventId::Colosseum => assert!(actual.active_combat.is_some()),
+                EventId::SpireHeart | EventId::ScrapOoze => assert_eq!(
+                    actual
+                        .run_state
+                        .event_state
+                        .as_ref()
+                        .unwrap()
+                        .current_screen,
+                    1
+                ),
+                EventId::DeadAdventurer => assert_eq!(
+                    actual
+                        .run_state
+                        .event_state
+                        .as_ref()
+                        .unwrap()
+                        .current_screen,
+                    2
+                ),
+                EventId::CursedTome => {
+                    assert_eq!(actual.run_state.current_hp, 2);
+                    assert!(matches!(actual.engine_state, EngineState::RewardScreen(_)));
+                }
                 _ => unreachable!(),
             }
             checkpoints.push(

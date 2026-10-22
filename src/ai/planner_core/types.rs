@@ -393,6 +393,7 @@ pub enum PlannerEventRandomOutcomeV1 {
     DeadAdventurerSearch,
     MatchAndKeepFlip,
     ScrapOozeRelicRoll,
+    MausoleumCurseRoll,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]

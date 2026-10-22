@@ -2,6 +2,7 @@
 //! data only; the simulator's typed event options remain the action source.
 
 use std::fmt::Write;
+use sts_oracle_learning::agent::task::TaskStrategicObservationV1;
 use sts_oracle_learning::ai::planner_core::{
     PlannerEventCardPoolV1, PlannerEventOptionPublicSemanticsV1, PlannerEventPublicEffectV1,
     PlannerEventRelicPoolV1,
@@ -21,6 +22,7 @@ enum Amount {
     LoseMaxHp,
     GainGoldMinimum,
     GainGoldMaximum,
+    Chance,
 }
 
 impl Amount {
@@ -35,6 +37,13 @@ impl Amount {
             (Self::LoseMaxHp, Effect::LoseMaxHp { amount }) => Some(*amount),
             (Self::GainGoldMinimum, Effect::GainGoldRange { min, .. }) => Some(*min),
             (Self::GainGoldMaximum, Effect::GainGoldRange { max, .. }) => Some(*max),
+            (
+                Self::Chance,
+                Effect::RandomOutcome {
+                    chance_percent: Some(chance),
+                    ..
+                },
+            ) => Some(i32::from(*chance)),
             _ => None,
         });
         let value = values.next()?;
@@ -86,6 +95,10 @@ enum Part {
     Amount(Amount),
     Literal(&'static str),
     Message(&'static str),
+    BonfireRules,
+    ColosseumRule,
+    ReceivedCard,
+    LostRelic,
 }
 
 /// Neow's button ordinal identifies a rolled offer, not a fixed reward. Match
@@ -181,6 +194,7 @@ pub(crate) fn option_label(
     option: usize,
     public: &PlannerEventOptionPublicSemanticsV1,
     locale: Locale,
+    observation: Option<&TaskStrategicObservationV1>,
 ) -> Result<Option<String>, String> {
     use Part::{Amount as Value, Message, Original as Text};
     let Some(semantics) = &public.structured_semantics else {
@@ -192,6 +206,53 @@ pub(crate) fn option_label(
         None
     };
     let recipe: &[Part] = match (event, screen, option) {
+        (EventId::GoldenIdol, 0, 0) => &[Text(0)],
+        (EventId::GoldenIdol, 0, 1) | (EventId::GoldenIdol, 2, 0) => &[Text(1)],
+        (EventId::GoldenIdol, 1, 0) => &[Text(2)],
+        (EventId::GoldenIdol, 1, 1) => &[Text(3), Value(Amount::LoseHp), Text(4)],
+        (EventId::GoldenIdol, 1, 2) => &[Text(5), Value(Amount::LoseMaxHp), Text(6)],
+        (EventId::DrugDealer, 0, 0) => &[Text(0)],
+        (EventId::DrugDealer, 0, 1) => &[Text(1)],
+        (EventId::DrugDealer, 0, 2) => &[Text(2)],
+        (EventId::DrugDealer, 1, 0) => &[Text(3)],
+        (EventId::Mausoleum, 0, 0) => &[Text(0), Value(Amount::Chance), Text(1)],
+        (EventId::Mausoleum, 0, 1) | (EventId::Mausoleum, 1, 0) => &[Text(2)],
+        (EventId::MaskedBandits, 0, 0) => &[Text(0)],
+        (EventId::MaskedBandits, 0, 1) => &[Text(1)],
+        (EventId::MaskedBandits, 1 | 2 | 3, 0) => &[Text(2)],
+        (EventId::TheLibrary, 0, 0) if semantics.effects.iter().any(|effect| matches!(effect, PlannerEventPublicEffectV1::OfferCards { count: 20, .. })) => &[Text(0)],
+        (EventId::TheLibrary, 0, 1) => &[Text(1), Value(Amount::Heal), Text(2)],
+        (EventId::TheLibrary, 1, _) if public.specific_cards_gained.len() == 1 => &[Part::ReceivedCard],
+        (EventId::TheLibrary, 2, 0) => &[Text(3)],
+        (EventId::Vampires, 0, 0) if specific_card_count(&semantics.effects, CardId::Bite) == Some(5) => &[Text(0), Value(Amount::LoseMaxHp), Text(1)],
+        (EventId::Vampires, 0, 1) if semantics.effects.iter().any(|effect| matches!(effect, PlannerEventPublicEffectV1::LoseRelic { specific: Some(_), .. }))
+            && specific_card_count(&semantics.effects, CardId::Bite) == Some(5) => &[Text(3), Part::LostRelic, Text(4)],
+        (EventId::Vampires, 0, 1 | 2) if semantics.effects.is_empty() => &[Text(2)],
+        (EventId::Vampires, 1 | 2, 0) => &[Text(5)],
+        (EventId::Colosseum, 0, 0) => &[Text(0), Part::Literal(" "), Part::ColosseumRule],
+        (EventId::Colosseum, 1, 0) => &[Text(1), Part::Literal(" "), Part::ColosseumRule],
+        (EventId::Colosseum, 2, 0) => &[Text(2)],
+        (EventId::Colosseum, 2, 1) => &[Text(3), Part::Literal(" "), Part::ColosseumRule],
+        (EventId::Colosseum, 3, 0) => &[Message("event.leave")],
+        (EventId::SpireHeart, 0 | 2, 0) => &[Text(0)],
+        (EventId::SpireHeart, 1, 0) => &[Text(1)],
+        (EventId::SpireHeart, 3, 0) => &[Text(2)],
+        (EventId::SpireHeart, 4, 0) => &[Text(3)],
+        (EventId::CursedTome, 0, 0) => &[Text(0)],
+        (EventId::CursedTome, 0, 1) | (EventId::CursedTome, 5, 0) => &[Text(7)],
+        (EventId::CursedTome, 1, 0) if Amount::LoseHp.read(&semantics.effects) == Some(1) => &[Text(1)],
+        (EventId::CursedTome, 2, 0) if Amount::LoseHp.read(&semantics.effects) == Some(2) => &[Text(2)],
+        (EventId::CursedTome, 3, 0) if Amount::LoseHp.read(&semantics.effects) == Some(3) => &[Text(3)],
+        (EventId::CursedTome, 4, 0) => &[Text(5), Value(Amount::LoseHp), Text(6)],
+        (EventId::CursedTome, 4, 1) if Amount::LoseHp.read(&semantics.effects) == Some(3) => &[Text(4)],
+        (EventId::DeadAdventurer, 0, 0) => &[Text(0), Value(Amount::Chance), Text(4)],
+        (EventId::DeadAdventurer, 0, 1) | (EventId::DeadAdventurer, 2, 0) => &[Text(1)],
+        (EventId::DeadAdventurer, 1, 0) => &[Text(2)],
+        (EventId::ScrapOoze, 0, 0) => &[Text(0), Value(Amount::LoseHp), Text(1), Value(Amount::Chance), Text(2)],
+        (EventId::ScrapOoze, 0, 1) | (EventId::ScrapOoze, 1, 0) => &[Text(3)],
+        (EventId::BonfireElementals, 0 | 2, 0) => &[Text(0)],
+        (EventId::BonfireElementals, 1, 0) => &[Text(2), Part::Literal(" "), Part::BonfireRules],
+        (EventId::BonfireElementals, 3, 0) => &[Text(1)],
         (EventId::Cleric, 0, 0) if Amount::LoseGold.read(&semantics.effects) == Some(35) => &[Text(0), Value(Amount::Heal), Text(8)],
         // The legal empty-deck branch advances without payment or selection.
         (EventId::Cleric, 0, 1) if semantics.effects.is_empty()
@@ -352,6 +413,68 @@ pub(crate) fn option_label(
             }
             Part::Literal(text) => output.push_str(text),
             Part::Message(key) => output.push_str(&locale.text("decision", key, &[])?),
+            Part::BonfireRules => {
+                let Some(observation) = observation else {
+                    return Ok(None);
+                };
+                let owns = |id| observation.relics.iter().any(|relic| relic.relic == id);
+                output.push_str(&sts_oracle_learning::content::events::bonfire_elementals::describe_offering_rewards(
+                    owns(sts_oracle_learning::content::relics::RelicId::SpiritPoop),
+                    owns(sts_oracle_learning::content::relics::RelicId::MarkOfTheBloom), locale,
+                ));
+            }
+            Part::ColosseumRule => {
+                let Some(rule) = sts_oracle_learning::content::events::colosseum::option_rule(
+                    screen, option, locale,
+                ) else {
+                    return Ok(None);
+                };
+                output.push_str(&rule);
+            }
+            Part::ReceivedCard => {
+                let [card] = public.specific_cards_gained.as_slice() else {
+                    return Ok(None);
+                };
+                let definition =
+                    sts_oracle_learning::content::cards::get_card_definition(card.card);
+                output.push_str(&locale.text(
+                    "decision",
+                    "event.offeredCard",
+                    &[
+                        (
+                            "name",
+                            &locale.card_name(card.card.stable_id(), card.upgrades),
+                        ),
+                        (
+                            "rarity",
+                            locale.entity("cardRarity", definition.rarity.vocabulary_token_v1()),
+                        ),
+                        (
+                            "type",
+                            locale.entity("cardType", definition.card_type.vocabulary_token_v1()),
+                        ),
+                    ],
+                )?);
+            }
+            Part::LostRelic => {
+                let mut relics = semantics.effects.iter().filter_map(|effect| match effect {
+                    PlannerEventPublicEffectV1::LoseRelic {
+                        specific: Some(relic),
+                        ..
+                    }
+                    | PlannerEventPublicEffectV1::LoseStarterRelic {
+                        specific: Some(relic),
+                    } => Some(*relic),
+                    _ => None,
+                });
+                let Some(relic) = relics.next() else {
+                    return Ok(None);
+                };
+                if relics.next().is_some() {
+                    return Ok(None);
+                }
+                output.push_str(locale.entity("relic", relic.stable_id()));
+            }
         }
     }
     Ok(Some(clean_text(&output)))
@@ -446,7 +569,7 @@ mod tests {
         };
         for count in [3, 5] {
             for locale in [Locale::En, Locale::ZhCn] {
-                let label = option_label(EventId::Ghosts, 0, 0, &apparition(count), locale)
+                let label = option_label(EventId::Ghosts, 0, 0, &apparition(count), locale, None)
                     .unwrap()
                     .unwrap();
                 assert!(
@@ -456,7 +579,7 @@ mod tests {
             }
         }
         assert_eq!(
-            option_label(EventId::Ghosts, 0, 0, &apparition(4), Locale::ZhCn).unwrap(),
+            option_label(EventId::Ghosts, 0, 0, &apparition(4), Locale::ZhCn, None).unwrap(),
             None
         );
         let riches = |amount| {
@@ -472,13 +595,13 @@ mod tests {
             ])
         };
         assert!(
-            option_label(EventId::MindBloom, 0, 2, &riches(999), Locale::ZhCn)
+            option_label(EventId::MindBloom, 0, 2, &riches(999), Locale::ZhCn, None)
                 .unwrap()
                 .unwrap()
                 .contains("999")
         );
         assert_eq!(
-            option_label(EventId::MindBloom, 0, 2, &riches(998), Locale::ZhCn).unwrap(),
+            option_label(EventId::MindBloom, 0, 2, &riches(998), Locale::ZhCn, None).unwrap(),
             None
         );
         let potions = public(vec![
@@ -486,13 +609,13 @@ mod tests {
             Effect::ObtainRandomPotions { count: 3 },
         ]);
         assert!(
-            option_label(EventId::WomanInBlue, 0, 2, &potions, Locale::ZhCn)
+            option_label(EventId::WomanInBlue, 0, 2, &potions, Locale::ZhCn, None)
                 .unwrap()
                 .unwrap()
                 .contains("3")
         );
         assert_eq!(
-            option_label(EventId::WomanInBlue, 0, 1, &potions, Locale::ZhCn).unwrap(),
+            option_label(EventId::WomanInBlue, 0, 1, &potions, Locale::ZhCn, None).unwrap(),
             None
         );
     }
@@ -651,10 +774,10 @@ mod tests {
         let check = |effects: Vec<Effect>, en_fact: &str, zh_fact: &str, drawback: Option<&str>| {
             let facts = public(effects);
             for index in [0, 3] {
-                let en = option_label(EventId::Neow, 1, index, &facts, Locale::En)
+                let en = option_label(EventId::Neow, 1, index, &facts, Locale::En, None)
                     .unwrap()
                     .unwrap();
-                let zh = option_label(EventId::Neow, 1, index, &facts, Locale::ZhCn)
+                let zh = option_label(EventId::Neow, 1, index, &facts, Locale::ZhCn, None)
                     .unwrap()
                     .unwrap();
                 assert!(en.to_ascii_lowercase().contains(en_fact), "{en}");
@@ -721,7 +844,7 @@ mod tests {
             ],
         ] {
             assert_eq!(
-                option_label(EventId::Neow, 1, 0, &public(effects), Locale::ZhCn).unwrap(),
+                option_label(EventId::Neow, 1, 0, &public(effects), Locale::ZhCn, None).unwrap(),
                 None
             );
         }
@@ -734,10 +857,10 @@ mod tests {
             Effect::LoseHp { amount: 11 },
             Effect::GainGold { amount: 123 },
         ]);
-        let en = option_label(EventId::FaceTrader, 1, 0, &facts, Locale::En)
+        let en = option_label(EventId::FaceTrader, 1, 0, &facts, Locale::En, None)
             .unwrap()
             .unwrap();
-        let zh = option_label(EventId::FaceTrader, 1, 0, &facts, Locale::ZhCn)
+        let zh = option_label(EventId::FaceTrader, 1, 0, &facts, Locale::ZhCn, None)
             .unwrap()
             .unwrap();
         assert_eq!(en, "[Touch] Lose 11 HP, gain 123 Gold.");
@@ -746,12 +869,12 @@ mod tests {
             "{zh}"
         );
         let facts = public(vec![Effect::Heal { amount: 17 }]);
-        let en = option_label(EventId::BigFish, 0, 0, &facts, Locale::En)
+        let en = option_label(EventId::BigFish, 0, 0, &facts, Locale::En, None)
             .unwrap()
             .unwrap();
         assert_eq!(en, "[Banana] Heal 17 HP.");
         let facts = public(vec![Effect::GainMaxHp { amount: 9 }]);
-        let en = option_label(EventId::BigFish, 0, 1, &facts, Locale::En)
+        let en = option_label(EventId::BigFish, 0, 1, &facts, Locale::En, None)
             .unwrap()
             .unwrap();
         assert_eq!(en, "[Donut] Max HP +9.");
@@ -766,7 +889,7 @@ mod tests {
             public(vec![Effect::Heal { amount: 8 }, Effect::Heal { amount: 9 }]),
         ] {
             assert_eq!(
-                option_label(EventId::BigFish, 0, 0, &facts, Locale::ZhCn).unwrap(),
+                option_label(EventId::BigFish, 0, 0, &facts, Locale::ZhCn, None).unwrap(),
                 None
             );
         }
@@ -778,7 +901,7 @@ mod tests {
             (EventId::Lab, 1, 0),
         ] {
             assert_eq!(
-                option_label(event, screen, index, &facts, Locale::ZhCn).unwrap(),
+                option_label(event, screen, index, &facts, Locale::ZhCn, None).unwrap(),
                 None
             );
         }
@@ -794,7 +917,7 @@ mod tests {
             },
         }]);
         assert_eq!(
-            option_label(EventId::FaceTrader, 1, 1, &replacement, Locale::ZhCn).unwrap(),
+            option_label(EventId::FaceTrader, 1, 1, &replacement, Locale::ZhCn, None).unwrap(),
             None
         );
         let normal = public(vec![Effect::ObtainRelic {
@@ -802,7 +925,7 @@ mod tests {
             pool: PlannerEventRelicPoolV1::RandomFace,
         }]);
         assert!(
-            option_label(EventId::FaceTrader, 1, 1, &normal, Locale::ZhCn)
+            option_label(EventId::FaceTrader, 1, 1, &normal, Locale::ZhCn, None)
                 .unwrap()
                 .unwrap()
                 .contains("[交易]")

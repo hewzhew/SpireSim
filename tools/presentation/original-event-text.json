@@ -7,8 +7,8 @@
     "localization/zhs/characters.json": "dfe855326e920fcb0b240d3d9866279a21dee13e3c60413143a85062a2092b4d"
   },
   "bindings_sha256": {
-    "en": "96f083c5ce230e5706347f4ac216d08b9a44900786576e224bf078378ad4b8ec",
-    "zh-CN": "2428178e5d9fb84f61bd877ad31c768615b2c35b28a0db9c852d6166e862b925"
+    "en": "0e570f9731d1221e2fbf741c730d2a719cf434544048e0c0501a41f59cfc067a",
+    "zh-CN": "ae4270254b0738d2e934480ddbc136df2eb8bb810b7362b609c0c203412d047e"
   },
   "events": {
     "en": {
@@ -62,6 +62,14 @@
           "[Leave]"
         ]
       },
+      "BonfireElementals": {
+        "OPTIONS": [
+          "[Continue]",
+          "[Leave]",
+          "[Offer] Receive a reward based on the offer.",
+          "Select a Card to Offer."
+        ]
+      },
       "Cleric": {
         "OPTIONS": [
           "[Heal] #y35 #yGold: #gHeal #g",
@@ -73,6 +81,45 @@
           "[Leave]",
           "Select a Card to Remove.",
           " #gHP."
+        ]
+      },
+      "Colosseum": {
+        "OPTIONS": [
+          "[Continue]",
+          "[Fight]",
+          "[COWARDICE] Escape.",
+          "[VICTORY] A powerful fight with many rewards."
+        ]
+      },
+      "CursedTome": {
+        "OPTIONS": [
+          "[Read]",
+          "[Continue] #rLose #r1 #rHP.",
+          "[Continue] #rLose #r2 #rHP.",
+          "[Continue] #rLose #r3 #rHP.",
+          "[Stop] #rLose #r3 #rHP.",
+          "[Take] #gObtain #gthe #gBook. #rLose #r",
+          " #rHP.",
+          "[Leave]"
+        ]
+      },
+      "DeadAdventurer": {
+        "OPTIONS": [
+          "[Search] #gFind #gLoot. #r",
+          "[Leave]",
+          "[Fight]",
+          "[Continue] #gFind #gLoot. #r",
+          "%: #rmonster #rreturns."
+        ]
+      },
+      "DrugDealer": {
+        "OPTIONS": [
+          "[Test J.A.X.] #gGet #gJAXXED.",
+          "[Become Test Subject] #gTransform #g2 #gcards.",
+          "[Ingest Mutagens] #gObtain #ga #gspecial #grelic.",
+          "[Leave]",
+          "[Locked] Requires: 2 or more cards in deck.",
+          "Select Cards to Transform."
         ]
       },
       "Duplicator": {
@@ -126,6 +173,17 @@
           "[Leave]"
         ]
       },
+      "GoldenIdol": {
+        "OPTIONS": [
+          "[Take] #gObtain #gGolden #gIdol. #rTrigger #ra #rtrap.",
+          "[Leave]",
+          "[Outrun] #rBecome #rCursed #r- #rInjury.",
+          "[Smash] #rTake #r",
+          " #rDamage.",
+          "[Hide] #rLose #r",
+          " #rMax #rHP."
+        ]
+      },
       "GoldenShrine": {
         "OPTIONS": [
           "[Pray] #gGain #g",
@@ -163,6 +221,21 @@
           "Choose a Card to Upgrade.",
           "[Leave]",
           "[Locked] Requires: Upgradeable Cards"
+        ]
+      },
+      "MaskedBandits": {
+        "OPTIONS": [
+          "[Pay] #rLose #rALL of your #yGold.",
+          "[Fight!]",
+          "[Continue]",
+          "[Leave]"
+        ]
+      },
+      "Mausoleum": {
+        "OPTIONS": [
+          "[Open Coffin] #gObtain #ga #gRelic. #r",
+          "%: #rBecome #rCursed #r- #rWrithe.",
+          "[Leave]"
         ]
       },
       "MindBloom": {
@@ -216,6 +289,15 @@
           "Select a Card to Remove."
         ]
       },
+      "ScrapOoze": {
+        "OPTIONS": [
+          "[Reach Inside] #rLose #r",
+          " #rHP. #g",
+          "%: #gFind #ga #gRelic.",
+          "[Leave]",
+          "[Deeper] #rLose #r"
+        ]
+      },
       "SecretPortal": {
         "OPTIONS": [
           "[Enter the Portal] IMMEDIATELY travel to the boss.",
@@ -230,6 +312,14 @@
           "[Locked] Requires: Upgradeable Cards"
         ]
       },
+      "SpireHeart": {
+        "OPTIONS": [
+          "[Continue]",
+          "[Attack] #b???",
+          "[Sleep]",
+          "[Approach Door]"
+        ]
+      },
       "Ssssserpent": {
         "OPTIONS": [
           "[Agree] #gGain #g",
@@ -237,6 +327,15 @@
           "[Disagree]",
           "[Continue]",
           "[Leave]"
+        ]
+      },
+      "TheLibrary": {
+        "OPTIONS": [
+          "[Read] #gChoose #g1 #gof #g20 #gcards #gto #gadd #gto #gyour #gdeck.",
+          "[Sleep] #gHeal #g",
+          " #gHP.",
+          "[Leave]",
+          "Add a card to your deck."
         ]
       },
       "TombRedMask": {
@@ -261,6 +360,16 @@
           "[Leave]",
           "Select a Card to Upgrade.",
           "[Locked] Requires: Upgradeable Cards"
+        ]
+      },
+      "Vampires": {
+        "OPTIONS": [
+          "[Accept] #gRemove #gall Strikes. #gReceive #g5 Bites. #rLose #r",
+          " #rMax #rHP.",
+          "[Refuse]",
+          "[Lose ",
+          "] #gRemove #gall Strikes. #gReceive #g5 Bites.",
+          "[Leave]"
         ]
       },
       "WindingHalls": {
@@ -394,6 +503,14 @@
           "[离开]"
         ]
       },
+      "BonfireElementals": {
+        "OPTIONS": [
+          "[继续]",
+          "[离开]",
+          "[献上] 根据献上的贡品获得相应的奖励。",
+          "选择一张牌献上。"
+        ]
+      },
       "Cleric": {
         "OPTIONS": [
           "[治疗] #y35 #y金币 ： #g回复 #g",
@@ -405,6 +522,45 @@
           "[离开]",
           "选择一张牌移除。",
           "。"
+        ]
+      },
+      "Colosseum": {
+        "OPTIONS": [
+          "[继续]",
+          "[战斗]",
+          "[怂了] 逃跑。",
+          "[战斗到底] 进行一场艰难的战斗，赢得众多奖赏。"
+        ]
+      },
+      "CursedTome": {
+        "OPTIONS": [
+          "[阅读]",
+          "[继续] #r失去 #r1 #r生命。",
+          "[继续] #r失去 #r2 #r生命。",
+          "[继续] #r失去 #r3 #r生命。",
+          "[停止] #r失去 #r3 #r生命。",
+          "[拿走] #g获得书。 #r失去 #r",
+          " #r生命。",
+          "[离开]"
+        ]
+      },
+      "DeadAdventurer": {
+        "OPTIONS": [
+          "[搜索] #g寻找东西。 #r",
+          "[离开]",
+          "[战斗]",
+          "[继续] #g寻找东西。 #r",
+          "%： #r遇见回来的怪物。"
+        ]
+      },
+      "DrugDealer": {
+        "OPTIONS": [
+          "[试一下J.A.X.] #g来点猛药。",
+          "[当一下实验对象] #g选择2张牌进行变化。",
+          "[喝一下突变剂] #g获得一件特殊遗物。",
+          "[离开]",
+          "[锁定] 需要：牌组中至少有2张牌。",
+          "选择要变化的牌。"
         ]
       },
       "Duplicator": {
@@ -458,6 +614,17 @@
           "[离开]"
         ]
       },
+      "GoldenIdol": {
+        "OPTIONS": [
+          "[拿走] #g获得金神像。 #r触发一个陷阱。",
+          "[离开]",
+          "[逃跑] #r被诅咒——受伤。",
+          "[砸烂] #r受到 #r",
+          " #r点伤害。",
+          "[躲藏] #r失去 #r",
+          " #r最大生命。"
+        ]
+      },
       "GoldenShrine": {
         "OPTIONS": [
           "[祈祷] #g获得 #g",
@@ -495,6 +662,21 @@
           "选择一张牌升级。",
           "[离开]",
           "[锁定] 需要： 可以升级的牌"
+        ]
+      },
+      "MaskedBandits": {
+        "OPTIONS": [
+          "[付钱] #r失去所有 #y金币 。",
+          "[战斗！]",
+          "[继续]",
+          "[离开]"
+        ]
+      },
+      "Mausoleum": {
+        "OPTIONS": [
+          "[打开棺材] #g获得一件遗物。 #r",
+          "%: #r被诅咒——苦恼。",
+          "[离开]"
         ]
       },
       "MindBloom": {
@@ -548,6 +730,15 @@
           "选择一张牌移除。"
         ]
       },
+      "ScrapOoze": {
+        "OPTIONS": [
+          "[伸手进去] #r失去 #r",
+          " #r生命。 #g",
+          "%: #g找到一件遗物。",
+          "[离开]",
+          "[接着往里伸] #r失去 #r"
+        ]
+      },
       "SecretPortal": {
         "OPTIONS": [
           "[进入传送门] 立即传送到Boss房间。",
@@ -562,6 +753,14 @@
           "[锁定] 需要： 可以升级的牌"
         ]
       },
+      "SpireHeart": {
+        "OPTIONS": [
+          "[继续]",
+          "[攻击] #b???",
+          "[睡眠]",
+          "[走向门前]"
+        ]
+      },
       "Ssssserpent": {
         "OPTIONS": [
           "[同意] #g获得 #g",
@@ -569,6 +768,15 @@
           "[反对]",
           "[继续]",
           "[离开]"
+        ]
+      },
+      "TheLibrary": {
+        "OPTIONS": [
+          "[阅读] #g从 #g20 #g张牌中选择一张加入你的牌组。",
+          "[睡觉]  #g回复 #g",
+          " #g点生命。",
+          "[离开]",
+          "选择一张牌加入牌组。"
         ]
       },
       "TombRedMask": {
@@ -593,6 +801,16 @@
           "[离开]",
           "选择一张牌升级。",
           "[锁定] 需要： 可以升级的牌"
+        ]
+      },
+      "Vampires": {
+        "OPTIONS": [
+          "[接受] #g移除所有 打击 #g牌。 #g获得5张 噬咬 #g牌。 #r失去 #r",
+          " #r最大生命。",
+          "[拒绝]",
+          "[失去 ",
+          "] #g移除所有 打击 #g牌。 #g获得5张 噬咬 #g牌。",
+          "[离开]"
         ]
       },
       "WindingHalls": {

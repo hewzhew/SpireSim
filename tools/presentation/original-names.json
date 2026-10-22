@@ -34,7 +34,7 @@
     "src/content/relics/identity_v1.json": "5794b359cc76adc59f0b1d573cfd6460bb507e548f0651363a9faad22318d9a9",
     "src/content/relics/mod.rs": "f349c8108e8b3dc86f7f553e8b90454e76c2ebff3d8db82b06aaf8239d5ce83a",
     "src/state/events/identity.rs": "7a5c5dcf219c9d682ae6a59062915a3084ed21662278448619d228b13123a372",
-    "src/state/events/mod.rs": "b30c45a451028cc689c6ea6400b8752d496fdcc9672e90c190951a6a211b2993",
+    "src/state/events/mod.rs": "3a965c12135f59f3a03c8bc2453bb3a596a7d5cc12f42c5e20d51b8f3b78b262",
     "src/content/powers/mod.rs": "1a0698e744734529e2bc4f6397190165d63b119c83f3dac91c2e993611f85158",
     "src/runtime/combat/orbs.rs": "304e8fadd9404a9308abf27665d1b0b2048ade00e41a53cc5947df4f4b95b688"
   },

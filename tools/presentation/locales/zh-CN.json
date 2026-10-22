@@ -2226,6 +2226,14 @@
       "TheGuardian_TwinSlam": "双斩",
       "TheGuardian_VentSteam": "蒸汽喷射",
       "TheGuardian_Whirlwind": "旋风"
+    },
+    "cardRarity": {
+      "basic": "基础",
+      "common": "普通",
+      "special": "特殊",
+      "uncommon": "罕见",
+      "rare": "稀有",
+      "curse": "诅咒"
     }
   },
   "mechanics": {
@@ -2974,7 +2982,8 @@
       "sceneUnavailable": "未知（原版事件正文不可用）",
       "leave": "[离开]",
       "continueToBoss": "[继续] 进入 Boss 战斗。",
-      "clericEmptyPurify": "[净化] 没有可移除的牌。"
+      "clericEmptyPurify": "[净化] 没有可移除的牌。",
+      "offeredCard": "{{name}}（{{rarity}} {{type}}）"
     },
     "otherCommands": "其他命令见 options：{{commands}}",
     "commandKind": {
@@ -3239,7 +3248,8 @@
       "joust": "长枪决斗结果",
       "adventurer": "冒险者遗骸搜索结果",
       "flip": "记忆配对翻牌结果",
-      "ooze": "废料堆遗物随机结果"
+      "ooze": "废料堆遗物随机结果",
+      "mausoleum": "陵墓诅咒判定"
     },
     "cardPool": {
       "unknown": "未指定的牌池",
@@ -3311,6 +3321,23 @@
       "transform_other": "变化 {{count}} 张牌。",
       "duplicate_one": "复制 {{count}} 张牌。",
       "duplicate_other": "复制 {{count}} 张牌。"
+    },
+    "bonfire": {
+      "nothing": "不获得额外奖励",
+      "heal": "恢复 {{hp}} 点生命，不超过生命上限",
+      "healFull": "恢复至生命上限",
+      "maxHpBlocked": "获得 {{hp}} 点生命上限；{{relic}}阻止回复生命，包括当前生命的增加",
+      "maxHpFull": "获得 {{hp}} 点生命上限和 {{hp}} 点当前生命，然后恢复至生命上限",
+      "relic": "获得{{relic}}",
+      "healingBlocked": "{{rule}}；{{relic}}阻止回复生命",
+      "rarityRule": "{{rarity}}：{{reward}}",
+      "separator": "；",
+      "selectedCard": "{{rarity}}；移除卡牌；{{reward}}"
+    },
+    "colosseum": {
+      "intro": "前往{{first}}战斗。获胜后，选择逃离或挑战{{second}}以获得奖励。",
+      "firstFight": "与{{first}}战斗。本场没有物品奖励；获胜后携结算完的生命和剩余资源返回本事件，选择逃离或进行第二场战斗。",
+      "secondFight": "挑战{{second}}。获胜后领取所列遗物和金币奖励。"
     }
   }
 }

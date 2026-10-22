@@ -3009,7 +3009,7 @@ mod private_preview_command_tests {
         assert!(
             projected
                 .view
-                .contains("event:CursedTome:0  |  [Continue] Take 1 damage."),
+                .contains("event:CursedTome:0  |  [Continue] Lose 1 HP."),
             "{}",
             projected.view
         );
@@ -3068,7 +3068,7 @@ mod private_preview_command_tests {
             .contains("Private position after 1 simulated actions"));
         assert!(projected
             .view
-            .contains("event:CursedTome:0  |  [Continue] Take 1 damage."));
+            .contains("event:CursedTome:0  |  [Continue] Lose 1 HP."));
         assert!(capture_exact_prefix_artifact_v1(&mut game, &[line.clone()]).is_err());
         assert!(game.anchor_action_line_v1(&line).is_err());
         assert_eq!(*game.head(), before);

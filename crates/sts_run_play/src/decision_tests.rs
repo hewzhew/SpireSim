@@ -1001,10 +1001,11 @@ fn bonfire_selection_preserves_source_and_exposes_each_offers_executed_reward() 
         CardId::Bite,
         CardId::Injury,
     ];
-    for (chosen_card, reward, expected_hp, expected_max_hp, modifier, gained_relic) in [
+    for (chosen_card, reward, reward_zh, expected_hp, expected_max_hp, modifier, gained_relic) in [
         (
             CardId::Strike,
             "basic; remove card; no additional reward",
+            "基础；移除卡牌；不获得额外奖励",
             31,
             75,
             None,
@@ -1013,6 +1014,7 @@ fn bonfire_selection_preserves_source_and_exposes_each_offers_executed_reward() 
         (
             CardId::ShrugItOff,
             "common; remove card; heal 5 HP",
+            "普通；移除卡牌；恢复 5 点生命",
             36,
             75,
             None,
@@ -1021,6 +1023,7 @@ fn bonfire_selection_preserves_source_and_exposes_each_offers_executed_reward() 
         (
             CardId::Inflame,
             "uncommon; remove card; heal to full HP",
+            "罕见；移除卡牌；恢复至生命上限",
             75,
             75,
             None,
@@ -1029,6 +1032,7 @@ fn bonfire_selection_preserves_source_and_exposes_each_offers_executed_reward() 
         (
             CardId::Offering,
             "rare; remove card; gain 10 Max HP",
+            "稀有；移除卡牌；获得 10 点生命上限",
             85,
             85,
             None,
@@ -1037,6 +1041,7 @@ fn bonfire_selection_preserves_source_and_exposes_each_offers_executed_reward() 
         (
             CardId::Bite,
             "special; remove card; heal 5 HP",
+            "特殊；移除卡牌；恢复 5 点生命",
             36,
             75,
             None,
@@ -1045,6 +1050,7 @@ fn bonfire_selection_preserves_source_and_exposes_each_offers_executed_reward() 
         (
             CardId::Injury,
             "curse; remove card; obtain Spirit Poop",
+            "诅咒；移除卡牌；获得精灵便便",
             31,
             75,
             None,
@@ -1053,6 +1059,7 @@ fn bonfire_selection_preserves_source_and_exposes_each_offers_executed_reward() 
         (
             CardId::Injury,
             "curse; remove card; obtain Circlet",
+            "诅咒；移除卡牌；获得头环",
             31,
             75,
             Some(RelicId::SpiritPoop),
@@ -1061,88 +1068,116 @@ fn bonfire_selection_preserves_source_and_exposes_each_offers_executed_reward() 
         (
             CardId::Offering,
             "Mark of the Bloom blocks healing",
+            "绽放印记阻止回复生命",
             31,
             85,
             Some(RelicId::MarkOfTheBloom),
             None,
         ),
     ] {
-        let dir = TestDirectory::new();
-        let mut session = fixture("reward");
-        session.run_state.current_hp = 31;
-        session.run_state.master_deck.clear();
-        for card in cards {
-            session.run_state.add_card_to_deck(card);
-        }
-        if let Some(relic) = modifier {
-            session.run_state.relics.push(RelicState::new(relic));
-        }
-        let mut event = EventState::new(EventId::BonfireElementals);
-        event.current_screen = 1;
-        session.run_state.event_state = Some(event);
-        session.engine_state = EngineState::EventRoom;
-        let mut game = controller_with_session(&dir.0, "bonfire", &session);
-        let offer = game.decision_reading_v1(&[], None, Locale::En).unwrap();
-        assert!(
-            offer.view.contains("Reward by its rarity"),
-            "{}",
-            offer.view
-        );
-        game.choose_bound_v1(&pick(&offer, |action| {
-            matches!(action, TaskStrategicActionV1::ChooseEventOption { .. })
-        }))
-        .unwrap();
-        let reading = game
-            .decision_reading_v1(&[DecisionDetailV1::State], None, Locale::En)
-            .unwrap();
-        let decision = reading.state.as_ref().unwrap();
-        let TaskPublicObservationV1::Strategic { observation } = &decision.observation else {
-            panic!("strategic selection");
-        };
-        assert!(matches!(
-            observation.context,
-            sts_oracle_learning::ai::planner_core::PlannerDecisionContext::RunChoice {
-                source: Some(DomainEventSource::Event(EventId::BonfireElementals)),
-                ..
+        let mut checkpoints = Vec::new();
+        for locale in [Locale::En, Locale::ZhCn] {
+            let reward = if locale == Locale::En {
+                reward
+            } else {
+                reward_zh
+            };
+            let dir = TestDirectory::new();
+            let mut session = fixture("reward");
+            session.run_state.current_hp = 31;
+            session.run_state.master_deck.clear();
+            for card in cards {
+                session.run_state.add_card_to_deck(card);
             }
-        ));
-        let ordinal = cards.iter().position(|card| *card == chosen_card).unwrap();
-        let selected = pick(
-            &reading,
-            |action| matches!(action, TaskStrategicActionV1::SubmitRunSelection { selected_card_ordinals, .. } if *selected_card_ordinals == vec![ordinal]),
-        );
-        let candidate = &decision.candidates[selected.choice.ordinal_path[0]];
-        let label = reading
-            .options
-            .iter()
-            .find(|option| option.choice == selected.choice)
+            if let Some(relic) = modifier {
+                session.run_state.relics.push(RelicState::new(relic));
+            }
+            let mut event = EventState::new(EventId::BonfireElementals);
+            event.current_screen = 1;
+            session.run_state.event_state = Some(event);
+            session.engine_state = EngineState::EventRoom;
+            let mut game = controller_with_session(&dir.0, "bonfire", &session);
+            let offer = game.decision_reading_v1(&[], None, locale).unwrap();
+            assert!(
+                offer.view.contains(if locale == Locale::En {
+                    "basic:"
+                } else {
+                    "基础："
+                }) && offer.view.contains(if locale == Locale::En {
+                    "rare:"
+                } else {
+                    "稀有："
+                }),
+                "{}",
+                offer.view
+            );
+            game.choose_bound_v1(&pick(&offer, |action| {
+                matches!(action, TaskStrategicActionV1::ChooseEventOption { .. })
+            }))
             .unwrap();
-        assert!(label.label.contains(reward), "{}", label.label);
-        assert!(crate::render::render_candidate_with_observation(
-            candidate,
-            Some(&decision.observation)
-        )
-        .contains(reward));
-        game.choose_bound_v1(&selected).unwrap();
-        let actual = game
-            .current_external_exact_checkpoint_v1()
-            .unwrap()
-            .into_session()
-            .unwrap();
-        assert_eq!(
-            (actual.run_state.current_hp, actual.run_state.max_hp),
-            (expected_hp, expected_max_hp),
-            "{chosen_card:?} {modifier:?}"
-        );
-        assert_eq!(actual.run_state.master_deck.len(), cards.len() - 1);
-        assert!(actual
-            .run_state
-            .master_deck
-            .iter()
-            .all(|card| card.id != chosen_card));
-        if let Some(relic) = gained_relic {
-            assert!(actual.run_state.relics.iter().any(|held| held.id == relic));
+            let reading = game
+                .decision_reading_v1(&[DecisionDetailV1::State], None, locale)
+                .unwrap();
+            let decision = reading.state.as_ref().unwrap();
+            let TaskPublicObservationV1::Strategic { observation } = &decision.observation else {
+                panic!("strategic selection");
+            };
+            assert!(matches!(
+                observation.context,
+                sts_oracle_learning::ai::planner_core::PlannerDecisionContext::RunChoice {
+                    source: Some(DomainEventSource::Event(EventId::BonfireElementals)),
+                    ..
+                }
+            ));
+            let ordinal = cards.iter().position(|card| *card == chosen_card).unwrap();
+            let selected = pick(
+                &reading,
+                |action| matches!(action, TaskStrategicActionV1::SubmitRunSelection { selected_card_ordinals, .. } if *selected_card_ordinals == vec![ordinal]),
+            );
+            let candidate = &decision.candidates[selected.choice.ordinal_path[0]];
+            let label = reading
+                .options
+                .iter()
+                .find(|option| option.choice == selected.choice)
+                .unwrap();
+            assert!(label.label.contains(reward), "{}", label.label);
+            let TaskPublicCandidateV1::Strategic { action } = candidate else {
+                panic!("bonfire selection must remain strategic")
+            };
+            assert!(crate::render::render_strategic_action(
+                action,
+                Some(&decision.observation),
+                locale
+            )
+            .contains(reward));
+            game.choose_bound_v1(&selected).unwrap();
+            let actual = game
+                .current_external_exact_checkpoint_v1()
+                .unwrap()
+                .into_session()
+                .unwrap();
+            assert_eq!(
+                (actual.run_state.current_hp, actual.run_state.max_hp),
+                (expected_hp, expected_max_hp),
+                "{chosen_card:?} {modifier:?}"
+            );
+            assert_eq!(actual.run_state.master_deck.len(), cards.len() - 1);
+            assert!(actual
+                .run_state
+                .master_deck
+                .iter()
+                .all(|card| card.id != chosen_card));
+            if let Some(relic) = gained_relic {
+                assert!(actual.run_state.relics.iter().any(|held| held.id == relic));
+            }
+            checkpoints.push(serde_json::to_value(
+            sts_oracle_learning::eval::run_control::RunControlSessionCheckpointV1::from_session(&actual)
+        ).unwrap());
         }
+        assert_eq!(
+            checkpoints[0], checkpoints[1],
+            "{chosen_card:?} {modifier:?}: language must not alter reward settlement or RNG"
+        );
     }
 }
 

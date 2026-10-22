@@ -17,6 +17,7 @@ use crate::state::core::{EngineState, RunPendingChoiceReason, RunPendingChoiceSt
 use crate::state::events::{EventChoiceMeta, EventId, EventOption, EventState};
 use crate::state::run::RunState;
 use crate::state::selection::DomainEventSource;
+use sts_presentation::Locale;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum OfferReward {
@@ -41,20 +42,35 @@ pub fn offer_reward_for_rarity(rarity: CardRarity, owns_spirit_poop: bool) -> Of
     }
 }
 
-pub fn describe_offer_reward(reward: OfferReward, healing_blocked: bool) -> String {
+pub const OFFER_RARITIES: [CardRarity; 6] = [
+    CardRarity::Basic,
+    CardRarity::Common,
+    CardRarity::Special,
+    CardRarity::Uncommon,
+    CardRarity::Rare,
+    CardRarity::Curse,
+];
+
+pub fn describe_offer_reward(reward: OfferReward, healing_blocked: bool, locale: Locale) -> String {
+    let text = |key: &str, parameters: &[(&str, &str)]| {
+        locale
+            .text("event", &format!("bonfire.{key}"), parameters)
+            .expect("bonfire reward rule")
+    };
+    let bloom = locale.entity("relic", RelicId::MarkOfTheBloom.stable_id());
     let rule = match reward {
-        OfferReward::Nothing => "no additional reward".into(),
-        OfferReward::Heal(hp) => format!("heal {hp} HP, capped by Max HP"),
-        OfferReward::HealToFull => "heal to full HP".into(),
+        OfferReward::Nothing => text("nothing", &[]),
+        OfferReward::Heal(hp) => text("heal", &[("hp", &hp.to_string())]),
+        OfferReward::HealToFull => text("healFull", &[]),
         OfferReward::MaxHpAndHealToFull(hp) => {
             if healing_blocked {
-                return format!("gain {hp} Max HP; Mark of the Bloom blocks healing, including the current HP increase");
+                return text("maxHpBlocked", &[("hp", &hp.to_string()), ("relic", bloom)]);
             }
-            format!("gain {hp} Max HP and {hp} current HP, then heal to full HP")
+            text("maxHpFull", &[("hp", &hp.to_string())])
         }
-        OfferReward::Relic(relic) => format!(
-            "obtain {}",
-            crate::content::identity::gameplay_display_label_v1(relic)
+        OfferReward::Relic(relic) => text(
+            "relic",
+            &[("relic", locale.entity("relic", relic.stable_id()))],
         ),
     };
     if healing_blocked
@@ -63,10 +79,47 @@ pub fn describe_offer_reward(reward: OfferReward, healing_blocked: bool) -> Stri
             OfferReward::Heal(_) | OfferReward::HealToFull | OfferReward::MaxHpAndHealToFull(_)
         )
     {
-        format!("{rule}; Mark of the Bloom blocks healing")
+        text("healingBlocked", &[("rule", &rule), ("relic", bloom)])
     } else {
         rule
     }
+}
+
+pub fn describe_offering_rewards(
+    owns_spirit_poop: bool,
+    healing_blocked: bool,
+    locale: Locale,
+) -> String {
+    OFFER_RARITIES
+        .into_iter()
+        .map(|rarity| {
+            locale
+                .text(
+                    "event",
+                    "bonfire.rarityRule",
+                    &[
+                        (
+                            "rarity",
+                            locale.entity("cardRarity", rarity.vocabulary_token_v1()),
+                        ),
+                        (
+                            "reward",
+                            &describe_offer_reward(
+                                offer_reward_for_rarity(rarity, owns_spirit_poop),
+                                healing_blocked,
+                                locale,
+                            ),
+                        ),
+                    ],
+                )
+                .expect("bonfire rarity rule")
+        })
+        .collect::<Vec<_>>()
+        .join(
+            locale
+                .entry("event", "bonfire.separator")
+                .expect("bonfire rule separator"),
+        )
 }
 
 pub fn get_options(run_state: &RunState, event_state: &EventState) -> Vec<EventOption> {
@@ -75,27 +128,7 @@ pub fn get_options(run_state: &RunState, event_state: &EventState) -> Vec<EventO
         .relics
         .iter()
         .any(|r| r.id == RelicId::MarkOfTheBloom);
-    let rewards = [
-        CardRarity::Basic,
-        CardRarity::Common,
-        CardRarity::Special,
-        CardRarity::Uncommon,
-        CardRarity::Rare,
-        CardRarity::Curse,
-    ]
-    .into_iter()
-    .map(|rarity| {
-        format!(
-            "{}: {}",
-            rarity.vocabulary_token_v1(),
-            describe_offer_reward(
-                offer_reward_for_rarity(rarity, owns_spirit_poop),
-                healing_blocked
-            )
-        )
-    })
-    .collect::<Vec<_>>()
-    .join("; ");
+    let rewards = describe_offering_rewards(owns_spirit_poop, healing_blocked, Locale::En);
     crate::content::events::bonfire_options(
         event_state,
         "[Approach] Investigate the bonfire.",

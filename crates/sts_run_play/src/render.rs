@@ -41,6 +41,7 @@ use sts_oracle_learning::state::HandSelectReason;
 pub(crate) fn run_selection_reward_label_v1(
     observation: &TaskStrategicObservationV1,
     card: sts_oracle_learning::content::cards::CardId,
+    locale: Locale,
 ) -> Option<String> {
     use sts_oracle_learning::ai::planner_core::PlannerDecisionContext;
     use sts_oracle_learning::content::events::bonfire_elementals::{
@@ -56,14 +57,28 @@ pub(crate) fn run_selection_reward_label_v1(
     };
     let rarity = sts_oracle_learning::content::cards::get_card_definition(card).rarity;
     let owns = |id| observation.relics.iter().any(|relic| relic.relic == id);
-    Some(format!(
-        "{}; remove card; {}",
-        rarity.vocabulary_token_v1(),
-        describe_offer_reward(
-            offer_reward_for_rarity(rarity, owns(RelicId::SpiritPoop)),
-            owns(RelicId::MarkOfTheBloom)
-        )
-    ))
+    Some(
+        locale
+            .text(
+                "event",
+                "bonfire.selectedCard",
+                &[
+                    (
+                        "rarity",
+                        locale.entity("cardRarity", rarity.vocabulary_token_v1()),
+                    ),
+                    (
+                        "reward",
+                        &describe_offer_reward(
+                            offer_reward_for_rarity(rarity, owns(RelicId::SpiritPoop)),
+                            owns(RelicId::MarkOfTheBloom),
+                            locale,
+                        ),
+                    ),
+                ],
+            )
+            .expect("bonfire selected-card reward"),
+    )
 }
 
 use crate::compact::render_comparison_v1;
@@ -2836,10 +2851,14 @@ pub(crate) fn render_strategic_action(
                                         format!(
                                             "{selection_ordinal}:{}@deck[{card_ordinal}]{}",
                                             format_card(card.card, card.upgrades),
-                                            run_selection_reward_label_v1(observation, card.card)
-                                                .map_or_else(String::new, |label| format!(
-                                                    " ({label})"
-                                                ))
+                                            run_selection_reward_label_v1(
+                                                observation,
+                                                card.card,
+                                                locale
+                                            )
+                                            .map_or_else(String::new, |label| format!(
+                                                " ({label})"
+                                            ))
                                         )
                                     },
                                 )
@@ -2884,10 +2903,14 @@ pub(crate) fn render_strategic_action(
                                         format!(
                                             "{}@deck[{card_ordinal}]{}",
                                             format_card(card.card, card.upgrades),
-                                            run_selection_reward_label_v1(observation, card.card)
-                                                .map_or_else(String::new, |label| format!(
-                                                    " ({label})"
-                                                ))
+                                            run_selection_reward_label_v1(
+                                                observation,
+                                                card.card,
+                                                locale
+                                            )
+                                            .map_or_else(String::new, |label| format!(
+                                                " ({label})"
+                                            ))
                                         )
                                     },
                                 )
@@ -3125,6 +3148,7 @@ pub(crate) fn render_event_public_effect_v1(
                 Random::DeadAdventurerSearch => "adventurer",
                 Random::MatchAndKeepFlip => "flip",
                 Random::ScrapOozeRelicRoll => "ooze",
+                Random::MausoleumCurseRoll => "mausoleum",
             };
             let chance = chance_percent.map_or_else(
                 || event_text(locale, "chanceUnknown", &[]),

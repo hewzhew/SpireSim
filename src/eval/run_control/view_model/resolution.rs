@@ -175,6 +175,7 @@ pub enum RandomEventOutcomeBoundary {
     DeadAdventurerSearch,
     MatchAndKeepFlip,
     ScrapOozeRelicRoll,
+    MausoleumCurseRoll,
 }
 
 impl CandidateResolution {
@@ -518,6 +519,7 @@ impl RandomEventOutcomeBoundary {
             RandomEventOutcomeBoundary::DeadAdventurerSearch => "Dead Adventurer search",
             RandomEventOutcomeBoundary::MatchAndKeepFlip => "Match and Keep flip",
             RandomEventOutcomeBoundary::ScrapOozeRelicRoll => "Scrap Ooze relic roll",
+            RandomEventOutcomeBoundary::MausoleumCurseRoll => "Mausoleum curse roll",
         }
     }
 }
@@ -791,6 +793,9 @@ fn random_event_outcome_boundary(kind: EventRandomOutcomeKind) -> RandomEventOut
         EventRandomOutcomeKind::MatchAndKeepFlip => RandomEventOutcomeBoundary::MatchAndKeepFlip,
         EventRandomOutcomeKind::ScrapOozeRelicRoll => {
             RandomEventOutcomeBoundary::ScrapOozeRelicRoll
+        }
+        EventRandomOutcomeKind::MausoleumCurseRoll => {
+            RandomEventOutcomeBoundary::MausoleumCurseRoll
         }
     }
 }

@@ -1108,7 +1108,7 @@ fn run_selection_card_label(
     observation: &TaskStrategicObservationV1,
     locale: Locale,
 ) -> String {
-    let reward = crate::render::run_selection_reward_label_v1(observation, card.card)
+    let reward = crate::render::run_selection_reward_label_v1(observation, card.card, locale)
         .map_or_else(String::new, |label| format!(" | {label}"));
     format!("{}{reward}", deck_card_label(card, locale))
 }
@@ -1404,6 +1404,7 @@ fn option_label(
                 *option_index,
                 public_semantics,
                 locale,
+                Some(observation),
             )?
             .unwrap_or_else(|| {
                 public_semantics

@@ -2,7 +2,8 @@ use crate::content::cards::CardId;
 use crate::state::core::EngineState;
 use crate::state::events::{
     EventActionKind, EventCardKind, EventChoiceMeta, EventEffect, EventId, EventOption,
-    EventOptionSemantics, EventOptionTransition, EventRelicKind, EventState,
+    EventOptionSemantics, EventOptionTransition, EventRandomOutcomeKind, EventRelicKind,
+    EventState,
 };
 use crate::state::run::RunState;
 use crate::state::selection::DomainEventSource;
@@ -19,6 +20,10 @@ pub fn get_options(run_state: &RunState, event_state: &EventState) -> Vec<EventO
                 count: 1,
                 kind: EventRelicKind::RandomRelic,
             }];
+            open_effects.push(EventEffect::RandomOutcome {
+                kind: EventRandomOutcomeKind::MausoleumCurseRoll,
+                chance_percent: Some(curse_chance),
+            });
             if run_state.ascension_level >= 15 {
                 open_effects.push(EventEffect::ObtainCurse {
                     count: 1,
@@ -153,6 +158,13 @@ mod tests {
         let options = get_options(&run_state, run_state.event_state.as_ref().unwrap());
 
         assert_eq!(options.len(), 2);
+        assert!(options[0]
+            .semantics
+            .effects
+            .contains(&EventEffect::RandomOutcome {
+                kind: EventRandomOutcomeKind::MausoleumCurseRoll,
+                chance_percent: Some(100),
+            }));
         assert_eq!(options[0].semantics.action, EventActionKind::Trade);
         assert!(options[0]
             .semantics
@@ -176,6 +188,13 @@ mod tests {
         let mut a0_run = mausoleum_run();
         a0_run.ascension_level = 0;
         let a0_options = get_options(&a0_run, a0_run.event_state.as_ref().unwrap());
+        assert!(a0_options[0]
+            .semantics
+            .effects
+            .contains(&EventEffect::RandomOutcome {
+                kind: EventRandomOutcomeKind::MausoleumCurseRoll,
+                chance_percent: Some(50),
+            }));
         assert!(!a0_options[0]
             .semantics
             .effects

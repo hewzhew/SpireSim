@@ -2226,6 +2226,14 @@
       "TheGuardian_TwinSlam": "Twin Slam",
       "TheGuardian_VentSteam": "Vent Steam",
       "TheGuardian_Whirlwind": "Whirlwind"
+    },
+    "cardRarity": {
+      "basic": "basic",
+      "common": "common",
+      "special": "special",
+      "uncommon": "uncommon",
+      "rare": "rare",
+      "curse": "curse"
     }
   },
   "mechanics": {
@@ -2974,7 +2982,8 @@
       "sceneUnavailable": "Unknown (original event scene unavailable)",
       "leave": "[Leave]",
       "continueToBoss": "[Continue] Enter the Boss battle.",
-      "clericEmptyPurify": "[Purify] No removable cards."
+      "clericEmptyPurify": "[Purify] No removable cards.",
+      "offeredCard": "{{name}} ({{rarity}} {{type}})"
     },
     "otherCommands": "Other commands in options: {{commands}}",
     "commandKind": {
@@ -3239,7 +3248,8 @@
       "joust": "Joust result",
       "adventurer": "Dead Adventurer search result",
       "flip": "Match and Keep card reveal",
-      "ooze": "Scrap Ooze relic roll"
+      "ooze": "Scrap Ooze relic roll",
+      "mausoleum": "Mausoleum curse roll"
     },
     "cardPool": {
       "unknown": "an unspecified card pool",
@@ -3311,6 +3321,23 @@
       "transform_other": "Transform {{count}} cards.",
       "duplicate_one": "Duplicate {{count}} card.",
       "duplicate_other": "Duplicate {{count}} cards."
+    },
+    "bonfire": {
+      "nothing": "no additional reward",
+      "heal": "heal {{hp}} HP, capped by Max HP",
+      "healFull": "heal to full HP",
+      "maxHpBlocked": "gain {{hp}} Max HP; {{relic}} blocks healing, including the current HP increase",
+      "maxHpFull": "gain {{hp}} Max HP and {{hp}} current HP, then heal to full HP",
+      "relic": "obtain {{relic}}",
+      "healingBlocked": "{{rule}}; {{relic}} blocks healing",
+      "rarityRule": "{{rarity}}: {{reward}}",
+      "separator": "; ",
+      "selectedCard": "{{rarity}}; remove card; {{reward}}"
+    },
+    "colosseum": {
+      "intro": "Advance to the {{first}} fight. After its victory, choose whether to flee or fight {{second}} for rewards.",
+      "firstFight": "Fight {{first}}. No item rewards; after victory return to this event with settled HP and remaining resources to choose Flee or a second fight.",
+      "secondFight": "Challenge {{second}}. On victory, receive the listed relic and Gold rewards."
     }
   }
 }

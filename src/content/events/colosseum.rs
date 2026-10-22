@@ -14,9 +14,41 @@ use crate::state::events::{
     EventOptionTransition, EventRelicKind, EventState,
 };
 use crate::state::run::RunState;
+use sts_presentation::Locale;
 
 const FIRST_ENCOUNTER: EncounterId = EncounterId::ColosseumSlavers;
 const SECOND_ENCOUNTER: EncounterId = EncounterId::ColosseumNobs;
+
+/// Public fixed encounters and return behavior, shared by raw and localized
+/// option readings. No encounter is constructed or sampled here.
+pub fn option_rule(screen: usize, option: usize, locale: Locale) -> Option<String> {
+    let key = match (screen, option) {
+        (0, 0) => "intro",
+        (1, 0) => "firstFight",
+        (2, 1) => "secondFight",
+        _ => return None,
+    };
+    let name = |encounter: EncounterId| match locale {
+        Locale::En => encounter.stable_id().to_owned(),
+        Locale::ZhCn => format!(
+            "{} [{}]",
+            locale.entity("encounter", encounter.stable_id()),
+            encounter.stable_id()
+        ),
+    };
+    Some(
+        locale
+            .text(
+                "event",
+                &format!("colosseum.{key}"),
+                &[
+                    ("first", &name(FIRST_ENCOUNTER)),
+                    ("second", &name(SECOND_ENCOUNTER)),
+                ],
+            )
+            .expect("Colosseum option rule"),
+    )
+}
 
 pub fn get_options(_run_state: &RunState, event_state: &EventState) -> Vec<EventOption> {
     match event_state.current_screen {
@@ -24,8 +56,8 @@ pub fn get_options(_run_state: &RunState, event_state: &EventState) -> Vec<Event
             // Introduction
             vec![EventOption::new(
                 EventChoiceMeta::new(format!(
-                    "[Proceed] Advance to the {} fight. After its victory, choose whether to flee or fight {} for rewards.",
-                    FIRST_ENCOUNTER.stable_id(), SECOND_ENCOUNTER.stable_id()
+                    "[Proceed] {}",
+                    option_rule(0, 0, Locale::En).unwrap()
                 )),
                 EventOptionSemantics {
                     action: EventActionKind::Continue,
@@ -38,8 +70,8 @@ pub fn get_options(_run_state: &RunState, event_state: &EventState) -> Vec<Event
             // Ready to fight
             vec![EventOption::new(
                 EventChoiceMeta::new(format!(
-                    "[Fight!] Fight {}. No item rewards; after victory return to this event with settled HP and remaining resources to choose Flee or a second fight.",
-                    FIRST_ENCOUNTER.stable_id()
+                    "[Fight!] {}",
+                    option_rule(1, 0, Locale::En).unwrap()
                 )),
                 EventOptionSemantics {
                     action: EventActionKind::Fight,
@@ -63,8 +95,8 @@ pub fn get_options(_run_state: &RunState, event_state: &EventState) -> Vec<Event
                 ),
                 EventOption::new(
                     EventChoiceMeta::new(format!(
-                        "[Fight] Challenge {}. On victory, receive the listed relic and Gold rewards.",
-                        SECOND_ENCOUNTER.stable_id()
+                        "[Fight] {}",
+                        option_rule(2, 1, Locale::En).unwrap()
                     )),
                     EventOptionSemantics {
                         action: EventActionKind::Fight,

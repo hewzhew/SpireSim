@@ -72,7 +72,7 @@ pub fn get_options(_run_state: &RunState, event_state: &EventState) -> Vec<Event
                         action: EventActionKind::Special,
                         effects: vec![EventEffect::RandomOutcome {
                             kind: EventRandomOutcomeKind::DeadAdventurerSearch,
-                            chance_percent: None,
+                            chance_percent: Some(chance.clamp(0, 100) as u8),
                         }],
                         repeatable: true,
                         ..Default::default()
@@ -304,7 +304,7 @@ mod tests {
             options[0].semantics.effects,
             vec![EventEffect::RandomOutcome {
                 kind: EventRandomOutcomeKind::DeadAdventurerSearch,
-                chance_percent: None,
+                chance_percent: Some(25),
             }]
         );
         assert!(options[0].semantics.repeatable);
@@ -314,6 +314,31 @@ mod tests {
             options[1].semantics.transition,
             EventOptionTransition::AdvanceScreen
         );
+    }
+
+    #[test]
+    fn public_search_chance_tracks_the_screen_without_revealing_hidden_rewards() {
+        let run_state = RunState::new(1, 0, false, "Ironclad");
+        for chance in [25, 35, 50, 60, 75, 85, 100] {
+            let mut event = EventState::new(EventId::DeadAdventurer);
+            set_encounter_chance(&mut event.internal_state, chance);
+            let before = run_state.rng_pool.misc_rng.counter;
+            let options = super::get_options(&run_state, &event);
+            assert_eq!(
+                options[0].semantics.effects,
+                vec![EventEffect::RandomOutcome {
+                    kind: EventRandomOutcomeKind::DeadAdventurerSearch,
+                    chance_percent: Some(chance as u8),
+                }]
+            );
+            let visible = options;
+            for enemy in 0..3 {
+                set_enemy_type(&mut event.internal_state, enemy);
+                set_reward_types(&mut event.internal_state, 2, 0, 1);
+                assert_eq!(super::get_options(&run_state, &event), visible);
+            }
+            assert_eq!(run_state.rng_pool.misc_rng.counter, before);
+        }
     }
 
     #[test]

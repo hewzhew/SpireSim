@@ -889,6 +889,7 @@ fn planner_event_public_effect_v1(
                 EventRandomOutcomeKind::DeadAdventurerSearch => Random::DeadAdventurerSearch,
                 EventRandomOutcomeKind::MatchAndKeepFlip => Random::MatchAndKeepFlip,
                 EventRandomOutcomeKind::ScrapOozeRelicRoll => Random::ScrapOozeRelicRoll,
+                EventRandomOutcomeKind::MausoleumCurseRoll => Random::MausoleumCurseRoll,
             },
             chance_percent: *chance_percent,
         },

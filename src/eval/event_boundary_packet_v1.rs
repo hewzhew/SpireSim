@@ -569,6 +569,7 @@ fn event_random_outcome_kind_v1(kind: EventRandomOutcomeKind) -> &'static str {
         EventRandomOutcomeKind::DeadAdventurerSearch => "dead_adventurer_search",
         EventRandomOutcomeKind::MatchAndKeepFlip => "match_and_keep_flip",
         EventRandomOutcomeKind::ScrapOozeRelicRoll => "scrap_ooze_relic_roll",
+        EventRandomOutcomeKind::MausoleumCurseRoll => "mausoleum_curse_roll",
     }
 }
 

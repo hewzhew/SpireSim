@@ -269,6 +269,7 @@ pub enum EventRandomOutcomeKind {
     DeadAdventurerSearch,
     MatchAndKeepFlip,
     ScrapOozeRelicRoll,
+    MausoleumCurseRoll,
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
