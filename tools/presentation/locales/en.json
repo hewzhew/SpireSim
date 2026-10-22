@@ -3557,6 +3557,10 @@
     "validation": {
       "sessionRequired": "Select the current session.",
       "journalMismatch": "The journal does not match the selected chat."
+    },
+    "updates": {
+      "missingWorkbench": "The native preset static module tree does not include the shared workbench; this tool update cannot be published.",
+      "presetNotUnique": "There is no unique Slay the Spire preset declaration."
     }
   },
   "scripted": {

@@ -131,7 +131,7 @@ test('map and update controls use named Remote args and only publish on a click'
   const cleanups = pendingEffects.map(effect => effect());
   await Promise.resolve();
   assert.deepEqual(calls, [
-    { channel: '/api', endpoint: 'stsToolUpdates/status', payload: { args: {} } },
+    { channel: '/api', endpoint: 'stsToolUpdates/status', payload: { args: { locale: 'zh-CN' } } },
     { channel: '/api', endpoint: 'stsMapView/read', payload: { args: { sessionId: 'selected-chat', locale: 'zh-CN' } } },
   ]);
   function find(node) {
@@ -140,7 +140,7 @@ test('map and update controls use named Remote args and only publish on a click'
     return node.children?.map(find).find(Boolean);
   }
   await find(tree).props.onClick();
-  assert.deepEqual(calls.at(-1), { channel: '/api', endpoint: 'stsToolUpdates/publish', payload: { args: {} } });
+  assert.deepEqual(calls.at(-1), { channel: '/api', endpoint: 'stsToolUpdates/publish', payload: { args: { locale: 'zh-CN' } } });
   assert.ok(updates.some(value => value?.reason === 'published'));
   cleanups.forEach(dispose => dispose());
 });

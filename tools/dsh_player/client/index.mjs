@@ -366,7 +366,7 @@ window.__ModuleLoader__.load({ id: '@sts-simulator/dsh-player', factory(require)
       const [highlighted, setHighlighted] = React.useState(null);
       React.useEffect(() => {
         const abort = new AbortController();
-        ctx.connection.rpc.call('/api', 'stsToolUpdates/status', { args: {} }, abort.signal).then(result => {
+        ctx.connection.rpc.call('/api', 'stsToolUpdates/status', { args: { locale: operatorLocale } }, abort.signal).then(result => {
           if (!abort.signal.aborted) setUpdate(result.ok ? result.value : { reason: 'failed', error: result.error.message });
         }).catch(error => { if (!abort.signal.aborted) setUpdate({ reason: 'failed', error: error.message }); });
         return () => abort.abort();
@@ -374,7 +374,7 @@ window.__ModuleLoader__.load({ id: '@sts-simulator/dsh-player', factory(require)
       async function publishTools() {
         setUpdating(true);
         try {
-          const result = await ctx.connection.rpc.call('/api', 'stsToolUpdates/publish', { args: {} });
+          const result = await ctx.connection.rpc.call('/api', 'stsToolUpdates/publish', { args: { locale: operatorLocale } });
           setUpdate(result.ok ? result.value : { reason: 'failed', error: result.error.message });
         } catch (error) { setUpdate({ reason: 'failed', error: error.message }); }
         finally { setUpdating(false); }

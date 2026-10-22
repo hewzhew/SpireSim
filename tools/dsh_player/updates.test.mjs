@@ -100,7 +100,9 @@ test('disk revisions cannot publish a workbench outside the native static module
   const f = await fixture(t, { linkedWorkbench: false });
   assert.equal((await f.updates.status()).status, 'unavailable');
   assert.equal((await f.updates.status()).reason, 'loadFailed');
-  assert.match((await f.updates.status()).error, /静态模块树没有包含共享工作台/);
+  assert.match((await f.updates.status('en')).error, /static module tree does not include the shared workbench/);
+  assert.match((await f.updates.status('zh-CN')).error, /静态模块树没有包含共享工作台/);
+  assert.equal((await f.updates.status('en')).reason, (await f.updates.status('zh-CN')).reason);
   assert.equal((await f.updates.publish()).status, 'unavailable');
   assert.equal(f.restarts(), 0);
 });
@@ -108,4 +110,23 @@ test('disk revisions cannot publish a workbench outside the native static module
 test('absolute watch roots outside the HMR base are not reported as working source watches', async t => {
   const f = await fixture(t, { misbased: true });
   assert.equal((await f.updates.publish()).status, 'unavailable'); assert.equal(f.restarts(), 0);
+});
+
+test('update diagnostics localize owned failures and preserve dynamic loader errors across languages', async t => {
+  const missing = await fixture(t);
+  missing.ctx.loader.entries = () => [];
+  for (const locale of ['en', 'zh-CN']) {
+    await assert.rejects(missing.updates.status(locale), locale === 'en'
+      ? /no unique Slay the Spire preset declaration/ : /没有唯一的杀戮尖塔预设声明/);
+  }
+  assert.equal(missing.restarts(), 0);
+
+  const dynamic = await fixture(t), raw = 'Loader {{original}} 原文 🐈';
+  dynamic.ctx.loader.import = async () => { throw new Error(raw); };
+  await dynamic.change('changed'); dynamic.ctx.emit('hmr/reload', new Map());
+  const failed = await dynamic.updates.publish('zh-CN');
+  assert.equal(failed.error, raw);
+  assert.equal((await dynamic.updates.status('en')).error, raw);
+  assert.equal((await dynamic.updates.status('zh-CN')).error, raw);
+  assert.equal(dynamic.restarts(), 0);
 });

@@ -3557,6 +3557,10 @@
     "validation": {
       "sessionRequired": "需要指定当前会话。",
       "journalMismatch": "会话记录与选中的聊天不一致。"
+    },
+    "updates": {
+      "missingWorkbench": "原生预设的静态模块树没有包含共享工作台，不能发布这次工具更新。",
+      "presetNotUnique": "没有唯一的杀戮尖塔预设声明。"
     }
   },
   "scripted": {
