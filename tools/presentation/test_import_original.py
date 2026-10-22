@@ -53,6 +53,21 @@ def test_exact_source_keys_preserve_identity_and_skip_deprecated_names(tmp_path,
     assert names["zh-CN"]["encounter"]["DonuAndDeca"] == "zhs:Donu与zhs:Deca"
 
 
+def test_card_templates_keep_original_fields_and_do_not_guess_upgrade_semantics(tmp_path, sources):
+    for language in owner.LANGUAGES.values():
+        cards = sources[f"localization/{language}/cards.json"]
+        cards["Body Slam"].update(DESCRIPTION="Deal damage equal to your Block.", UPGRADE_DESCRIPTION=" NL (Deals !D! damage.)")
+        cards["Armaments"].update(UPGRADE_DESCRIPTION="Upgrade all cards.", EXTENDED_DESCRIPTION=["raw #ytext", ""])
+    jar = archive(tmp_path, sources)
+    _, _, bindings = owner.names_from_archive(jar)
+    imported = owner.card_texts_from_archive(jar, bindings)
+    assert imported["cards"]["en"]["BodySlam"] == {"DESCRIPTION": "Deal damage equal to your Block.", "UPGRADE_DESCRIPTION": " NL (Deals !D! damage.)"}
+    assert imported["cards"]["zh-CN"]["Armaments"]["EXTENDED_DESCRIPTION"] == ["raw #ytext", ""]
+    assert imported["cards"]["en"]["ShrugItOff"]["DESCRIPTION"] == "!D! NL !B! !M!"
+    assert len(imported["cards"]["en"]) == 370
+    assert "Impulse" not in imported["cards"]["en"]
+
+
 def test_english_display_aliases_are_not_used_for_lookup(tmp_path, sources, monkeypatch):
     from dataclasses import replace
 

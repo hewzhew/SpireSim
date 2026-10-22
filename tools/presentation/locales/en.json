@@ -750,7 +750,9 @@
     "cardType": {
       "attack": "Attack",
       "skill": "Skill",
-      "curse": "Curse"
+      "curse": "Curse",
+      "power": "Power",
+      "status": "Status"
     },
     "effect": {
       "damage": "Deal {{damage}} damage.",
@@ -779,6 +781,25 @@
         "true": "true",
         "false": "false"
       }
+    },
+    "card": {
+      "energy": "[Energy]",
+      "definition": "Card definition: {{name}} | {{type}} | {{upgrade}} base, before combat modifiers | ID: {{id}}",
+      "unupgraded": "unupgraded",
+      "upgraded": "upgraded",
+      "unplayable": "unplayable",
+      "attributes": "  Cost: {{cost}} | Base damage: {{damage}} | Base Block: {{block}} | Exhaust: {{exhaust}} | Ethereal: {{ethereal}}",
+      "tags": "  Tags: {{tags}}",
+      "none": "none",
+      "targets": "  Attack targets: {{targets}}",
+      "oneEnemy": "one selected enemy",
+      "allEnemies": "all enemies",
+      "randomEnemy": "random enemy per hit",
+      "printed": "  Card text:",
+      "supplement": "  Effect: {{effect}}",
+      "unknown": "  Unknown: effect explanation not yet covered; base attributes alone are not a complete effect description.",
+      "yes": "true",
+      "no": "false"
     }
   },
   "replay": {

@@ -1,4 +1,4 @@
-"""Import entity names from an installed game's localization, without Java.
+"""Import entity names and raw card templates from the game, without Java.
 
 Card/relic IDs come from the existing identity owners. Only localization-key
 differences are recorded here; no fuzzy matching or translated-name lookup.
@@ -129,8 +129,42 @@ def names_from_archive(jar: Path, repository: Path = REPOSITORY) -> tuple[dict, 
     return result, manifest, bindings
 
 
+def card_texts_from_archive(jar: Path, bindings: dict) -> dict:
+    """Preserve original fields verbatim; card owners select their meaning."""
+    cards, entries, card_bindings = {}, {}, {}
+    with zipfile.ZipFile(jar) as archive:
+        for locale, language in LANGUAGES.items():
+            entry = f"localization/{language}/cards.json"
+            raw = archive.read(entry)
+            entries[entry] = digest(raw)
+            source = json.loads(raw.decode("utf-8-sig"), strict=False)
+            cards[locale], card_bindings[locale] = {}, {}
+            for identity, binding in sorted(bindings[locale].items()):
+                if not identity.startswith("card."):
+                    continue
+                if binding["entry"] != entry:
+                    raise ValueError(f"Card template binding has another source: {identity}")
+                row = source[binding["key"]]
+                if not isinstance(row["DESCRIPTION"], str) or not row["DESCRIPTION"].strip():
+                    raise ValueError(f"Missing original card description: {identity}")
+                selected = {field: row[field] for field in ("DESCRIPTION", "UPGRADE_DESCRIPTION", "EXTENDED_DESCRIPTION") if field in row}
+                if "UPGRADE_DESCRIPTION" in selected and not isinstance(selected["UPGRADE_DESCRIPTION"], str):
+                    raise ValueError(f"Invalid original upgrade description: {identity}")
+                extended = selected.get("EXTENDED_DESCRIPTION", [])
+                if not isinstance(extended, list) or not all(isinstance(text, str) for text in extended):
+                    raise ValueError(f"Invalid original extended description: {identity}")
+                cards[locale][identity.removeprefix("card.")] = selected
+                card_bindings[locale][identity] = binding
+    return {"schema": "sts-original-card-text-v1", "entries_sha256": entries,
+            "bindings_sha256": {locale: digest(encoded(rows)) for locale, rows in card_bindings.items()},
+            "cards": cards}
+
+
 def update(jar: Path, directory: Path, *, write: bool = False) -> dict:
     names, manifest, bindings = names_from_archive(jar)
+    card_texts = card_texts_from_archive(jar, bindings)
+    if any(manifest["entries_sha256"][entry] != sha for entry, sha in card_texts["entries_sha256"].items()):
+        raise ValueError("Original resources changed during import")
     outputs, changed = {}, []
     for locale, sections in names.items():
         file = directory / "locales" / f"{locale}.json"
@@ -141,6 +175,7 @@ def update(jar: Path, directory: Path, *, write: bool = False) -> dict:
         # Keep the original layout if the generated names are already equal.
         outputs[file] = original if json.loads(original) == catalog else encoded(catalog)
     outputs[directory / "original-names.json"] = encoded(manifest)
+    outputs[directory / "original-card-text.json"] = encoded(card_texts)
     for file, content in outputs.items():
         if not file.exists() or file.read_bytes() != content:
             changed.append(file.name)

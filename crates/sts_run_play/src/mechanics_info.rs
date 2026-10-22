@@ -564,7 +564,7 @@ fn render_query(
             .ok_or_else(|| {
                 format!("Unknown card name: {name}. Use the full displayed name or stable ID. If its kind is uncertain, query info {name} without a category, or info help.")
             })?;
-        write_card(&mut out, card, upgrades.unwrap_or(0));
+        write_card(&mut out, card, upgrades.unwrap_or(0), locale)?;
         return Ok(out);
     }
     if lower.starts_with("relic ") {
@@ -650,7 +650,7 @@ fn render_query(
         let card = cards::CardId::from_stable_id(name)
             .or_else(|| resolve::<cards::CardId>(name))
             .ok_or_else(|| format!("Unknown card name: {name}."))?;
-        write_card(&mut out, card, upgrades.unwrap_or(0));
+        write_card(&mut out, card, upgrades.unwrap_or(0), locale)?;
         return Ok(out);
     }
     let matches = matching_powers(query);
@@ -667,7 +667,7 @@ fn render_query(
         return Ok(out);
     }
     if let Some(card) = resolve::<cards::CardId>(query) {
-        write_card(&mut out, card, 0);
+        write_card(&mut out, card, 0, locale)?;
         return Ok(out);
     }
     if let Some(relic) = resolve::<relics::RelicId>(query) {
@@ -837,67 +837,139 @@ pub(crate) fn card_attributes(card: cards::CardId, upgrades: u8, cost_modifier: 
     format!("{:?} | {cost} | tags: {tags}", definition.card_type)
 }
 
-fn write_card(out: &mut String, card: cards::CardId, upgrades: u8) {
+fn write_card(
+    out: &mut String,
+    card: cards::CardId,
+    upgrades: u8,
+    locale: Locale,
+) -> Result<(), String> {
     let definition = cards::get_card_definition(card);
+    let original = cards::mechanics::original_printed_card_text(card, upgrades, locale)?;
+    let message = |key, parameters: &[(&str, &str)]| {
+        locale
+            .text("mechanics", key, parameters)
+            .expect("card query message")
+    };
+    let mut name = locale.entity("card", card.stable_id()).to_owned();
+    if upgrades == 1 {
+        name.push('+');
+    } else if upgrades > 1 {
+        write!(name, "+{upgrades}").unwrap();
+    }
+    let kind = match definition.card_type {
+        cards::CardType::Attack => "attack",
+        cards::CardType::Skill => "skill",
+        cards::CardType::Power => "power",
+        cards::CardType::Status => "status",
+        cards::CardType::Curse => "curse",
+    };
+    let upgrade = message(
+        if upgrades == 0 {
+            "card.unupgraded"
+        } else {
+            "card.upgraded"
+        },
+        &[],
+    );
     writeln!(
         out,
-        "Card definition: {} | {:?} | {} base, before combat modifiers",
-        crate::render::format_card(card, upgrades),
-        definition.card_type,
-        if upgrades == 0 {
-            "unupgraded"
-        } else {
-            "upgraded"
-        },
+        "{}",
+        message(
+            "card.definition",
+            &[
+                ("name", &name),
+                ("id", card.stable_id()),
+                (
+                    "type",
+                    locale
+                        .entry("game", &format!("cardType.{kind}"))
+                        .expect("card type name")
+                ),
+                ("upgrade", &upgrade)
+            ]
+        )
     )
     .unwrap();
     let cost =
         match cards::upgraded_base_cost_override_for(card, upgrades).unwrap_or(definition.cost) {
-            -2 => "unplayable".to_string(),
+            -2 => message("card.unplayable", &[]),
             -1 => "X".to_string(),
             cost => cost.to_string(),
         };
     let mut blueprint = sts_oracle_learning::runtime::combat::CardBlueprint::fresh(card);
     blueprint.upgrades = upgrades;
     let numbers = cards::mechanics::card_blueprint_persistent_base_numbers_v1(&blueprint);
+    let boolean = |value: bool| message(if value { "card.yes" } else { "card.no" }, &[]);
     writeln!(
         out,
-        "  Cost: {cost} | Base damage: {} | Base Block: {} | Exhaust: {} | Ethereal: {}",
-        numbers.damage,
-        numbers.block,
-        cards::mechanics::card_exhausts_when_played(card, upgrades),
-        cards::mechanics::card_is_ethereal(card, upgrades),
+        "{}",
+        message(
+            "card.attributes",
+            &[
+                ("cost", &cost),
+                ("damage", &numbers.damage.to_string()),
+                ("block", &numbers.block.to_string()),
+                (
+                    "exhaust",
+                    &boolean(cards::mechanics::card_exhausts_when_played(card, upgrades))
+                ),
+                (
+                    "ethereal",
+                    &boolean(cards::mechanics::card_is_ethereal(card, upgrades))
+                )
+            ]
+        )
     )
     .unwrap();
     writeln!(
         out,
-        "  Tags: {}",
-        if definition.tags.is_empty() {
-            "none".to_owned()
-        } else {
-            definition
-                .tags
-                .iter()
-                .map(|tag| format!("{tag:?}"))
-                .collect::<Vec<_>>()
-                .join(", ")
-        }
+        "{}",
+        message(
+            "card.tags",
+            &[(
+                "tags",
+                &if definition.tags.is_empty() {
+                    message("card.none", &[])
+                } else {
+                    definition
+                        .tags
+                        .iter()
+                        .map(|tag| format!("{tag:?}"))
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                }
+            )]
+        )
     )
     .unwrap();
     if let Some(cards::mechanics::CardBaseDamageDeliveryV1::Attack { targets, .. }) =
         cards::mechanics::card_base_damage_delivery_v1(card, upgrades)
     {
         let targets = match targets {
-            cards::mechanics::CardAttackTargetsV1::SelectedEnemy => "one selected enemy",
-            cards::mechanics::CardAttackTargetsV1::EachEnemy => "all enemies",
-            cards::mechanics::CardAttackTargetsV1::RandomEnemyPerHit => "random enemy per hit",
+            cards::mechanics::CardAttackTargetsV1::SelectedEnemy => "card.oneEnemy",
+            cards::mechanics::CardAttackTargetsV1::EachEnemy => "card.allEnemies",
+            cards::mechanics::CardAttackTargetsV1::RandomEnemyPerHit => "card.randomEnemy",
         };
-        writeln!(out, "  Attack targets: {targets}").unwrap();
+        writeln!(
+            out,
+            "{}",
+            message("card.targets", &[("targets", &message(targets, &[]))])
+        )
+        .unwrap();
+    }
+    if let Some(original) = original {
+        writeln!(out, "{}", message("card.printed", &[])).unwrap();
+        for line in original.lines() {
+            writeln!(out, "    {line}").unwrap();
+        }
     }
     match cards::mechanics::explanation(card) {
-        Some(effect) => writeln!(out, "  Effect: {effect}").unwrap(),
-        None => writeln!(out, "  Unknown: effect explanation not yet covered; base attributes alone are not a complete effect description.").unwrap(),
+        Some(effect) => {
+            writeln!(out, "{}", message("card.supplement", &[("effect", effect)])).unwrap()
+        }
+        None => writeln!(out, "{}", message("card.unknown", &[])).unwrap(),
     }
+    Ok(())
 }
 
 fn write_power(out: &mut String, power: powers::PowerId) {
@@ -1509,6 +1581,57 @@ mod tests {
         query: &str,
     ) -> Result<String, String> {
         super::render_query(combat, ascension, None, query, Locale::En)
+    }
+
+    #[test]
+    fn original_card_queries_localize_faces_and_preserve_native_rules_and_state() {
+        let dir = crate::decision_tests::TestDirectory::new();
+        let game = crate::decision_tests::controller_with_session(
+            &dir.0,
+            "card-text",
+            &crate::decision_tests::fixture("reward"),
+        );
+        let before = game.head().clone();
+        let decision = before
+            .current_decision
+            .as_ref()
+            .unwrap()
+            .public_decision_v1()
+            .unwrap();
+        for &id in cards::CardId::STABLE_IDS {
+            let card = cards::CardId::from_stable_id(id).unwrap();
+            for upgrades in [0, 1] {
+                let query = format!("card {id}{}", if upgrades == 0 { "" } else { "+" });
+                for locale in [Locale::En, Locale::ZhCn] {
+                    let view = super::render(Some(&decision), &query, locale).unwrap();
+                    assert!(view.contains(id), "{query}/{locale}: {view}");
+                    if let Some(rule) = cards::mechanics::explanation(card) {
+                        assert!(
+                            view.contains(rule),
+                            "complete supplementary rule: {query}/{locale}"
+                        );
+                    }
+                    if card != cards::CardId::Impulse {
+                        let face =
+                            cards::mechanics::original_printed_card_text(card, upgrades, locale)
+                                .unwrap()
+                                .unwrap();
+                        for line in face.lines() {
+                            assert!(view.contains(line), "{query}/{locale}: {view}");
+                        }
+                    }
+                }
+            }
+        }
+        let armaments = super::render(Some(&decision), "card Armaments+", Locale::ZhCn).unwrap();
+        assert!(armaments.starts_with("卡牌定义：武装+ | ID：Armaments"));
+        assert!(armaments.contains("所有牌"));
+        assert!(armaments.contains("机制补充（英文）"));
+        assert_eq!(
+            *game.head(),
+            before,
+            "card rendering must not alter the bound run"
+        );
     }
 
     #[test]

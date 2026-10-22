@@ -4,6 +4,9 @@ use std::{fmt, str::FromStr, sync::OnceLock};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
+mod card_text;
+pub use card_text::{CardTextField, CardTextValues};
+
 #[derive(Clone, Copy, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 pub enum Locale {
     #[default]

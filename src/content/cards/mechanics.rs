@@ -304,6 +304,8 @@ mod status;
 pub use status::*;
 mod upgrade;
 pub use upgrade::*;
+mod presentation;
+pub use presentation::*;
 
 /// Persistent card-owned numbers before combat-dependent substitutions and
 /// modifiers. These are definition/instance fields, not damage or Block grants.

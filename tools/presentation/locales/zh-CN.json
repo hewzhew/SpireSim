@@ -750,7 +750,9 @@
     "cardType": {
       "attack": "攻击",
       "skill": "技能",
-      "curse": "诅咒"
+      "curse": "诅咒",
+      "power": "能力",
+      "status": "状态"
     },
     "effect": {
       "damage": "造成 {{damage}} 点伤害",
@@ -779,6 +781,25 @@
         "true": "是",
         "false": "否"
       }
+    },
+    "card": {
+      "energy": "[能量]",
+      "definition": "卡牌定义：{{name}} | ID：{{id}} | {{type}} | {{upgrade}}，战斗修正前的牌面数值",
+      "unupgraded": "未升级",
+      "upgraded": "已升级",
+      "unplayable": "不能打出",
+      "attributes": "  费用：{{cost}} | 基础伤害：{{damage}} | 基础格挡：{{block}} | 消耗：{{exhaust}} | 虚无：{{ethereal}}",
+      "tags": "  标签：{{tags}}",
+      "none": "无",
+      "targets": "  攻击目标：{{targets}}",
+      "oneEnemy": "一名选定敌人",
+      "allEnemies": "所有敌人",
+      "randomEnemy": "每段伤害随机选择一名敌人",
+      "printed": "  牌面文本：",
+      "supplement": "  机制补充（英文）：{{effect}}",
+      "unknown": "  尚未提供机制详解；完整效果需结合牌面文本与实际规则。",
+      "yes": "是",
+      "no": "否"
     }
   },
   "replay": {

@@ -43,6 +43,20 @@ test('generated name sections match their recorded original-resource import', as
   assert.equal(catalogs.en.game.card.Impulse, undefined);
 });
 
+test('original card templates retain their source fields without entering interface messages', async () => {
+  const source = JSON.parse(await readFile(new URL('./original-card-text.json', import.meta.url), 'utf8'));
+  assert.equal(source.schema, 'sts-original-card-text-v1');
+  for (const locale of ['en', 'zh-CN']) {
+    assert.equal(Object.keys(source.cards[locale]).length, 370);
+    assert.deepEqual(Object.keys(source.cards[locale]).sort(), Object.keys(catalogs[locale].game.card).sort());
+    assert.equal(source.cards[locale].Impulse, undefined);
+  }
+  assert.equal(source.cards.en.BodySlam.UPGRADE_DESCRIPTION, ' NL (Deals !D! damage.)');
+  assert.ok(source.cards['zh-CN'].ShrugItOff.DESCRIPTION.includes('!B!'));
+  assert.equal(catalogs.en.mechanics.card.energy, '[Energy]');
+  assert.equal(catalogs['zh-CN'].mechanics.card.energy, '[能量]');
+});
+
 test('names are keyed by exact typed identity; changing one view leaves other views alone', async () => {
   const first = await createPresentation({ locale: 'zh-CN' }), second = await createPresentation({ locale: 'en' });
   assert.equal(first.entity('card', 'ShrugItOff'), '耸肩无视');
