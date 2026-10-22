@@ -1,5 +1,1 @@
-"""Resident attributed expert-reference owner."""
-
-from .query import ExpertKnowledgeOwner
-
-__all__ = ["ExpertKnowledgeOwner"]
+"""Public decision reading and attributed references, loaded by their consumers."""

@@ -117,7 +117,7 @@ def test_cli_reads_public_inventory_with_curated_shop_and_route_knowledge(tmp_pa
     def forbidden(*args, **kwargs):
         raise AssertionError("visible relic reading must not query raw sources")
 
-    monkeypatch.setattr(cli, "ExpertKnowledgeOwner", forbidden)
+    monkeypatch.setattr("tools.expert.query.ExpertKnowledgeOwner", forbidden)
     path = write_document(tmp_path, document())
     assert cli.main(["curated", "--decision", str(path), "--view", "context",
                      "--package", str(PACKAGE), "--entry", "shop-tradeoffs", "--entry", "route-options"]) == 0

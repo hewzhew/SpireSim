@@ -5,6 +5,8 @@ import re
 from pathlib import Path
 from typing import Any
 
+from tools.presentation import Presentation
+
 from .store import ExpertReferenceStore, owned_path
 
 
@@ -295,7 +297,7 @@ class ExpertKnowledgeOwner:
         return excerpt
 
     def entity_evidence(
-        self, name: str, *, source_id: str | None = None
+        self, name: str, *, source_id: str | None = None, locale: str = "en"
     ) -> dict[str, Any]:
         self._refresh()
         entity = self._resolve_entity(name)
@@ -471,11 +473,7 @@ class ExpertKnowledgeOwner:
             "related_reviewed_passages": related_passages,
             "direct_reviewed_claims": direct_claims,
             "related_reviewed_claims": related_claims,
-            "boundary": (
-                "related card/mechanic evidence is context, and a source media "
-                "transcription is a scoped observation rather than authored prose "
-                "or a reviewed strategic judgment"
-            ),
+            "boundary": Presentation(locale).text("expert", "cli.evidenceBoundary"),
         }
 
     def coverage(self) -> dict[str, Any]:

@@ -53,7 +53,7 @@ def test_rust_produced_export_reads_all_candidates_without_raw_corpus():
         "take_card",
     ]
     text = render_decision(view)
-    assert "DarkShackles+1" in text and "Unknown" in text
+    assert '黑暗镣铐+' in text and "Unknown" in text
     assert "deployable_policy" in text
     assert view["public_snapshot_id"] not in text and decision.revision not in text
     assert "cards" not in view["content"]
@@ -167,7 +167,7 @@ def test_cli_selective_knowledge_does_not_repeat_context_or_load_query_owner(
     def forbidden(*args, **kwargs):
         raise AssertionError("raw query owner is not part of this reading")
 
-    monkeypatch.setattr(cli, "ExpertKnowledgeOwner", forbidden)
+    monkeypatch.setattr("tools.expert.query.ExpertKnowledgeOwner", forbidden)
     isolated_package = tmp_path / "package.json"
     isolated_package.write_bytes(PACKAGE.read_bytes())
     isolated_decision = tmp_path / "decision.json"
@@ -188,7 +188,7 @@ def test_cli_selective_knowledge_does_not_repeat_context_or_load_query_owner(
     selective = capsys.readouterr().out
     assert "HP 22/80" not in selective and "改判：" in selective
     assert cli.main(base + ["--view", "map", "--entry", "near-threat"]) == 0
-    assert "question_mark" in capsys.readouterr().out
+    assert '未知' in capsys.readouterr().out
 
 
 def test_mechanics_bind_variants_and_select_without_repeating_the_whole_scene():
@@ -213,7 +213,7 @@ def test_mechanics_bind_variants_and_select_without_repeating_the_whole_scene():
     )
     assert escape["current"]["reviewed_effects"]["end_of_turn_block_each_turn"] is None
     text = render_decision(selected)
-    assert "Unknown" in text and "Shackled" in text and "Artifact" in text
+    assert "Unknown" in text and '镣铐' in text and '人工制品' in text
     assert "技能牌" in text
     assert "HP 22/80" not in text and reading.revision not in text
     assert len(text) < 2300
@@ -335,7 +335,7 @@ def test_cli_mechanics_is_selective_and_does_not_repeat_knowledge_catalog(capsys
     ]
     assert cli.main(base) == 0
     text = capsys.readouterr().out
-    assert "DeepBreath" in text and "DarkShackles" not in text
+    assert '深呼吸' in text and '黑暗镣铐' not in text
     assert "future-value" not in text and "HP 22/80" not in text
     assert cli.main(base + ["--entry", "draw-access"]) == 0
     assert "改判：" in capsys.readouterr().out
@@ -360,4 +360,4 @@ def test_mechanics_only_view_does_not_require_a_knowledge_package(tmp_path, caps
         )
         == 0
     )
-    assert "DarkShackles" in capsys.readouterr().out
+    assert '黑暗镣铐' in capsys.readouterr().out

@@ -19,19 +19,19 @@ def test_shop_comparison_preserves_secondary_effects_without_choosing_actions():
         render_decision(reading.view("mechanics", candidate_ordinals=[i])) for i in (0, 2, 4, 6)
     ]
     assert "虚弱 3 层 → 易伤 3 层" in shockwave and "虚弱 5 层 → 易伤 5 层" in shockwave
-    assert "一层 Artifact 阻止第一个减益" in shockwave
+    assert '一层 人工制品 阻止第一个减益' in shockwave
     assert "能力 1 层" in rupture and "能力 2 层" in rupture
     assert "收益不乘失血量" in rupture and "敌人伤害不触发" in rupture
-    assert "多份 Combust 合并为一次失血事件" in rupture
+    assert '多份 自燃 合并为一次失血事件' in rupture
     assert "完全阻止则不触发" in rupture and "打出当下不加力" in rupture
     assert "从抽牌堆直接取 1 张现有技能牌" in secret
     assert "打出时抽牌堆必须有技能牌" in secret and "效果结算时重新检查" in secret
-    assert "No Draw 不阻止" in secret and "满手则放入弃牌堆" in secret
+    assert '无法抽牌 不阻止' in secret and "满手则放入弃牌堆" in secret
     assert "保留当时费用，不自动免费" in secret and "不能取消" in secret
     assert "消耗/虚无/固有：是/否/否" in secret and "消耗/虚无/固有：否/否/否" in secret
     assert "伤害之后排队生成 1 张自身副本到弃牌堆" in anger
     assert "仅在本场战斗内增加牌量" in anger and "可能阻止复制结算" in anger
-    assert "Master Reality" in anger and "不复制临时显示伤害" in anger
+    assert '操控现实' in anger and "不复制临时显示伤害" in anger
     assert all(len(text) < 1500 for text in (anger, shockwave, rupture, secret))
     assert "buy Rupture" not in secret and "buy Shockwave" not in anger
     assert len(reading.view()["content"]["candidates"]) == 8
@@ -84,7 +84,7 @@ def test_cli_combines_shop_knowledge_with_selected_cards_without_raw_query(monke
     def forbidden(*args, **kwargs):
         raise AssertionError("curated reading must not query original strategy text")
 
-    monkeypatch.setattr(cli, "ExpertKnowledgeOwner", forbidden)
+    monkeypatch.setattr("tools.expert.query.ExpertKnowledgeOwner", forbidden)
     assert cli.main(["curated", "--decision", str(FIXTURE), "--view", "mechanics",
         "--candidate", "2", "--candidate", "4", "--package", "reference/expert/curated/ironclad-run-planning.json",
         "--entry", "shop-tradeoffs"]) == 0

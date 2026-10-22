@@ -20,13 +20,13 @@ def test_selected_comparison_retains_delayed_payoffs_and_draw_obligation():
     assert "每个敌人伤害 5" in combust and "每个敌人伤害 7" in combust
     assert "自失血 1" in combust and "两种数值分别叠加" in combust
     assert "先请求合计失血" in combust and "打出当下不结算" in combust
-    assert "不按玩家力量/虚弱调整" in combust and "Rupture" in combust
+    assert "不按玩家力量/虚弱调整" in combust and '撕裂' in combust
     assert "抽牌请求 1" in warcry and "抽牌请求 2" in warcry
-    assert "放回抽牌堆顶" in warcry and "No Draw 阻止抽牌也不免除" in warcry
+    assert "放回抽牌堆顶" in warcry and '无法抽牌 阻止抽牌也不免除' in warcry
     assert "全部手牌选择" in warcry and "不能取消" in warcry
     assert "手牌为空则跳过" in warcry and "仅一张时自动放回" in warcry
     assert "每有一张牌被消耗" in embrace and "打出当下不直接抽牌" in embrace
-    assert "No Draw、手牌上限" in embrace
+    assert '无法抽牌、手牌上限' in embrace
     assert "基础费用 2" in embrace and "基础费用 1" in embrace
     assert all(len(text) < 1300 for text in (combust, warcry, embrace))
     assert "take Warcry" not in combust and "take Combust" not in embrace
@@ -78,7 +78,7 @@ def test_cli_reads_reward_mechanics_and_selected_knowledge_without_source_search
     def forbidden(*args, **kwargs):
         raise AssertionError("curated comparison must not query raw strategy")
 
-    monkeypatch.setattr(cli, "ExpertKnowledgeOwner", forbidden)
+    monkeypatch.setattr("tools.expert.query.ExpertKnowledgeOwner", forbidden)
     assert cli.main(["curated", "--decision", str(FIXTURE), "--view", "mechanics",
                      "--candidate", "2", "--entry", "exhaust-startup"]) == 0
     text = capsys.readouterr().out

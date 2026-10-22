@@ -186,7 +186,7 @@ def test_cli_explicit_package_is_selective_and_never_constructs_query_owner(
     def forbidden(*args, **kwargs):
         raise AssertionError("natural-query owner must not be loaded")
 
-    monkeypatch.setattr(cli, "ExpertKnowledgeOwner", forbidden)
+    monkeypatch.setattr("tools.expert.query.ExpertKnowledgeOwner", forbidden)
     package = package_copy(tmp_path)
     decision = decision_copy(tmp_path, "map")
     before = decision.path.read_bytes()

@@ -26,7 +26,7 @@ def test_pyramid_reading_is_selective_and_keeps_retain_and_hand_capacity_distinc
     reading = DecisionReading(FIXTURE)
     text = render_decision(reading.view("mechanics", candidate_ordinals=[2]))
     assert "跳过通常的回合末弃牌" in text and "不赋予保留标记" in text
-    assert "不因此触发保留效果或确立的减费" in text
+    assert "不因此触发保留效果或确立基础的减费" in text
     assert "未保留的虚无牌仍会消耗" in text and "主动弃牌仍可发生" in text
     assert "占用手牌容量" in text and "不增加起手抽牌数" in text
     assert "SneckoEye" not in text and "Sozu" not in text

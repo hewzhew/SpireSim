@@ -28,7 +28,7 @@ def test_same_named_cards_keep_opposite_upgrade_cost_changes_and_selection_ident
     assert [row["facts"]["current"]["persistent_cost"] for row in cards] == [3, 0]
     assert [row["facts"]["next_upgrade"]["persistent_cost"] for row in cards] == [2, 2]
     text = render_decision(view)
-    assert "[deck 1] Corruption" in text and "[deck 0] Corruption" in text
+    assert '[deck 1] 腐化' in text and '[deck 0] 腐化' in text
     assert "当前持久费用 0" in text and "下次升级 +1：当前持久费用 2" in text
     assert "Strike" not in text and "营火/遗物副作用" in text
     assert "Unknown" in text and reading.revision not in text and len(text) < 1600
@@ -63,7 +63,7 @@ def test_cli_combines_selected_owned_instance_with_campfire_knowledge(monkeypatc
     def forbidden(*args, **kwargs):
         raise AssertionError("owned reading must not query original sources")
 
-    monkeypatch.setattr(cli, "ExpertKnowledgeOwner", forbidden)
+    monkeypatch.setattr("tools.expert.query.ExpertKnowledgeOwner", forbidden)
     assert cli.main(["curated", "--decision", str(FIXTURE), "--view", "mechanics", "--card", "0",
                      "--package", "reference/expert/curated/ironclad-run-planning.json", "--entry", "hp-recovery"]) == 0
     text = capsys.readouterr().out
@@ -75,7 +75,7 @@ def test_cli_combines_selected_owned_instance_with_campfire_knowledge(monkeypatc
 def test_old_exports_do_not_reconstruct_missing_instance_mechanics(tmp_path):
     reading = DecisionReading(edited(tmp_path, lambda p: p.pop("deck_mechanics")))
     text = render_decision(reading.view("mechanics", card_ordinals=[0]))
-    assert "Unknown" in text and "Corruption" in text and "当前持久费用" not in text
+    assert "Unknown" in text and '腐化' in text and "当前持久费用" not in text
     candidate = render_decision(reading.view("mechanics", candidate_ordinals=[0]))
     assert "Unknown" in candidate and "当前持久费用" not in candidate
 

@@ -130,7 +130,7 @@ def test_cli_curated_read_never_constructs_natural_query_owner(
     def forbidden(*args, **kwargs):
         raise AssertionError("the old query owner must not be loaded")
 
-    monkeypatch.setattr(cli, "ExpertKnowledgeOwner", forbidden)
+    monkeypatch.setattr("tools.expert.query.ExpertKnowledgeOwner", forbidden)
     path = write_sample(tmp_path)
     assert (
         cli.main(

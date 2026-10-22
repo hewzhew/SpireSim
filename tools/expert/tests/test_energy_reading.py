@@ -42,7 +42,7 @@ def test_energy_timing_payment_and_upgrade_survive_selective_reading():
     assert "请求 +1" in texts["Adrenaline"] and "请求 +2" in texts["Adrenaline"]
     assert "抽牌请求 2" in texts["Adrenaline"]
     assert "下次玩家能量补充时" in texts["Outmaneuver"] and "触发后移除" in texts["Outmaneuver"]
-    assert "Void ×1 → 弃牌堆" in texts["Turbo"] and "带虚无属性" in texts["Turbo"]
+    assert '虚空 ×1 → 弃牌堆' in texts["Turbo"] and "带虚无属性" in texts["Turbo"]
     assert "Unknown" in texts["DoubleEnergy"] and "加费请求" not in texts["DoubleEnergy"]
     assert all(len(text) < 1100 for text in texts.values())
     assert "take Berserk" not in texts["Offering"]
@@ -100,7 +100,7 @@ def test_cli_combines_selected_mechanics_with_curated_energy_without_raw_query(m
     def forbidden(*args, **kwargs):
         raise AssertionError("a curated public reading must not search raw sources")
 
-    monkeypatch.setattr(cli, "ExpertKnowledgeOwner", forbidden)
+    monkeypatch.setattr("tools.expert.query.ExpertKnowledgeOwner", forbidden)
     assert cli.main(["curated", "--decision", str(FIXTURE), "--view", "mechanics",
                      "--candidate", "1", "--entry", "energy"]) == 0
     text = capsys.readouterr().out

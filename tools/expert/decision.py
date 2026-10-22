@@ -14,7 +14,7 @@ from typing import Any
 
 from .curated import CuratedStrategy, _digest, _require, _unique_object
 
-READING_SCHEMA = "sts-public-decision-reading-v2"
+READING_SCHEMA = "sts-public-decision-reading-v3"
 
 
 class DecisionReading:
@@ -221,7 +221,7 @@ class DecisionReading:
                 },
                 "candidates": self._candidates(),
                 "context_summary": (
-                    self._surface["context_summary"] if self._surface else "选牌"
+                    self._surface["context_summary"] if self._surface else None
                 ),
             }
         elif part == "deck":
@@ -244,7 +244,7 @@ class DecisionReading:
             content = {
                 "public": observation["context"],
                 "summary": (
-                    self._surface["context_summary"] if self._surface else "选牌"
+                    self._surface["context_summary"] if self._surface else None
                 ),
                 "detail": self._surface["context_detail"] if self._surface else "",
                 "relics": [{**row, "mechanics": self._relic_mechanics.get(row["relic"])}
@@ -276,8 +276,6 @@ class DecisionReading:
                 "candidates": [
                     {
                         **rows[i],
-                        "label": rows[i].get("label")
-                        or _candidate_label(rows[i]["action"]),
                         "facts": self._mechanics.get(rows[i]["candidate_id"]),
                         "potion_facts": self._potion_mechanics.get(rows[i]["candidate_id"]),
                         "relic_facts": self._relic_mechanics.get(candidate_relic(rows[i]["action"])),
@@ -410,167 +408,111 @@ def _validate_surface(surface, decision):
     return presentations
 
 
-def _card(card: str, upgrades: int) -> str:
-    return f"{card}+{upgrades}" if upgrades else card
+def _card(card: str, upgrades: int, locale="zh-CN") -> str:
+    from tools.presentation import Presentation
+    return Presentation(locale).card_name(card, upgrades)
 
 
-def _candidate_label(action: dict[str, Any]) -> str:
+def _candidate_label(action: dict[str, Any], locale="zh-CN") -> str:
+    from tools.presentation import Presentation
+    view = Presentation(locale)
+    text = lambda key, **values: view.text("expert", key, **values)
     kind = action["kind"]
     fields = {
         "take_card": {"reward_item_index", "option_index", "card", "upgrades"},
-        "skip_card_reward": {"reward_item_index"},
-        "open_card_reward": {"reward_item_index"},
-        "singing_bowl": {"reward_item_index"},
-        "use_run_potion": {"slot", "potion"},
-        "discard_run_potion": {"slot", "potion"},
-        "cancel": {"site"},
-        "proceed": {"site"},
+        "skip_card_reward": {"reward_item_index"}, "open_card_reward": {"reward_item_index"},
+        "singing_bowl": {"reward_item_index"}, "use_run_potion": {"slot", "potion"},
+        "discard_run_potion": {"slot", "potion"}, "cancel": {"site"}, "proceed": {"site"},
     }
-    _require(
-        kind in fields and set(action) == fields[kind] | {"kind"},
-        f"unsupported card-reward candidate view: {kind}",
-    )
-    if kind == "take_card":
-        return f"拿取 {_card(action['card'], action['upgrades'])}（{_reward_location(action)} / 选项 {action['option_index']}）"
-    if kind in {"skip_card_reward", "open_card_reward", "singing_bowl"}:
-        label = {
-            "skip_card_reward": "跳过选牌",
-            "open_card_reward": "打开选牌",
-            "singing_bowl": "使用颂钵",
-        }[kind]
-        return f"{label}（{_reward_location(action)}）"
+    _require(kind in fields and set(action) == fields[kind] | {"kind"},
+             f"unsupported card-reward candidate view: {kind}")
+    if kind in {"take_card", "skip_card_reward", "open_card_reward", "singing_bowl"}:
+        item = action["reward_item_index"]
+        location = text("decision.standaloneReward") if item is None else text("decision.rewardLocation", index=item)
+        if kind == "take_card":
+            return text("decision.takeCard", card=view.card_name(action["card"], action["upgrades"]), location=location, option=action["option_index"])
+        return text("decision.locatedAction", label=text("decision.action." + kind), location=location)
     if kind in {"use_run_potion", "discard_run_potion"}:
-        verb = "使用" if kind == "use_run_potion" else "丢弃"
-        return f"{verb} {action['potion']}（槽 {action['slot']}）"
-    if kind in {"cancel", "proceed"}:
-        verb = "返回" if kind == "cancel" else "继续"
-        return f"{verb}（{action['site']}）"
-    raise ValueError(f"unsupported card-reward candidate view: {kind}")
+        return text("decision.potionAction", verb=text("decision.action." + kind), potion=view.entity("potion", action["potion"]), slot=action["slot"])
+    return text("decision.locatedAction", label=text("decision.action." + kind), location=action["site"])
 
 
-def _reward_location(action):
-    item = action["reward_item_index"]
-    return "独立选牌页" if item is None else f"奖励项 {item}"
+def _render_candidates(candidates, locale):
+    return [f"[{row['ordinal']}] {row.get('label') or _candidate_label(row['action'], locale)}" for row in candidates]
 
 
-def _render_candidates(candidates):
-    return [
-        f"[{row['ordinal']}] {row.get('label') or _candidate_label(row['action'])}"
-        for row in candidates
-    ]
-
-
-def render_decision(document: dict[str, Any]) -> str:
+def render_decision(document: dict[str, Any], *, locale="zh-CN") -> str:
+    from tools.presentation import Presentation
+    view = Presentation(locale)
+    text = lambda key, **values: view.text("expert", key, **values)
     _require(document.get("schema") == READING_SCHEMA, "unsupported public decision reading schema")
     source = document["source"]
-    origin = (
-        f"Rust h{source['head_revision']}"
-        if source["kind"] in {"run_play_head", "run_play_scratch_head"}
-        else "构造案例"
-    )
-    lines = [
-        f"{origin} · 离线公开局面；未检查当前会话，序号仅供本次阅读。",
-        f"候选范围：{document['candidate_surface']}；"
-        + (
-            "展开所选已持有遗物；当前候选可读 candidates。"
-            if document.get("selected_relics") else
-            "展开所选牌组实例，不授予升级或移除动作；当前候选可读 candidates。"
-            if document.get("selected_cards") else
-            "展开本次所选候选，完整列表可读 candidates。"
-            if document["part"] == "mechanics" or document.get("selected_candidates")
-            else (
-                "保留 owner 提供的全部候选。"
-                if document["part"] in {"overview", "candidates"}
-                else "当前为局部视图，完整列表可读 candidates。"
-            )
-        ),
-    ]
+    origin = f"Rust h{source['head_revision']}" if source["kind"] in {"run_play_head", "run_play_scratch_head"} else text("decision.constructed")
+    if document.get("selected_relics"):
+        scope = "relics"
+    elif document.get("selected_cards"):
+        scope = "cards"
+    elif document["part"] == "mechanics" or document.get("selected_candidates"):
+        scope = "selected"
+    elif document["part"] in {"overview", "candidates"}:
+        scope = "all"
+    else:
+        scope = "partial"
+    lines = [text("decision.detached", origin=origin), text("decision.surface", surface=document["candidate_surface"], scope=text("decision.scope." + scope))]
     content, part = document["content"], document["part"]
     if part == "overview":
         run = content["run"]
-        keys = "/".join(
-            f"{name}{'有' if key else '无'}"
-            for name, key in zip(("红", "蓝", "绿"), run["keys"], strict=True)
-        )
-        lines.extend(
-            [
-                f"{run['player_class']} A{run['ascension_level']} · Act {run['act']} / 层 {run['floor']} · 目标 {content['run_goal']}",
-                f"HP {run['current_hp']}/{run['max_hp']} · 金币 {run['gold']} · 钥匙 {keys}",
-                f"牌组 {content['deck_size']} 张 · 遗物 {content['relic_count']} 件",
-                "药水（容量 "
-                + str(run["potion_capacity"])
-                + "）："
-                + "；".join(
-                    f"槽 {slot['slot']} {slot['potion']['potion'] if slot['potion'] else '空'}"
-                    for slot in content["potions"]
-                ),
-            ]
-        )
+        keys = "/".join(text("decision.key", color=text("decision." + color), status=text("decision.keyPresent" if present else "decision.keyAbsent"))
+                        for color, present in zip(("red", "blue", "green"), run["keys"], strict=True))
+        goal = view.entry("expert", "decision.goal." + content["run_goal"]) or content["run_goal"]
+        lines.extend([
+            text("decision.run", character=view.entity("character", run["player_class"]), ascension=run["ascension_level"], act=run["act"], floor=run["floor"], goal=goal),
+            text("decision.resources", hp=run["current_hp"], maxHp=run["max_hp"], gold=run["gold"], keys=keys),
+            text("decision.inventory", cards=content["deck_size"], relics=content["relic_count"]),
+            text("decision.potions", capacity=run["potion_capacity"], slots=text("separator").join(text("decision.slot", slot=row["slot"], potion=view.entity("potion", row["potion"]["potion"]) if row["potion"] else text("empty")) for row in content["potions"])),
+            content["context_summary"] or view.entry("decision", "context.cardReward"),
+        ])
         position = content["map_position"]
-        lines.append(content["context_summary"])
-        lines.append(
-            f"地图坐标 ({position['current_x']},{position['current_y']}) · Boss {position['boss'] or 'Unknown'}；拓扑按需展开。"
-        )
-        lines.extend(_render_candidates(content["candidates"]))
-        lines.append(
-            "可展开：deck / map / relics / history / context / candidates / mechanics；后两项可指定候选序号，mechanics 也可用 --card 选牌组序号或 --relic 选已持有遗物序号。"
-        )
+        lines.append(text("decision.position", x=position["current_x"], y=position["current_y"], boss=view.entity("encounter", position["boss"]) if position["boss"] else "Unknown"))
+        lines.extend(_render_candidates(content["candidates"], locale))
+        lines.append(text("decision.views"))
     elif part == "deck":
         for card in content:
             modifiers = []
-            for field in (
-                "misc_value",
-                "base_damage_override",
-                "base_block_override",
-                "cost_modifier",
-            ):
+            for field in ("misc_value", "base_damage_override", "base_block_override", "cost_modifier"):
                 value = card[field]
                 if value is not None and (value != 0 or field.endswith("override")):
                     modifiers.append(f"{field}={value}")
-            lines.append(
-                f"[{card['ordinal']}] {_card(card['card'], card['upgrades'])}"
-                + (" · " + ", ".join(modifiers) if modifiers else "")
-            )
+            lines.append(f"[{card['ordinal']}] {view.card_name(card['card'], card['upgrades'])}" + (" | " + ", ".join(modifiers) if modifiers else ""))
     elif part == "map":
-        lines.append(
-            f"当前 ({content['current_x']},{content['current_y']}) · Boss {content['boss'] or 'Unknown'}"
-        )
+        lines.append(text("decision.position", x=content["current_x"], y=content["current_y"], boss=view.entity("encounter", content["boss"]) if content["boss"] else "Unknown"))
         for node in content["nodes"]:
-            edges = ", ".join(
-                f"({e['destination_x']},{e['destination_y']})" for e in node["edges"]
-            )
-            lines.append(
-                f"({node['x']},{node['y']}) {node['room']}"
-                + (" · 绿钥匙" if node["has_emerald_key"] else "")
-                + f" -> {edges or '无出边记录'}"
-            )
+            edges = ", ".join(f"({edge['destination_x']},{edge['destination_y']})" for edge in node["edges"])
+            lines.append(f"({node['x']},{node['y']}) {view.entity('room', node['room'])}" + (text("decision.emerald") if node["has_emerald_key"] else "") + f" -> {edges or text('decision.noEdges')}")
     elif part == "relics":
-        for row in content:
-            lines.append(f"[{row['ordinal']}] {row['relic']}")
-        lines.append("用 mechanics --relic N 展开当前观测与部分机制，可重复 --relic 比较多件。"
-                     if content else "暂无已持有遗物。")
+        lines.extend(f"[{row['ordinal']}] {view.entity('relic', row['relic'])}" for row in content)
+        lines.append(text("decision.relicHelp" if content else "decision.noRelics"))
     elif part == "history":
-        lines.extend(
-            f"{key}：{value if value is not None else 'Unknown'}"
-            for key, value in content.items()
-        )
+        for key, value in content.items():
+            label = view.entry("expert", "decision.history." + key) or key
+            lines.append(f"{label}: {value if value is not None else 'Unknown'}")
     elif part == "candidates":
-        lines.extend(_render_candidates(content))
+        lines.extend(_render_candidates(content, locale))
     elif part == "context":
-        lines.append(content["summary"])
+        lines.append(content["summary"] or view.entry("decision", "context.cardReward"))
         if content["detail"]:
             lines.append(content["detail"].rstrip())
         if content["relics"]:
-            from .relic_mechanics import RELIC_READING_SCOPE, render_relic_mechanics
-
-            lines.append("可见遗物机制；是否可购买/领取仍看原库存与候选。")
+            from .relic_mechanics import render_relic_mechanics
+            lines.append(text("decision.visibleRelics"))
             if any(row["mechanics"] is not None for row in content["relics"]):
-                lines.append(RELIC_READING_SCOPE)
+                lines.append(view.definition_text("expert", "relic.scope"))
             for row in content["relics"]:
-                lines.append(f"{row['location']} · {row['relic']}")
-                lines.extend("  " + text for text in render_relic_mechanics(row["mechanics"]))
+                location = row["location"]
+                label = text("relic." + location["kind"], index=location["index"])
+                lines.append(f"{label} | {view.entity('relic', row['relic'])}")
+                lines.extend("  " + line for line in render_relic_mechanics(row["mechanics"], locale=locale))
     elif part == "mechanics":
         from .mechanics import render_mechanics
-
-        lines.extend(render_mechanics(content))
+        lines.extend(render_mechanics(content, locale=locale))
     return "\n".join(lines)

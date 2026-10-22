@@ -78,7 +78,7 @@ def test_snecko_mechanics_and_replanning_knowledge_remain_separate(monkeypatch, 
     def forbidden(*args, **kwargs):
         raise AssertionError("Snecko reading must not load a natural-language query owner")
 
-    monkeypatch.setattr(cli, "ExpertKnowledgeOwner", forbidden)
+    monkeypatch.setattr("tools.expert.query.ExpertKnowledgeOwner", forbidden)
     assert cli.main(["curated", "--decision", str(FIXTURE), "--view", "mechanics", "--candidate", "0",
                      "--package", str(PACKAGE), "--entry", "replan-after-relic"]) == 0
     text = capsys.readouterr().out

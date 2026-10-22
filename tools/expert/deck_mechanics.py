@@ -1,4 +1,6 @@
 """Read exported instance facts; never look up names or reconstruct runtime cards."""
+from tools.presentation import Presentation
+
 from .curated import _digest, _require
 from .mechanics import _definition, _integer, _keys, _parts, render_card_parts
 
@@ -48,30 +50,28 @@ def validate_deck_mechanics(value, snapshot_id, cards):
     return result
 
 
-def _instance_parts(state):
-    parts = _parts(state["definition"])
+def _instance_parts(state, locale):
+    view = Presentation(locale)
+    parts = _parts(state["definition"], locale)
     cost = state["persistent_cost"]
-    parts["cost"] = f"当前持久费用 { {-1: 'X', -2: '不可打出'}.get(cost, cost)}"
-    parts["numbers"] = f"实例字段：伤害 {state['persistent_damage']} / 格挡 {state['persistent_block']}"
+    parts["cost"] = view.text("expert", "deck.cost", cost={-1: "X", -2: view.text("expert", "unplayable")}.get(cost, cost))
+    parts["numbers"] = view.text("expert", "deck.numbers", damage=state["persistent_damage"], block=state["persistent_block"])
     if state["misc_value"]:
-        parts["misc"] = f"实例记录 misc={state['misc_value']}；含义依卡牌机制，不能通用地加到收益上"
+        parts["misc"] = view.text("expert", "deck.misc", value=state["misc_value"])
     return parts
 
 
-def render_owned_card(card, facts):
-    lines = [f"[deck {card['ordinal']}] {card['card']}+{card['upgrades']}"]
+def render_owned_card(card, facts, *, locale="zh-CN"):
+    view = Presentation(locale)
+    lines = [f"[deck {card['ordinal']}] {view.card_name(card['card'], card['upgrades'])}"]
     if facts is None:
-        return lines + ["  此导出没有该实例的机制（Unknown）；未按卡名补造。"]
+        return lines + [view.text("expert", "deck.unknown")]
     current, next_state = facts["current"], facts["next_upgrade"]
-    lines.extend(render_card_parts(
-        _instance_parts(current),
-        _instance_parts(next_state) if next_state else None,
-        next_state["definition"]["upgrades"] if next_state else None,
-    ))
+    lines.extend(render_card_parts(_instance_parts(current, locale), _instance_parts(next_state, locale) if next_state else None,
+                                  next_state["definition"]["upgrades"] if next_state else None, locale=locale))
     return lines
 
 
-OWNED_READING_SCOPE = (
-    "牌组实例机制：公开持久数值与共享规则，部分覆盖；未列效果为 Unknown。",
-    "实例字段不是结算总伤害/格挡；升级预览只含卡牌自身变化，营火/遗物副作用与当前行动资格另算。",
-)
+def owned_reading_scope(locale):
+    view = Presentation(locale)
+    return [view.text("expert", "deck.scope"), view.text("expert", "deck.upgradeScope")]

@@ -27,7 +27,7 @@ def test_gold_rule_preserves_owned_balance_spending_and_trigger_scope():
     text = render_decision(reading.view("mechanics", candidate_ordinals=[0]))
     assert "阻止获得金币" in text and "盗贼返还" in text
     assert "已有金币保留" in text and "仍可花费或被盗" in text
-    assert "未获得金币时不触发" in text and "血腥神像的治疗" in text
+    assert "未获得金币时不触发" in text and '鲜血神像的治疗' in text
     assert "每回合基础能量 +1" in text
     assert "BustedCrown" not in text and "CursedKey" not in text
     assert len(text) < 650
@@ -49,7 +49,7 @@ def test_owned_idol_reads_per_gain_healing_without_predicting_income_or_changing
     assert view["content"]["relics"][0]["facts"]["gold_gain_healing"] == 5
     text = render_decision(view)
     assert "立即请求治疗 5 HP" in text and "一次收入触发一次" in text
-    assert "不按金币数量乘算" in text and "灵体阻止收入时不触发" in text
+    assert "不按金币数量乘算" in text and "灵体外质阻止收入时不触发" in text
     assert "治疗修正与禁止治疗" in text and "尚未发生的收入" in text
     assert "可选张数" not in text and "每回合基础能量" not in text
     assert len(text) < 400

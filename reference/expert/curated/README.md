@@ -71,6 +71,17 @@ V1 选牌包保留单个 `decision_site`，两种范围格式不能混用。
 回执总会返回内容。展开程度、知识内容、所引来源说明或适用范围变化都会使回执失效。
 包在进程中修改后，下次读取会自动加载新内容。上下文压缩后不要仅凭旧回执假定内容还在。
 
+## 语言
+
+`tools.expert.cli` 的 `--locale en|zh-CN` 可放在命令前后，默认 `zh-CN`。语言控制帮助、工具界面和按公开数值生成的机制正文；资料引文、整理者正文和导出中已记录的候选说明保留原文。需要另一种语言的实时说明时，在 Rust 导出入口选择该语言。
+
+```powershell
+.\scripts\py.ps1 -m tools.expert.cli --locale en curated --decision <decision.json> --view mechanics --card 0
+.\scripts\py.ps1 -m tools.expert.cli curated --locale zh-CN --decision <decision.json> --view context
+```
+
+库接口在 `render_decision(view, locale=...)` 和 `render_curated(reading, locale=...)` 选择语言。读取、校验和阅读回执不依赖显示语言；同一份视图可重复渲染为两语。卡牌、遗物、药水和机制中的具名实体按稳定 ID 从共用原版词典取名，工具消息保存在 `expert` 命名空间，不查询原始攻略缓存或本机游戏安装。
+
 ## 从公开战略局面读取
 
 Rust `run-play` 的现有 `show` 可以把当前战略决策导出一次，之后展开牌组、地图与知识均不再
@@ -101,7 +112,7 @@ V3 导出支持战略决策的公开读取，包括选牌、奖励、地图、�
 
 候选、牌组与已持有遗物使用各自的阅读序号，`--candidate`、`--card`、`--relic` 同次调用
 不能混用；序号只绑定本次导出文件，不是跨局面身份或执行句柄。文件变化后须重新读取目录。
-派生视图使用 `sts-public-decision-reading-v2`，其中遗物目录仅含序号和实体；旧派生视图需从
+派生视图使用 `sts-public-decision-reading-v3`，遗物目录仅含序号和实体，库存位置保存种类和序号；旧派生视图需从
 原始公开导出重新读取，不作迁移。原始导出合同保持独立。
 
 地图路线的短说明给出沿公开普通连线首先可能遇到的路标：营火、精英、商店、宝箱、Boss、

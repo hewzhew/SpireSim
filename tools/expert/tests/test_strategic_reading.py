@@ -188,7 +188,7 @@ def test_default_non_card_view_is_independent_of_card_knowledge_and_raw_query(
             "this public view needs no source query or knowledge package"
         )
 
-    monkeypatch.setattr(cli, "ExpertKnowledgeOwner", forbidden)
+    monkeypatch.setattr("tools.expert.query.ExpertKnowledgeOwner", forbidden)
     reading = read_case(tmp_path, "shop")
     base = ["--repository", str(tmp_path), "curated", "--decision", str(reading.path)]
     assert cli.main(base) == 0

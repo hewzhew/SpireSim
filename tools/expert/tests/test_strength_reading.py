@@ -29,7 +29,7 @@ def test_selected_strength_reading_keeps_conditions_schedule_and_upgrade():
     assert "力量 +2" in inflame and "力量 +3" in inflame and "不安排回合末回收" in inflame
     flex = text_for("Flex")
     assert "力量 +2" in flex and "力量 +4" in flex
-    assert "另请求同量 LoseStrength" in flex and "Artifact" in flex and "提前清除" in flex
+    assert "另请求同量 活动肌肉" in flex and '人工制品' in flex and "提前清除" in flex
     demon = text_for("DemonForm")
     assert "每个玩家回合开始抽牌后" in demon and "打出当下不直接加力" in demon
     assert "力量 +2" in demon and "力量 +3" in demon

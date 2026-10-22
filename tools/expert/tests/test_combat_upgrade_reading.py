@@ -28,7 +28,7 @@ def test_armaments_upgrade_difference_survives_unchanged_numbers():
     text = render_decision(view)
     assert "升级一张可升级牌" in text and "升级当前手牌内全部可升级牌" in text
     assert "效果结算时" in text and "不能取消" in text
-    assert "不永久升级主牌组" in text and "Searing Blow 可继续升级" in text
+    assert "不永久升级主牌组" in text and '灼热攻击 可继续升级' in text
     assert "已展示属性不变" not in text and len(text) < 1800
     assert "Apotheosis" not in text and reading.revision not in text
     assert len(reading.view()["content"]["candidates"]) == 3
@@ -84,7 +84,7 @@ def test_cli_can_pair_scope_comparison_with_resource_knowledge(monkeypatch, caps
     def forbidden(*args, **kwargs):
         raise AssertionError("mechanics reading must not retrieve original guides")
 
-    monkeypatch.setattr(cli, "ExpertKnowledgeOwner", forbidden)
+    monkeypatch.setattr("tools.expert.query.ExpertKnowledgeOwner", forbidden)
     assert cli.main([
         "curated", "--decision", str(FIXTURE), "--view", "mechanics", "--candidate", "0",
         "--package", "reference/expert/curated/ironclad-run-planning.json", "--entry", "hp-recovery",

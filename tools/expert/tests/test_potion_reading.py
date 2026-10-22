@@ -34,7 +34,7 @@ def test_shop_potion_effects_retain_units_timing_and_candidate_meaning(tmp_path)
     assert "购买，效果须之后使用" in text[1]
     assert "任意数量" in text[2] and "允许选零张" in text[2]
     assert "取消选择不退还" in text[2] and "永久牌组" in text[2]
-    assert "虚弱 3" in text[3] and "Artifact" in text[3]
+    assert "虚弱 3" in text[3] and '人工制品' in text[3]
     assert "需指定敌人目标" in text[3]
     assert all(len(value) < 800 for value in text)
     assert "buy Elixir" not in text[1]
@@ -119,7 +119,7 @@ def test_cli_compares_selected_potions_with_curated_resources_without_raw_search
     def forbidden(*args, **kwargs):
         raise AssertionError("potion planning must not query raw strategies")
 
-    monkeypatch.setattr(cli, "ExpertKnowledgeOwner", forbidden)
+    monkeypatch.setattr("tools.expert.query.ExpertKnowledgeOwner", forbidden)
     path = write_document(tmp_path, document())
     assert cli.main(["curated", "--decision", str(path), "--view", "mechanics", "--candidate", "1",
                      "--candidate", "2", "--package", str(PACKAGE), "--entry", "shop-tradeoffs",

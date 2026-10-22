@@ -41,7 +41,7 @@ def test_owned_question_card_and_prayer_wheel_have_different_effect_units():
     assert "可选张数 +1" in text and "额外生成 1 份" in text
     assert "精英、Boss 与事件房不适用" in text
     assert "每份独立生成，分别选择或跳过" in text
-    assert "每份的可选张数仍受破损王冠、问号牌等修正" in text
+    assert '每份的可选张数仍受破碎金冠、问号牌等修正' in text
     assert "可选张数 -2" not in text
 
 

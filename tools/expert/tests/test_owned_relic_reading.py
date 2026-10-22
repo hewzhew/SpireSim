@@ -28,7 +28,7 @@ def test_owned_relic_directory_keeps_order_without_loading_every_mechanic_into_c
         {"ordinal": 2, "relic": "PrayerWheel"},
     ]
     text = render_decision(view)
-    assert "[1] QuestionCard" in text and "--relic" in text
+    assert '[1] 问号牌' in text and "--relic" in text
     assert "counter=" not in text and "可选张数" not in text and "额外生成" not in text
     assert len(text) < 350
 
@@ -101,13 +101,13 @@ def test_cli_selects_owned_relics_through_shared_reader_without_raw_query(monkey
     def forbidden(*args, **kwargs):
         raise AssertionError("owned relic reading must not query original sources")
 
-    monkeypatch.setattr(cli, "ExpertKnowledgeOwner", forbidden)
+    monkeypatch.setattr("tools.expert.query.ExpertKnowledgeOwner", forbidden)
     assert cli.main(["curated", "--decision", str(FIXTURE), "--view", "mechanics", "--relic", "2",
                      "--package", str(ROOT / "reference/expert/curated/ironclad-run-planning.json"),
                      "--entry", "replan-after-relic"]) == 0
     text = capsys.readouterr().out
-    assert "[relic 2] PrayerWheel" in text and "replan-after-relic" in text
-    assert "QuestionCard" not in text and "BloodyIdol" not in text
+    assert '[relic 2] 转经轮' in text and "replan-after-relic" in text
+    assert "[relic 1]" not in text and "[relic 0]" not in text
     assert cli.main(["curated", "--relic", "0"]) == 1
     assert cli.main(["curated", "--decision", str(FIXTURE), "--view", "mechanics",
                      "--relic", "0", "--candidate", "0"]) == 1

@@ -280,37 +280,41 @@ class CuratedStrategy:
         )
 
 
-def render_curated(document: dict[str, Any]) -> str:
+def render_curated(document: dict[str, Any], *, locale="zh-CN") -> str:
+    from tools.presentation import Presentation
+
+    view = Presentation(locale)
+    text = lambda key, **values: view.text("expert", key, **values)
     if document["schema"] == "sts-curated-catalog-v1":
-        return "\n".join(f"{row['id']} · {row['title']}" for row in document["entries"])
+        return "\n".join(f"{row['id']} | {row['title']}" for row in document["entries"])
     lines = []
     for reading in document["readings"]:
         if reading["status"] == "unchanged":
-            lines.append(f"{reading['id']} · 已读内容无变化")
+            lines.append(text("curated.unchanged", id=reading["id"]))
             continue
         row = reading["content"]
         lines.extend(
             [
-                f"{reading['id']} · {row['title']}",
+                f"{reading['id']} | {row['title']}",
                 row["principle"],
-                f"检查：{row['check']}",
-                f"改判：{row['unless']}",
+                text("curated.check", value=row["check"]),
+                text("curated.unless", value=row["unless"]),
             ]
         )
         if document["detail"] != "brief":
-            lines.append("来源取舍：" + "；".join(row["disagreements"]))
+            lines.append(text("curated.disagreements", value=text("separator").join(row["disagreements"])))
         for item in row.get("inputs", []):
-            label = "可观察" if item["kind"] == "observable" else "需判断"
-            lines.append(f"  {label}：{item['description']}")
-        lines.extend(f"  推导：{text}" for text in row.get("reasoning", []))
+            label = text("curated.observable" if item["kind"] == "observable" else "curated.judgment")
+            lines.append(f"  {label}: {item['description']}")
+        lines.extend(text("curated.reasoning", value=value) for value in row.get("reasoning", []))
         for aid, assertion in row.get("assertions", {}).items():
             source = row["sources"][assertion["source_id"]]
             lines.append(
-                f"  {aid} · {source['author']} · {assertion['locator']}：{assertion['summary']}"
+                f"  {aid} | {source['author']} | {assertion['locator']}: {assertion['summary']}"
             )
         for source in row.get("sources", {}).values():
             lines.append(
-                f"  来源范围：{source['title']} ({source['published_at']})；{source['scope_note']}；{source['curator_scope_note']}"
+                text("curated.source", title=source["title"], date=source["published_at"], scope=source["scope_note"], curator=source["curator_scope_note"])
             )
         lines.append("")
     return "\n".join(lines).rstrip()

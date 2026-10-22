@@ -1,18 +1,15 @@
 """Visible relic definitions from the typed observation and candidate surface."""
 
+from tools.presentation import Presentation
+
 from .curated import _require
 from .mechanics import _booleans, _integer, _keys
 
-RELIC_READING_SCOPE = "遗物已审阅效果仅部分覆盖；获取时效果、其他触发与相互作用未完整展开。"
-
-
-def render_owned_relic(ordinal, observed, facts):
-    lines = [
-        f"[relic {ordinal}] {observed['relic']}",
-        f"  当前观测：计数 {observed['counter']} / 数量 {observed['amount']} / "
-        f"已使用标记 {'是' if observed['used_up'] else '否'}",
-    ]
-    lines.extend("  " + text for text in render_relic_mechanics(facts))
+def render_owned_relic(ordinal, observed, facts, *, locale="zh-CN"):
+    view = Presentation(locale)
+    lines = [f"[relic {ordinal}] {view.entity('relic', observed['relic'])}",
+             view.text("expert", "relic.observed", counter=observed["counter"], amount=observed["amount"], used=view.text("expert", "yes" if observed["used_up"] else "no"))]
+    lines.extend("  " + line for line in render_relic_mechanics(facts, locale=locale))
     return lines
 
 
@@ -26,10 +23,10 @@ def candidate_relic(action):
 
 def context_relics(context):
     if context["kind"] == "shop":
-        return [{"relic": row["relic"], "location": f"商店遗物槽 {row['slot']}"}
+        return [{"relic": row["relic"], "location": {"kind": "shopLocation", "index": row["slot"]}}
                 for row in context.get("inventory", {}).get("relics", [])]
     if context["kind"] == "reward":
-        return [{"relic": row["relic"], "location": f"奖励项 {index}"}
+        return [{"relic": row["relic"], "location": {"kind": "rewardLocation", "index": index}}
                 for index, row in enumerate(context.get("pending_rewards", [])) if row["kind"] == "relic"]
     return []
 
@@ -111,78 +108,56 @@ def validate_relic_mechanics(value, snapshot_id, observation, candidates):
     return result
 
 
-def render_relic_mechanics(facts):
+def render_relic_mechanics(facts, *, locale="zh-CN"):
+    view = Presentation(locale)
+    text = lambda key, **values: view.definition_text("expert", "relic." + key, **values)
     if facts is None:
-        return ["遗物机制 Unknown；此导出没有相关事实，不按名称补猜。"]
+        return [text("unknown")]
     lines = []
-    choices_delta = facts.get("card_reward_choice_delta")
-    if choices_delta is not None:
-        lines.append(f"每份生成的卡牌奖励，可选张数 {choices_delta:+d}；多个相关遗物的修正相加，奖励份数不因此变化。")
-        lines.append("也作用于调用奖励生成流程的无色奖励、捕梦网与星系仪；不改变商店卡牌库存、发现或药水的三选一数量。")
-    additional_rows = facts.get("additional_normal_monster_card_reward_rows")
-    if additional_rows is not None:
-        lines.append(f"普通怪物房生成卡牌奖励时，额外生成 {additional_rows} 份；精英、Boss 与事件房不适用。")
-        lines.append("每份独立生成，分别选择或跳过；每份的可选张数仍受破损王冠、问号牌等修正。")
+    choices = facts.get("card_reward_choice_delta")
+    if choices is not None:
+        lines.extend([text("rewardChoices", delta=f"{choices:+d}"), text("rewardChoiceScope")])
+    rows = facts.get("additional_normal_monster_card_reward_rows")
+    if rows is not None:
+        lines.extend([text("additionalRows", count=rows), text("rowScope")])
     if facts.get("gold_gain_rule") == "prevent_gold_gain":
-        lines.append("阻止获得金币，包括奖励、事件、卡牌、遗物的金币收入及盗贼返还的金币。")
-        lines.append("已有金币保留，仍可花费或被盗；未获得金币时不触发获得金币后的效果，例如血腥神像的治疗。")
+        lines.extend([text("preventGold"), text("existingGold")])
     healing = facts.get("gold_gain_healing")
     if healing is not None:
-        lines.append(f"每次实际获得正数金币时，立即请求治疗 {healing} HP；一次收入触发一次，不按金币数量乘算。")
-        lines.append("奖励、事件、卡牌与遗物收入均可触发；灵体阻止收入时不触发，花费或失去金币也不触发。")
-        lines.append("实际治疗受最大 HP、治疗修正与禁止治疗影响；不会预先计入尚未发生的收入。")
+        lines.extend([text("goldHealing", hp=healing), text("goldHealingTriggers"), text("healingModifiers")])
     if facts.get("end_turn_discard_rule") == "skip_ordinary_discard":
-        lines.append("跳过通常的回合末弃牌；不赋予保留标记，也不因此触发保留效果或确立的减费。")
-        lines.append("未保留的虚无牌仍会消耗；牌本身的保留与其他效果各自结算，主动弃牌仍可发生。")
-        lines.append("留下的牌占用手牌容量，可能挤占下一回合抽牌空间；此效果不增加起手抽牌数。")
+        lines.extend([text("skipDiscard"), text("ethereal"), text("handCapacity")])
     draw = facts.get("additional_cards_drawn_each_turn")
     if draw is not None:
-        lines.append(f"每回合起手抽牌数 +{draw}；实际抽到的数量仍受手牌上限、牌堆与禁止抽牌等限制。")
+        lines.append(text("draw", count=draw))
     confusion = facts.get("pre_battle_confusion")
     if confusion is not None:
-        lines.append("战斗前请求施加混乱；只有混乱成功存在时才在抽牌时随机费用，能力被阻止或清除另算。"
-                     + ("额外起手抽牌不依赖混乱仍在。" if draw is not None else ""))
-        lines.append(f"每次实际抽到非负战斗费用的牌，抽取 {confusion['minimum_cost']} 到 {confusion['maximum_cost']}（含两端）的费用；"
-                     "按费用而非卡牌类型判断，状态与诅咒不统一排除，X 与不可打出的负费用不掷。")
-        lines.append("掷出费用与当前战斗费用不同时，同时更新本场费用与本回合费用；相同时保留已有本回合费用。"
-                     + ("符合资格的抽牌都会清除免费打出一次标记，包括掷出相同费用时。"
-                        if confusion["clears_free_to_play_once"] else "本规则不清除免费打出一次标记。"))
-        lines.append("费用变化只影响本场卡牌副本，不永久改写主牌组；之后再次符合条件抽到时会重掷。")
-    energy_delta = facts.get("energy_per_turn_delta")
-    if energy_delta is not None:
-        lines.append(f"持有时每回合基础能量 +{energy_delta}；不是获取当下立即获得可用能量，其他能量修正另算。")
+        lines.append(text("confusion"))
+        if draw is not None:
+            lines.append(text("drawIndependent"))
+        lines.append(text("randomCost", min=confusion["minimum_cost"], max=confusion["maximum_cost"]))
+        lines.extend([text("costUpdate"), text("clearFree" if confusion["clears_free_to_play_once"] else "keepFree")])
+        lines.append(text("combatCost"))
+    energy = facts.get("energy_per_turn_delta")
+    if energy is not None:
+        lines.append(text("energy", amount=energy))
     restriction = facts.get("campfire_restriction")
-    if restriction == "rest":
-        lines.append("禁用营火的休息选项；其他治疗来源仍按各自规则结算，不等于禁止一切恢复。")
-    elif restriction == "smith":
-        lines.append("禁用营火的升级选项；事件、卡牌等其他升级来源仍按各自规则结算。")
+    if restriction in {"rest", "smith"}:
+        lines.append(text("noRest" if restriction == "rest" else "noSmith"))
     potions = facts.get("potion_acquisition_rule")
     if potions is not None:
-        lines.append(("阻止获得新药水" if potions["prevents_new_potions"] else "本规则不阻止获得新药水")
-                     + ("；已有药水仍可使用，具体使用资格另算。" if potions["owned_potions_remain_usable"]
-                        else "；本规则不保留已有药水的使用资格。"))
+        lines.append(text("potions", acquisition=text("preventPotions" if potions["prevents_new_potions"] else "allowPotions"), existing=text("useOwnedPotions" if potions["owned_potions_remain_usable"] else "noUseOwnedPotions")))
     limit = facts.get("card_play_limit_per_turn")
     if limit is not None:
-        lines.append(f"每回合最多打出 {limit} 张牌，回合开始重置计数；零费牌也计数，不是手牌数量上限。")
+        lines.append(text("cardLimit", count=limit))
     power = facts["battle_start_power"]
     if power:
-        scope = "每场战斗开始" if power["scope"] == "every_combat" else "仅精英战斗开始（Boss 身份本身不满足条件）"
-        if power["power"] == "strength":
-            lines.append(f"{scope}请求力量 +{power['amount']}；不是每回合加力，也不直接造成伤害。")
-        else:
-            lines.append(f"{scope}请求荆棘 {power['amount']}；受其他来源的普通攻击时反伤，被格挡的攻击仍可触发；THORNS/HP_LOSS 不触发。")
-    energy = facts["shuffle_energy"]
-    if energy:
-        lines.append(f"每次洗牌计数 +1，恰好到 {energy['shuffle_trigger_at']} 时立即归零并请求能量 +{energy['energy']}；不是每回合或购买时加费。")
-        lines.append(f"定义初始计数 {energy['initial_counter']}；"
-                     + ("计数跨战斗保留。" if energy["counter_persists_between_combats"] else "计数不跨战斗保留。")
-                     + "实际收益取决于洗牌与能量使用时机；牌堆变空不自动等于一次洗牌。")
+        lines.append(text("strength" if power["power"] == "strength" else "thorns", scope=text("everyCombat" if power["scope"] == "every_combat" else "eliteCombat"), amount=power["amount"]))
+    shuffle = facts["shuffle_energy"]
+    if shuffle:
+        lines.extend([text("shuffleEnergy", threshold=shuffle["shuffle_trigger_at"], amount=shuffle["energy"]),
+                      text("shuffleCounter", initial=shuffle["initial_counter"], persistence=text("persistentCounter" if shuffle["counter_persists_between_combats"] else "transientCounter"))])
     heal = facts["combat_victory_healing"]
     if heal:
-        lines.append(f"战斗胜利后请求治疗 {heal['base_hp']} HP"
-                     + ("，需玩家存活" if heal["requires_player_alive"] else "，不要求玩家存活")
-                     + ("，受最大 HP 限制" if heal["capped_at_max_hp"] else "，不受最大 HP 限制")
-                     + ("，受治疗修正与禁止治疗影响。" if heal["affected_by_healing_modifiers"] else "，不受治疗修正影响。"))
-    if not lines:
-        lines.append("具体遗物效果 Unknown。")
-    return lines
+        lines.append(text("victoryHealing", hp=heal["base_hp"], alive=text("requiresAlive" if heal["requires_player_alive"] else "allowsDead"), cap=text("hpCap" if heal["capped_at_max_hp"] else "noHpCap"), modifiers=text("affectedHealing" if heal["affected_by_healing_modifiers"] else "ignoresHealing")))
+    return lines or [text("unknownEffect")]

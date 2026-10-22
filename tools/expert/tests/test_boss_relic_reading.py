@@ -80,7 +80,7 @@ def test_resource_reading_combines_selected_knowledge_without_raw_guide_queries(
     def forbidden(*args, **kwargs):
         raise AssertionError("boss resource reading must not load raw guide queries")
 
-    monkeypatch.setattr(cli, "ExpertKnowledgeOwner", forbidden)
+    monkeypatch.setattr("tools.expert.query.ExpertKnowledgeOwner", forbidden)
     assert cli.main(["curated", "--decision", str(FIXTURE), "--view", "mechanics", "--candidate", "1",
                      "--package", str(PACKAGE), "--entry", "replan-after-relic", "--entry", "potion-reserve"]) == 0
     text = capsys.readouterr().out
