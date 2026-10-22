@@ -1755,27 +1755,27 @@ fn brief_smith_rows_preserve_secondary_effects_and_exact_copy_choices() {
     );
     for (prefix, facts) in [
         (
-            "smith Pommel Strike@deck[0] (choose 1 of 2 copies)",
+            "Upgrade one Pommel Strike (choose 1 of 2 copies)",
             vec!["base damage/hit 9 -> 10", "draw 1 -> 2"],
         ),
         (
-            "smith Pommel Strike [Bottled Flame]@deck[1]",
+            "Upgrade one Pommel Strike [Bottled Flame]",
             vec!["draw 1 -> 2"],
         ),
         (
-            "smith Pommel Strike (damage 30)@deck[3]",
+            "Upgrade one Pommel Strike (damage 30)",
             vec!["base damage/hit 30 -> 31"],
         ),
         (
-            "smith Bash@deck[4]",
+            "Upgrade one Bash",
             vec!["base damage/hit 8 -> 10", "Vulnerable 2 -> 3"],
         ),
         (
-            "smith Flame Barrier@deck[5]",
+            "Upgrade one Flame Barrier",
             vec!["Block 12 -> 16", "retaliation/hit 4 -> 6"],
         ),
         (
-            "smith Armaments@deck[6]",
+            "Upgrade one Armaments",
             vec!["combat upgrade: one card in hand -> whole hand"],
         ),
     ] {
@@ -1791,7 +1791,10 @@ fn brief_smith_rows_preserve_secondary_effects_and_exact_copy_choices() {
     assert!(!brief.view.contains("@deck[2]"));
     assert!(!brief.view.contains("Smith upgrades:"));
     assert!(!brief.view.contains("Printed rule"));
-    assert_eq!(expanded.view.matches("smith Pommel Strike").count(), 4);
+    assert_eq!(
+        expanded.view.matches("Upgrade one Pommel Strike").count(),
+        4
+    );
     let TaskPublicObservationV1::Strategic { observation } =
         &full.state.as_ref().unwrap().observation
     else {
@@ -1853,7 +1856,7 @@ fn brief_smith_keeps_the_rule_for_an_unnamed_upgrade_effect() {
     let row = reading
         .view
         .lines()
-        .find(|row| row.contains("smith Double Tap"))
+        .find(|row| row.contains("Upgrade one Double Tap"))
         .unwrap();
     assert!(row.contains("Rule:"), "{row}");
     assert!(
@@ -2506,8 +2509,15 @@ fn displayed_choices_are_dense_and_keep_original_execution_paths() {
         }
         assert_eq!(&expanded.options[..reading.options.len()], &reading.options);
         assert_eq!(expanded.source, reading.source);
-        for (index, option) in reading.options.iter().enumerate() {
-            assert!(reading.view.contains(&format!("{index}: {}", option.label)));
+        for option in &reading.options {
+            let command = crate::selector::semantic_action_for_choice_v1(
+                reading.state.as_ref().unwrap(),
+                &option.choice,
+            )
+            .unwrap();
+            assert!(reading
+                .view
+                .contains(&format!("./p {command}  |  Effect: {}", option.label)));
             assert!(
                 kind == "full_reward"
                     || !matches!(
@@ -2807,14 +2817,18 @@ fn grouped_shop_preserves_identical_offers_and_blocked_stock() {
     });
     assert_ne!(first.choice, second.choice);
     for choice in [&first, &second] {
-        let ordinal = before
-            .options
-            .iter()
-            .position(|o| o.choice == choice.choice)
+        let decision = game
+            .head()
+            .current_decision
+            .as_ref()
+            .unwrap()
+            .public_decision_v1()
             .unwrap();
+        let command =
+            crate::selector::semantic_action_for_choice_v1(&decision, &choice.choice).unwrap();
         assert!(before
             .view
-            .contains(&format!("{ordinal}: buy Shrug It Off 60g")));
+            .contains(&format!("./p {command}  |  Effect: buy Shrug It Off 60g")));
     }
     assert_eq!(before.view.matches("buy Shrug It Off 60g").count(), 2);
     game.choose_bound_v1(&first).unwrap();
@@ -3378,7 +3392,7 @@ fn shop_and_campfire_readings_show_only_their_connected_preparation_routes() {
             .view
             .contains("Published routes after current room (0,0)"));
         assert!(
-            reading.view.find("0: ").unwrap()
+            reading.view.find("./p ").unwrap()
                 < reading
                     .view
                     .find("Published routes after current room")
@@ -4011,7 +4025,7 @@ fn act_returns_the_successor_reading_and_selection_jump_renders_after_commit() {
     let displayed_commands = reading
         .view
         .lines()
-        .filter(|line| line.starts_with("  select ") || line.starts_with("  select:"))
+        .filter(|line| line.starts_with("  ./p act select:"))
         .collect::<Vec<_>>();
     assert_eq!(
         displayed_commands.len(),
@@ -4019,7 +4033,7 @@ fn act_returns_the_successor_reading_and_selection_jump_renders_after_commit() {
     );
     for (member, line) in reading.selections[0].members.iter().zip(displayed_commands) {
         let command = line.trim().split("  |  ").next().unwrap();
-        let spec = command.replacen("select ", "select:", 1);
+        let spec = command.strip_prefix("./p act ").unwrap();
         let selector = crate::selector::parse_action_selector_v1(&spec, "test").unwrap();
         let actual = crate::selector::resolve_action_selector_v1(&public, &selector).unwrap();
         let mut expected = reading.selections[0].choice.clone();

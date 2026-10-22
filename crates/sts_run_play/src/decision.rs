@@ -23,6 +23,10 @@ use crate::run_selection::{project_deck_cards_v1, project_run_selection_family_v
 pub(crate) mod combat;
 mod smith;
 
+#[cfg(test)]
+#[path = "decision/presentation_tests.rs"]
+mod presentation_tests;
+
 pub(crate) fn run_transition_label_v1(
     stage: sts_oracle_learning::ai::planner_core::PlannerRunTransitionV1,
 ) -> &'static str {
@@ -619,9 +623,10 @@ fn read_public_decision_v1(
     if !brief {
         crate::mechanics_info::write_key_status(out, run.keys, heart_goal);
     }
+    let bound = result.source.is_some();
     let shop_choices = if let PlannerDecisionContext::Shop { inventory, .. } = &observation.context
     {
-        render_shop(out, inventory, &result.options, brief)?
+        render_shop(out, decision, inventory, &result.options, brief, bound)?
     } else {
         BTreeSet::new()
     };
@@ -667,7 +672,7 @@ fn read_public_decision_v1(
             }
         }
     }
-    render_selections(out, decision, &result.selections)?;
+    render_selections(out, decision, &result.selections, bound)?;
     let upgrades = smith::comparisons(observation, &result.options)?;
     let route_choices: Vec<_> = result
         .options
@@ -679,6 +684,9 @@ fn read_public_decision_v1(
             _ => None,
         })
         .collect();
+    if bound && !route_choices.is_empty() {
+        writeln!(out, "Next rooms: {}", route_choices.len()).unwrap();
+    }
     for (ordinal, option) in result.options.iter().enumerate() {
         if shop_choices.contains(&ordinal) {
             continue;
@@ -710,7 +718,7 @@ fn read_public_decision_v1(
         } else {
             option.label.clone()
         };
-        writeln!(out, "{ordinal}: {label}").unwrap();
+        render_option_row(out, decision, option, ordinal, &label, bound)?;
         if let TaskPublicCandidateV1::Strategic { action } = &option.candidate {
             write_choice_mechanics(out, action, brief);
             write_event_resource_modifiers(out, action, observation);
@@ -875,10 +883,51 @@ fn run_selection_label(
     }
 }
 
+/// Commands are projections of typed choices. Presentation never resolves a
+/// choice by reading its label or an already formatted line.
+fn choice_command(
+    decision: &TaskPublicDecisionV1,
+    choice: &TaskPublicChoiceV1,
+) -> Result<String, String> {
+    let semantic = crate::selector::semantic_action_for_choice_v1(decision, choice)?;
+    match &decision.candidates[choice.ordinal_path[0]] {
+        TaskPublicCandidateV1::Strategic {
+            action: TaskStrategicActionV1::ChooseRouteNode { x, y, .. },
+        } => Ok(format!("go {x},{y}")),
+        TaskPublicCandidateV1::Strategic {
+            action: TaskStrategicActionV1::SubmitRunSelection { .. },
+        }
+        | TaskPublicCandidateV1::CombatSelectionFamily { .. } => Ok(format!("act {semantic}")),
+        _ => Ok(semantic),
+    }
+}
+
+fn render_option_row(
+    out: &mut String,
+    decision: &TaskPublicDecisionV1,
+    option: &DecisionOptionV1,
+    ordinal: usize,
+    label: &str,
+    bound: bool,
+) -> Result<(), String> {
+    if bound {
+        writeln!(
+            out,
+            "./p {}  |  Effect: {label}",
+            choice_command(decision, &option.choice)?
+        )
+        .unwrap();
+    } else {
+        writeln!(out, "{ordinal}: {label}").unwrap();
+    }
+    Ok(())
+}
+
 fn render_selections(
     out: &mut String,
     decision: &TaskPublicDecisionV1,
     selections: &[DecisionSelectionV1],
+    bound: bool,
 ) -> Result<(), String> {
     for (index, selection) in selections.iter().enumerate() {
         let count = if selection.min == selection.max {
@@ -895,11 +944,20 @@ fn render_selections(
         if selection.min != 1 || selection.max != 1 {
             writeln!(
                 out,
-                "  Input: select:<card tokens joined by commas without spaces>"
+                "  Input: {}select:<card tokens joined by commas without spaces>",
+                if bound { "./p act " } else { "" }
             )
             .unwrap();
+            if bound && selection.max > 1 {
+                writeln!(out, "  Select distinct listed card tokens in this one selection; #0 and #1 identify different copies, not the same #0 twice.").unwrap();
+            }
             if selection.min == 0 {
-                writeln!(out, "  select:none  |  choose none").unwrap();
+                writeln!(
+                    out,
+                    "  {}select:none  |  choose none",
+                    if bound { "./p act " } else { "" }
+                )
+                .unwrap();
             }
         }
         for member in &selection.members {
@@ -909,7 +967,13 @@ fn render_selections(
                 let mut choice = selection.choice.clone();
                 choice.ordinal_path.push(member.ordinal);
                 let exact = crate::selector::semantic_action_for_choice_v1(decision, &choice)?;
-                writeln!(out, "  {exact}  |  {}", member.label).unwrap();
+                writeln!(
+                    out,
+                    "  {}{exact}  |  {}",
+                    if bound { "./p act " } else { "" },
+                    member.label
+                )
+                .unwrap();
             } else {
                 writeln!(out, "  {token}  |  {}", member.label).unwrap();
             }
@@ -933,8 +997,8 @@ fn option_label(
         TaskPublicCandidateV1::Strategic {
             action:
                 TaskStrategicActionV1::ClaimReward {
-                    reward_item_index,
                     reward: reward @ PlannerRewardDescriptor::Potion { .. },
+                    ..
                 },
         } if observation
             .relics
@@ -942,27 +1006,33 @@ fn option_label(
             .any(|relic| relic.relic == sts_oracle_learning::content::relics::RelicId::Sozu) =>
         {
             format!(
-                "claim reward[{reward_item_index}] {} (Sozu: clear reward; potion gain prevented)",
+                "{} (Sozu: clear reward; potion gain prevented)",
                 render_reward_descriptor(reward)
             )
         }
         TaskPublicCandidateV1::Strategic {
             action:
                 TaskStrategicActionV1::ClaimReward {
-                    reward_item_index,
                     reward:
                         reward @ (PlannerRewardDescriptor::Gold { .. }
                         | PlannerRewardDescriptor::StolenGold { .. }),
+                    ..
                 },
         } if observation.relics.iter().any(|relic| {
             sts_oracle_learning::content::relics::mechanics::relic_prevents_gold_gain(relic.relic)
         }) =>
         {
             format!(
-                "claim reward[{reward_item_index}] {} (Gold gain prevented by Ectoplasm)",
+                "{} (Gold gain prevented by Ectoplasm)",
                 render_reward_descriptor(reward)
             )
         }
+        TaskPublicCandidateV1::Strategic {
+            action: TaskStrategicActionV1::ClaimReward { reward, .. },
+        } => render_reward_descriptor(reward),
+        TaskPublicCandidateV1::Strategic {
+            action: TaskStrategicActionV1::OpenCardReward { .. },
+        } => "card reward".into(),
         TaskPublicCandidateV1::Strategic {
             action: TaskStrategicActionV1::Rest,
         } => {
@@ -988,7 +1058,7 @@ fn option_label(
             action: TaskStrategicActionV1::Smith { card_ordinal, .. },
         } => {
             let card = project_deck_cards_v1(&observation.cards, &[*card_ordinal])?[0];
-            format!("smith {}@deck[{card_ordinal}]", deck_card_label(&card))
+            format!("Upgrade one {}", deck_card_label(&card))
         }
         TaskPublicCandidateV1::Strategic {
             action:
@@ -1348,9 +1418,11 @@ fn write_choice_mechanics(out: &mut String, action: &TaskStrategicActionV1, brie
 
 fn render_shop(
     out: &mut String,
+    decision: &TaskPublicDecisionV1,
     inventory: &PlannerShopInventoryV1,
     options: &[DecisionOptionV1],
     brief: bool,
+    bound: bool,
 ) -> Result<BTreeSet<usize>, String> {
     let offers = inventory
         .cards
@@ -1431,7 +1503,7 @@ fn render_shop(
                 if !shown.insert(*ordinal) {
                     return Err("Duplicate shop offer in public inventory".into());
                 }
-                writeln!(out, "{ordinal}: {}", option.label).unwrap();
+                render_option_row(out, decision, option, *ordinal, &option.label, bound)?;
             }
             (PlannerShopPurchaseStatusV1::Blocked { .. }, []) => {
                 writeln!(out, "  {name} {price}g{}", purchase_suffix(status)).unwrap();

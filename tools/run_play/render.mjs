@@ -80,33 +80,6 @@ export function renderMapGrid(nodes, current, { flipped = false } = {}) {
   return lines.join('\n');
 }
 
-// Option rows carry the engine's own verb first (take Disarm, smith
-// Bash); bracketing it keeps what-you-see matched to what-you-type.
-const OPTION_VERBS = new Set(['take', 'buy', 'skip', 'claim', 'proceed', 'smith', 'leave', 'open', 'cancel', 'select', 'route', 'remove', 'use']);
-export function annotateOptionVerbs(view) {
-  return view.split('\n').map(line => {
-    const match = /^(\d+: )([a-z]+) (.+)$/.exec(line);
-    if (match && OPTION_VERBS.has(match[2])) return `${match[1]}[${match[2]}] ${match[3]}`;
-    return line;
-  }).join('\n');
-}
-
-export function namedOptionRows(view, commands) {
-  return view.split('\n').map(line => {
-    const match = /^(\d+): (.+)$/.exec(line);
-    if (!match) return line;
-    const command = commands[Number(match[1])];
-    if (command === null) return line;
-    if (!command) throw new Error(`no semantic command for option row ${match[1]}`);
-    let label = match[2].replace(/^claim reward\[\d+\] /, '')
-      .replace(/^open card reward #\d+$/, 'card reward');
-    // The semantic command already binds the exact copy. Keep the native
-    // deck-position selector out of its explanatory label.
-    if (command.startsWith('smith:')) label = label.replace(/^smith (.+?)@deck\[\d+\]/, 'Upgrade one $1');
-    return `./p ${command}  |  Effect: ${label}`;
-  }).join('\n');
-}
-
 export function writeText(text) { return process.stdout.write(text); }
 
 // Compare permanent inventory from the typed real root and private successor.
@@ -135,38 +108,11 @@ export function previewInventoryChanges(previous, endpoint) {
   return changes.length ? `Preview inventory changes:\n${changes.map(line => `  ${line}`).join('\n')}\n` : '';
 }
 
-export function printReading(reading, { optionCommands = null,
-  expanded = false, combatCommands = [], selectionCommands = false, commandHeading = false, write = writeText } = {}) {
-  // Rust groups identical copies; displayed indices still bind the full list.
-  let rawView = reading.view;
-  if (optionCommands !== null) rawView = namedOptionRows(rawView, optionCommands);
-  if (commandHeading && optionCommands !== null) {
-    rawView = rawView.replace(/^\.\/p /m, 'Commands (copy text before |):\n./p ');
-  }
-  const nextRooms = reading.raw?.reading?.options?.filter(option => option.candidate?.action?.kind === 'choose_route_node').length;
-  if (nextRooms && optionCommands !== null) {
-    rawView = rawView.replace(/^\.\/p go /m, `Next rooms: ${nextRooms}\n./p go `);
-  }
-  if (selectionCommands && reading.selections?.length === 1 && reading.selections[0].max === 1) {
-    rawView = rawView.replace(/^  (\d+): (.+)$/gm, '  ./p $1  |  $2');
-    if (reading.control === 'combat') {
-      // Rust prints semantic combat selection actions. They use the act
-      // executor, not the ordinary option-name resolver.
-      rawView = rawView.replace(/^  (select:[^\n]+?)  \|  (.+)$/gm, '  ./p act $1  |  $2');
-    }
-  }
-  if (selectionCommands && reading.selections?.length) {
-    // Both combat and master-deck multi-selections use the semantic act
-    // executor. Rust indents Input under the selection heading.
-    rawView = rawView.replace(/^([ \t]*)Input: select:(.+)$/gm, '$1Input: ./p act select:$2');
-    if (reading.selections.some(selection => selection.max > 1)) {
-      rawView = rawView.replace(/^([ \t]*Input: \.\/p act select:.+)$/gm,
-        '$1\n  Select distinct listed card tokens in this one selection; #0 and #1 identify different copies, not the same #0 twice.');
-    }
-    rawView = rawView.replace(/^([ \t]*)select:none  \|  (.+)$/gm, '$1./p act select:none  |  $2');
-  }
-  const view = reading.control === 'combat' ? rawView : annotateOptionVerbs(rawView);
-  write(`${view.trimEnd()}\n`);
+export function printReading(reading, {
+  expanded = false, combatCommands = [], write = writeText } = {}) {
+  // The source renderer owns choice commands and their presentation. Leave
+  // localized labels and hypothetical preview rows exactly as received.
+  write(`${reading.view.trimEnd()}\n`);
   if (combatCommands.length > 0) {
     write(expanded ? 'Legal commands (current position):\n'
       : 'Playable now (equivalent copies grouped; options lists all):\n');

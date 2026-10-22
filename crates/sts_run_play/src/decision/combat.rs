@@ -71,7 +71,8 @@ pub(super) fn pending_choices(
             candidate: candidate.clone(),
         });
     }
-    super::render_selections(&mut reading.view, decision, &reading.selections)?;
+    let bound = reading.source.is_some();
+    super::render_selections(&mut reading.view, decision, &reading.selections, bound)?;
     if !reading.options.is_empty() {
         let indexed = decision
             .candidates
@@ -88,7 +89,13 @@ pub(super) fn pending_choices(
         .unwrap();
         for option in &reading.options {
             let command = crate::selector::semantic_action_for_choice_v1(decision, &option.choice)?;
-            writeln!(reading.view, "  {command}  |  {}", option.label).unwrap();
+            writeln!(
+                reading.view,
+                "  {}{command}  |  {}",
+                if bound { "./p " } else { "" },
+                option.label
+            )
+            .unwrap();
         }
     }
     let mut cards = Vec::new();

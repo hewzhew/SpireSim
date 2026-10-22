@@ -263,10 +263,28 @@ fn private_preview_exposes_the_same_followup_choices_and_rules_as_real_execution
         }
         let acted = exchange(&mut game, json!({"command":"act", "actions":[action]}));
         assert_eq!(acted["status"], "ok", "{acted}");
+        let current = game
+            .head()
+            .current_decision
+            .as_ref()
+            .unwrap()
+            .public_decision_v1()
+            .unwrap();
+        let hypothetical = crate::decision::read_preview_decision_v1(&current, None).unwrap();
+        assert_eq!(preview["result"]["lines"][0]["view"], hypothetical.view);
         assert_eq!(
-            preview["result"]["lines"][0]["view"],
-            acted["result"]["reading"]["view"]
+            acted["result"]["reading"]["options"],
+            json!(hypothetical.options)
         );
+        assert_eq!(
+            acted["result"]["reading"]["selections"],
+            json!(hypothetical.selections)
+        );
+        assert!(!view.contains("./p "));
+        assert!(acted["result"]["reading"]["view"]
+            .as_str()
+            .unwrap()
+            .contains("./p "));
     }
 }
 

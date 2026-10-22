@@ -6,7 +6,7 @@ import { choose } from './commands/choose.mjs';
 import { go, info, loot, mapView } from './commands/travel.mjs';
 import { join } from 'node:path';
 import { optionSemantics, readingOptionCommands, expandedCombatCommands, distinctCombatCommands, resolveOptionName, summarizeDecisionJson } from './contract.mjs';
-import { namedOptionRows, printReading, previewInventoryChanges } from './render.mjs';
+import { printReading, previewInventoryChanges } from './render.mjs';
 
 function lootFixture(rewards, { full = false, capacity = 1, sozu = false, cardOpen = false } = {}) {
   const pending = rewards.slice(), chosen = [];
@@ -143,12 +143,6 @@ test('reward names survive gold removal and cannot fall through to a key or simi
     assert.throws(() => resolveOptionName(selector, next.reading, next.doc), /no exact current option/);
   }
   assert.throws(() => resolveOptionName('claim:BagOfPreparation#0', old.reading, next.doc), /decision changed/);
-  for (const { reading, doc } of [old, next]) {
-    const output = namedOptionRows(reading.view, optionSemantics(reading, doc));
-    assert.match(output, /\.\/p claim:BagOfPreparation#0  \|  Effect: relic Bag of Preparation/);
-    assert.match(output, /\.\/p claim:SapphireKey#0  \|  Effect: sapphire key/);
-    assert.doesNotMatch(output, /^\d+:|reward\[/m);
-  }
 });
 
 test('numeric reward choices fail without executing even after rows shifted', async () => {
@@ -185,7 +179,7 @@ function choiceFixture(control, choices) {
   return {
     reading: { control, options,
       raw: { reading: { source: { public_snapshot_id: 'cards' }, options } },
-      view: choices.map((choice, index) => `${index}: ${choice.label}`).join('\n') },
+      view: choices.map(choice => `./p ${choice.displayCommand ?? choice.command}  |  Effect: ${choice.label}`).join('\n') },
     doc: { decision: { information: { snapshot_id: 'cards' }, candidates: actions.map(() => ({})) },
       semantic_actions: actions },
   };
@@ -201,9 +195,9 @@ test('card reward and discovery print commands that choose the bound card, not i
       { label: 'Skip', command: 'skip' },
     ]);
     output = '';
-    printReading(reading, { optionCommands: readingOptionCommands(reading, doc) });
+    printReading(reading);
     const command = /^\.\/p (\S+)  \|  Effect: Armaments$/m.exec(output)?.[1];
-    assert.equal(command, `${verb}:Armaments#0`);
+    assert.equal(command, `${verb}:Armaments+0#0`);
     assert.equal(output.trim().split('\n').length, 3, 'commands replace rows rather than adding a second listing');
     let picked;
     reading.options.forEach((option, index) => {
@@ -257,16 +251,15 @@ test('grouped smith rows retain exact command bindings across omitted copies', a
   const { reading, doc } = choiceFixture('strategic', [
     { label: 'rest', command: 'rest' },
     ...Array.from({ length: 7 }, (_, index) => ({
-      label: `smith Strike${index === 2 ? ' [Bottled Flame]' : ''}@deck[${index + 1}]`, command: `smith:Strike+0#${index}`,
+      label: `Upgrade one Strike${index === 2 ? ' [Bottled Flame]' : ''}`, command: `smith:Strike+0#${index}`,
     })),
     { label: 'recall', command: 'recall' },
   ]);
-  const optionCommands = readingOptionCommands(reading, doc);
   const expandedView = reading.view;
   // Rust omits duplicate rows; their positions in the bound list stay unchanged.
-  reading.view = '0: rest\n1: smith Strike@deck[1] (choose 1 of 6 copies) | base damage/hit 6 -> 9\n'
-    + '3: smith Strike [Bottled Flame]@deck[3] | base damage/hit 6 -> 9\n8: recall';
-  printReading(reading, { optionCommands });
+  reading.view = './p rest  |  Effect: rest\n./p smith:Strike#0  |  Effect: Upgrade one Strike (choose 1 of 6 copies) | base damage/hit 6 -> 9\n'
+    + './p smith:Strike#2  |  Effect: Upgrade one Strike [Bottled Flame] | base damage/hit 6 -> 9\n./p recall  |  Effect: recall';
+  printReading(reading);
   assert.match(output, /\.\/p rest  \|  Effect: rest/);
   assert.match(output, /\.\/p recall  \|  Effect: recall/);
   assert.match(output, /\.\/p smith:Strike#0  \|  Effect: Upgrade one Strike \(choose 1 of 6 copies\) \| base damage\/hit 6 -> 9/);
@@ -281,9 +274,9 @@ test('grouped smith rows retain exact command bindings across omitted copies', a
   assert.equal(picked, 3);
   output = '';
   reading.view = expandedView;
-  printReading(reading, { optionCommands, expanded: true });
+  printReading(reading, { expanded: true });
   assert.equal((output.match(/\.\/p smith:/g) ?? []).length, 7);
-  assert.match(output, /\.\/p smith:Strike#6  \|  Effect: Upgrade one Strike/);
+  assert.match(output, /\.\/p smith:Strike\+0#6  \|/);
   assert.doesNotMatch(output, /@deck\[/);
   assert.equal(resolveOptionName('smith:Strike+0#6', reading, doc), 7);
 });
@@ -315,7 +308,7 @@ test('full map includes the boss identity and every connection without unrelated
 
 test('relic, removal, event and route choices print actual executable commands', () => {
   const { reading, doc } = choiceFixture('strategic', [
-    { label: 'Go (1,7) Elite', command: 'route:1.7' },
+    { label: 'Go (1,7) Elite', command: 'route:1.7', displayCommand: 'go 1,7' },
     { label: 'take boss relic Astrolabe', command: 'boss-relic:Astrolabe#0' },
     { label: 'remove Strike', command: 'remove:Strike+0#2' },
     { label: 'Obtain a random common relic.', command: 'event:Neow:1' },
@@ -324,18 +317,14 @@ test('relic, removal, event and route choices print actual executable commands',
   doc.decision.observation = { domain: 'strategic', observation: { public_map: {
     current: [1, 6], nodes: [[1, 7, 'elite', false, []]],
   } } };
-  const output = namedOptionRows(reading.view, readingOptionCommands(reading, doc));
+  const output = reading.view;
   assert.match(output, /\.\/p go 1,7  \|  Effect: Go \(1,7\) Elite/);
   assert.match(output, /\.\/p boss-relic:Astrolabe#0/);
-  assert.match(output, /\.\/p remove:Strike#2/);
+  assert.match(output, /\.\/p remove:Strike\+0#2/);
   assert.match(output, /\.\/p event:Neow:1  \|  Effect: Obtain a random common relic\./);
   assert.match(output, /\.\/p open-chest  \|  Effect: \[open\] chest/);
   assert.equal(resolveOptionName('event:Neow:1', reading, doc), 3, 'event index is not the displayed row');
   assert.doesNotMatch(output, /\.\/p route:/);
-  reading.raw.reading.options[0].candidate = { action: { kind: 'choose_route_node' } };
-  let withCount = '';
-  printReading(reading, { optionCommands: readingOptionCommands(reading, doc), write: text => { withCount += text; } });
-  assert.match(withCount, /Next rooms: 1\n\.\/p go 1,7  \|/);
 });
 
 test('shop leave keeps a named command when purchases reorder the rows', () => {
@@ -344,7 +333,7 @@ test('shop leave keeps a named command when purchases reorder the rows', () => {
     [{ label: 'buy Flex 26g', command: 'buy:Flex+0#0' }, { label: 'leave shop', command: 'leave' }],
   ]) {
     const { reading, doc } = choiceFixture('strategic', choices);
-    const output = namedOptionRows(reading.view, readingOptionCommands(reading, doc));
+    const output = reading.view;
     assert.match(output, /\.\/p leave  \|  Effect: leave shop/);
     assert.equal(resolveOptionName('leave', reading, doc), choices.length - 1);
   }
@@ -453,7 +442,7 @@ test('strategic target menus display the same act selection command used by clas
   doc.decision.observation = { domain: 'strategic', observation: { context: { kind: 'run_choice' } } };
   const commands = readingOptionCommands(reading, doc);
   assert.deepEqual(commands, ['act select:DemonForm+#0', 'act select:Disarm#0']);
-  assert.match(namedOptionRows(reading.view, commands), /act select:DemonForm\+#0  \|  Effect: Select Demon Form\+/);
+  assert.equal(commands[0], 'act select:DemonForm+#0');
   doc.decision.observation.domain = 'combat';
   assert.deepEqual(readingOptionCommands(reading, doc), ['select:DemonForm+#0', 'select:Disarm#0']);
 });
@@ -532,39 +521,34 @@ test('rendering preserves Rust hand values and live relic counters without a sec
   assert.equal(output, reading.view+'\n');
 });
 
-test('single-card selection prints its executable member row without confusing cancel option zero', async t => {
+test('single-card selection keeps its member binding separate from cancel option zero', async t => {
   let output = '';
   t.mock.method(process.stdout, 'write', chunk => { output += chunk; return true; });
   const members = [{ label: 'Defend' }, { label: 'Anger' }, { label: 'Defend' }];
   let picked;
   const reading = { control: 'combat',
-    view: 'Selection 0 | Upgrade | Choose 1\n  0: Defend\n  1: Anger\n  2: Defend',
+    view: 'Selection | Upgrade | Choose 1\n  ./p act select:Defend+0#0  |  Defend\n  ./p act select:Anger+0#0  |  Anger\n  ./p act select:Defend+0#1  |  Defend',
     selections: [{ min: 1, max: 1, members, async select(chosen) { picked = chosen; return { view: 'Combat' }; } }],
     options: [{ label: 'Cancel', async choose() { assert.fail('selection must not cancel'); } }],
   };
-  printReading(reading, { selectionCommands: true });
-  assert.match(output, /  \.\/p 2  \|  Defend/);
+  printReading(reading);
+  assert.equal(output, reading.view + '\n');
   await choose({ game: { async decision() { return reading; } }, async printCurrentReading() {} }, '2', []);
   assert.deepEqual(picked, [members[2]]);
   assert.deepEqual(expandedCombatCommands(reading, {}), []);
   output = '';
-  printReading(reading); // A preview's hypothetical selection is not executable here.
+  reading.view = 'Selection | Upgrade | Choose 1\n  select:Defend+0#1  |  Defend';
+  printReading(reading);
   assert.doesNotMatch(output, /\.\/p/);
-  reading.selections[0].min = 2;
-  reading.selections[0].max = 2;
-  output = '';
-  printReading(reading, { selectionCommands: true });
-  assert.match(output, /  2: Defend/);
-  assert.doesNotMatch(output, /\.\/p 2/, 'multi-select must not advertise a single member as a complete action');
 });
 
 test('combat selection rows use the act executor for exact semantic commands', async () => {
   let output = '';
   const reading = { control: 'combat',
-    view: 'Selection | Exhume | Choose 1\n  select:Defend+0#0  |  Defend\n  select:ShrugItOff+0#1  |  Shrug It Off\n  select:Disarm+0#0  |  Disarm',
+    view: 'Selection | Exhume | Choose 1\n  ./p act select:Defend+0#0  |  Defend\n  ./p act select:ShrugItOff+0#1  |  Shrug It Off\n  ./p act select:Disarm+0#0  |  Disarm',
     selections: [{ min: 1, max: 1, members: [] }],
   };
-  printReading(reading, { selectionCommands: true, write: text => { output += text; } });
+  printReading(reading, { write: text => { output += text; } });
   assert.match(output, /\.\/p act select:Defend\+0#0  \|  Defend/);
   assert.match(output, /\.\/p act select:ShrugItOff\+0#1  \|  Shrug It Off/);
   assert.match(output, /\.\/p act select:Disarm\+0#0  \|  Disarm/);
@@ -574,14 +558,14 @@ test('combat selection rows use the act executor for exact semantic commands', a
   } }, async printCurrentReading() {}, write() {} }, 'act', ['select', 'Disarm']);
   assert.deepEqual(calls, [['select:Disarm']]);
   output = '';
+  reading.view = 'Selection | Exhume | Choose 1\n  select:Disarm+0#0  |  Disarm';
   printReading(reading, { write: text => { output += text; } });
   assert.doesNotMatch(output, /\.\/p/, 'a hypothetical preview does not advertise current commands');
   reading.selections[0].min = 2; reading.selections[0].max = 2;
-  reading.view = 'Selection | Replace hand cards | Choose 2\nInput: select:<card tokens joined by commas without spaces>\n  select:Defend+0#0  |  Defend';
+  reading.view = 'Selection | Replace hand cards | Choose 2\nInput: ./p act select:<card tokens joined by commas without spaces>\n  Defend+0#0  |  Defend';
   output = '';
-  printReading(reading, { selectionCommands: true, write: text => { output += text; } });
+  printReading(reading, { write: text => { output += text; } });
   assert.match(output, /Input: \.\/p act select:<card tokens joined by commas without spaces>/);
-  assert.match(output, /Select distinct listed card tokens in this one selection/);
   assert.doesNotMatch(output, /\.\/p act select:Defend/, 'one member cannot complete a two-card selection');
 });
 
@@ -1014,10 +998,10 @@ test('default research runs one explicit budget even on Unknown', async () => {
 test('strategic multi-selection prints the act command that executes its bound members', async () => {
   let output = '';
   const reading = { control: 'strategic',
-    view: 'Selection | Remove from deck | Choose 2\n  Input: select:<card tokens joined by commas without spaces>\n  Parasite+0#0  |  Parasite\n  Strike+0#0  |  Strike',
+    view: 'Selection | Remove from deck | Choose 2\n  Input: ./p act select:<card tokens joined by commas without spaces>\n  Parasite+0#0  |  Parasite\n  Strike+0#0  |  Strike',
     selections: [{ min: 2, max: 2, members: [] }],
   };
-  printReading(reading, { selectionCommands: true, write: text => { output += text; } });
+  printReading(reading, { write: text => { output += text; } });
   assert.match(output, /  Input: \.\/p act select:<card tokens joined by commas without spaces>/);
   const calls = [];
   await actOrPreview({ game: { async decision() { return reading; }, async act(tokens) {
@@ -1025,11 +1009,12 @@ test('strategic multi-selection prints the act command that executes its bound m
   } }, async printCurrentReading() {}, write() {} }, 'act', ['select', 'Parasite+0#0', 'Strike+0#0']);
   assert.deepEqual(calls, [['select:Parasite+0#0,Strike+0#0']]);
   reading.selections[0].min = 0;
-  reading.view += '\n  select:none  |  choose none';
+  reading.view += '\n  ./p act select:none  |  choose none';
   output = '';
-  printReading(reading, { selectionCommands: true, write: text => { output += text; } });
+  printReading(reading, { write: text => { output += text; } });
   assert.match(output, /  \.\/p act select:none  \|  choose none/);
   output = '';
+  reading.view = 'Selection | Remove from deck | Choose 0..2\n  Input: select:<card tokens joined by commas without spaces>\n  select:none  |  choose none';
   printReading(reading, { write: text => { output += text; } });
   assert.doesNotMatch(output, /\.\/p/, 'hypothetical selection must not advertise live commands');
 });

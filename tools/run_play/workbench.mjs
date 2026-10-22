@@ -6,7 +6,7 @@ import { randomUUID } from 'node:crypto';
 import { openRunPlay } from './client.mjs';
 import { commandGroups, commandTokens, freshRecordDirectory } from './session.mjs';
 import { printReading, writeText } from './render.mjs';
-import { readingOptionCommands, expandedCombatCommands, distinctCombatCommands,
+import { expandedCombatCommands, distinctCombatCommands,
   assertCurrentDecision, resolveOptionName, decisionDocumentFromObservation, currentCommandHint } from './contract.mjs';
 import { actOrPreview, board, publicPiles } from './commands/combat.mjs';
 import { go, mapView, loot, info, cancel, use } from './commands/travel.mjs';
@@ -21,13 +21,11 @@ export function createWorkbenchContext(options) {
     reading?.raw?.observation ?? await ctx.game.observe());
   ctx.commandHint = async (reading, options) => currentCommandHint(reading, await ctx.decisionDocument(reading), options);
   ctx.printCurrentReading = async (reading, { expanded = false } = {}) => {
-    const doc = reading.control === 'combat' || reading.options?.length
+    const doc = reading.control === 'combat'
       ? await ctx.decisionDocument(reading) : null;
     if (doc) assertCurrentDecision(reading, doc);
     printReading(reading, {
-      write: ctx.write, expanded, selectionCommands: true,
-      commandHeading: ctx.commandPrefix === '',
-      optionCommands: reading.options?.length ? readingOptionCommands(reading, doc) : null,
+      write: ctx.write, expanded,
       combatCommands: doc ? (expanded ? expandedCombatCommands(reading, doc)
         : distinctCombatCommands(reading, doc)) : [],
     });

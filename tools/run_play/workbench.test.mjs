@@ -9,6 +9,16 @@ import { commandTokens, commandGroups } from './session.mjs';
 import { info } from './commands/travel.mjs';
 import { runEngine } from './commands/navigation.mjs';
 
+test('strategic reads preserve source-rendered localized choices without querying another observation', async () => {
+  const view = '选择牌\n./p take:Armaments+0#0  |  效果：武装\n  Input: ./p act select:<tokens>\n0: claim reward[4] is descriptive text\n';
+  let output = '';
+  const ctx = createWorkbenchContext({ write(text) { output += text; },
+    game: new Proxy({}, { get() { assert.fail('source-rendered strategic text needs no extra query'); } }),
+  });
+  await ctx.printCurrentReading({ control: 'strategic', view, options: [{ label: '武装' }] });
+  assert.equal(output, view);
+});
+
 test('printing a reading does not query plans based on an English or localized heading', async () => {
   for (const heading of ['Saved combat wins', '已保存的战斗方案']) {
     let text = '';
