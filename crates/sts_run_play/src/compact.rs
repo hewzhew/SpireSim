@@ -60,10 +60,40 @@ pub fn render_status_v1(head: &RunPlayHeadV1) -> Result<String, String> {
     Ok(output)
 }
 
-pub fn render_back_targets_v1(paths: &crate::storage::RunPlayPathsV1) -> Result<String, String> {
+pub(crate) fn compact_text(locale: Locale, key: &str, parameters: &[(&str, &str)]) -> String {
+    locale
+        .text("compact", key, parameters)
+        .expect("compact presentation message")
+}
+
+fn position_site_label_v1(
+    site: sts_oracle_learning::ai::planner_core::PlannerDecisionSite,
+    locale: Locale,
+) -> String {
+    use sts_oracle_learning::ai::planner_core::PlannerDecisionSite;
+    let key = match site {
+        PlannerDecisionSite::Map => "site.Map",
+        PlannerDecisionSite::CardReward => "site.CardReward",
+        PlannerDecisionSite::Neow => "site.Neow",
+        PlannerDecisionSite::Event => "site.Event",
+        PlannerDecisionSite::Shop => "site.Shop",
+        PlannerDecisionSite::Campfire => "site.Campfire",
+        PlannerDecisionSite::BossRelic => "site.BossRelic",
+        PlannerDecisionSite::Reward => "site.Reward",
+        PlannerDecisionSite::RunChoice => "site.RunChoice",
+        PlannerDecisionSite::Treasure => "site.Treasure",
+        PlannerDecisionSite::RunTransition => "site.RunTransition",
+    };
+    compact_text(locale, key, &[])
+}
+
+pub fn render_back_targets_v1(
+    paths: &crate::storage::RunPlayPathsV1,
+    locale: Locale,
+) -> Result<String, String> {
     let head = paths.load_head()?;
     if !head.scratch {
-        return Err("floor return points and marks require a scratch session".into());
+        return Err(compact_text(locale, "returns.scratchRequired", &[]));
     }
     let floors = head
         .scratch_floor_ends
@@ -71,13 +101,21 @@ pub fn render_back_targets_v1(paths: &crate::storage::RunPlayPathsV1) -> Result<
         .map(|end| end.floor.to_string())
         .collect::<Vec<_>>()
         .join(", ");
-    let mut out = format!(
-        "Retained floors (back floor <number>): {}\n",
-        if floors.is_empty() { "none" } else { &floors }
+    let mut out = compact_text(
+        locale,
+        "returns.floors",
+        &[(
+            "floors",
+            &if floors.is_empty() {
+                compact_text(locale, "none", &[])
+            } else {
+                floors
+            },
+        )],
     );
     let recent = paths.recent_scratch_heads_v1(&head, 12)?;
     if !recent.is_empty() {
-        out.push_str("Recent return points (back <steps>; up to 12):\n");
+        out.push_str(&compact_text(locale, "returns.recent", &[]));
         for (index, retained) in recent.iter().enumerate() {
             let decision = retained
                 .current_decision
@@ -87,28 +125,28 @@ pub fn render_back_targets_v1(paths: &crate::storage::RunPlayPathsV1) -> Result<
                 out,
                 "  back {} | {}",
                 index + 1,
-                render_position_resources_v1(&decision.observation)
+                render_position_resources_v1(&decision.observation, locale)
             )
             .expect("string write");
         }
     }
-    out.push_str(&render_mark_targets_v1(paths, &head)?);
-    out.push_str("Each retained floor is its completed Map or first decision when no Map exists, not every earlier action. Save the current exact position with mark <name> BEFORE rewinding. Rewinding replaces the active branch and discards unmarked later floors; a named mark preserves its own floor return points. Do not guess node or revision IDs.\n");
+    out.push_str(&render_mark_targets_v1(paths, &head, locale)?);
+    out.push_str(&compact_text(locale, "returns.retention", &[]));
     Ok(out)
 }
 
 pub fn render_mark_targets_v1(
     paths: &crate::storage::RunPlayPathsV1,
     head: &RunPlayHeadV1,
+    locale: Locale,
 ) -> Result<String, String> {
     if !head.scratch {
-        return Err("marks require a scratch session".into());
+        return Err(compact_text(locale, "returns.marksScratchRequired", &[]));
     }
     if head.scratch_marks.is_empty() {
-        return Ok("Named return points: none.\n".into());
+        return Ok(compact_text(locale, "returns.noMarks", &[]));
     }
-    let mut out =
-        String::from("Named return points (back mark <name>; facts saved at each point):\n");
+    let mut out = compact_text(locale, "returns.marks", &[]);
     for mark in &head.scratch_marks {
         let retained = paths.load_scratch_mark_head_v1(head, &mark.name)?;
         let decision = retained
@@ -119,20 +157,31 @@ pub fn render_mark_targets_v1(
             out,
             "  {} | {}",
             mark.name,
-            render_position_resources_v1(&decision.observation)
+            render_position_resources_v1(&decision.observation, locale)
         )
         .expect("string write");
     }
-    out.push_str("These are saved branch facts. Read the restored game for its full inventory and current choices.\n");
+    out.push_str(&compact_text(locale, "returns.savedFacts", &[]));
     Ok(out)
 }
 
-pub(crate) fn render_position_resources_v1(observation: &TaskPublicObservationV1) -> String {
+pub(crate) fn render_position_resources_v1(
+    observation: &TaskPublicObservationV1,
+    locale: Locale,
+) -> String {
     let (location, hp, max_hp, gold, held_potions) = match observation {
         TaskPublicObservationV1::Strategic { observation } => (
-            format!(
-                "Act {} F{} | {:?}",
-                observation.run.act, observation.run.floor, observation.decision_site
+            compact_text(
+                locale,
+                "position.location",
+                &[
+                    ("act", &observation.run.act.to_string()),
+                    ("floor", &observation.run.floor.to_string()),
+                    (
+                        "site",
+                        &position_site_label_v1(observation.decision_site, locale),
+                    ),
+                ],
             ),
             observation.run.current_hp,
             observation.run.max_hp,
@@ -143,7 +192,7 @@ pub(crate) fn render_position_resources_v1(observation: &TaskPublicObservationV1
                 .filter_map(|slot| {
                     slot.potion
                         .as_ref()
-                        .map(|potion| gameplay_display_label_v1(potion.potion))
+                        .map(|potion| locale.entity("potion", potion.potion.stable_id()))
                 })
                 .collect::<Vec<_>>(),
         ),
@@ -155,10 +204,15 @@ pub(crate) fn render_position_resources_v1(observation: &TaskPublicObservationV1
                 sts_oracle_learning::agent::information::run::PublicCombatRunContextV1::Available {
                     act, floor, encounter_id, ..
                 } => {
-                    let encounter = encounter_id.as_ref().map_or("Combat", |encounter| encounter.stable_id());
-                    format!("Act {act} F{floor} | {encounter}")
+                    let encounter = encounter_id.as_ref().map_or_else(
+                        || compact_text(locale, "position.combat", &[]),
+                        |encounter| locale.entity("encounter", encounter.stable_id()).to_owned(),
+                    );
+                    compact_text(locale, "position.location", &[
+                        ("act", &act.to_string()), ("floor", &floor.to_string()), ("site", &encounter),
+                    ])
                 }
-                sts_oracle_learning::agent::information::run::PublicCombatRunContextV1::Unavailable { .. } => "Combat (run context unavailable)".into(),
+                sts_oracle_learning::agent::information::run::PublicCombatRunContextV1::Unavailable { .. } => compact_text(locale, "position.unavailableCombat", &[]),
             };
             (
                 format!(
@@ -173,19 +227,29 @@ pub(crate) fn render_position_resources_v1(observation: &TaskPublicObservationV1
                     .iter()
                     .filter_map(|slot| {
                         slot.as_ref()
-                            .map(|potion| gameplay_display_label_v1(potion.potion_id))
+                            .map(|potion| locale.entity("potion", potion.potion_id.stable_id()))
                     })
                     .collect::<Vec<_>>(),
             )
         }
     };
-    format!(
-        "{location} | HP {hp}/{max_hp} | Gold {gold} | Potions: {}",
-        if held_potions.is_empty() {
-            "none".into()
-        } else {
-            held_potions.join(", ")
-        }
+    compact_text(
+        locale,
+        "position.resources",
+        &[
+            ("location", &location),
+            ("hp", &hp.to_string()),
+            ("maxHp", &max_hp.to_string()),
+            ("gold", &gold.to_string()),
+            (
+                "potions",
+                &if held_potions.is_empty() {
+                    compact_text(locale, "none", &[])
+                } else {
+                    held_potions.join(", ")
+                },
+            ),
+        ],
     )
 }
 
@@ -210,7 +274,9 @@ mod return_point_tests {
                 &combat,
             ),
         };
-        assert!(render_position_resources_v1(&public).contains("| T1 |"));
+        assert!(render_position_resources_v1(&public, Locale::En).contains("| T1 |"));
+        let zh = render_position_resources_v1(&public, Locale::ZhCn);
+        assert!(zh.contains("战斗（幕层信息不可用） | T1 | 生命"), "{zh}");
     }
 
     #[test]
@@ -241,7 +307,7 @@ mod return_point_tests {
         observation.run.current_hp = 10;
         observation.run.max_hp = 85;
         observation.potions.clear();
-        let empty = render_position_resources_v1(&public);
+        let empty = render_position_resources_v1(&public, Locale::En);
         let TaskPublicObservationV1::Strategic { observation } = &mut public else {
             unreachable!();
         };
@@ -262,11 +328,69 @@ mod return_point_tests {
             }),
         })
         .collect();
-        let supplied = render_position_resources_v1(&public);
+        let supplied = render_position_resources_v1(&public, Locale::En);
         assert!(empty.contains("HP 10/85") && supplied.contains("HP 10/85"));
         assert!(empty.ends_with("Potions: none"));
         assert!(supplied.ends_with("Potions: Energy Potion, Explosive Potion, Strength Potion"));
+        let chinese = render_position_resources_v1(&public, Locale::ZhCn);
+        assert!(chinese.contains("生命 10/85"));
+        assert!(
+            chinese.ends_with("药水：能量药水, 爆炸药水, 力量药水"),
+            "{chinese}"
+        );
         assert_ne!(empty, supplied);
+    }
+
+    #[test]
+    fn return_lists_share_saved_facts_without_changing_their_source_or_mark_names() {
+        let directory = crate::decision_tests::TestDirectory::new();
+        let paths = crate::storage::RunPlayPathsV1::new(directory.0.join("return-locales"));
+        crate::driver::create_scratch_natural_session_v1(
+            &paths,
+            sts_oracle_learning::eval::run_control::RunControlConfig {
+                seed: 17,
+                ascension_level: 20,
+                neow_eligibility:
+                    sts_oracle_learning::content::events::neow::NeowEligibilityV1::Rich,
+                final_act: true,
+                ..Default::default()
+            },
+            sts_oracle_learning::agent::task::TaskBudgetV1 {
+                max_world_transitions: 64,
+                max_reloads: 0,
+            },
+            sts_oracle_learning::eval::run_control::CombatResearchPlanOptionsV1::default(),
+        )
+        .unwrap();
+        let initial = paths.load_head().unwrap();
+        assert_eq!(
+            render_mark_targets_v1(&paths, &initial, Locale::ZhCn).unwrap(),
+            "命名返回点：无。\n"
+        );
+        crate::driver::save_scratch_mark_v1(&paths, "start").unwrap();
+        let head = paths.load_head().unwrap();
+        let points = crate::return_points::return_points_v2(&paths).unwrap();
+        for locale in [Locale::En, Locale::ZhCn] {
+            let marks = render_mark_targets_v1(&paths, &head, locale).unwrap();
+            let back = render_back_targets_v1(&paths, locale).unwrap();
+            assert!(marks.contains("  start | "));
+            assert!(marks.contains("back mark <name>"));
+            assert!(back.contains("back floor <number>"));
+            assert!(back.contains(&marks));
+            assert!(
+                back.contains(if locale == Locale::En {
+                    "HP 68/75"
+                } else {
+                    "生命 68/75"
+                }),
+                "{back}"
+            );
+            assert_eq!(paths.load_head().unwrap(), head);
+            assert_eq!(
+                crate::return_points::return_points_v2(&paths).unwrap(),
+                points
+            );
+        }
     }
 }
 

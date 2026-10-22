@@ -2085,6 +2085,7 @@ fn run(cli: Cli) -> Result<(), String> {
                     .ok_or("deck-lab requires a decision")?
                     .public_decision_v1()?
                     .observation,
+                locale,
             );
             let original_run = exact.run_state;
             let source_act = original_run.act_num;
@@ -3990,13 +3991,22 @@ fn run(cli: Cli) -> Result<(), String> {
             let paths = RunPlayPathsV1::new(session);
             if let Some(name) = name {
                 driver::save_scratch_mark_v1(&paths, &name)?;
-                println!("Saved mark: {name}");
+                println!(
+                    "{}",
+                    compact::compact_text(locale, "returns.saved", &[("name", &name)])
+                );
             } else if let Some(name) = drop {
                 driver::drop_scratch_mark_v1(&paths, &name)?;
-                println!("Dropped mark: {name}");
+                println!(
+                    "{}",
+                    compact::compact_text(locale, "returns.dropped", &[("name", &name)])
+                );
             } else {
                 let head = paths.load_head()?;
-                print!("{}", compact::render_mark_targets_v1(&paths, &head)?);
+                print!(
+                    "{}",
+                    compact::render_mark_targets_v1(&paths, &head, locale)?
+                );
             }
         }
         Command::Back {
@@ -4027,7 +4037,7 @@ fn run(cli: Cli) -> Result<(), String> {
                             .map_err(|error| error.to_string())?
                     );
                 } else {
-                    print!("{}", compact::render_back_targets_v1(&paths)?);
+                    print!("{}", compact::render_back_targets_v1(&paths, locale)?);
                 }
                 return Ok(());
             }

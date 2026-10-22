@@ -5530,5 +5530,39 @@
         "about": "将当前 head 的活动恢复路径导出为新的产物"
       }
     }
+  },
+  "compact": {
+    "none": "无",
+    "returns": {
+      "scratchRequired": "楼层返回点和标记需要可回退会话",
+      "marksScratchRequired": "标记需要可回退会话",
+      "floors": "保留的楼层（back floor <number>）：{{floors}}\n",
+      "recent": "最近的返回点（back <steps>；最多 12 个）：\n",
+      "retention": "每层保留完成后的地图，若没有地图则保留首个决策，不包含此前的每一步。返回前可用 mark <name> 保存当前精确位置。返回会替换当前分支，并丢弃未标记的后续楼层；命名标记会保留自身的楼层返回点。请使用列出的返回命令。\n",
+      "noMarks": "命名返回点：无。\n",
+      "marks": "命名返回点（back mark <name>；列出保存时的状态）：\n",
+      "savedFacts": "以上为保存时的分支状态。返回后读取游戏可查看完整库存和当前选项。\n",
+      "saved": "已保存标记：{{name}}",
+      "dropped": "已删除标记：{{name}}"
+    },
+    "position": {
+      "location": "第 {{act}} 幕 F{{floor}} | {{site}}",
+      "resources": "{{location}} | 生命 {{hp}}/{{maxHp}} | 金币 {{gold}} | 药水：{{potions}}",
+      "combat": "战斗",
+      "unavailableCombat": "战斗（幕层信息不可用）"
+    },
+    "site": {
+      "Map": "地图",
+      "CardReward": "卡牌奖励",
+      "Neow": "涅奥",
+      "Event": "事件",
+      "Shop": "商店",
+      "Campfire": "营火",
+      "BossRelic": "Boss 遗物",
+      "Reward": "奖励",
+      "RunChoice": "选牌",
+      "Treasure": "宝箱",
+      "RunTransition": "跨幕"
+    }
   }
 }

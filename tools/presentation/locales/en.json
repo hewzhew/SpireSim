@@ -5530,5 +5530,39 @@
         "about": "Export the current head's active recovery path to fresh artifacts"
       }
     }
+  },
+  "compact": {
+    "none": "none",
+    "returns": {
+      "scratchRequired": "floor return points and marks require a scratch session",
+      "marksScratchRequired": "marks require a scratch session",
+      "floors": "Retained floors (back floor <number>): {{floors}}\n",
+      "recent": "Recent return points (back <steps>; up to 12):\n",
+      "retention": "Each retained floor is its completed Map or first decision when no Map exists, not every earlier action. Save the current exact position with mark <name> BEFORE rewinding. Rewinding replaces the active branch and discards unmarked later floors; a named mark preserves its own floor return points. Do not guess node or revision IDs.\n",
+      "noMarks": "Named return points: none.\n",
+      "marks": "Named return points (back mark <name>; facts saved at each point):\n",
+      "savedFacts": "These are saved branch facts. Read the restored game for its full inventory and current choices.\n",
+      "saved": "Saved mark: {{name}}",
+      "dropped": "Dropped mark: {{name}}"
+    },
+    "position": {
+      "location": "Act {{act}} F{{floor}} | {{site}}",
+      "resources": "{{location}} | HP {{hp}}/{{maxHp}} | Gold {{gold}} | Potions: {{potions}}",
+      "combat": "Combat",
+      "unavailableCombat": "Combat (run context unavailable)"
+    },
+    "site": {
+      "Map": "Map",
+      "CardReward": "CardReward",
+      "Neow": "Neow",
+      "Event": "Event",
+      "Shop": "Shop",
+      "Campfire": "Campfire",
+      "BossRelic": "BossRelic",
+      "Reward": "Reward",
+      "RunChoice": "RunChoice",
+      "Treasure": "Treasure",
+      "RunTransition": "RunTransition"
+    }
   }
 }

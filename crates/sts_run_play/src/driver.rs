@@ -6782,7 +6782,8 @@ mod tests {
         assert_eq!(recent.len(), 12);
         assert_eq!(recent.first().unwrap().head_revision, 15);
         assert_eq!(recent.last().unwrap().head_revision, 4);
-        let targets = crate::compact::render_back_targets_v1(&paths).unwrap();
+        let targets =
+            crate::compact::render_back_targets_v1(&paths, sts_presentation::Locale::En).unwrap();
         assert!(targets.contains("  back 12 |"));
         assert!(!targets.contains("  back 13 |"));
         assert_eq!(paths.load_head().unwrap(), head);
@@ -7048,7 +7049,7 @@ mod tests {
         ));
         let checkpoint_bytes = fs::read(&checkpoint).unwrap();
         fs::write(&checkpoint, b"not a decodable checkpoint").unwrap();
-        let targets = crate::compact::render_back_targets_v1(&paths);
+        let targets = crate::compact::render_back_targets_v1(&paths, sts_presentation::Locale::En);
         fs::write(&checkpoint, checkpoint_bytes).unwrap();
         let targets = targets.unwrap();
         assert!(targets.contains("Retained floors (back floor <number>): 0, 1"));
