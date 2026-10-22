@@ -362,7 +362,7 @@ export async function controlPlayer({ repository, session, parameters = [], bina
   let args = parameters.slice(1);
   if (operation === 'inspect') {
     const options = parseInspectionArgs(args);
-    const inspected = await inspectPlayer({ repository, session, binding: await readPlayerBinding(session, locale), options });
+    const inspected = await inspectPlayer({ repository, session, binding: await readPlayerBinding(session, locale), options, locale });
     display(inspected.text);
     return { outcome: 'inspected', report: inspected.report };
   }

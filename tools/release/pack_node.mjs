@@ -147,6 +147,7 @@ if (process.argv.slice(2).join(' ') === '--check') {
           const { shopInstructions, renderShopBudget } = await import(pathToFileURL(join(installed, 'shop.mjs')).href);
           const { playedCardLifecycle, strengthTiming } = await import(pathToFileURL(join(installed, 'deck.mjs')).href);
           const { playerPauseText } = await import(pathToFileURL(join(installed, 'supervision.mjs')).href);
+          const { renderInspection } = await import(pathToFileURL(join(installed, 'inspection.mjs')).href);
           for (const locale of ['en', 'zh-CN']) {
             const manual = nativeGuide(true, locale), assisted = nativeGuide(false, locale);
             if (!manual.includes(locale === 'en' ? 'public-information manual play' : '依据公开信息手动出牌')
@@ -178,6 +179,11 @@ if (process.argv.slice(2).join(' ') === '--check') {
                 || !paused.includes('buy:Inflame#0') || !paused.includes('Opaque {{reason}}')) {
               throw new Error(`Installed supervision lost language or recorded content: ${locale}`);
             }
+            const inspected = renderInspection({ directory: 'offline-check', manifest: { id: 'offline-player' }, steps: [], scope: 'noRecordedTurn' }, { locale });
+            if (!inspected.includes(locale === 'en' ? 'No recorded model turn in this run.' : '此运行没有已记录的模型轮次。')
+                || !inspected.includes('player inspect N input')) {
+              throw new Error(`Installed inspection lost language or command: ${locale}`);
+            }
             const preparation = preparationInstructions(locale), card = cardChoiceInstructions(locale), shop = shopInstructions(locale);
             if (!preparationStageGuide('pending', undefined, {}, undefined, locale).includes(locale === 'en' ? 'Current task: rate' : '当前任务：评估')
                 || !preparation.text('eventCombatEntry').includes(locale === 'en' ? 'received after victory' : '在获胜后取得')
@@ -192,7 +198,7 @@ if (process.argv.slice(2).join(' ') === '--check') {
                 || !renderShopBudget({ gold: 40, starts: [] }, undefined, locale).includes(locale === 'en' ? 'Shop budget: Gold 40' : '商店预算：金币 40')) {
               throw new Error(`Installed preparation guide lost language or protocol: ${locale}`);
             }
-            report.installed_scripted_checks.push({ package: manifest.name, locale, imported_entries: true, preserved_guide_commands_and_operator: true, runtime_control_messages: true, launcher_operator_locale_independent: true, supervision_record_content_preserved: true, preparation_guides_and_schemas: true, deck_mechanism_messages: true, card_choice_messages: true, shop_messages: true, preparation_card_conditions: true, preparation_resource_conditions: true, preparation_classification_messages: true });
+            report.installed_scripted_checks.push({ package: manifest.name, locale, imported_entries: true, preserved_guide_commands_and_operator: true, runtime_control_messages: true, launcher_operator_locale_independent: true, supervision_record_content_preserved: true, inspection_typed_scope_messages: true, preparation_guides_and_schemas: true, deck_mechanism_messages: true, card_choice_messages: true, shop_messages: true, preparation_card_conditions: true, preparation_resource_conditions: true, preparation_classification_messages: true });
           }
         }
       }

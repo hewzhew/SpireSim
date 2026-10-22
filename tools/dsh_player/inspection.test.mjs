@@ -144,6 +144,18 @@ test('historical requests exactly match SDK dispatch across retry and later cont
   assert.match(text, /same as first supplied source/);
   assert.match(renderInspection(report, { step: 2, attempt: 2, input: true }), /Earlier guide/);
   assert.match(renderInspection(report, { step: 2 }), /Uncommitted failed output\./);
+  const chinese = inspectJournal(log, { directory: f.output, manifest: f.manifest, result: f.result,
+    finalObservation: f.finalObservation }, boundaries, 'zh-CN');
+  assert.deepEqual(chinese, report, 'inspection language does not change the structured report or original requests');
+  const chineseText = renderInspection(chinese, { locale: 'zh-CN' });
+  assert.match(chineseText, /^玩家 player-inspection/);
+  assert.match(chineseText, /已记录的运行事件范围/);
+  assert.match(chineseText, /所供读数：\nAct 1 F6/);
+  assert.match(chineseText, /与首次所供来源相同/);
+  assert.ok(chineseText.includes('Earlier operator task.'));
+  assert.match(renderInspection(chinese, { step: 2, locale: 'zh-CN' }), /Uncommitted failed output\./);
+  const rawInput = renderInspection(chinese, { step: 1, input: true, locale: 'zh-CN' });
+  assert.deepEqual(JSON.parse(rawInput.slice(rawInput.indexOf('\n{') + 1)), f.firstRequests[0]);
   const localized = structuredClone(report);
   for (const item of localized.steps) for (const entry of item.requests) {
     const checkpoint = entry.request?.messages.find(message => message.source?.kind === 'sts-decision');
@@ -165,12 +177,16 @@ test('inspection uses a read handle, scopes the selected run, and never connects
   const f = await fixture(t);
   const journalPath = await f.ctx.sessionPersistence.resolveCurrentLog(SessionId(f.id));
   const before = await readFile(journalPath);
-  const inspected = await controlPlayer({ repository: f.repository, session: f.session, parameters: ['inspect', '1'] }, () => {}, {
-    openWorkbench() { assert.fail('inspection must not open Rust'); }, startPlayer() { assert.fail('inspection must not call a model'); },
-  });
-  assert.equal(inspected.outcome, 'inspected');
-  assert.equal(inspected.report.steps.length, 3, 'later conversation turns are outside the selected run');
-  assert.deepEqual(await readFile(journalPath), before);
+  for (const locale of ['en', 'zh-CN']) {
+    const output = [];
+    const inspected = await controlPlayer({ repository: f.repository, session: f.session, parameters: ['inspect', '1'], locale }, text => output.push(text), {
+      openWorkbench() { assert.fail('inspection must not open Rust'); }, startPlayer() { assert.fail('inspection must not call a model'); },
+    });
+    assert.equal(inspected.outcome, 'inspected');
+    assert.equal(inspected.report.steps.length, 3, 'later conversation turns are outside the selected run');
+    assert.match(output.join('\n'), locale === 'en' ? /^Player / : /^玩家 /);
+    assert.deepEqual(await readFile(journalPath), before);
+  }
   assert.deepEqual(f.executed, ['read', 'options', 'proceed']);
 });
 
@@ -186,6 +202,9 @@ test('missing or damaged dispatch evidence stays explicit and old journals are n
   const corrupted = inspectJournal(log, run, rows);
   assert.equal(corrupted.steps[0].requests[0].precision, 'unavailable');
   assert.match(renderInspection(corrupted), /hash does not match/);
+  const chineseCorrupted = inspectJournal(log, run, rows, 'zh-CN');
+  assert.equal(chineseCorrupted.steps[0].requests[0].precision, 'unavailable');
+  assert.match(renderInspection(chineseCorrupted, { locale: 'zh-CN' }), /请求摘要与已保存的派发记录不匹配/);
   delete rows[0].requestHash;
   assert.equal(inspectJournal(log, run, rows).steps[0].requests[0].precision, 'unavailable');
   rows[0].throughSeq = log.events.length + 1;
@@ -213,6 +232,13 @@ test('missing or damaged dispatch evidence stays explicit and old journals are n
   assert.equal(failedStep.calls[0].result, undefined);
   assert.equal(failedStep.calls[1].started, true);
   assert.ok(failedStep.calls[1].result);
+});
+
+test('inspection scope remains typed when there is no recorded turn', () => {
+  const report = inspectJournal({ events: [] }, { directory: 'empty-run', manifest: { id: 'empty-player' } }, []);
+  assert.equal(report.scope, 'noRecordedTurn');
+  assert.match(renderInspection(report), /No recorded model turn/);
+  assert.match(renderInspection(report, { locale: 'zh-CN' }), /没有已记录的模型轮次/);
 });
 
 test('inspection rejects invalid selectors and foreign run identities', async t => {

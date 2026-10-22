@@ -3,6 +3,7 @@
 import { appendFile, readFile, readdir } from 'node:fs/promises';
 import { basename, join, resolve } from 'node:path';
 import { createHash } from 'node:crypto';
+import { createPresentation } from '@sts-simulator/presentation';
 import { Context } from '@deepseek-ai/cordis';
 import { Session, SessionId } from '@deepseek-ai/dsh-session';
 import { isAgentLoopRequest, assembleAssistantStream, assistantStreamChunks } from '@deepseek-ai/dsh-llm';
@@ -10,6 +11,10 @@ import * as SessionPersistence from '@deepseek-ai/dsh-session-persistence-jsonl'
 import { gameContextSource, sameGameContextSource, sameGameDecisionTask } from './context.mjs';
 
 const usage = 'player inspect [STEP[.ATTEMPT] [input]] [--run RUN_DIRECTORY_NAME]';
+function inspectionText(locale, key, parameters = {}) {
+  return createPresentation({ locale }).text(`scripted:inspection.${key}`,
+    Object.fromEntries(Object.entries(parameters).map(([name, value]) => [name, String(value)])));
+}
 const textOf = message => (message?.content ?? []).filter(block => block.type === 'text').map(block => block.text).join('\n');
 const jsonRequest = ({ signal, ...request }) => JSON.parse(JSON.stringify(request));
 const stable = value => Array.isArray(value) ? value.map(stable)
@@ -46,14 +51,14 @@ export function parseInspectionArgs(args) {
   return options;
 }
 
-export function journalRequest({ events, meta, inheritedEventCount = 0 }, throughSeq) {
+export function journalRequest({ events, meta, inheritedEventCount = 0 }, throughSeq, locale = 'en') {
   if (!Number.isSafeInteger(throughSeq) || throughSeq < 0 || throughSeq >= events.length) {
-    throw new Error('The recorded request boundary is not yet available in the journal.');
+    throw new Error(inspectionText(locale, 'boundaryUnavailable'));
   }
   const session = Session.fromRestore(SessionId(meta.id), events.slice(0, throughSeq + 1), meta,
     Math.min(inheritedEventCount, throughSeq + 1), 'shared-frozen');
   const header = session.requestHeader();
-  if (!header) throw new Error('This journal prefix has no recorded request header.');
+  if (!header) throw new Error(inspectionText(locale, 'headerUnavailable'));
   return jsonRequest({ ...header.config, messages: session.deriveMessages(), toolHistory: session.toolHistory(),
     ...(header.tools ? { tools: header.tools } : {}), sessionId: meta.id });
 }
@@ -91,9 +96,9 @@ export function recordPlayerRequests(ctx, { id, session, output }) {
     JSON.stringify({ schema: 'sts-player-request-boundary-v1', ...boundary }) + '\n') });
 }
 
-export function requestFromBoundary(log, boundary) {
-  const request = boundary.snapshot ?? journalRequest(log, boundary.throughSeq);
-  if (digest(request) !== boundary.requestHash) throw new Error('Captured request does not match its recorded input digest.');
+export function requestFromBoundary(log, boundary, locale = 'en') {
+  const request = boundary.snapshot ?? journalRequest(log, boundary.throughSeq, locale);
+  if (digest(request) !== boundary.requestHash) throw new Error(inspectionText(locale, 'digestMismatch'));
   return request;
 }
 
@@ -116,8 +121,8 @@ export async function readPlayerJournal(home, id, { compression = 'none' } = {})
   }
 }
 
-async function findRun(binding, repository, session, name) {
-  if (!binding?.id || !binding.home) throw new Error('No recorded player is bound to this game.');
+async function findRun(binding, repository, session, name, locale = 'en') {
+  if (!binding?.id || !binding.home) throw new Error(inspectionText(locale, 'noBoundPlayer'));
   const root = join(binding.home, 'runs');
   const timestamp = name => Number(name.slice(binding.id.length + 1).split('-')[0]);
   let candidates;
@@ -126,14 +131,14 @@ async function findRun(binding, repository, session, name) {
     .sort((a, b) => timestamp(b) - timestamp(a) || b.localeCompare(a));
   const selected = name ?? (binding.lastRun ? basename(binding.lastRun) : (await listRuns())[0]);
   if (!selected || !selected.startsWith(`${binding.id}-`) || !Number.isSafeInteger(timestamp(selected))) {
-    throw new Error('No matching player run. Use an exact directory name from this player.');
+    throw new Error(inspectionText(locale, 'noMatchingRun'));
   }
   const directory = join(root, selected);
   const manifest = await optionalJson(join(directory, 'manifest.json'));
   if (!manifest || manifest.id !== binding.id || typeof manifest.session !== 'string' || typeof manifest.repository !== 'string'
       || resolve(manifest.session).toLowerCase() !== resolve(session).toLowerCase()
       || resolve(manifest.repository).toLowerCase() !== resolve(repository).toLowerCase()) {
-    throw new Error('The selected run does not belong to this player, repository and game.');
+    throw new Error(inspectionText(locale, 'foreignRun'));
   }
   const nextTime = manifest.eventStart === undefined
     ? (await listRuns()).map(timestamp).filter(time => time > timestamp(selected)).sort((a, b) => a - b)[0] ?? Infinity : Infinity;
@@ -142,7 +147,7 @@ async function findRun(binding, repository, session, name) {
     finalObservation: await optionalJson(join(directory, 'final-observation.json')) };
 }
 
-async function readBoundaries(directory) {
+async function readBoundaries(directory, locale = 'en') {
   let text;
   try { text = await readFile(join(directory, 'requests.jsonl'), 'utf8'); }
   catch (error) { if (error.code === 'ENOENT') return null; throw error; }
@@ -152,19 +157,19 @@ async function readBoundaries(directory) {
   lines.pop();
   return lines.filter(Boolean).map(line => {
     const row = JSON.parse(line);
-    if (row.schema !== 'sts-player-request-boundary-v1') throw new Error('Unsupported request boundary record.');
+    if (row.schema !== 'sts-player-request-boundary-v1') throw new Error(inspectionText(locale, 'unsupportedBoundary'));
     return row;
   });
 }
 
-export function inspectJournal(log, run, boundaries) {
+export function inspectJournal(log, run, boundaries, locale = 'en') {
   const { events } = log;
   const start = run.manifest.eventStart ?? events.find(event => event.type === 'turn/start'
     && event.time >= run.createdAt && event.time < run.nextTime)?.seq;
-  if (start === undefined) return { ...run, steps: [], scope: 'No recorded model turn in this run.' };
+  if (start === undefined) return { ...run, steps: [], scope: 'noRecordedTurn' };
   const end = run.result?.eventEnd ?? events.find(event => event.seq >= start && event.time >= run.nextTime)?.seq ?? events.length;
   if (!Number.isSafeInteger(start) || start < 0 || !Number.isSafeInteger(end) || end < start || end > events.length) {
-    throw new Error('Invalid or unavailable run event range.');
+    throw new Error(inspectionText(locale, 'invalidRunRange'));
   }
   const owned = events.slice(start, end);
   const starts = owned.filter(event => event.type === 'step/start');
@@ -178,14 +183,14 @@ export function inspectJournal(log, run, boundaries) {
     const requests = references.map(reference => {
       try {
         if (!Number.isSafeInteger(reference.throughSeq) || reference.throughSeq < event.seq || reference.throughSeq >= stop) {
-          throw new Error('Request boundary lies outside this step.');
+          throw new Error(inspectionText(locale, 'boundaryOutsideStep'));
         }
         if (!reference.legacy && (!Number.isSafeInteger(reference.attempt) || reference.attempt < 1
             || typeof reference.requestHash !== 'string' || !/^[0-9a-f]{64}$/.test(reference.requestHash))) {
-          throw new Error('Request boundary has no valid attempt and verification hash.');
+          throw new Error(inspectionText(locale, 'invalidAttemptHash'));
         }
-        const request = reference.snapshot ?? journalRequest(log, reference.throughSeq);
-        if (reference.requestHash && digest(request) !== reference.requestHash) throw new Error('Request hash does not match the saved dispatch.');
+        const request = reference.snapshot ?? journalRequest(log, reference.throughSeq, locale);
+        if (reference.requestHash && digest(request) !== reference.requestHash) throw new Error(inspectionText(locale, 'dispatchHashMismatch'));
         const checkpointSource = requestReading(request)?.source;
         const queryRefs = checkpointSource?.queryRefs;
         const refreshedQueries = (Array.isArray(queryRefs) ? queryRefs : []).flatMap(seq => {
@@ -208,40 +213,40 @@ export function inspectJournal(log, run, boundaries) {
     for (const [id, call] of begun) if (!declared.some(block => block.committed && block.id === id)) calls.push({ ...call, started: true, result: results.get(id)?.data.message });
     return { number: index + 1, ...event.data, requests, calls, settlements };
   });
-  return { ...run, steps, scope: run.manifest.eventStart === undefined ? 'Run range selected by recorded event times (older run).' : 'Recorded run event range.' };
+  return { ...run, steps, scope: run.manifest.eventStart === undefined ? 'timeRange' : 'eventRange' };
 }
 
-function brief(text, limit = 8) {
+function brief(text, limit = 8, locale = 'en') {
   const lines = text.trim().split('\n');
-  return lines.length > limit ? `${lines.slice(0, limit).join('\n')}\n[${lines.length - limit} more lines; select this step for complete output]` : text.trim();
+  return lines.length > limit ? inspectionText(locale, 'moreLines', { text: lines.slice(0, limit).join('\n'), count: lines.length - limit }) : text.trim();
 }
 
 function requestReading(request) {
   return request?.messages.filter(message => message.source?.kind === 'sts-decision').at(-1);
 }
 
-function sourceLabel(source) {
-  return source ? `${source.session_id} h${source.head_revision} / state ${source.state_revision}` : 'unavailable';
+function sourceLabel(source, locale = 'en') {
+  return source ? inspectionText(locale, 'sourceLabel', { session: source.session_id, head: source.head_revision, state: source.state_revision }) : inspectionText(locale, 'unavailable');
 }
 
-function recordedState(observation) {
-  if (!observation) return 'Final game observation unavailable.';
+function recordedState(observation, locale = 'en') {
+  if (!observation) return inspectionText(locale, 'finalObservationUnavailable');
   const position = observation.position;
-  if (position.kind === 'terminal') return `Terminal: ${JSON.stringify(position.outcome)}`;
+  if (position.kind === 'terminal') return inspectionText(locale, 'terminal', { outcome: JSON.stringify(position.outcome) });
   const visible = position.observation;
   const state = visible.observation;
   const run = visible.domain === 'strategic' ? state.run : visible.run_context;
   const hp = visible.domain === 'strategic' ? run.current_hp : state.player.hp;
   const max = visible.domain === 'strategic' ? run.max_hp : state.player.max_hp;
   const gold = visible.domain === 'strategic' ? run.gold : state.player.gold;
-  return `Act ${run.act} F${run.floor} | HP ${hp}/${max} | Gold ${gold} | ${visible.domain === 'combat' ? 'combat' : state.context.kind}`;
+  return inspectionText(locale, 'recordedState', { act: run.act, floor: run.floor, hp: hp, maxHp: max, gold: gold, context: visible.domain === 'combat' ? 'combat' : state.context.kind });
 }
 
-export function renderInspection(report, { step, attempt, input } = {}) {
+export function renderInspection(report, { step, attempt, input, locale = 'en' } = {}) {
   const selected = step === undefined ? report.steps : report.steps.filter(item => item.number === step);
-  if (step !== undefined && !selected.length) throw new Error(`No step ${step} in this run.`);
-  const lines = [`Player ${report.manifest.id}`, `Run ${basename(report.directory)}\nRecorded outcome: ${report.result?.outcome ?? 'Running or incomplete'} | ${report.steps.length} recorded steps`, report.scope];
-  if (input) lines.push('dsh SDK input before adapter projection; this view does not contain the provider HTTP payload.');
+  if (step !== undefined && !selected.length) throw new Error(inspectionText(locale, 'stepUnavailable', { step: step }));
+  const lines = [inspectionText(locale, 'player', { id: report.manifest.id }), inspectionText(locale, 'run', { directory: basename(report.directory), outcome: report.result?.outcome ?? inspectionText(locale, 'runningIncomplete'), steps: report.steps.length }), inspectionText(locale, report.scope)];
+  if (input) lines.push(inspectionText(locale, 'sdkInput'));
   const seen = new Map();
   const showChanged = (key, value, label) => {
     const signature = JSON.stringify(value);
@@ -251,70 +256,70 @@ export function renderInspection(report, { step, attempt, input } = {}) {
     return true;
   };
   for (const item of selected) {
-    lines.push('', `Step ${item.number} (turn ${item.turn}, dsh step ${item.step})`);
+    lines.push('', inspectionText(locale, 'step', { number: item.number, turn: item.turn, step: item.step }));
     const requests = attempt === undefined ? item.requests : item.requests.filter(request => request.attempt === attempt);
-    if (attempt !== undefined && !requests.length) throw new Error(`No attempt ${attempt} in step ${item.number}.`);
-    if (!requests.length) lines.push('No dispatched request recorded for this step.');
+    if (attempt !== undefined && !requests.length) throw new Error(inspectionText(locale, 'attemptUnavailable', { attempt: attempt, step: item.number }));
+    if (!requests.length) lines.push(inspectionText(locale, 'noDispatchedRequest'));
     for (const entry of requests) {
-      lines.push(`Request ${entry.attempt}: ${entry.precision}`);
-      if (entry.legacy) lines.push('Reconstructed from journal before response settlement; the dispatch boundary was not recorded.');
-      if (entry.error) { lines.push(`Input unavailable: ${entry.error}`); continue; }
+      lines.push(inspectionText(locale, 'request', { attempt: entry.attempt, precision: entry.precision }));
+      if (entry.legacy) lines.push(inspectionText(locale, 'legacyRequest'));
+      if (entry.error) { lines.push(inspectionText(locale, 'inputUnavailable', { error: entry.error })); continue; }
       if (input) { lines.push(JSON.stringify(entry.request, null, 2)); continue; }
       const checkpoint = requestReading(entry.request);
       const model = [entry.request.provider, entry.request.model, entry.request.reasoningEffort, entry.request.maxTokens];
-      showChanged('model', model, `Model: ${model[0]}/${model[1]} | reasoning ${model[2] ?? 'default'} | max tokens ${model[3] ?? 'default'}`);
+      showChanged('model', model, inspectionText(locale, 'model', { provider: model[0], model: model[1], reasoning: model[2] ?? inspectionText(locale, 'default'), maxTokens: model[3] ?? inspectionText(locale, 'default') }));
       const system = entry.request.messages.filter(message => message.role === 'system').map(message => message.content);
-      showChanged('system', system, `System prompt: ${Buffer.byteLength(JSON.stringify(system))} JSON bytes (expand input for full text)`);
+      showChanged('system', system, inspectionText(locale, 'system', { bytes: Buffer.byteLength(JSON.stringify(system)) }));
       const task = entry.request.messages.filter(message => message.source?.kind === 'user').at(-1);
       if (task && showChanged('task', task.content)) {
         const taskText = textOf(task);
-        lines.push(`Task: ${step === undefined && taskText.length > 240 ? `${taskText.slice(0, 240)} [task continues; expand input]` : taskText}`);
+        lines.push(inspectionText(locale, 'task', { text: step === undefined && taskText.length > 240 ? inspectionText(locale, 'taskContinues', { text: taskText.slice(0, 240) }) : taskText }));
       }
-      showChanged('tools', entry.request.tools, `Tools: ${(entry.request.tools ?? []).map(tool => tool.name).join(', ')}`);
+      showChanged('tools', entry.request.tools, inspectionText(locale, 'tools', { names: (entry.request.tools ?? []).map(tool => tool.name).join(', ') }));
       if (checkpoint) {
         const checkpointText = textOf(checkpoint);
         if (showChanged('reading', [checkpoint.source?.gameSource, checkpoint.content])) {
-          lines.push(`Source supplied: ${sourceLabel(checkpoint.source?.gameSource)}`);
-          if (entry.refreshedQueries?.length) lines.push('Refreshed prior queries:', ...entry.refreshedQueries.map(command => `  ${command}`));
+          lines.push(inspectionText(locale, 'sourceSupplied', { source: sourceLabel(checkpoint.source?.gameSource, locale) }));
+          if (entry.refreshedQueries?.length) lines.push(inspectionText(locale, 'refreshedQueries'), ...entry.refreshedQueries.map(command => `  ${command}`));
           const range = checkpoint.source?.readingRange;
           if (range && (!Number.isSafeInteger(range.start) || !Number.isSafeInteger(range.end)
               || range.start < 0 || range.end <= range.start || range.end > checkpointText.length)) {
-            throw new Error('Recorded checkpoint reading range is invalid');
+            throw new Error(inspectionText(locale, 'invalidReadingRange'));
           }
           const reading = range ? checkpointText.slice(range.start, range.end) : checkpointText;
-          lines.push(`Supplied reading:\n${brief(reading, step === undefined ? 10 : Infinity)}`);
-        } else lines.push('Same supplied checkpoint; expand input for this request\'s complete history.');
+          lines.push(inspectionText(locale, 'suppliedReading', { text: brief(reading, step === undefined ? 10 : Infinity, locale) }));
+        } else lines.push(inspectionText(locale, 'sameCheckpoint'));
       }
     }
     if (input) continue;
     if (step !== undefined) for (const settlement of item.settlements) {
       const blocks = settlementBlocks(settlement);
-      lines.push('Model output:', ...blocks.filter(block => ['text', 'reasoning'].includes(block.type)).map(block => `${block.type}: ${block.text}`));
-      if (settlement.type === 'assistant/attempt') lines.push('Unsettled/failed stream; no assistant message committed.');
+      lines.push(inspectionText(locale, 'modelOutput'), ...blocks.filter(block => ['text', 'reasoning'].includes(block.type)).map(block => `${block.type}: ${block.text}`));
+      if (settlement.type === 'assistant/attempt') lines.push(inspectionText(locale, 'uncommittedStream'));
     }
     for (const call of item.calls) {
       let args;
       try { args = typeof call.arguments === 'string' ? JSON.parse(call.arguments) : call.arguments; } catch { args = null; }
-      lines.push(`${call.name}${args?.command ? ` ${args.command}` : ` ${call.arguments}`}${call.started ? '' : ' (not started)'}`);
-      lines.push(call.result ? `${call.result.isError ? 'Error' : 'Returned'}:\n${brief(textOf(call.result), step === undefined ? 8 : Infinity)}` : 'No tool result recorded; execution is unconfirmed.');
+      lines.push(`${call.name}${args?.command ? ` ${args.command}` : ` ${call.arguments}`}${call.started ? '' : inspectionText(locale, 'notStarted')}`);
+      lines.push(call.result ? `${inspectionText(locale, call.result.isError ? 'toolError' : 'returned')}:\n${brief(textOf(call.result), step === undefined ? 8 : Infinity, locale)}` : inspectionText(locale, 'noToolResult'));
     }
   }
   if (!input) {
-    lines.push('', `Recorded end: ${recordedState(report.finalObservation)}`);
+    lines.push('', inspectionText(locale, 'recordedEnd', { state: recordedState(report.finalObservation, locale) }));
     if (report.finalObservation) {
       const finalSource = gameContextSource(report.finalObservation);
       const first = report.steps[0]?.requests[0]?.request;
       const initialSource = requestReading(first)?.source?.gameSource;
-      lines.push(`Final source: ${sourceLabel(finalSource)}${initialSource ? ` (${sameGameContextSource(initialSource, finalSource) ? 'same as first supplied source' : 'changed since first supplied source'})` : ''}`);
+      lines.push(inspectionText(locale, 'finalSource', { source: sourceLabel(finalSource, locale), changeSuffix: initialSource ? ` (${sameGameContextSource(initialSource, finalSource) ? inspectionText(locale, 'sameSource') : inspectionText(locale, 'changedSource')})` : '' }));
     }
-    lines.push('Full step: player inspect N | full dsh SDK input: player inspect N input');
+    lines.push(inspectionText(locale, 'expandHelp'));
   }
   return lines.join('\n') + '\n';
 }
 
-export async function inspectPlayer({ repository, session, binding, options = {} }) {
-  const run = await findRun(binding, repository, session, options.run);
-  const [log, boundaries] = await Promise.all([readPlayerJournal(binding.home, binding.id), readBoundaries(run.directory)]);
-  const report = inspectJournal(log, run, boundaries);
-  return { report, text: renderInspection(report, options) };
+export async function inspectPlayer({ repository, session, binding, options = {}, locale = 'en' }) {
+  const run = await findRun(binding, repository, session, options.run, locale);
+  const [log, boundaries] = await Promise.all([readPlayerJournal(binding.home, binding.id), readBoundaries(run.directory, locale)]);
+  const report = inspectJournal(log, run, boundaries, locale);
+  return { report, text: renderInspection(report, { ...options, locale }) };
 }
