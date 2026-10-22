@@ -3294,6 +3294,21 @@
       "foreignSelectionMember": "所选成员属于另一个读数",
       "duplicateSelectionMember": "选择中含有重复成员",
       "selectionCountOutOfBounds": "选择数量超出允许范围"
+    },
+    "web": {
+      "usage": "用法：dsh.ps1 [start|restart|status] [-Locale en|zh-CN] [-Help]\nnode tools/dsh_player/web.mjs [start|restart|status] [--locale en|zh-CN] [--help]",
+      "unsupportedLocale": "不支持此文本语言；请使用 en 或 zh-CN",
+      "configRequired": "dsh-web.json 需要 home、cli 和有效的 port。",
+      "invalidHotReload": "hotReload 必须为 true 或 false。",
+      "configureFirst": "先在 .oracle-lab/dsh-web.json 配置本机 dsh 的 home、cli 和 port。",
+      "foreignPort": "{{port}} 端口被其他程序占用，未停止它。",
+      "running": "dsh 正在运行（PID {{pid}}）\n{{entry}}",
+      "notRunning": "dsh 未运行。",
+      "alreadyRunning": "dsh 已在运行\n{{entry}}",
+      "stillRunning": "旧服务还未退出，没有启动第二个服务。",
+      "started": "dsh 已启动。打开下面的地址，新建聊天即可试跑：\n{{address}}",
+      "startupExited": "dsh 启动时退出。请查看 {{log}}",
+      "startupTimeout": "服务尚未报告启动完成。请查看 {{log}}"
     }
   },
   "event": {

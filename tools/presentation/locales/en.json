@@ -3294,6 +3294,21 @@
       "foreignSelectionMember": "Selection member belongs to another reading",
       "duplicateSelectionMember": "Selection contains a duplicate member",
       "selectionCountOutOfBounds": "Selection count outside its bounds"
+    },
+    "web": {
+      "usage": "Usage: dsh.ps1 [start|restart|status] [-Locale en|zh-CN] [-Help]\nnode tools/dsh_player/web.mjs [start|restart|status] [--locale en|zh-CN] [--help]",
+      "unsupportedLocale": "Unsupported text locale; use en or zh-CN",
+      "configRequired": "dsh-web.json requires home, cli and a valid port.",
+      "invalidHotReload": "hotReload must be true or false.",
+      "configureFirst": "Configure home, cli and port in .oracle-lab/dsh-web.json first.",
+      "foreignPort": "Port {{port}} is owned by another program; that process was left running.",
+      "running": "dsh is running (PID {{pid}})\n{{entry}}",
+      "notRunning": "dsh is not running.",
+      "alreadyRunning": "dsh is already running\n{{entry}}",
+      "stillRunning": "The previous service has not exited; a second service was not started.",
+      "started": "dsh started. Open the address below and create a new chat:\n{{address}}",
+      "startupExited": "dsh exited during startup. See {{log}}",
+      "startupTimeout": "The service has not reported a completed startup. See {{log}}"
     }
   },
   "event": {

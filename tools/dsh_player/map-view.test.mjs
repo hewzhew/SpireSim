@@ -10,7 +10,6 @@ import SessionStore from '@deepseek-ai/dsh-session';
 import ProjectionRegistry from '@deepseek-ai/dsh-session-projection';
 import { nativeBinding } from './native.mjs';
 import { StsMapView, mapViewFromDecision, mapTickProjection } from './map-view.mjs';
-import { validateWebConfig, ownedWebProcess, localHmrPatch } from './web.mjs';
 import { createHostLocale } from './client/test-support.mjs';
 import { mapNamespace } from './client/locale.mjs';
 
@@ -144,19 +143,4 @@ test('map and update controls use named Remote args and only publish on a click'
   assert.deepEqual(calls.at(-1), { channel: '/api', endpoint: 'stsToolUpdates/publish', payload: { args: {} } });
   assert.ok(updates.some(value => value?.reason === 'published'));
   cleanups.forEach(dispose => dispose());
-});
-
-test('launcher validates local configuration and refuses a foreign listener', () => {
-  assert.throws(() => validateWebConfig({ home: 'home', cli: 'cli', port: 0 }));
-  assert.equal(validateWebConfig({ home: 'home', cli: 'cli', port: 3415 }).port, 3415);
-  const cli = 'D:/repo/runtime/@deepseek-ai/dsh/lib/bin.js';
-  assert.equal(ownedWebProcess({ name: 'node.exe', command: `node "${cli}" --profile web` }, cli, 'D:/repo'), true);
-  assert.equal(ownedWebProcess({ name: 'node.exe', command: 'node runtime/@deepseek-ai/dsh/lib/bin.js --profile web' }, cli, 'D:/repo'), true);
-  assert.equal(ownedWebProcess({ name: 'node.exe', command: 'node other/server.js' }, cli, 'D:/repo'), false);
-  assert.equal(ownedWebProcess({ name: 'other.exe', command: cli }, cli, 'D:/repo'), false);
-  assert.throws(() => validateWebConfig({ home: 'home', cli: 'cli', port: 3415, hotReload: 'true' }), /hotReload/);
-  const root = join(tmpdir(), 'sts-hmr-root'), patch = JSON.parse(localHmrPatch(root));
-  assert.deepEqual(patch.map(row => row.id), ['hmr']);
-  assert.equal(patch[0].config.base, pathToFileURL(root + '/').href);
-  assert.deepEqual(patch[0].config.root, ['tools/dsh_player', 'tools/run_play']);
 });

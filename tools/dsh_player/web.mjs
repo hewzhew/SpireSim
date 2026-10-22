@@ -3,16 +3,33 @@ import { readFile, writeFile, mkdir, open, realpath } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { execFile, spawn } from 'node:child_process';
-import { promisify } from 'node:util';
+import { promisify, parseArgs } from 'node:util';
+import { createPresentation } from '@sts-simulator/presentation';
 
 const execute = promisify(execFile);
 const repository = fileURLToPath(new URL('../../', import.meta.url));
-export function validateWebConfig(config) {
+function webText(locale, key, parameters) { return createPresentation({ locale }).text(`workbench:web.${key}`, parameters); }
+export function parseWebArguments(args) {
+  const requested = args.find(arg => arg.startsWith('--locale='))?.slice('--locale='.length)
+    ?? (args.includes('--locale') ? args[args.indexOf('--locale') + 1] : 'zh-CN');
+  let parsed;
+  try {
+    parsed = parseArgs({ args, allowPositionals: true, options: {
+      locale: { type: 'string', default: 'zh-CN' }, help: { type: 'boolean', short: 'h' },
+    } });
+  } catch (cause) { throw new Error(webText(requested, 'usage'), { cause }); }
+  const { locale, help = false } = parsed.values;
+  if (!['en', 'zh-CN'].includes(locale)) throw new Error(webText('en', 'unsupportedLocale'));
+  const action = parsed.positionals[0] ?? 'start';
+  if (parsed.positionals.length > 1 || !['start', 'restart', 'status'].includes(action)) throw new Error(webText(locale, 'usage'));
+  return { action, locale, help };
+}
+export function validateWebConfig(config, locale = 'zh-CN') {
   if (typeof config.home !== 'string' || !config.home || typeof config.cli !== 'string' || !config.cli
       || !Number.isSafeInteger(config.port) || config.port < 1 || config.port > 65535) {
-    throw new Error('dsh-web.json 需要 home、cli 和有效的 port。');
+    throw new Error(webText(locale, 'configRequired'));
   }
-  if (config.hotReload !== undefined && typeof config.hotReload !== 'boolean') throw new Error('hotReload 必须为 true 或 false。');
+  if (config.hotReload !== undefined && typeof config.hotReload !== 'boolean') throw new Error(webText(locale, 'invalidHotReload'));
   return config;
 }
 export function localHmrPatch(root) {
@@ -32,29 +49,29 @@ async function currentServer(port) {
   return stdout.trim() ? JSON.parse(stdout) : null;
 }
 async function main() {
-  const action = process.argv[2] ?? 'start';
-  if (process.argv.length > 3 || !['start', 'restart', 'status'].includes(action)) throw new Error('用法：dsh.ps1 [start|restart|status]');
+  const { action, locale, help } = parseWebArguments(process.argv.slice(2));
+  if (help) { console.log(webText(locale, 'usage')); return; }
   const file = join(repository, '.oracle-lab/dsh-web.json');
   let config;
-  try { config = validateWebConfig(JSON.parse(await readFile(file, 'utf8'))); }
+  try { config = validateWebConfig(JSON.parse(await readFile(file, 'utf8')), locale); }
   catch (error) {
-    if (error.code === 'ENOENT') throw new Error('先在 .oracle-lab/dsh-web.json 配置本机 dsh 的 home、cli 和 port。');
+    if (error.code === 'ENOENT') throw new Error(webText(locale, 'configureFirst'));
     throw error;
   }
   const home = await realpath(resolve(repository, config.home)), cli = await realpath(resolve(repository, config.cli));
   const existing = await currentServer(config.port);
-  if (existing && !ownedWebProcess(existing, cli, repository)) throw new Error(`${config.port} 端口被其他程序占用，未停止它。`);
+  if (existing && !ownedWebProcess(existing, cli, repository)) throw new Error(webText(locale, 'foreignPort', { port: config.port }));
   const entry = `http://127.0.0.1:${config.port}/`;
   if (action === 'status') {
-    console.log(existing ? `dsh 正在运行（PID ${existing.pid}）\n${entry}` : 'dsh 未运行。'); return;
+    console.log(existing ? webText(locale, 'running', { pid: existing.pid, entry }) : webText(locale, 'notRunning')); return;
   }
-  if (existing && action === 'start') { console.log(`dsh 已在运行\n${entry}`); return; }
+  if (existing && action === 'start') { console.log(webText(locale, 'alreadyRunning', { entry })); return; }
   if (existing) {
     process.kill(existing.pid);
     for (let attempt = 0; attempt < 20 && await currentServer(config.port); attempt++) {
       await new Promise(resolve => setTimeout(resolve, 100));
     }
-    if (await currentServer(config.port)) throw new Error('旧服务还未退出，没有启动第二个服务。');
+    if (await currentServer(config.port)) throw new Error(webText(locale, 'stillRunning'));
   }
   const directory = join(repository, '.oracle-lab/dsh-web'); await mkdir(directory, { recursive: true });
   const patch = join(directory, 'hmr.patch.yml');
@@ -71,11 +88,11 @@ async function main() {
   for (let attempt = 0; attempt < 120; attempt++) {
     const output = await readFile(log, 'utf8');
     const address = output.match(new RegExp(`http://127\\.0\\.0\\.1:${config.port}/\\?token=[A-Za-z0-9_-]+`))?.[0];
-    if (address) { console.log(`dsh 已启动。打开下面的地址，新建聊天即可试跑：\n${address}`); return; }
-    if (child.exitCode !== null || child.signalCode !== null) throw new Error(`dsh 启动时退出。请查看 ${log}`);
+    if (address) { console.log(webText(locale, 'started', { address })); return; }
+    if (child.exitCode !== null || child.signalCode !== null) throw new Error(webText(locale, 'startupExited', { log }));
     await new Promise(resolve => setTimeout(resolve, 500));
   }
-  throw new Error(`服务尚未报告启动完成。请查看 ${log}`);
+  throw new Error(webText(locale, 'startupTimeout', { log }));
 }
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   main().catch(error => { console.error(error.message); process.exitCode = 1; });
