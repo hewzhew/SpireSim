@@ -74,6 +74,50 @@ test('direct pipes retain source objects, concise views and exact evidence', asy
   assert.equal(wire.trim().split('\n').length, 2);
 });
 
+test('connection language owns client errors while preserving native replies and transport identity', async t => {
+  const rawMessage = 'Native {{receipt}} 原始 🐈';
+  const scripted = `
+  const lines = require('node:readline').createInterface({input:process.stdin});
+  lines.on('line', line => {
+    const r=JSON.parse(line);
+    const response={schema:'sts-run-play-agent-response-v1',request_id:r.request_id,status:'error',
+      error:{code:'native_raw',message:${JSON.stringify(rawMessage)}}};
+    if(r.command==='decision') Object.assign(response,{status:'ok',result:{reading:{view:'Native view {{raw}} 原文\\n',
+      source:{revision:0},options:[],selections:[{label:'native',choice:{ordinal_path:[0]},min:1,max:1,
+      members:[{label:'first',ordinal:1},{label:'second',ordinal:2}]}]}}});
+    process.stdout.write(JSON.stringify(response)+'\\n');
+  });`;
+  for (const locale of ['en', 'zh-CN']) {
+    const {client, root, config} = await fixture(t, 5000, {server:scripted, locale});
+    const chinese = locale === 'zh-CN';
+    assert.equal(await getRunPlay(root, {locale:chinese ? 'en' : 'zh-CN'}), client);
+    await assert.rejects(openRunPlay({...config, recordDirectory:join(root,'duplicate')}),
+      chinese ? /会话已有打开的连接/ : /already has an open connection/);
+    const reading = await client.decision();
+    assert.equal(reading.view, 'Native view {{raw}} 原文\n');
+    const selection = reading.selections[0];
+    const before = (await readdir(join(root,'wire'))).length;
+    await assert.rejects(selection.select([]), chinese ? /选择数量超出/ : /outside its bounds/);
+    await assert.rejects(selection.select([{}, {}]), chinese ? /另一个读数/ : /another reading/);
+    await assert.rejects(selection.select([selection.members[0],selection.members[0]]), chinese ? /重复成员/ : /duplicate member/);
+    await assert.rejects(client.info(''), chinese ? /机制查询/ : /mechanics query/);
+    await assert.rejects(client.research({maxSearchMs:0}), chinese ? /必须在 1..20000/ : /must be in 1..20000/);
+    assert.equal((await readdir(join(root,'wire'))).length, before);
+    await assert.rejects(client.act(['play:Bash']), error => {
+      assert.ok(error instanceof RunPlayCommandError); assert.equal(error.message,rawMessage);
+      assert.equal(error.code,'native_raw'); assert.equal(error.command,'act');
+      assert.equal(error.requestId,'exchange-001'); return true;
+    });
+    const wire = (await readFile(join(root,'wire','exchange-001.jsonl'),'utf8')).trimEnd().split('\n').map(JSON.parse);
+    assert.deepEqual(wire[0],{schema:'sts-run-play-agent-request-v1',request_id:'exchange-001',command:'act',actions:['play:Bash']});
+    assert.equal(wire[1].error.message,rawMessage);
+    const fallback = new RunPlayCommandError({}, {command:'act',request_id:'fallback'}, root, locale);
+    assert.equal(fallback.message,chinese ? 'Run-play 命令失败' : 'Run-play command failed');
+    await client.close();
+    await assert.rejects(getRunPlay(root,{locale}),chinese ? /没有已打开/ : /No open/);
+  }
+});
+
 test('connection language reaches the native process and defaults definition queries without rewriting requests', async t => {
   const scripted = `
   require('node:readline').createInterface({ input:process.stdin }).on('line', line => {

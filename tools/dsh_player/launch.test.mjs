@@ -74,6 +74,8 @@ test('scripted dry setup supplies file tools preserves locale bindings and leave
       const resumedManifest = JSON.parse(await readFile(join(resumed.output, 'manifest.json'), 'utf8'));
       assert.equal(resumedManifest.agentLocale, agentLocale);
       assert.equal(resumedManifest.task, manifest.task);
+      const attachment = await readFile(join(resumed.output, 'attachment-observation-wire', 'exchange-000.jsonl'), 'utf8');
+      assert.equal(attachment.includes('涅奥'), agentLocale === 'zh-CN', 'the auxiliary native observation uses the saved player language');
       assert.deepEqual(await readFile(bindingPath), binding);
       assert.deepEqual(await fingerprint(), before);
     }

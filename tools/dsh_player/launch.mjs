@@ -134,7 +134,7 @@ export async function runPlayer(options, display = console.log) {
   }
   if (taskScope === 'preparation' && !preparationRoot) {
     const { openRunPlay } = await import(pathToFileURL(join(repository, 'tools/run_play/client.mjs')));
-    const probe = await openRunPlay({ repository, session, binary, agentLocale, recordDirectory: join(output, 'task-root-wire') });
+    const probe = await openRunPlay({ repository, session, binary, locale: agentLocale, recordDirectory: join(output, 'task-root-wire') });
     try { preparationRoot = preparationTaskRoot(await probe.observe(), agentLocale); }
     finally { await probe.close(); }
   }
@@ -208,7 +208,7 @@ export async function runPlayer(options, display = console.log) {
     let attachedGameSource, resetContextOnAttach = true;
     if (options.resume) {
       const { openRunPlay } = await import(pathToFileURL(join(repository, 'tools/run_play/client.mjs')));
-      const probe = await openRunPlay({ repository, session, binary, agentLocale,
+      const probe = await openRunPlay({ repository, session, binary, locale: agentLocale,
         recordDirectory: join(output, 'attachment-observation-wire') });
       try { attachedGameSource = gameContextSource(await probe.observe()); }
       finally { await probe.close(); }
@@ -310,7 +310,7 @@ export async function runPlayer(options, display = console.log) {
       let game, finalGameSource;
       try {
         const { openRunPlay } = await import(pathToFileURL(join(repository, 'tools/run_play/client.mjs')));
-        game = await openRunPlay({ repository, session, binary, agentLocale, recordDirectory: join(output, 'final-observation-wire') });
+        game = await openRunPlay({ repository, session, binary, locale: agentLocale, recordDirectory: join(output, 'final-observation-wire') });
         const observation = await game.observe();
         finalGameSource = gameContextSource(observation);
         if (preparationRoot) result.preparationProgress = preparationTaskProgress(preparationRoot, observation, agentLocale);
@@ -593,7 +593,7 @@ export async function runPreparationFlow(options, display = console.log) {
       if (existsSync(stopRequestFile)) { result.outcome = 'interrupted'; break; }
       const folder = join(output, `step-${String(step).padStart(3, '0')}`);
       await mkdir(folder);
-      let game = await openRunPlay({ repository, session, binary, agentLocale, recordDirectory: join(folder, 'before-wire') });
+      let game = await openRunPlay({ repository, session, binary, locale: agentLocale, recordDirectory: join(folder, 'before-wire') });
       let before;
       try { before = await game.observe(); } finally { await game.close(); }
       await writeFile(join(folder, 'before.json'), JSON.stringify(before, null, 2));
@@ -636,7 +636,7 @@ export async function runPreparationFlow(options, display = console.log) {
       }
       let execution, adoptedAction, needsReview = false;
       if (combat) {
-        game = await openRunPlay({ repository, session, binary, agentLocale, recordDirectory: join(folder, 'combat-wire') });
+        game = await openRunPlay({ repository, session, binary, locale: agentLocale, recordDirectory: join(folder, 'combat-wire') });
         try {
           const report = await game.research({ effort: 'whole_combat', maxSearchMs: 8000, maxGenerationWork: 200000 });
           result.combatSearches++;
@@ -717,7 +717,7 @@ export async function runPreparationFlow(options, display = console.log) {
           result.outcome = 'preparation-needs-review'; result.player = player; needsReview = true;
         }
       }
-      game = await openRunPlay({ repository, session, binary, agentLocale, recordDirectory: join(folder, 'after-wire') });
+      game = await openRunPlay({ repository, session, binary, locale: agentLocale, recordDirectory: join(folder, 'after-wire') });
       let after;
       try { after = await game.observe(); } finally { await game.close(); }
       await writeFile(join(folder, 'after.json'), JSON.stringify(after, null, 2));

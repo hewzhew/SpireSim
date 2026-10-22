@@ -5,6 +5,11 @@ import { resolve, join } from 'node:path';
 import { createInterface } from 'node:readline';
 import { inspect } from 'node:util';
 import { platform } from 'node:os';
+import { createPresentation, resolveLocale } from '@sts-simulator/presentation';
+
+const clientViews = Object.fromEntries(['en', 'zh-CN'].map(locale => [locale, createPresentation({ locale })]));
+const clientText = (locale, key, parameters = {}) => clientViews[resolveLocale(locale)].text(`workbench:transport.${key}`,
+  Object.fromEntries(Object.entries(parameters).map(([name, value]) => [name, String(value)])));
 
 // One transport per filesystem session in this Node host, including module
 // reloads. This registry never owns simulator state or resumes a closed process.
@@ -12,8 +17,8 @@ const registryKey = Symbol.for('sts.run-play.connections.v1');
 const connections = globalThis[registryKey] ??= new Map();
 
 export class RunPlayCommandError extends Error {
-  constructor(error, request, recordDirectory) {
-    super(error?.message ?? 'Run-play command failed');
+  constructor(error, request, recordDirectory, locale = 'en') {
+    super(error?.message ?? clientText(locale, 'commandFailed'));
     this.name = 'RunPlayCommandError';
     this.code = error?.code ?? 'RUN_PLAY_COMMAND_FAILED';
     this.command = request.command;
@@ -22,22 +27,23 @@ export class RunPlayCommandError extends Error {
   }
 }
 
-async function sessionKey(session) {
-  if (!session) throw new Error('session is required');
+async function sessionKey(session, locale = 'en') {
+  if (!session) throw new Error(clientText(locale, 'sessionRequired'));
   const path = await realpath(resolve(session));
   return platform() === 'win32' ? path.toLowerCase() : path;
 }
 
-export async function getRunPlay(session) {
-  const entry = connections.get(await sessionKey(session));
-  if (!entry) throw new Error('No open run-play connection for this session');
-  if (!entry.client) throw new Error('Run-play connection is still opening');
+export async function getRunPlay(session, { locale = 'en' } = {}) {
+  const entry = connections.get(await sessionKey(session, locale));
+  if (!entry) throw new Error(clientText(locale, 'noOpenConnection'));
+  if (!entry.client) throw new Error(clientText(locale, 'connectionOpening'));
   return entry.client;
 }
 
 export async function openRunPlay(options) {
-  const key = await sessionKey(options.session);
-  if (connections.has(key)) throw new Error('Session already has an open connection; use getRunPlay(session)');
+  const locale = options.locale ?? 'en';
+  const key = await sessionKey(options.session, locale);
+  if (connections.has(key)) throw new Error(clientText(locale, 'connectionExists'));
   const entry = {};
   connections.set(key, entry);
   const release = () => { if (connections.get(key) === entry) connections.delete(key); };
@@ -51,10 +57,10 @@ export async function openRunPlay(options) {
 }
 
 async function connectRunPlay({ repository, session, recordDirectory, binary, manual = false, locale = 'en', timeoutMs = 30000, closeTimeoutMs = 2000 }, release) {
-  if (!repository || !session || !recordDirectory) throw new Error('repository, session and a fresh recordDirectory are required');
-  if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1) throw new Error('invalid timeout');
-  if (!Number.isSafeInteger(closeTimeoutMs) || closeTimeoutMs < 1) throw new Error('invalid close timeout');
-  if (!['en', 'zh-CN'].includes(locale)) throw new Error('Unsupported text locale; use en or zh-CN');
+  if (!repository || !session || !recordDirectory) throw new Error(clientText(locale, 'connectionArgumentsRequired'));
+  if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1) throw new Error(clientText(locale, 'invalidTimeout'));
+  if (!Number.isSafeInteger(closeTimeoutMs) || closeTimeoutMs < 1) throw new Error(clientText(locale, 'invalidCloseTimeout'));
+  if (!['en', 'zh-CN'].includes(locale)) throw new Error(clientText(locale, 'unsupportedLocale'));
   const records = resolve(recordDirectory);
   await mkdir(records); // Never mix a new connection into an old transcript.
   const child = spawn(binary ?? join(repository, 'target/dev-opt/run_play.exe'),
@@ -103,7 +109,7 @@ async function connectRunPlay({ repository, session, recordDirectory, binary, ma
     if (!closing || code !== 0 || pending) {
       const diagnostic = diagnosticTail.trim();
       const summary = diagnostic ? `: ${diagnostic.slice(-1024)}` : '';
-      fail(Object.assign(new Error(`Run-play connection closed (${code})${summary}; inspect the saved session before retrying`), {
+      fail(Object.assign(new Error(clientText(locale, 'connectionClosed', { code: code, summary: summary })), {
         exitCode: code, stderrTail: diagnosticTail,
       }));
     }
@@ -119,7 +125,7 @@ async function connectRunPlay({ repository, session, recordDirectory, binary, ma
   lines.on('line', async line => {
     const active = pending;
     if (!active || active.received) {
-      fail(new Error('Unexpected run-play response'));
+      fail(new Error(clientText(locale, 'unexpectedResponse')));
       return;
     }
     active.received = true;
@@ -129,16 +135,16 @@ async function connectRunPlay({ repository, session, recordDirectory, binary, ma
       await appendFile(join(records, `${active.id}.jsonl`), line + '\n');
       let response;
       try { response = JSON.parse(line); }
-      catch { throw new Error('Invalid JSON from run-play; inspect the saved reply'); }
+      catch { throw new Error(clientText(locale, 'invalidJson')); }
       if (response.schema !== 'sts-run-play-agent-response-v1' || response.request_id !== active.id) {
-        throw new Error('Run-play response identity mismatch');
+        throw new Error(clientText(locale, 'responseIdentityMismatch'));
       }
-      if (!['ok', 'error'].includes(response.status)) throw new Error('Invalid run-play response status');
+      if (!['ok', 'error'].includes(response.status)) throw new Error(clientText(locale, 'invalidResponseStatus'));
       if (pending !== active) return; // A timeout already made the outcome uncertain.
       clearTimeout(active.timer);
       pending = undefined;
       if (response.status === 'error') {
-        active.reject(new RunPlayCommandError(response.error, active.request, records));
+        active.reject(new RunPlayCommandError(response.error, active.request, records, locale));
       } else {
         active.resolve(response.result);
       }
@@ -147,8 +153,8 @@ async function connectRunPlay({ repository, session, recordDirectory, binary, ma
 
   function ready() {
     if (failure) throw failure;
-    if (closing) throw new Error('Run-play connection is closing');
-    if (pending) throw new Error('Wait for the current operation before sending another');
+    if (closing) throw new Error(clientText(locale, 'connectionClosing'));
+    if (pending) throw new Error(clientText(locale, 'operationPending'));
   }
 
   async function request(command, fields = {}, expectedWorkMs = 0) {
@@ -157,7 +163,7 @@ async function connectRunPlay({ repository, session, recordDirectory, binary, ma
     const request = { schema: 'sts-run-play-agent-request-v1', request_id: id, command, ...fields };
     return new Promise((resolve, reject) => {
       const active = { id, request, resolve, reject, received: false, sent: false,
-        timer: setTimeout(() => fail(Object.assign(new Error('Run-play response timed out; outcome uncertain, inspect the saved session before retrying'), { code: 'RUN_PLAY_TIMEOUT' })), timeoutMs + expectedWorkMs) };
+        timer: setTimeout(() => fail(Object.assign(new Error(clientText(locale, 'responseTimeout')), { code: 'RUN_PLAY_TIMEOUT' })), timeoutMs + expectedWorkMs) };
       pending = active;
       const wire = JSON.stringify(request) + '\n';
       // Record before sending, including requests whose response never arrives.
@@ -175,7 +181,7 @@ async function connectRunPlay({ repository, session, recordDirectory, binary, ma
     const reading = result.reading;
     const view = reading?.view ?? result.view;
     if (typeof view !== 'string' || /[\x00-\x08\x0b-\x1f\x7f]/.test(view)) {
-      throw new Error('Run-play reading missing or contains terminal control characters');
+      throw new Error(clientText(locale, 'invalidReading'));
     }
     const value = { view };
     Object.defineProperty(value, 'raw', { value: result });
@@ -199,11 +205,11 @@ async function connectRunPlay({ repository, session, recordDirectory, binary, ma
       if (reading.can_collect_rewards) {
         value.collectRewards = async (chosen, { retainContext = false } = {}) => {
           if (!Array.isArray(chosen) || chosen.length < 1 || chosen.length > 8) {
-            throw new Error('Collect an ordered array of 1..8 reward choices, ending with a card reward');
+            throw new Error(clientText(locale, 'rewardArrayRequired'));
           }
           const indices = chosen.map(option => value.options.indexOf(option));
-          if (indices.includes(-1)) throw new Error('Reward choice belongs to another reading');
-          if (new Set(indices).size !== indices.length) throw new Error('Reward sequence repeats a choice');
+          if (indices.includes(-1)) throw new Error(clientText(locale, 'foreignReward'));
+          if (new Set(indices).size !== indices.length) throw new Error(clientText(locale, 'duplicateReward'));
           ready();
           epoch++;
           return frame(await request('choose', {
@@ -221,7 +227,7 @@ async function connectRunPlay({ repository, session, recordDirectory, binary, ma
           label: selection.label, min: selection.min, max: selection.max, members,
           [inspect.custom]: () => selection.label,
           async select(chosen) {
-            const indices = selectionIndices(chosen, members, selection.min, selection.max);
+            const indices = selectionIndices(chosen, members, selection.min, selection.max, locale);
             ready();
             epoch++;
             return frame(await request('choose', {
@@ -240,7 +246,7 @@ async function connectRunPlay({ repository, session, recordDirectory, binary, ma
     const sourceEpoch = epoch;
     return () => {
       ready();
-      if (epoch !== sourceEpoch) throw new Error('Draft reading expired; read the current draft');
+      if (epoch !== sourceEpoch) throw new Error(clientText(locale, 'draftExpired'));
     };
   }
 
@@ -272,7 +278,7 @@ async function connectRunPlay({ repository, session, recordDirectory, binary, ma
     ready();
     if (!Number.isSafeInteger(generationWork) || generationWork < 0 || generationWork > 65536 ||
         !Number.isSafeInteger(engineSteps) || engineSteps < 0 || engineSteps > 33554432) {
-      throw new Error('Invalid draft work budget');
+      throw new Error(clientText(locale, 'invalidDraftBudget'));
     }
     epoch++;
     return request('combat_draft_advance', {
@@ -301,7 +307,7 @@ async function connectRunPlay({ repository, session, recordDirectory, binary, ma
         [inspect.custom]: () => family.label,
         async prefer(chosen) {
           check();
-          const indices = selectionIndices(chosen, members, family.min, family.max);
+          const indices = selectionIndices(chosen, members, family.min, family.max, locale);
           epoch++;
           return selectionFrame(await request('combat_draft_selection', { edit: {
             source_ref: result.source_ref,
@@ -374,22 +380,22 @@ async function connectRunPlay({ repository, session, recordDirectory, binary, ma
 
   function plansFrame(result, effort, sourceEpoch, canDraft = false) {
     if (typeof result.report_id !== 'string' || !result.report_id) {
-      throw new Error('Combat plans response has no report identity');
+      throw new Error(clientText(locale, 'missingReportIdentity'));
     }
     const identity = { report_id: result.report_id };
     const base = frame(result);
     const check = () => {
-      if (epoch !== sourceEpoch) throw new Error('Combat candidate expired; read the current plans');
+      if (epoch !== sourceEpoch) throw new Error(clientText(locale, 'candidateExpired'));
     };
     async function review(chosen, { turn, includeSteps = false, compact = false } = {}) {
       check();
       if (!Array.isArray(chosen) || chosen.length < 1 || chosen.length > 8) {
-        throw new Error('Review an array of 1..8 candidates from these plans');
+        throw new Error(clientText(locale, 'reviewArrayRequired'));
       }
       for (const candidate of chosen) {
-        if (!candidates.includes(candidate)) throw new Error('Combat candidate belongs to another reading');
+        if (!candidates.includes(candidate)) throw new Error(clientText(locale, 'foreignCandidate'));
       }
-      if (new Set(chosen).size !== chosen.length) throw new Error('Review repeats a candidate');
+      if (new Set(chosen).size !== chosen.length) throw new Error(clientText(locale, 'duplicateReviewCandidate'));
       return frame(await request('combat_review', {
         candidate_refs: chosen.map(candidate => candidate.ref), effort, include_steps: includeSteps,
         ...identity,
@@ -400,7 +406,7 @@ async function connectRunPlay({ repository, session, recordDirectory, binary, ma
     const candidates = Object.freeze(result.candidates.map(candidate => {
       if (typeof candidate.plan_id !== 'string' || !/^c(?:0|[1-9]\d*)@[a-f0-9]{12}$/.test(candidate.plan_id)
           || candidate.plan_id.split('@')[0] !== candidate.candidate_ref) {
-        throw new Error('Combat candidate has no matching report-bound plan ID; update the client and binary together');
+        throw new Error(clientText(locale, 'candidatePlanIdentityMismatch'));
       }
       const option = {
         ref: candidate.candidate_ref,
@@ -417,9 +423,9 @@ async function connectRunPlay({ repository, session, recordDirectory, binary, ma
         async draft({ turn, replace = false } = {}) {
           check();
           ready();
-          if (!canDraft) throw new Error('Opening a draft requires the original live research connection');
+          if (!canDraft) throw new Error(clientText(locale, 'liveResearchRequired'));
           if (!Number.isSafeInteger(turn) || turn < 1 || turn > 0xffffffff || typeof replace !== 'boolean') {
-            throw new Error('Open a draft with an observed turn >= 1 and a boolean replace option');
+            throw new Error(clientText(locale, 'invalidDraftOpening'));
           }
           const opened = await request('combat_draft_open', {
             candidate_ref: candidate.candidate_ref, effort, turn, replace,
@@ -442,9 +448,9 @@ async function connectRunPlay({ repository, session, recordDirectory, binary, ma
   return Object.freeze({
     async info(query, { locale: infoLocale = locale } = {}) {
       if (typeof query !== 'string' || !query.trim()) {
-        throw new Error('Info requires a mechanics query such as card Dropkick or M0');
+        throw new Error(clientText(locale, 'mechanicsQueryRequired'));
       }
-      if (!['en', 'zh-CN'].includes(infoLocale)) throw new Error('Unsupported text locale; use en or zh-CN');
+      if (!['en', 'zh-CN'].includes(infoLocale)) throw new Error(clientText(locale, 'unsupportedLocale'));
       return frame(await request('info', { query, locale: infoLocale }));
     },
     async slPiles() {
@@ -452,18 +458,18 @@ async function connectRunPlay({ repository, session, recordDirectory, binary, ma
     },
     async gameFacts(entities) {
       if (!Array.isArray(entities) || entities.length < 1 || entities.length > 128) {
-        throw new Error('Game facts requires 1..128 typed card, relic or potion queries');
+        throw new Error(clientText(locale, 'typedFactsQueriesRequired'));
       }
       const result = await request('game_facts', { entities });
       if (result?.kind !== 'game_facts' || !Array.isArray(result.facts)) {
-        throw new Error('Run-play game_facts response missing facts');
+        throw new Error(clientText(locale, 'missingGameFacts'));
       }
       return freeze(result.facts);
     },
     async observe() {
       const result = await request('observe');
       if (result?.kind !== 'observation' || !result.observation) {
-        throw new Error('Run-play observe response missing observation');
+        throw new Error(clientText(locale, 'missingObservation'));
       }
       return freeze(result.observation);
     },
@@ -482,11 +488,11 @@ async function connectRunPlay({ repository, session, recordDirectory, binary, ma
       ready();
       if (!Array.isArray(actions) || actions.length < 1
         || actions.some(action => typeof action !== 'string' || action === '')) {
-        throw new Error('Act on one or more non-empty semantic action strings');
+        throw new Error(clientText(locale, 'actionsRequired'));
       }
       if (advance === undefined && actions.length > 1) advance = 'one_public_action';
       if (advance !== undefined && typeof advance !== 'string') {
-        throw new Error('advance must be a string mode when provided');
+        throw new Error(clientText(locale, 'invalidAdvance'));
       }
       epoch++;
       const acted = await request('act', {
@@ -494,22 +500,22 @@ async function connectRunPlay({ repository, session, recordDirectory, binary, ma
         ...(advance === undefined ? {} : { advance }),
       });
       if (acted?.kind !== 'acted' || !acted.reading) {
-        throw new Error('Run-play act response missing acted envelope');
+        throw new Error(clientText(locale, 'missingActedEnvelope'));
       }
       return frame(acted);
     },
     async research({ effort = 'whole_combat', maxSearchMs = 10000, maxGenerationWork, maxPotionsUsed } = {}) {
       ready();
       if (!Number.isSafeInteger(maxSearchMs) || maxSearchMs < 1 || maxSearchMs > 20000) {
-        throw new Error('Research maxSearchMs must be in 1..20000');
+        throw new Error(clientText(locale, 'invalidSearchTime'));
       }
       if (maxGenerationWork !== undefined && (effort !== 'whole_combat'
           || !Number.isSafeInteger(maxGenerationWork) || maxGenerationWork < 1 || maxGenerationWork > 1000000)) {
-        throw new Error('Research maxGenerationWork must be in 1..1000000 and requires whole_combat');
+        throw new Error(clientText(locale, 'invalidGenerationWork'));
       }
       if (maxPotionsUsed !== undefined && (!Number.isSafeInteger(maxPotionsUsed)
           || maxPotionsUsed < 0 || maxPotionsUsed > 4294967295)) {
-        throw new Error('Research maxPotionsUsed must be in 0..4294967295');
+        throw new Error(clientText(locale, 'invalidPotionBudget'));
       }
       const sourceEpoch = ++epoch;
       const result = await request('combat_research', { effort, max_search_ms: maxSearchMs,
@@ -519,18 +525,18 @@ async function connectRunPlay({ repository, session, recordDirectory, binary, ma
     },
     async plans({ diagnostics = false } = {}) {
       ready();
-      if (typeof diagnostics !== 'boolean') throw new Error('Plans diagnostics must be a boolean');
+      if (typeof diagnostics !== 'boolean') throw new Error(clientText(locale, 'invalidDiagnostics'));
       const sourceEpoch = ++epoch;
       const result = await request('combat_plans', diagnostics ? { diagnostics } : {});
       return plansFrame(result, result.effort, sourceEpoch);
     },
     async preview(actions) {
       if (!Array.isArray(actions) || actions.length < 1 || actions.some(a => typeof a !== 'string' || !a)) {
-        throw new Error('Preview requires a nonempty semantic action line');
+        throw new Error(clientText(locale, 'previewActionsRequired'));
       }
       const result = await request('probe', { lines: [actions] });
       if (result.durable_head_unchanged !== true || result.lines?.length !== 1) {
-        throw new Error('Invalid non-publishing preview response');
+        throw new Error(clientText(locale, 'invalidPreviewResponse'));
       }
       const line = result.lines[0];
       const stop = line.stop;
@@ -539,18 +545,18 @@ async function connectRunPlay({ repository, session, recordDirectory, binary, ma
         || (stop.kind !== 'complete' && !nonnegativeInteger(stop.unapplied_actions))
         || (stop.kind === 'unresolved' && (!Number.isSafeInteger(stop.requested_step)
           || stop.requested_step < 1 || typeof stop.error !== 'string'))) {
-        throw new Error('Invalid preview stop boundary');
+        throw new Error(clientText(locale, 'invalidPreviewStop'));
       }
       return Object.freeze({ ...frame({ view: line.view }), endpoint: freeze(line.endpoint),
         stop: freeze(line.stop), preview: true });
     },
     async close() {
-      if (pending) throw new Error('Wait for the current operation before closing');
+      if (pending) throw new Error(clientText(locale, 'pendingBeforeClose'));
       if (!failure && !closing) {
         closing = true;
         child.stdin.end();
         closeTimer = setTimeout(() => {
-          closeError = new Error('Run-play did not exit after EOF; the process was stopped');
+          closeError = new Error(clientText(locale, 'closeTimeout'));
           child.kill();
         }, closeTimeoutMs);
       }
@@ -569,11 +575,11 @@ function freeze(value) {
   return value;
 }
 
-function selectionIndices(chosen, members, min, max) {
-  if (!Array.isArray(chosen)) throw new Error('Select an ordered array of members from this selection');
+function selectionIndices(chosen, members, min, max, locale = 'en') {
+  if (!Array.isArray(chosen)) throw new Error(clientText(locale, 'selectionArrayRequired'));
   const indices = chosen.map(member => members.indexOf(member));
-  if (indices.includes(-1)) throw new Error('Selection member belongs to another reading');
-  if (new Set(indices).size !== indices.length) throw new Error('Selection contains a duplicate member');
-  if (indices.length < min || indices.length > max) throw new Error('Selection count outside its bounds');
+  if (indices.includes(-1)) throw new Error(clientText(locale, 'foreignSelectionMember'));
+  if (new Set(indices).size !== indices.length) throw new Error(clientText(locale, 'duplicateSelectionMember'));
+  if (indices.length < min || indices.length > max) throw new Error(clientText(locale, 'selectionCountOutOfBounds'));
   return indices;
 }
