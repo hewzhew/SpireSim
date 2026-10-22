@@ -6,11 +6,9 @@ import { pathToFileURL } from 'node:url';
 import { preparationExpertGuidance } from './strategy.mjs';
 import { preparationDeckComparison } from './deck.mjs';
 import { preparationCardChoice, renderPreparationCardChoice, adoptPreparationCardChoice,
-  CARD_CHOICE_GUIDE, CARD_CHOICE_AUTOMATIC_GUIDE, CARD_CHOICE_REVIEW_GUIDE,
-  CARD_CHOICE_TOOL_DESCRIPTION, CARD_CHOICE_TOOL_PARAMETERS } from './card-choice.mjs';
+  cardChoiceInstructions } from './card-choice.mjs';
 import { preparationShopBudget, currentShopPlan, bindShopPlan, shopPotionReplacementScope, bindShopPotionPlan,
-  SHOP_POTION_COMPARISON_GUIDE, measureShopPotionInputBudget, shopSpendingScope,
-  SHOP_SPENDING_GUIDE, SHOP_SPENDING_TOOL_PARAMETERS, SHOP_SPENDING_NAMING_GUIDE, measureShopSpendingInputBudget } from './shop.mjs';
+  shopInstructions, measureShopPotionInputBudget, shopSpendingScope, measureShopSpendingInputBudget } from './shop.mjs';
 import z from '@deepseek-ai/schemastery';
 import { defineTool } from '@deepseek-ai/dsh-tools';
 import { scopeOf } from '@deepseek-ai/dsh-scope';
@@ -20,7 +18,7 @@ import { gameContextSource, sameGameContextSource, requestBranchReset, requestDe
   contextQueryCommand, decisionContextSource, decisionQueryReferences } from './context.mjs';
 import { needsMaintainerReview, proposePlayerCommand, readPlayerReview,
   playerReviewOutstanding, playerPauseText, currentPlayerGuidance, currentPlayerAdoption } from './supervision.mjs';
-import { preparationReading, preparationReadingSupply, preparationStageGuide, PREPARATION_PROCEDURE, PREPARATION_TOOL_PARAMETERS, PREPARATION_SHOP_TOOL_PARAMETERS, PREPARATION_TOOL_DESCRIPTION, preparationTaskRoot, preparationTaskProgress,
+import { preparationReading, preparationReadingSupply, preparationStageGuide, preparationInstructions, preparationTaskRoot, preparationTaskProgress,
   preparationProgressText, assertPreparationCommand, restoredPreparationDecision, preparationCommandBasis,
   preparationClassificationContext, preparationCandidateGroups, preparationConditionBindings, collectPreparationClassification,
   preparationClassificationReceipt, preparationRecordedTable } from './preparation.mjs';
@@ -54,6 +52,9 @@ export const PLAYER_GUIDE = playerGuide();
 export async function apply(ctx, config) {
   const presentation = createPresentation({ locale: config.agentLocale ?? 'en' });
   const text = (key, parameters) => presentation.text(`scripted:${key}`, parameters);
+  const preparation = preparationInstructions(presentation.locale);
+  const cardInstructions = cardChoiceInstructions(presentation.locale);
+  const shop = shopInstructions(presentation.locale);
   const scope = scopeOf(ctx);
   if (!scope) throw new Error('sts-player must be mounted inside a dedicated agent/preset scope');
   if (typeof ctx.compaction.resetDecisionContext !== 'function') {
@@ -113,18 +114,19 @@ export async function apply(ctx, config) {
     return reading;
   }
   const progressText = () => cardChoiceFrame && taskProgress === 'pending'
-    ? `Card choice task: ${cardChoiceFrame.route.kind === 'review' ? 'awaiting a strategy policy' : 'awaiting one choice'}.`
+    ? preparation.text(cardChoiceFrame.route.kind === 'review' ? 'cardReview' : 'cardPending')
     : preparationContext?.shopSpending && taskProgress === 'pending'
-      ? `Shop task: ${classification ? 'choose a recorded current command'
-        : classificationDraft ? `submit pending recommendation rows: ${classificationDraft.pendingCommands.join(', ')}${classificationDraft.pendingChoice ? `; saved choice ${classificationDraft.pendingChoice}` : '; choose one command from the full table'}`
-          : 'submit recommendation rows for every current option, including leave, and one choice'}.`
-    : preparationProgressText(taskProgress, adoptedDecision, preparationRoot, classification, classificationDraft);
-  const cardGuide = () => ({ automatic: CARD_CHOICE_AUTOMATIC_GUIDE, model: CARD_CHOICE_GUIDE,
-    review: CARD_CHOICE_REVIEW_GUIDE })[cardChoiceFrame.route.kind];
+      ? preparation.text('shopTask', { instruction: classification ? preparation.text('shopRecorded')
+        : classificationDraft ? preparation.text('shopPending', { commands: classificationDraft.pendingCommands.join(', '),
+          choice: classificationDraft.pendingChoice ? preparation.text('shopSaved', { choice: classificationDraft.pendingChoice }) : preparation.text('shopChoose') })
+        : preparation.text('shopRate') })
+    : preparationProgressText(taskProgress, adoptedDecision, preparationRoot, classification, classificationDraft, presentation.locale);
+  const cardGuide = () => ({ automatic: cardInstructions.automatic, model: cardInstructions.guide,
+    review: cardInstructions.review })[cardChoiceFrame.route.kind];
   const guideText = () => (taskScope === 'preparation' && preparationContext?.shopSpending
-    ? SHOP_SPENDING_NAMING_GUIDE : text('guide.naming')) + '\n\n' + (taskScope === 'preparation'
+    ? shop.naming : text('guide.naming')) + '\n\n' + (taskScope === 'preparation'
     ? (cardChoiceFrame && taskProgress === 'pending' ? cardGuide()
-      : preparationStageGuide(taskProgress, classification, preparationContext, classificationDraft))
+      : preparationStageGuide(taskProgress, classification, preparationContext, classificationDraft, presentation.locale))
     : (config.supervised ? text('guide.coached') + '\n\n' : '') + text('guide.player'));
   const updateTaskProgress = (reading, command, basis) => {
     if (taskScope !== 'preparation') return;
@@ -187,17 +189,27 @@ export async function apply(ctx, config) {
   ctx.tools.presentAs('native');
   ctx.tools.restrict({ allow: ctx.tools.schemas().filter(tool => taskTools.has(tool.name)).map(tool => tool.name) });
   ctx.tools.guard(exec => taskTools.has(exec.name) ? undefined : text('tool.guard'));
+  const preparationDecision = () => adoptedDecision ? { command: adoptedDecision.command,
+    ...(adoptedDecision.basis !== undefined ? { basis: adoptedDecision.basis } : {}) } : undefined;
+  // Acknowledged execution can precede a failed observation. Persist its
+  // identity on that error receipt too, independently of rendered prose.
+  ctx.on('tools/execute', async (exec, next) => {
+    const result = await next();
+    return exec.name === 'sts' && exec.agent === owner && result.isError && preparationDecision()
+      ? { ...result, meta: { ...result.meta, schema: 'sts-preparation-result-v1', preparationDecision: preparationDecision() } }
+      : result;
+  });
   ctx.systemPrompt.section({ name: 'sts:player-guide', order: 300,
     text: guideText, interpolate: false });
   ctx.tools.register(defineTool({
     name: 'sts',
     description: taskScope === 'preparation'
-      ? (cardChoiceFrame ? CARD_CHOICE_TOOL_DESCRIPTION : PREPARATION_TOOL_DESCRIPTION)
+      ? (cardChoiceFrame ? cardInstructions.description : preparation.description)
       : text('tool.run'),
-    parameters: taskScope === 'preparation' ? (cardChoiceFrame ? CARD_CHOICE_TOOL_PARAMETERS
-      : preparationContext?.shopSpending ? SHOP_SPENDING_TOOL_PARAMETERS
+    parameters: taskScope === 'preparation' ? (cardChoiceFrame ? cardInstructions.parameters
+      : preparationContext?.shopSpending ? shop.parameters
         : initialReading.position.observation.observation?.context?.kind === 'shop'
-          ? PREPARATION_SHOP_TOOL_PARAMETERS : PREPARATION_TOOL_PARAMETERS) : {
+          ? preparation.shopParameters : preparation.parameters) : {
       command: { type: 'string', required: true, description: text('tool.command') },
       ...(config.supervised ? { reason: { type: 'string', description: text('tool.reason') } } : {}),
     },
@@ -205,9 +217,11 @@ export async function apply(ctx, config) {
       properties: { text: { type: 'string', required: true }, query: { type: 'object', additionalProperties: true },
         currentReading: { type: 'object', additionalProperties: true } } },
       render: (_args, value) => [{ type: 'text', text: value.text }],
-      presentationMeta: (_args, value) => value.query || value.currentReading ? {
-        ...(value.query ? { schema: 'sts-context-query-v1', ...value.query } : { schema: 'sts-game-result-v1' }),
+      presentationMeta: (_args, value) => value.query || value.currentReading || preparationDecision() ? {
+        ...(value.query ? { schema: 'sts-context-query-v1', ...value.query }
+          : { schema: preparationDecision() ? 'sts-preparation-result-v1' : 'sts-game-result-v1' }),
         ...(value.currentReading ? { currentReading: value.currentReading } : {}),
+        ...(preparationDecision() ? { preparationDecision: preparationDecision() } : {}),
       } : null },
     async execute({ command, reason, basis, choice, comparison: submittedComparison }, exec) {
       let preparationExecution;
@@ -309,8 +323,8 @@ export async function apply(ctx, config) {
                     ...recorded,
                     stage: taskProgress, taskRoot: preparationRoot,
                     observation: reading,
-                    criteria: preparationContext?.potionReplacement ? SHOP_POTION_COMPARISON_GUIDE
-                      : preparationContext?.shopSpending ? SHOP_SPENDING_GUIDE : PREPARATION_PROCEDURE,
+                    criteria: preparationContext?.potionReplacement ? shop.potionGuide
+                      : preparationContext?.shopSpending ? shop.spendingGuide : preparation.procedure,
                     ratingMeaning: preparationContext?.potionReplacement ? 'shop-bottle-tradeoff-v1'
                       : preparationContext?.shopSpending ? 'shop-spending-tradeoff-v1' : 'current-window-recommendation-v1',
                     expertGuidance: preparationExpertGuidance(reading, strategicOptionCommand),
@@ -396,8 +410,8 @@ export async function apply(ctx, config) {
           const { adopted, successor } = acknowledged;
           adoptedDecision ??= { command: adopted.command, basis: adopted.renderedBasis };
           if (successor) updateTaskProgress(successor, adopted.command, adopted.renderedBasis);
-          error.message += `\nAdopted preparation command: ${adopted.command}`
-            + (adopted.renderedBasis ? `\nPreparation comparison before action (recorded rows): ${adopted.renderedBasis}` : '');
+          error.message += '\n' + preparation.text('progressAdopted', { command: adopted.command }).trimEnd()
+            + (adopted.renderedBasis ? '\n' + preparation.text('progressBasis', { basis: adopted.renderedBasis }).trimEnd() : '');
         }
         if (cardChoiceFrame && taskProgress === 'pending') requestBranchReset(exec.agent);
         if (error.preparationReviewCandidate) preparationReviewCandidate = error.preparationReviewCandidate;

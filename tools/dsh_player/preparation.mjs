@@ -1,43 +1,33 @@
+import { createPresentation } from '@sts-simulator/presentation';
 import { gameContextSource, sameGameContextSource, gameDecisionTask } from './context.mjs';
 import { preparationExpertGuidance, renderExpertGuidance, renderCandidateExpertGuidance, apparitionPreparationOffers, preparationBossRelicOffers, preparationShopRemovalPolicy } from './strategy.mjs';
 import { preparationDeckComparison, preparationDeckConditionBindings, preparationCardAcquisition, strikeScaledAttack, renderDeckComparison, attackInventoryText, renderStatusRoutes } from './deck.mjs';
-import { renderShopBudget, shopContinuation, shopNeedsPotionSlot, shopPotionReplacementScope,
-  renderShopPotionComparison, shopPotionComparisonReading, shopPotionConditionBindings, SHOP_POTION_COMPARISON_GUIDE,
-  shopSpendingScope, shopSpendingReading, shopSpendingConditionBindings, renderShopSpendingComparison, SHOP_SPENDING_GUIDE } from './shop.mjs';
+import { shopInstructions, renderShopBudget, shopContinuation, shopNeedsPotionSlot, shopPotionReplacementScope,
+  renderShopPotionComparison, shopPotionComparisonReading, shopPotionConditionBindings,
+  shopSpendingScope, shopSpendingReading, shopSpendingConditionBindings, renderShopSpendingComparison } from './shop.mjs';
 
 const families = new Set(['shop', 'campfire', 'event', 'rewards', 'treasure', 'boss_relic', 'run_choice', 'map', 'run_transition']);
 const queries = new Set(['read', 'options']);
 
-export const PREPARATION_COMPARISONS = [
-  { id: '@function', text: 'Incremental function compared with the owned inventory.' },
-  { id: '@access', text: 'Access, payment and deployment conditions in the recorded rows.' },
-  { id: '@protection', text: 'Protection and HP needed through the next hard fight.' },
-  { id: '@resources', text: 'Gold, potions and other resources spent or retained.' },
-  { id: '@opportunity', text: 'Connected route and remaining preparation opportunities.' },
-];
-export const PREPARATION_COMPARISON_BASIS = 'ALTERNATIVE_COMMAND | @comparison-reference[, @comparison-reference]. Copy the alternative row\'s first column before | and select references from @function,@access,@protection,@resources,@opportunity. Use the current decision baseline\'s alternative commands and comparison references when supplied.';
-
-export const PREPARATION_PROCEDURE = `Read candidates in the listed order and record each row, then compare the recommendations and select one command. Each row's evaluation pool is exactly the current owned inventory plus that row's offered change. Its local facts identify the owned supports. Assess that useful increment and its draw/Hand slot, Energy, Gold or preparation opportunity using the supplied routes, mechanics and strategy. For removal, assess the benefit of giving up that owned card. For upgrades compare the change to the owned copy. Use one connected route's preparation opportunities and first hard fight together. Missing Heart keys are due before the end of Act 3; later Acts offer their own burning elite while Emerald is missing.
-Rate two independent dimensions under the same comparison baseline:
-Benefit/recommendation in the current preparation window: high = a substantial useful improvement or important resource preservation with workable realization conditions; medium = a useful improvement or reasonable conditional investment; low = a small marginal benefit or costs outweighing its gain; review = a specific fact is missing to rate the benefit. Taking/removing/upgrading compares the change with the current inventory; leaving/skipping compares keeping the current resource with the best feasible addition or spending opportunity. For skipping, high favors preserving access over the offered additions, medium represents a reasonable preservation tradeoff, and low favors a useful offered addition over the preserved slot. Bind that comparison to an actual offered command.
-Realization: direct = normal access and payment using supplied resources; sequence = owned resources need a particular deployment order, shared Hand or repeated access; future = an additional acquisition or optional future opportunity is needed; review = a specific fact is missing to identify the realization conditions. Normal drawing and paying for a standalone card is direct. Existing trigger sources establish a direct or sequence path even when their limited quantity makes the benefit low. A high benefit can require a sequence; a low benefit can be direct.
-Use each matching strategy rule at its stated conditions. Assess the first usable benefit, then later gains through the actual deployment, triggers and repeated access. Rate the overall recommendation for this window and select the candidate's supplied references explaining its main benefit or tradeoff. Close tradeoffs may share a rating. Use review for a specific missing fact. Compare affordable purchase combinations and their intended continuation when they improve the tradeoff.`;
-
-export const PREPARATION_BASIS = 'One line per pending classification candidate: command | high/medium/low/review | direct/sequence/future/review | @reference[, @reference]. Copy one or more of that candidate\'s supplied reference IDs into the fourth column, separated by commas. Use actual line breaks between rows. A grouped row evaluates choosing one copy. Submit the rows as basis with command classify and the selected complete command as choice. The host retains accepted rows and a legal choice for this source. Subsequent classify calls complete the remaining rows; the saved choice is used after the table is complete.';
-
-export const PREPARATION_TOOL_DESCRIPTION = 'Submit the current preparation step: choose with one supplied choice, or classify with the requested table and choice. read recovers the current step; options lists attached choices.';
-
-export const PREPARATION_TOOL_PARAMETERS = {
-  command: { type: 'string', required: true, description: 'Operation requested by the current step: choose, classify, read or options.' },
-  basis: { type: 'string', description: 'For classify: the requested classification rows, using the supplied row format.' },
-  choice: { type: 'string', description: 'Copy one complete supplied option command. When completing pending classification rows, the host retains the saved choice.' },
-};
-
-export const PREPARATION_SHOP_TOOL_PARAMETERS = { ...PREPARATION_TOOL_PARAMETERS,
-  comparison: { type: 'string', description: 'Optional purchase plan: OTHER_COMMAND | @function,@access,@resources | then NEXT_PURCHASE_COMMAND.' },
-};
-
-const DUPLICATION_CHECK = 'Permanent duplication: assess the change from the current copy count to one more. Separate earlier access to the first useful play from actually playing the extra copy. Each normal Power play requires that copy in Hand and its own payment. First compare the next hard fight\'s early output, protection and access; then compare later output. When existing sustained growth is available and an extra slow deployment uses all base Energy, rate that extra setup as a small marginal gain until an owned payment/protection arrangement makes it useful in time. Protection or draw can improve use of the existing growth engine.';
+export function preparationInstructions(locale = 'en') {
+  const presentation = createPresentation({ locale });
+  const text = (key, params) => presentation.text(`scripted:preparation.${key}`, params);
+  const parameters = Object.fromEntries(['command', 'basis', 'choice'].map(key => [key,
+    { type: 'string', ...(key === 'command' ? { required: true } : {}), description: text(`parameter${key[0].toUpperCase()}${key.slice(1)}`) }]));
+  return {
+    text, comparisons: ['function', 'access', 'protection', 'resources', 'opportunity'].map(key => ({ id: `@${key}`, text: text(`comparison${key[0].toUpperCase()}${key.slice(1)}`) })),
+    comparisonBasis: text('comparisonBasis'), procedure: text('procedure'), basis: text('basis'), description: text('description'), parameters,
+    shopParameters: { ...parameters, comparison: { type: 'string', description: text('parameterComparison') } },
+  };
+}
+const defaultInstructions = preparationInstructions();
+export const PREPARATION_COMPARISONS = defaultInstructions.comparisons;
+export const PREPARATION_COMPARISON_BASIS = defaultInstructions.comparisonBasis;
+export const PREPARATION_PROCEDURE = defaultInstructions.procedure;
+export const PREPARATION_BASIS = defaultInstructions.basis;
+export const PREPARATION_TOOL_DESCRIPTION = defaultInstructions.description;
+export const PREPARATION_TOOL_PARAMETERS = defaultInstructions.parameters;
+export const PREPARATION_SHOP_TOOL_PARAMETERS = defaultInstructions.shopParameters;
 
 // The native frame binds rule blocks to actions and entity IDs. Display text is
 // opaque; it never identifies a command, card, relic or section boundary.
@@ -67,25 +57,18 @@ export function preparationReadingSupply(observation, normalize = command => com
     relicReadings: Object.fromEntries(native.inventory.relics.map(row => [row.relic, row.view])), candidates };
 }
 
-export function preparationStageGuide(progress, classification, context, draft) {
-  if (progress !== 'complete' && !classification && draft?.pendingChoice) return `Current task: complete the pending classification rows. Saved choice: ${draft.pendingChoice}. Submit command classify with the remaining basis rows. The host uses the saved choice after the table is complete. A different choice can be submitted through choose after completion.`;
-  if (progress === 'pending' && context?.potionReplacement) return classification
-    ? 'Compare the recorded bottle recommendations. Submit command choose with one complete recorded command in choice.'
-    : SHOP_POTION_COMPARISON_GUIDE;
-  if (progress === 'pending' && context?.shopSpending) return classification
-    ? 'Submit command choose with one recorded current command in choice. An optional second spend uses comparison: then FOLLOW_UP_COMMAND from its budget row.'
-    : SHOP_SPENDING_GUIDE;
-  const current = progress === 'complete' ? 'Preparation complete. The returned reading is its actual result.'
-    : (progress === 'selection' ? 'Attached target choice: the parent preparation has been adopted. Evaluate the incremental effect of each current target using the current inventory.\n' : '')
-      + (progress === 'selection' && context?.reason === 'Duplicate' ? `${DUPLICATION_CHECK}\n` : '')
-      + (classification
-        ? `Classification complete. Current stage: adoption. Compare the strongest recorded recommendations by their useful gain before the next hard fight, access and payment, setup protection, and resources retained. Use the current inventory and each offered change. Same-turn benefit uses cards reached and paid together; later benefit uses the supplied deployment and trigger sequence. For close tradeoffs, choose an acceptable option. Call sts with command choose and choice: ${progress === 'selection' ? 'the complete command built from the current Selection adoption instruction' : 'the selected row\'s first column, copied verbatim'}. The host returns the actual successor.`
-        : `Current task: rate the candidates and choose one preparation.\n${PREPARATION_PROCEDURE}\n${PREPARATION_BASIS}\n${context?.kind === 'map' ? 'Choose from the highest-rated assessed routes; close route tradeoffs can share a rating. ' : ''}${draft?.rows.length ? 'Continue with the pending rows; the accepted rows are already recorded. ' : ''}Compare the useful increments, access, protection and resource costs, then submit the rows and your choice together.`);
-  const rewardOrder = context?.kind === 'reward'
-    ? '\n\nReward order: collect useful inventory rewards and resolve relic/key choices first, then open card rewards using the updated inventory. When an unwanted inventory reward remains unclaimed, opening the remaining card reward is still an available choice.' : '';
-  const shopPlan = context?.kind === 'shop'
-    ? '\n\nFor an intended purchase sequence, optional comparison: OTHER_COMMAND | @access,@resources | then NEXT_PURCHASE_COMMAND. Copy both commands from the current legal candidates; the host validates the combined budget and reserves the next purchase.' : '';
-  return `Complete the current preparation stage through sts. The host supplies the current inventory, legal choices, public routes, exact mechanics and applicable strategy checks.\n\n${current}${rewardOrder}${shopPlan}\n\nCopy the supplied commands and occurrences. Each successful action returns the actual successor. Use read to recover after a command error, and options for an attached selection. Record a review item's missing fact through sts_feedback. The host keeps this task's progress across context refreshes and resume.`;
+export function preparationStageGuide(progress, classification, context, draft, locale = 'en') {
+  const { text, procedure, basis } = preparationInstructions(locale);
+  const shop = shopInstructions(locale);
+  if (progress !== 'complete' && !classification && draft?.pendingChoice) return text('pendingChoice', { choice: draft.pendingChoice });
+  if (progress === 'pending' && context?.potionReplacement) return classification ? text('potionAdoption') : shop.potionGuide;
+  if (progress === 'pending' && context?.shopSpending) return classification ? text('shopAdoption') : shop.spendingGuide;
+  const current = progress === 'complete' ? text('complete')
+    : (progress === 'selection' ? text('selection') : '')
+      + (progress === 'selection' && context?.reason === 'Duplicate' ? text('duplication') + '\n' : '')
+      + (classification ? text('adoption', { choiceInstruction: text(progress === 'selection' ? 'selectionChoice' : 'rowChoice') })
+        : text('classification', { procedure, basis, route: context?.kind === 'map' ? text('route') : '', pending: draft?.rows.length ? text('pending') : '' }));
+  return text('stage', { current, rewardOrder: context?.kind === 'reward' ? text('rewardOrder') : '', shopPlan: context?.kind === 'shop' ? text('shopPlan') : '' });
 }
 
 // Rust supplies exact tokens and the ordered domain. Rate targets individually;
@@ -837,7 +820,7 @@ export function preparationClassificationContext(observation, normalize, draft) 
     ...(selection.reason === 'Transform' ? ['Selected cards are replaced by the supplied random transformation pool. Compare the functions given up and the declared replacement distribution.'] : []),
   );
   if (selection?.reason === 'Duplicate' || observation.position.actions.some(row => row.candidate?.action?.public_semantics
-      ?.structured_semantics?.effects?.some(effect => effect.effect === 'duplicate_card'))) checks.push(DUPLICATION_CHECK);
+      ?.structured_semantics?.effects?.some(effect => effect.effect === 'duplicate_card'))) checks.push(defaultInstructions.text('duplication'));
   if (state.context?.kind === 'card_reward') checks.push(
     'Card reward: taking adds a permanent copy to the current deck; skipping preserves its current size. Both choices retain the same Gold. Assess the added card\'s function and draw cost alongside the existing copies.');
   if (state.context?.kind === 'boss_relic') checks.push(
@@ -1102,18 +1085,17 @@ export function preparationTaskProgress(root, observation) {
   return 'complete';
 }
 
-export function preparationProgressText(progress, decision, root, classification, draft) {
-  const budget = Number.isSafeInteger(root?.startingGold)
-    ? `Decision-start budget: Gold ${root.startingGold}. Compare the original alternatives using this budget; the current reading shows the balance after adopted actions.\n` : '';
-  const adopted = decision?.command ? `Adopted preparation command: ${decision.command}\n`
-    + (decision.basis ? `Preparation comparison before action (recorded rows): ${decision.basis}\n` : '') : '';
-  return budget + (progress === 'complete'
-    ? `${adopted}Preparation task complete.`
-    : progress === 'selection'
-      ? `${adopted}Preparation adopted; finish its attached choices. ${classification ? 'Target classification complete; compare and select using its recorded rows.' : 'Classify the current targets before selecting.'}`
-      : classification
-        ? 'Preparation stage: adoption. Compare the strongest recorded recommendations using their current useful gain and realization conditions, then submit the selected command.'
-        : `Preparation task: classification and choice. ${draft?.rows.length ? `Accepted rows are recorded; ${draft.pendingCommands.length} row(s) remain. ${draft.pendingChoice ? `Saved choice: ${draft.pendingChoice}. Supply the remaining basis rows through classify.` : 'Supply the remaining rows and a choice from the full candidate table through classify.'}` : 'Rate the supplied candidates and submit classify with basis and choice.'}`);
+export function preparationProgressText(progress, decision, root, classification, draft, locale = 'en') {
+  const { text } = preparationInstructions(locale);
+  const budget = Number.isSafeInteger(root?.startingGold) ? text('progressBudget', { gold: root.startingGold }) : '';
+  const adopted = decision?.command ? text('progressAdopted', { command: decision.command })
+    + (decision.basis ? text('progressBasis', { basis: decision.basis }) : '') : '';
+  return budget + (progress === 'complete' ? adopted + text('progressComplete')
+    : progress === 'selection' ? adopted + text('progressSelection', { instruction: text(classification ? 'progressTargetComplete' : 'progressTargetPending') })
+    : classification ? text('progressAdoption')
+    : text('progressClassification', { instruction: draft?.rows.length
+      ? text('progressRows', { count: draft.pendingCommands.length, instruction: draft.pendingChoice ? text('progressSavedChoice', { choice: draft.pendingChoice }) : text('progressRemaining') })
+      : text('progressRate') }));
 }
 
 export function restoredPreparationDecision(session) {
@@ -1121,11 +1103,11 @@ export function restoredPreparationDecision(session) {
     if (event.type !== 'tool/result') continue;
     const call = session.eventAt(event.sourceEventSeqs?.[0]);
     if (call?.type !== 'tool/call' || call.data.name !== 'sts') continue;
-    for (const block of event.data.message.content) {
-      if (block.type !== 'text') continue;
-      const command = /^Adopted preparation command: (.+)$/m.exec(block.text)?.[1];
-      if (command) return { command,
-        basis: /^Preparation comparison before action \((?:recorded rows|player assessment)\): (.+)$/m.exec(block.text)?.[1] };
+    const decision = event.data.meta?.preparationDecision;
+    if (event.data.meta?.schema === 'sts-preparation-result-v1'
+        && typeof decision?.command === 'string' && decision.command.trim()
+        && (decision.basis === undefined || typeof decision.basis === 'string')) {
+      return { command: decision.command, basis: decision.basis };
     }
   }
 }

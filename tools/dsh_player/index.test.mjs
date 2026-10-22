@@ -200,6 +200,58 @@ test('ordinary scripted players localize guides and tool descriptions per scope 
   for (const handle of handles) await handle.dispose();
 });
 
+test('preparation scopes localize the actual guide and schema from their model language', async t => {
+  const f = await fixture(t, 'Raw rules {{literal}}');
+  await f.setPosition(scopedPosition('campfire', 1));
+  const schemas = [];
+  for (const agentLocale of ['en', 'zh-CN']) {
+    const handle = await f.create({ taskScope: 'preparation', agentLocale });
+    const assembly = await f.ctx.systemPrompt.assemble({ scope: scopeOf(f.scope()) });
+    const guide = assembly.sections.find(section => section.name === 'sts:player-guide').text;
+    const tool = f.ctx.tools.schemas(handle.agent).find(tool => tool.name === 'sts');
+    assert.match(guide, agentLocale === 'en' ? /Current task: rate the candidates/ : /当前任务：评估候选/);
+    assert.match(tool.description, agentLocale === 'en' ? /Submit the current preparation step/ : /提交当前准备步骤/);
+    schemas.push(JSON.parse(JSON.stringify(tool, (key, value) => key === 'description' ? undefined : value)));
+    await handle.dispose();
+  }
+  assert.deepEqual(schemas[0], schemas[1]);
+});
+
+test('both languages record acknowledged decisions on a failed tool result before any recovery read', async t => {
+  for (const agentLocale of ['en', 'zh-CN']) {
+    const command = 'take:BurningPact#0';
+    const f = await fixture(t, 'Current rules', false, { actions: { [command]: scopedPosition('map', 2) }, failObservationAfterAction: true });
+    await f.setPosition(checkedCardPosition());
+    let requests = 0;
+    class Adapter extends LlmAdapter {
+      async *stream() {
+        if (requests++ === 0) {
+          const block = { type: 'tool-call', id: `typed-recovery-${agentLocale}`, name: 'sts', arguments: JSON.stringify({ command: 'choose', choice: command }) };
+          yield { type: 'block-start', index: 0, blockType: 'tool-call' };
+          yield { type: 'tool-call-delta', index: 0, id: block.id, name: block.name, argumentsDelta: block.arguments };
+          yield { type: 'block-end', index: 0, block };
+          yield { type: 'finish', reason: { kind: 'tool-calls' } };
+        } else yield { type: 'finish', reason: { kind: 'stop' } };
+      }
+    }
+    f.ctx.llm.registerAdapter(['fixture'], new Adapter());
+    const handle = await f.create({ taskScope: 'preparation', agentLocale });
+    handle.agent.followup(createUserMessage({ source: { kind: 'user' }, content: [{ type: 'text', text: 'Complete the current reward choice.' }] }));
+    await handle.agent.whenIdle();
+    const failed = handle.agent.session.snapshotEvents().find(event => event.type === 'tool/result' && event.data.message.isError);
+    assert.ok(failed);
+    assert.equal(failed.data.meta.preparationDecision.command, command);
+    assert.equal(restoredPreparationDecision(handle.agent.session).command, command);
+    const content = failed.data.message.content.map(block => block.text ?? '').join('\n');
+    assert.match(content, agentLocale === 'en' ? /Adopted preparation command:/ : /已采用的准备命令：/);
+    const recovered = await rawGameExec(f.ctx, handle.agent, 'read');
+    assert.equal(Boolean(recovered.isError), false, resultText(recovered));
+    assert.match(resultText(recovered), agentLocale === 'en' ? /Preparation task complete/ : /准备任务完成/);
+    assert.equal((await f.calls()).filter(call => call === command).length, 1);
+    await handle.dispose();
+  }
+});
+
 test('bound rules are loaded before play, remain scoped, and close with the player', async t => {
   const rules = 'Run rules | A20\nAct transition: heal 75% of missing HP. {{literal}}';
   const f = await fixture(t, rules);

@@ -1,3 +1,4 @@
+import { createPresentation } from '@sts-simulator/presentation';
 // Gold, prices, purchase side effects and attached choices come from Rust.
 // These private prefixes organize the current publicly offered shopping window.
 import { gameContextSource, sameGameContextSource } from './context.mjs';
@@ -54,7 +55,15 @@ export function shopPotionReplacementScope(reading, normalize = command => comma
     }) };
 }
 
-export const SHOP_POTION_COMPARISON_GUIDE = 'Compare the single offered replacement with each held bottle and keeping Gold. Rate each supplied command: high = preferred tradeoff, medium = acceptable tradeoff, low = weaker tradeoff, review = a concrete missing fact. Submit command classify, basis rows as command | high/medium/low/review, and one complete command in choice. Use sts_feedback for a concrete missing fact.';
+export function shopInstructions(locale = 'en') {
+  const presentation = createPresentation({ locale });
+  const text = key => presentation.text(`scripted:shop.${key}`);
+  return { potionGuide: text('potionGuide'), spendingGuide: text('spendingGuide'), naming: text('naming'),
+    parameters: Object.fromEntries(['command', 'basis', 'choice', 'comparison'].map(key => [key,
+      { type: 'string', ...(key === 'command' ? { required: true } : {}), description: text(`parameter${key[0].toUpperCase()}${key.slice(1)}`) }])) };
+}
+const defaultInstructions = shopInstructions();
+export const SHOP_POTION_COMPARISON_GUIDE = defaultInstructions.potionGuide;
 export const TARGET_SHOP_POTION_INPUT_BYTES = 4096;
 
 export function measureShopPotionInputBudget(parts) {
@@ -251,15 +260,10 @@ export function renderShopBudget(budget, plan) {
     'Compare the whole intended spend with retaining Gold. The classification table covers the current single actions. For adoption, an intended follow-up uses: alternative | @resources[, other comparison references] | then <displayed follow-up command>. The host adopts the first action and supplies the intended next spend to its fresh classification.'].join('\n');
 }
 
-export const SHOP_SPENDING_GUIDE = 'Submit one recommendation row for each current option, including leave: command | high/medium/low/review in basis; command classify and a current command in choice. high = preferred, medium = acceptable, low = weaker, review = missing fact. Optional comparison: then FOLLOW_UP_COMMAND from its first-spend budget row, or keep the balance. Send missing facts through sts_feedback.';
-export const SHOP_SPENDING_TOOL_PARAMETERS = {
-  command: { type: 'string', required: true, description: 'classify with rows and choice; choose with a recorded choice; read to recover.' },
-  basis: { type: 'string', description: 'For classify: command | high/medium/low/review, one row per supplied current command.' },
-  choice: { type: 'string', description: 'Copy one complete supplied current command.' },
-  comparison: { type: 'string', description: 'Optional continuation: then FOLLOW_UP_COMMAND from the selected first spend\'s budget row, or keep the balance.' },
-};
+export const SHOP_SPENDING_GUIDE = defaultInstructions.spendingGuide;
+export const SHOP_SPENDING_TOOL_PARAMETERS = defaultInstructions.parameters;
 export const TARGET_SHOP_SPENDING_INPUT_BYTES = 4096;
-export const SHOP_SPENDING_NAMING_GUIDE = 'Keep supplied names and IDs; use ASCII + for upgrades.';
+export const SHOP_SPENDING_NAMING_GUIDE = defaultInstructions.naming;
 
 // Ordinary purchases share one spending comparison. Native budget previews
 // bind their prices and continuations; a reviewed removal policy owns the target.

@@ -1,21 +1,26 @@
+import { createPresentation } from '@sts-simulator/presentation';
 import { gameContextSource, sameGameContextSource } from './context.mjs';
 import { preparationCardAcquisition, preparationDeckComparison, renderStatusRoutes, battleTranceDrawOrder,
   strengthTiming, playedCardLifecycle, OTHER_CARD_EXHAUST_COMPARISON } from './deck.mjs';
 import { preparationCardPolicies, STRATEGY_SOURCES } from './strategy.mjs';
 
-export const CARD_CHOICE_GUIDE = `Apply the supplied comparison question to the listed options. Submit one complete option command in choice with command choose. Use sts_feedback for a concrete missing fact or policy.`;
-export const CARD_CHOICE_AUTOMATIC_GUIDE = 'The host supplied one policy choice. Submit that complete option command in choice with command choose.';
-export const CARD_CHOICE_REVIEW_GUIDE = 'The host retained this reward for policy review. Record the supplied strategy gap through sts_feedback.';
-export const CARD_CHOICE_TOOL_DESCRIPTION = 'Choose one supplied reward option. read recovers the current step.';
+export function cardChoiceInstructions(locale = 'en') {
+  const presentation = createPresentation({ locale });
+  const text = key => presentation.text(`scripted:cardChoice.${key}`);
+  return { guide: text('guide'), automatic: text('automatic'), review: text('review'), description: text('description'),
+    parameters: { command: { type: 'string', required: true, description: text('parameterCommand') },
+      choice: { type: 'string', description: text('parameterChoice') } } };
+}
+const defaultInstructions = cardChoiceInstructions();
+export const CARD_CHOICE_GUIDE = defaultInstructions.guide;
+export const CARD_CHOICE_AUTOMATIC_GUIDE = defaultInstructions.automatic;
+export const CARD_CHOICE_REVIEW_GUIDE = defaultInstructions.review;
+export const CARD_CHOICE_TOOL_DESCRIPTION = defaultInstructions.description;
+export const CARD_CHOICE_TOOL_PARAMETERS = defaultInstructions.parameters;
 export const MAX_CARD_CHOICE_OPTIONS = 4;
 // Bytes of the decision reading plus its guide. Tool schemas and provider
 // framing have separate token overhead, measured by the runtime token meter.
 export const TARGET_CARD_CHOICE_INPUT_BYTES = 4096;
-export const CARD_CHOICE_TOOL_PARAMETERS = {
-  command: { type: 'string', required: true, description: 'choose to submit; read to recover.' },
-  choice: { type: 'string', description: 'For choose: copy one complete supplied option command.' },
-};
-
 const label = row => `${row.card.card}${row.card.upgrades > 0 ? '+' : ''}`;
 
 function gapError(kind, reason, message, details = {}) {

@@ -142,6 +142,9 @@ if (process.argv.slice(2).join(' ') === '--check') {
           const { nativeGuide } = await import(pathToFileURL(entry).href);
           const { playerGuide } = await import(pathToFileURL(join(installed, 'index.mjs')).href);
           const { continuationTask } = await import(pathToFileURL(join(installed, 'launch.mjs')).href);
+          const { preparationInstructions, preparationStageGuide } = await import(pathToFileURL(join(installed, 'preparation.mjs')).href);
+          const { cardChoiceInstructions } = await import(pathToFileURL(join(installed, 'card-choice.mjs')).href);
+          const { shopInstructions } = await import(pathToFileURL(join(installed, 'shop.mjs')).href);
           for (const locale of ['en', 'zh-CN']) {
             const manual = nativeGuide(true, locale), assisted = nativeGuide(false, locale);
             if (!manual.includes(locale === 'en' ? 'public-information manual play' : '依据公开信息手动出牌')
@@ -155,7 +158,13 @@ if (process.argv.slice(2).join(' ') === '--check') {
                 || !continuationTask(task, 'interrupted', locale).endsWith('\n\n' + task)) {
               throw new Error(`Installed scripted guide lost language, command or operator text: ${locale}`);
             }
-            report.installed_scripted_checks.push({ package: manifest.name, locale, imported_entries: true, preserved_guide_commands_and_operator: true });
+            const preparation = preparationInstructions(locale), card = cardChoiceInstructions(locale), shop = shopInstructions(locale);
+            if (!preparationStageGuide('pending', undefined, {}, undefined, locale).includes(locale === 'en' ? 'Current task: rate' : '当前任务：评估')
+                || !card.parameters.command.description.includes('choose') || !shop.spendingGuide.includes('then FOLLOW_UP_COMMAND')
+                || preparation.comparisons.map(row => row.id).join(',') !== '@function,@access,@protection,@resources,@opportunity') {
+              throw new Error(`Installed preparation guide lost language or protocol: ${locale}`);
+            }
+            report.installed_scripted_checks.push({ package: manifest.name, locale, imported_entries: true, preserved_guide_commands_and_operator: true, preparation_guides_and_schemas: true });
           }
         }
       }
