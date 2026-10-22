@@ -5133,6 +5133,7 @@ fn render_revealed_deck_result_v1(
     controller: &RunPlayControllerV1,
     before: Option<&sts_oracle_learning::agent::task::TaskPublicDecisionV1>,
     reveals: bool,
+    locale: Locale,
 ) -> Result<String, String> {
     if !reveals {
         return Ok(String::new());
@@ -5143,9 +5144,13 @@ fn render_revealed_deck_result_v1(
     let Some(after) = controller.head().current_decision.as_ref() else {
         return Ok(String::new());
     };
-    let change = crate::compact::preview_deck_change_v1(before, &after.public_decision_v1()?);
+    let change =
+        crate::compact::render_deck_change_v1(before, &after.public_decision_v1()?, locale);
     Ok(match change {
-        Some(change) => format!("Deck change: {change}\n"),
+        Some(change) => format!(
+            "{}\n",
+            crate::compact::compact_text(locale, "status.deckChange", &[("change", &change)])
+        ),
         None => String::new(),
     })
 }
@@ -5235,7 +5240,7 @@ fn handle_valid_request_v1(
                 controller.choose_bound_v1(selection)?;
             }
             let revealed_changes =
-                render_revealed_deck_result_v1(controller, before.as_ref(), reveals)?;
+                render_revealed_deck_result_v1(controller, before.as_ref(), reveals, locale)?;
             *observation_cache = None;
             *combat_research_cache = None;
             *combat_turn_cache = None;
@@ -5346,7 +5351,7 @@ fn handle_valid_request_v1(
                 controller.anchor_action_line_v1(&selectors)?;
             }
             let revealed_changes =
-                render_revealed_deck_result_v1(controller, before.as_ref(), reveals)?;
+                render_revealed_deck_result_v1(controller, before.as_ref(), reveals, locale)?;
             *observation_cache = None;
             *combat_research_cache = None;
             *combat_turn_cache = None;

@@ -3178,7 +3178,7 @@ fn compact_shop_shows_executable_offers_and_curse_removal() {
         .unwrap()
         .public_decision_v1()
         .unwrap();
-    let receipt = crate::compact::render_inventory_change_v1(&before, &after);
+    let receipt = crate::compact::render_inventory_change_v1(&before, &after, Locale::En);
     assert!(receipt.contains("Deck change: +Shrug It Off"));
     assert!(!receipt.contains("Relic gained:"));
 
@@ -3589,7 +3589,7 @@ fn compact_shop_relic_purchase_reports_only_the_new_relic() {
         .unwrap()
         .public_decision_v1()
         .unwrap();
-    let receipt = crate::compact::render_inventory_change_v1(&before, &after);
+    let receipt = crate::compact::render_inventory_change_v1(&before, &after, Locale::En);
     assert_eq!(receipt, "Relic gained: Membership Card\n");
 }
 

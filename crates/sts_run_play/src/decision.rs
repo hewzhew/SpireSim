@@ -713,7 +713,8 @@ fn read_public_decision_v1(
                             &deck
                                 .into_iter()
                                 .map(|(count, card)| {
-                                    let mut label = deck_card_label(&card, locale);
+                                    let mut label =
+                                        crate::compact::permanent_card_label_v1(&card, locale);
                                     if names[locale.entity("card", card.card.stable_id())].len() > 1
                                     {
                                         write!(label, " [{}]", card.card.stable_id()).unwrap();
@@ -1137,62 +1138,6 @@ fn read_public_decision_v1(
     Ok(result)
 }
 
-pub(crate) fn deck_card_label(card: &TaskStrategicCardV1, locale: Locale) -> String {
-    let mut label = locale.card_name(card.card.stable_id(), card.upgrades);
-    if card.misc_value != 0 {
-        write!(
-            label,
-            " ({})",
-            locale
-                .text(
-                    "inventory",
-                    "misc",
-                    &[("amount", &card.misc_value.to_string())]
-                )
-                .unwrap()
-        )
-        .unwrap();
-    }
-    if card.cost_modifier != 0 {
-        write!(
-            label,
-            " ({})",
-            locale
-                .text(
-                    "inventory",
-                    "cost",
-                    &[("amount", &format!("{:+}", card.cost_modifier))]
-                )
-                .unwrap()
-        )
-        .unwrap();
-    }
-    if let Some(damage) = card.base_damage_override {
-        write!(
-            label,
-            " ({})",
-            locale
-                .text("inventory", "damage", &[("amount", &damage.to_string())])
-                .unwrap()
-        )
-        .unwrap();
-    }
-    if let Some(block) = card.base_block_override {
-        write!(
-            label,
-            " ({})",
-            locale
-                .text("inventory", "block", &[("amount", &block.to_string())])
-                .unwrap()
-        )
-        .unwrap();
-    }
-    if let Some(relic) = card.bottled_by {
-        write!(label, " [{}]", locale.entity("relic", relic.stable_id())).unwrap();
-    }
-    label
-}
-
 fn run_selection_card_label(
     card: &TaskStrategicCardV1,
     observation: &TaskStrategicObservationV1,
@@ -1200,7 +1145,10 @@ fn run_selection_card_label(
 ) -> String {
     let reward = crate::render::run_selection_reward_label_v1(observation, card.card, locale)
         .map_or_else(String::new, |label| format!(" | {label}"));
-    format!("{}{reward}", deck_card_label(card, locale))
+    format!(
+        "{}{reward}",
+        crate::compact::permanent_card_label_v1(card, locale)
+    )
 }
 
 fn run_selection_label(
@@ -1436,7 +1384,10 @@ fn option_label(
             text(
                 locale,
                 "action.upgrade",
-                &[("card", &deck_card_label(&card, locale))],
+                &[(
+                    "card",
+                    &crate::compact::permanent_card_label_v1(&card, locale),
+                )],
             )
         }
         TaskPublicCandidateV1::Strategic {

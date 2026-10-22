@@ -2,6 +2,115 @@ use super::*;
 use crate::decision_tests::{controller_with_session, fixture, TestDirectory};
 
 #[test]
+fn permanent_card_changes_do_not_cancel_same_name_card_identities() {
+    let dir = TestDirectory::new();
+    let game = controller_with_session(&dir.0, "card-identity-change", &fixture("reward"));
+    let mut before = game
+        .head()
+        .current_decision
+        .as_ref()
+        .unwrap()
+        .public_decision_v1()
+        .unwrap();
+    let TaskPublicObservationV1::Strategic { observation } = &mut before.observation else {
+        panic!()
+    };
+    let mut card = observation.cards[0];
+    card.card = cards::CardId::Strike;
+    observation.cards = vec![card];
+    let mut after = before.clone();
+    let TaskPublicObservationV1::Strategic { observation } = &mut after.observation else {
+        panic!()
+    };
+    observation.cards[0].card = cards::CardId::StrikeG;
+    for locale in [Locale::En, Locale::ZhCn] {
+        let change = render_deck_change_v1(&before, &after, locale)
+            .expect("same-name identities are distinct");
+        assert!(change.contains("[Strike]"), "{change}");
+        assert!(change.contains("[StrikeG]"), "{change}");
+        assert!(
+            change.starts_with('-') && change.contains(", +"),
+            "{change}"
+        );
+    }
+}
+
+#[test]
+fn permanent_card_changes_track_all_modifiers_and_ignore_page_ordinals() {
+    let dir = TestDirectory::new();
+    let game = controller_with_session(&dir.0, "permanent-modifiers", &fixture("reward"));
+    let mut before = game
+        .head()
+        .current_decision
+        .as_ref()
+        .unwrap()
+        .public_decision_v1()
+        .unwrap();
+    let TaskPublicObservationV1::Strategic { observation } = &mut before.observation else {
+        panic!()
+    };
+    let mut card = observation.cards[0];
+    card.card = cards::CardId::Strike;
+    card.upgrades = 0;
+    card.misc_value = 0;
+    card.base_damage_override = None;
+    card.base_block_override = None;
+    card.cost_modifier = 0;
+    card.bottled_by = None;
+    observation.cards = vec![card, card];
+    let variants = [
+        TaskStrategicCardV1 {
+            upgrades: 1,
+            ..card
+        },
+        TaskStrategicCardV1 {
+            misc_value: 12,
+            ..card
+        },
+        TaskStrategicCardV1 {
+            base_damage_override: Some(23),
+            ..card
+        },
+        TaskStrategicCardV1 {
+            base_block_override: Some(17),
+            ..card
+        },
+        TaskStrategicCardV1 {
+            cost_modifier: -1,
+            ..card
+        },
+        TaskStrategicCardV1 {
+            bottled_by: Some(relics::RelicId::BottledFlame),
+            ..card
+        },
+    ];
+    for variant in variants {
+        let mut after = before.clone();
+        let TaskPublicObservationV1::Strategic { observation } = &mut after.observation else {
+            panic!()
+        };
+        observation.cards = vec![variant, variant];
+        for locale in [Locale::En, Locale::ZhCn] {
+            let change = render_deck_change_v1(&before, &after, locale).unwrap();
+            assert!(
+                change.contains("-2× ") && change.contains("+2× "),
+                "{change}"
+            );
+        }
+    }
+    let mut after = before.clone();
+    let TaskPublicObservationV1::Strategic { observation } = &mut after.observation else {
+        panic!()
+    };
+    observation.cards[0].ordinal = 19;
+    observation.cards[1].ordinal = 5;
+    observation.cards.reverse();
+    for locale in [Locale::En, Locale::ZhCn] {
+        assert_eq!(render_deck_change_v1(&before, &after, locale), None);
+    }
+}
+
+#[test]
 fn compact_status_layout_keeps_the_same_public_choices_and_does_not_advance() {
     let dir = TestDirectory::new();
     for kind in [

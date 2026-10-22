@@ -2113,12 +2113,14 @@ fn run(cli: Cli) -> Result<(), String> {
                     "Preparation (private exact scratch RNG): {}\nHP {}/{} -> {}/{} | Gold {} -> {}\n",
                     actions.join(" / "), original_run.current_hp, original_run.max_hp,
                     resources.current_hp, resources.max_hp, original_run.gold, resources.gold));
-                preparation_text.push_str(&compact::render_inventory_change_v1(&before, &after));
+                preparation_text.push_str(&compact::render_inventory_change_v1(
+                    &before, &after, locale,
+                ));
                 preparation_text.push_str(&compact::render_inventory_decision_v1(
                     after.clone(),
                     false,
                     None,
-                    Locale::En,
+                    locale,
                 )?);
                 if let TaskPublicObservationV1::Strategic { observation } = &after.observation {
                     preparation_text.push_str(&format!("Base energy/turn {} | Potions: {}\n",
@@ -3967,7 +3969,11 @@ fn run(cli: Cli) -> Result<(), String> {
             if let Some(after) = controller.head().current_decision.as_ref() {
                 print!(
                     "{}",
-                    compact::render_inventory_change_v1(&before, &after.public_decision_v1()?)
+                    compact::render_inventory_change_v1(
+                        &before,
+                        &after.public_decision_v1()?,
+                        locale
+                    )
                 );
             }
             print!("{}", render_status_v1(controller.head(), locale)?);

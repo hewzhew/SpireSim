@@ -5624,6 +5624,9 @@
       "transitions": "Stopped: transition budget exhausted",
       "unsupported": "Stopped: unsupported decision",
       "error": "Stopped: {{message}}"
+    },
+    "transition": {
+      "relicGained": "Relic gained: {{relic}}"
     }
   }
 }

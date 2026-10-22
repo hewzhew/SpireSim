@@ -593,7 +593,7 @@ pub(crate) fn inventory_reading_decision_v1(
         let id = card.card;
         let upgrades = card.upgrades;
         let start = output.len();
-        let mut label = inventory_card_label_v1(&card, locale);
+        let mut label = permanent_card_label_v1(&card, locale);
         if name_ids[locale.entity("card", id.stable_id())].len() > 1 {
             write!(label, " [{}]", id.stable_id()).expect("string write");
         }
@@ -726,20 +726,46 @@ pub(crate) fn inventory_reading_decision_v1(
 
 /// Permanent instances group by identity and all public instance modifiers.
 /// The result and its order do not depend on translated display names.
+type PermanentCardVariantKeyV1 = (
+    &'static str,
+    u8,
+    i32,
+    Option<i32>,
+    Option<i32>,
+    i8,
+    Option<&'static str>,
+);
+
+fn permanent_card_variant_key_v1(value: &TaskStrategicCardV1) -> PermanentCardVariantKeyV1 {
+    // Ordinals locate a card on one page; they are not permanent identity.
+    // Destructure exhaustively so a new public field needs an explicit policy.
+    let TaskStrategicCardV1 {
+        ordinal: _,
+        card,
+        upgrades,
+        misc_value,
+        base_damage_override,
+        base_block_override,
+        cost_modifier,
+        bottled_by,
+    } = *value;
+    (
+        card.stable_id(),
+        upgrades,
+        misc_value,
+        base_damage_override,
+        base_block_override,
+        cost_modifier,
+        bottled_by.map(|id| id.stable_id()),
+    )
+}
+
 pub(crate) fn inventory_card_groups_v1(
     cards: &[TaskStrategicCardV1],
 ) -> Vec<(usize, TaskStrategicCardV1)> {
     let mut counts = BTreeMap::new();
     for &card in cards {
-        let key = (
-            card.card.stable_id(),
-            card.upgrades,
-            card.misc_value,
-            card.base_damage_override,
-            card.base_block_override,
-            card.cost_modifier,
-            card.bottled_by.map(|relic| relic.stable_id()),
-        );
+        let key = permanent_card_variant_key_v1(&card);
         counts.entry(key).or_insert((0, card)).0 += 1;
     }
     let mut groups = counts.into_values().collect::<Vec<_>>();
@@ -753,7 +779,7 @@ pub(crate) fn inventory_card_groups_v1(
     groups
 }
 
-fn inventory_card_label_v1(card: &TaskStrategicCardV1, locale: Locale) -> String {
+pub(crate) fn permanent_card_label_v1(card: &TaskStrategicCardV1, locale: Locale) -> String {
     let mut label = locale.card_name(card.card.stable_id(), card.upgrades);
     let modifier = |key, amount: String| {
         locale
@@ -1203,9 +1229,10 @@ fn render_shop_status_v1(
     Ok(output)
 }
 
-pub(crate) fn preview_deck_change_v1(
+pub(crate) fn render_deck_change_v1(
     source: &TaskPublicDecisionV1,
     successor: &TaskPublicDecisionV1,
+    locale: Locale,
 ) -> Option<String> {
     let (
         TaskPublicObservationV1::Strategic {
@@ -1216,25 +1243,40 @@ pub(crate) fn preview_deck_change_v1(
     else {
         return None;
     };
-    let mut changes = BTreeMap::<String, i32>::new();
+    let mut changes = BTreeMap::<PermanentCardVariantKeyV1, (TaskStrategicCardV1, i32)>::new();
     for card in &before.cards {
-        *changes
-            .entry(crate::decision::deck_card_label(card, Locale::En))
-            .or_default() -= 1;
+        changes
+            .entry(permanent_card_variant_key_v1(card))
+            .or_insert((*card, 0))
+            .1 -= 1;
     }
     for card in &after.cards {
-        *changes
-            .entry(crate::decision::deck_card_label(card, Locale::En))
-            .or_default() += 1;
+        changes
+            .entry(permanent_card_variant_key_v1(card))
+            .or_insert((*card, 0))
+            .1 += 1;
+    }
+    let mut names = BTreeMap::<_, std::collections::BTreeSet<_>>::new();
+    for card in before.cards.iter().chain(&after.cards) {
+        names
+            .entry(locale.entity("card", card.card.stable_id()))
+            .or_default()
+            .insert(card.card.stable_id());
     }
     let changes = changes
-        .into_iter()
+        .into_values()
         .filter(|(_, count)| *count != 0)
-        .map(|(card, count)| match count {
-            1 => format!("+{card}"),
-            -1 => format!("-{card}"),
-            n if n > 1 => format!("+{n}× {card}"),
-            n => format!("-{}× {card}", -n),
+        .map(|(card, count)| {
+            let mut label = permanent_card_label_v1(&card, locale);
+            if names[locale.entity("card", card.card.stable_id())].len() > 1 {
+                write!(label, " [{}]", card.card.stable_id()).expect("string write");
+            }
+            match count {
+                1 => format!("+{label}"),
+                -1 => format!("-{label}"),
+                n if n > 1 => format!("+{n}× {label}"),
+                n => format!("-{}× {label}", -n),
+            }
         })
         .collect::<Vec<_>>();
     (!changes.is_empty()).then(|| changes.join(", "))
@@ -1243,10 +1285,16 @@ pub(crate) fn preview_deck_change_v1(
 pub fn render_inventory_change_v1(
     before: &TaskPublicDecisionV1,
     after: &TaskPublicDecisionV1,
+    locale: Locale,
 ) -> String {
     let mut output = String::new();
-    if let Some(change) = preview_deck_change_v1(before, after) {
-        writeln!(output, "Deck change: {change}").expect("string write");
+    if let Some(change) = render_deck_change_v1(before, after, locale) {
+        writeln!(
+            output,
+            "{}",
+            compact_text(locale, "status.deckChange", &[("change", &change)])
+        )
+        .expect("string write");
     }
     if let (
         TaskPublicObservationV1::Strategic {
@@ -1264,8 +1312,12 @@ pub fn render_inventory_change_v1(
             if !held.contains(&relic.relic) {
                 writeln!(
                     output,
-                    "Relic gained: {}",
-                    gameplay_display_label_v1(relic.relic)
+                    "{}",
+                    compact_text(
+                        locale,
+                        "transition.relicGained",
+                        &[("relic", locale.entity("relic", relic.relic.stable_id()))]
+                    )
                 )
                 .expect("string write");
             }
@@ -1324,7 +1376,8 @@ pub fn render_preview_v1(comparison: &RunPlayComparisonV1, detail: bool) -> Resu
                 before.context.as_ref(),
                 Locale::En,
             )?;
-            let deck_change = preview_deck_change_v1(&line.steps[0].source_decision, next);
+            let deck_change =
+                render_deck_change_v1(&line.steps[0].source_decision, next, Locale::En);
             writeln!(output, "Result:").expect("string write");
             output.push_str(&render_reading_status_v1(
                 next,

@@ -5624,6 +5624,9 @@
       "transitions": "已停止：转换预算用尽",
       "unsupported": "已停止：决策类型不受支持",
       "error": "已停止：{{message}}"
+    },
+    "transition": {
+      "relicGained": "获得遗物：{{relic}}"
     }
   }
 }
