@@ -8,6 +8,32 @@ import { join } from 'node:path';
 import { optionSemantics, readingOptionCommands, expandedCombatCommands, distinctCombatCommands, resolveOptionName, summarizeDecisionJson } from './contract.mjs';
 import { printReading, previewInventoryChanges } from './render.mjs';
 
+test('parallel reading presentations preserve native text and executable commands across languages', async () => {
+  const reading = { view: 'Native reading stays exactly as recorded\n' };
+  const commands = ['play:Strike+0#0@0', 'end'];
+  const output = { en: '', 'zh-CN': '' };
+  await Promise.all(Object.keys(output).map(locale => printReading(reading, {
+    locale, combatCommands: commands, write(text) { output[locale] += text; },
+  })));
+  assert.match(output.en, /Playable now/);
+  assert.match(output['zh-CN'], /当前可打出/);
+  for (const value of Object.values(output)) {
+    assert.ok(value.startsWith(reading.view));
+    for (const command of commands) assert.ok(value.includes(`./p act ${command}`));
+  }
+});
+
+test('translated preview inventory deltas retain same-name card identities', async () => {
+  const original = { domain: 'strategic', observation: { cards: [{ card: 'Strike', upgrades: 0, count: 1 }], relics: [] } };
+  const endpoint = { kind: 'decision', observation: { domain: 'strategic', observation: { cards: [{ card: 'StrikeG', upgrades: 0, count: 1 }], relics: [] } } };
+  const before = structuredClone([original, endpoint]);
+  const result = await previewInventoryChanges(original, endpoint, { locale: 'zh-CN' });
+  assert.match(result, /预演库存变化/);
+  assert.match(result, /-1 打击 \[Strike\]/);
+  assert.match(result, /\+1 打击 \[StrikeG\]/);
+  assert.deepEqual([original, endpoint], before);
+});
+
 test('cancel uses the bound typed action despite translated and misleading labels', async () => {
   for (const domain of ['strategic', 'combat_atomic']) {
     let picked = false, rendered;
@@ -213,7 +239,7 @@ test('card reward and discovery print commands that choose the bound card, not i
       { label: 'Skip', command: 'skip' },
     ]);
     output = '';
-    printReading(reading);
+    await printReading(reading);
     const command = /^\.\/p (\S+)  \|  Effect: Armaments$/m.exec(output)?.[1];
     assert.equal(command, `${verb}:Armaments+0#0`);
     assert.equal(output.trim().split('\n').length, 3, 'commands replace rows rather than adding a second listing');
@@ -277,7 +303,7 @@ test('grouped smith rows retain exact command bindings across omitted copies', a
   // Rust omits duplicate rows; their positions in the bound list stay unchanged.
   reading.view = './p rest  |  Effect: rest\n./p smith:Strike#0  |  Effect: Upgrade one Strike (choose 1 of 6 copies) | base damage/hit 6 -> 9\n'
     + './p smith:Strike#2  |  Effect: Upgrade one Strike [Bottled Flame] | base damage/hit 6 -> 9\n./p recall  |  Effect: recall';
-  printReading(reading);
+  await printReading(reading);
   assert.match(output, /\.\/p rest  \|  Effect: rest/);
   assert.match(output, /\.\/p recall  \|  Effect: recall/);
   assert.match(output, /\.\/p smith:Strike#0  \|  Effect: Upgrade one Strike \(choose 1 of 6 copies\) \| base damage\/hit 6 -> 9/);
@@ -292,7 +318,7 @@ test('grouped smith rows retain exact command bindings across omitted copies', a
   assert.equal(picked, 3);
   output = '';
   reading.view = expandedView;
-  printReading(reading, { expanded: true });
+  await printReading(reading, { expanded: true });
   assert.equal((output.match(/\.\/p smith:/g) ?? []).length, 7);
   assert.match(output, /\.\/p smith:Strike\+0#6  \|/);
   assert.doesNotMatch(output, /@deck\[/);
@@ -357,17 +383,17 @@ test('shop leave keeps a named command when purchases reorder the rows', () => {
   }
 });
 
-test('expanded combat exposes legal potion occurrences and targets, default stays compact', t => {
+test('expanded combat exposes legal potion occurrences and targets, default stays compact', async t => {
   let output = '';
   t.mock.method(process.stdout, 'write', chunk => { output += chunk; return true; });
   const reading = { control: 'combat', view: 'Energy 0\nPotions: P0 Blood Potion, P1 Attack Potion', options: [],
     raw: { reading: { source: { public_snapshot_id: 'combat' } } } };
   const semantics = ['end', 'use-potion:BloodPotion#0', 'use-potion:AttackPotion#0', 'discard-potion:AttackPotion#0'];
   const doc = { semantic_actions: semantics, decision: { information: { snapshot_id: 'combat' }, candidates: semantics.map(() => ({})) } };
-  printReading(reading);
+  await printReading(reading);
   assert.doesNotMatch(output, /\.\/p act/);
   output = '';
-  printReading(reading, { expanded: true, combatCommands: expandedCombatCommands(reading, doc) });
+  await printReading(reading, { expanded: true, combatCommands: expandedCombatCommands(reading, doc) });
   assert.match(output, /\.\/p act use-potion:AttackPotion#0/);
   assert.doesNotMatch(output, /AttackPotion#1|play:Defend/);
   assert.match(output, /\.\/p act discard-potion:AttackPotion#0/);
@@ -391,7 +417,7 @@ function combatFixture(cards, monsters, plays, view) {
   };
 }
 
-test('compact combat exposes all usable bottles and leaves discarding to options', () => {
+test('compact combat exposes all usable bottles and leaves discarding to options', async () => {
   const { reading, doc } = combatFixture([], [], [], 'Potions: P0 empty, P1 Power Potion, P2 Fire Potion');
   doc.decision.candidates = [
     { kind: 'use_potion', potion_index: 1 },
@@ -404,7 +430,7 @@ test('compact combat exposes all usable bottles and leaves discarding to options
     'use-potion:FirePotion#0@0  |  P2',
   ]);
   let output = '';
-  printReading(reading, { combatCommands: distinctCombatCommands(reading, doc), write: text => { output += text; } });
+  await printReading(reading, { combatCommands: distinctCombatCommands(reading, doc), write: text => { output += text; } });
   assert.match(output, /Potions: P0 empty, P1 Power Potion, P2 Fire Potion/);
   assert.match(output, /act use-potion:PowerPotion#0/);
   assert.doesNotMatch(output, /act discard-potion/);
@@ -420,13 +446,13 @@ test('compact combat exposes all usable bottles and leaves discarding to options
   assert.deepEqual(distinctCombatCommands(reading, doc), [], 'pending choices use their own legal interface');
 });
 
-test('compact combat keeps the legal End Turn option and does not invent it during a choice', () => {
+test('compact combat keeps the legal End Turn option and does not invent it during a choice', async () => {
   const { reading, doc } = combatFixture([], [], [], 'Hand: Burn[unplayable]');
   doc.decision.candidates = [{ action: { kind: 'end_turn' } }];
   doc.semantic_actions = ['end'];
   assert.deepEqual(distinctCombatCommands(reading, doc), ['end']);
   let output = '';
-  printReading(reading, { combatCommands: distinctCombatCommands(reading, doc), write: text => { output += text; } });
+  await printReading(reading, { combatCommands: distinctCombatCommands(reading, doc), write: text => { output += text; } });
   assert.match(output, /act end/);
   reading.selections = [{}];
   assert.deepEqual(distinctCombatCommands(reading, doc), []);
@@ -465,7 +491,7 @@ test('strategic target menus display the same act selection command used by clas
   assert.deepEqual(readingOptionCommands(reading, doc), ['select:DemonForm+#0', 'select:Disarm#0']);
 });
 
-test('Snecko dissimilar copies expose their exact commands, equivalent copies stay compact', t => {
+test('Snecko dissimilar copies expose their exact commands, equivalent copies stay compact', async t => {
   let output = '';
   t.mock.method(process.stdout, 'write', chunk => { output += chunk; return true; });
   const cards = [
@@ -483,7 +509,7 @@ test('Snecko dissimilar copies expose their exact commands, equivalent copies st
     { hand: 4, command: 'play:FlameBarrier+#0' },
   ], 'Hand: Strike[3c 6d], Defend[3c 5b], Metallicize[2c], Defend[1c 5b], Flame Barrier+[3c 16b]');
   const render = () => printReading(reading, { combatCommands: distinctCombatCommands(reading, doc) });
-  render();
+  await render();
   assert.match(output, /Defend\[3c 5b\].*Defend\[1c 5b\]/);
   assert.match(output, /\.\/p act play:Defend#0  \|  3c/);
   assert.match(output, /\.\/p act play:Defend#1  \|  1c/);
@@ -528,14 +554,14 @@ test('board binds damage to active monster slots and candidate target indices', 
   assert.throws(() => summarizeDecisionJson(doc), /damage contract drifted/);
 });
 
-test('rendering preserves Rust hand values and live relic counters without a second data source', t => {
+test('rendering preserves Rust hand values and live relic counters without a second data source', async t => {
   let output = '';
   t.mock.method(process.stdout, 'write', chunk => { output += chunk; return true; });
   const reading = { control: 'combat', view: 'Hand: Perfected Strike+[2c 39d], Perfected Strike[2c 28d]\nRelics: Nunchaku [9], Kunai [2]' };
-  printReading(reading);
+  await printReading(reading);
   assert.equal(output, reading.view+'\n');
   output = '';
-  printReading(reading);
+  await printReading(reading);
   assert.equal(output, reading.view+'\n');
 });
 
@@ -549,14 +575,14 @@ test('single-card selection keeps its member binding separate from cancel option
     selections: [{ min: 1, max: 1, members, async select(chosen) { picked = chosen; return { view: 'Combat' }; } }],
     options: [{ label: 'Cancel', async choose() { assert.fail('selection must not cancel'); } }],
   };
-  printReading(reading);
+  await printReading(reading);
   assert.equal(output, reading.view + '\n');
   await choose({ game: { async decision() { return reading; } }, async printCurrentReading() {} }, '2', []);
   assert.deepEqual(picked, [members[2]]);
   assert.deepEqual(expandedCombatCommands(reading, {}), []);
   output = '';
   reading.view = 'Selection | Upgrade | Choose 1\n  select:Defend+0#1  |  Defend';
-  printReading(reading);
+  await printReading(reading);
   assert.doesNotMatch(output, /\.\/p/);
 });
 
@@ -566,7 +592,7 @@ test('combat selection rows use the act executor for exact semantic commands', a
     view: 'Selection | Exhume | Choose 1\n  ./p act select:Defend+0#0  |  Defend\n  ./p act select:ShrugItOff+0#1  |  Shrug It Off\n  ./p act select:Disarm+0#0  |  Disarm',
     selections: [{ min: 1, max: 1, members: [] }],
   };
-  printReading(reading, { write: text => { output += text; } });
+  await printReading(reading, { write: text => { output += text; } });
   assert.match(output, /\.\/p act select:Defend\+0#0  \|  Defend/);
   assert.match(output, /\.\/p act select:ShrugItOff\+0#1  \|  Shrug It Off/);
   assert.match(output, /\.\/p act select:Disarm\+0#0  \|  Disarm/);
@@ -577,12 +603,12 @@ test('combat selection rows use the act executor for exact semantic commands', a
   assert.deepEqual(calls, [['select:Disarm']]);
   output = '';
   reading.view = 'Selection | Exhume | Choose 1\n  select:Disarm+0#0  |  Disarm';
-  printReading(reading, { write: text => { output += text; } });
+  await printReading(reading, { write: text => { output += text; } });
   assert.doesNotMatch(output, /\.\/p/, 'a hypothetical preview does not advertise current commands');
   reading.selections[0].min = 2; reading.selections[0].max = 2;
   reading.view = 'Selection | Replace hand cards | Choose 2\nInput: ./p act select:<card tokens joined by commas without spaces>\n  Defend+0#0  |  Defend';
   output = '';
-  printReading(reading, { write: text => { output += text; } });
+  await printReading(reading, { write: text => { output += text; } });
   assert.match(output, /Input: \.\/p act select:<card tokens joined by commas without spaces>/);
   assert.doesNotMatch(output, /\.\/p act select:Defend/, 'one member cannot complete a two-card selection');
 });
@@ -974,20 +1000,20 @@ test('invalid indexes and arguments fail before reading or searching', async () 
   /Held potions are already included; research has no potions argument/);
 });
 
-test('strategic preview exposes changed permanent inventory without querying or publishing', () => {
+test('strategic preview exposes changed permanent inventory without querying or publishing', async () => {
   const original = { domain: 'strategic', observation: {
     cards: [{ card: 'Strike', upgrades: 0, count: 5 }, { card: 'Defend', upgrades: 0, count: 4 }],
     relics: [{ relic: 'BurningBlood' }],
   } };
   const endpoint = observation => ({ kind: 'decision', observation });
-  assert.equal(previewInventoryChanges(original, endpoint(original)), '');
-  assert.equal(previewInventoryChanges(original, endpoint({ domain: 'strategic', observation: {
+  assert.equal(await previewInventoryChanges(original, endpoint(original)), '');
+  assert.equal(await previewInventoryChanges(original, endpoint({ domain: 'strategic', observation: {
     cards: [{ card: 'Strike', upgrades: 0, count: 4 }, { card: 'Defend', upgrades: 0, count: 4 },
       { card: 'Havoc', upgrades: 0, count: 1 }],
     relics: [{ relic: 'SacredBark' }],
-  } })), 'Preview inventory changes:\n  Deck: -1 Strike, +1 Havoc\n  Relics: -1 BurningBlood, +1 SacredBark\n');
-  assert.equal(previewInventoryChanges(original, { kind: 'outcome' }), '');
-  assert.equal(previewInventoryChanges(original, endpoint({ domain: 'combat' })), '');
+  } })), 'Preview inventory changes:\n  Deck: -1 Strike, +1 Havoc\n  Relics: -1 Burning Blood, +1 Sacred Bark\n');
+  assert.equal(await previewInventoryChanges(original, { kind: 'outcome' }), '');
+  assert.equal(await previewInventoryChanges(original, endpoint({ domain: 'combat' })), '');
 });
 
 test('plans full expands the saved report without starting research', async () => {
@@ -1019,7 +1045,7 @@ test('strategic multi-selection prints the act command that executes its bound m
     view: 'Selection | Remove from deck | Choose 2\n  Input: ./p act select:<card tokens joined by commas without spaces>\n  Parasite+0#0  |  Parasite\n  Strike+0#0  |  Strike',
     selections: [{ min: 2, max: 2, members: [] }],
   };
-  printReading(reading, { write: text => { output += text; } });
+  await printReading(reading, { write: text => { output += text; } });
   assert.match(output, /  Input: \.\/p act select:<card tokens joined by commas without spaces>/);
   const calls = [];
   await actOrPreview({ game: { async decision() { return reading; }, async act(tokens) {
@@ -1029,11 +1055,11 @@ test('strategic multi-selection prints the act command that executes its bound m
   reading.selections[0].min = 0;
   reading.view += '\n  ./p act select:none  |  choose none';
   output = '';
-  printReading(reading, { write: text => { output += text; } });
+  await printReading(reading, { write: text => { output += text; } });
   assert.match(output, /  \.\/p act select:none  \|  choose none/);
   output = '';
   reading.view = 'Selection | Remove from deck | Choose 0..2\n  Input: select:<card tokens joined by commas without spaces>\n  select:none  |  choose none';
-  printReading(reading, { write: text => { output += text; } });
+  await printReading(reading, { write: text => { output += text; } });
   assert.doesNotMatch(output, /\.\/p/, 'hypothetical selection must not advertise live commands');
 });
 

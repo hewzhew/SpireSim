@@ -1,6 +1,6 @@
 // Act publishes a validated line; preview runs it on a private engine branch.
 // Board presents the current combat without executing a line.
-import { printReading, writeText, previewInventoryChanges } from '../render.mjs';
+import { printReading, writeText, previewInventoryChanges, presentationFor } from '../render.mjs';
 import { summarizeDecisionJson, applyPotionSkin, assertCurrentDecision, decisionDocumentFromObservation } from '../contract.mjs';
 import { expandRepeatSugar, normalizeActionTokens, actTrimmingEndedCombat } from '../tokens.mjs';
 
@@ -41,17 +41,18 @@ export async function actOrPreview(ctx, command, parameters) {
     throw error;
   }
   if (command === 'preview') {
-    write('Preview (current position unchanged)\n\n');
-    write(`Actual position:\n${before.summary.trimEnd()}\n\n`);
+    const presentation = await presentationFor(ctx);
+    write(`${presentation.text('workbench:preview.heading')}\n\n`);
+    write(`${presentation.text('workbench:preview.actual', { summary: before.summary.trimEnd() })}\n\n`);
     if (reading.stop?.kind === 'unresolved') {
-      write('Private boundary reached by preview; repair the failed action and suffix before act:\n');
+      write(`${presentation.text('workbench:preview.unresolved')}\n`);
     } else if (reading.stop?.kind === 'terminal') {
-      write('Private terminal reached by preview:\n');
+      write(`${presentation.text('workbench:preview.terminal')}\n`);
     } else {
-      write('Private result of preview:\n');
+      write(`${presentation.text('workbench:preview.result')}\n`);
     }
-    printReading(reading, { write });
-    write(previewInventoryChanges(previewSource?.decision.observation, reading.endpoint));
+    await printReading(reading, { write, presentation });
+    write(await previewInventoryChanges(previewSource?.decision.observation, reading.endpoint, { presentation }));
     return;
   }
   ctx.recordAction?.(acceptedTokens.join(' '));
@@ -72,14 +73,15 @@ export async function board(ctx) {
   // The combat summary only exists mid-fight; outside combat the plain
   // reading already says everything.
   if (reading.control === 'combat') {
+    const presentation = await presentationFor(ctx);
     assertCurrentDecision(reading, doc);
     const { incoming, currentBlock, handBlock, playableLines } = summarizeDecisionJson(doc);
     if (incoming > 0) {
-      write(`incoming next enemy turn: ${incoming} | current block ${currentBlock ?? '?'}\n`);
-      write(`hand block sum: ${handBlock} (individual projections; ignores cost, order and play limits)\n`);
+      write(`${presentation.text('workbench:board.incoming', { incoming, block: currentBlock ?? '?' })}\n`);
+      write(`${presentation.text('workbench:board.handBlock', { block: handBlock })}\n`);
     }
     if (playableLines.length > 0) {
-      write(`playable (damage per hit before block; adjusted for the listed target):\n`);
+      write(`${presentation.text('workbench:board.playable')}\n`);
       for (const line of playableLines) write(`  ${line}\n`);
     }
   }
@@ -90,19 +92,34 @@ export async function board(ctx) {
 export async function publicPiles(ctx) {
   const state = decisionDocumentFromObservation(await ctx.game.observe()).decision.observation;
   if (state.domain !== 'combat') throw new Error('piles requires an active combat');
-  const lines = ['Combat piles (unordered; current combat, not the permanent deck)'];
-  for (const [key, label] of [['draw', 'Draw'], ['discard', 'Discard'], ['exhaust', 'Exhaust']]) {
+  const presentation = await presentationFor(ctx);
+  const lines = [presentation.text('workbench:piles.heading')];
+  for (const key of ['draw', 'discard', 'exhaust']) {
     const pile = state.observation.cards[key];
     if (!['public_unordered_collection', 'public_ordered_collection'].includes(pile?.evidence)
         || !Array.isArray(pile.cards)) throw new Error(`Public ${key} pile contents are unavailable`);
     const counts = new Map();
+    const nameIds = new Map();
     for (const card of pile.cards) {
-      const name = card.card_id + (card.upgrades === 1 ? '+' : card.upgrades > 1 ? `+${card.upgrades}` : '');
-      counts.set(name, (counts.get(name) ?? 0) + 1);
+      const displayName = presentation.entity('card', card.card_id);
+      const ids = nameIds.get(displayName) ?? new Set();
+      ids.add(card.card_id);
+      nameIds.set(displayName, ids);
+      const identity = `${card.card_id}+${card.upgrades}`;
+      const group = counts.get(identity) ?? { id: card.card_id, upgrades: card.upgrades, count: 0 };
+      group.count++;
+      counts.set(identity, group);
     }
     const cards = [...counts].sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0)
-      .map(([name, count]) => count > 1 ? `${count}x ${name}` : name);
-    lines.push(`${label} [${pile.cards.length}]: ${cards.join(', ') || 'empty'}`);
+      .map(([, { id, upgrades, count }]) => {
+        const disambiguation = nameIds.get(presentation.entity('card', id)).size > 1 ? ` [${id}]` : '';
+        const name = presentation.cardName(id, upgrades) + disambiguation;
+        return count > 1 ? `${count}x ${name}` : name;
+      });
+    lines.push(presentation.text('workbench:piles.row', {
+      label: presentation.text(`workbench:piles.${key}`), count: pile.cards.length,
+      cards: cards.join(', ') || presentation.text('workbench:piles.empty'),
+    }));
   }
   ctx.write(lines.join('\n') + '\n');
 }

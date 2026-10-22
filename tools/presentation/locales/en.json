@@ -1528,5 +1528,32 @@
     "publishedBoss": "Published Boss: {{boss}}",
     "coordinates": "Map (x,y); current ({{x}},{{y}})",
     "emeraldSuffix": " + Emerald Key"
+  },
+  "workbench": {
+    "legalExpanded": "Legal commands (current position):",
+    "legalBrief": "Playable now (equivalent copies grouped; options lists all):",
+    "preview": {
+      "heading": "Preview (current position unchanged)",
+      "actual": "Actual position:\n{{summary}}",
+      "unresolved": "Private boundary reached by preview; repair the failed action and suffix before act:",
+      "terminal": "Private terminal reached by preview:",
+      "result": "Private result of preview:",
+      "changes": "Preview inventory changes:",
+      "deck": "Deck",
+      "relics": "Relics"
+    },
+    "board": {
+      "incoming": "incoming next enemy turn: {{incoming}} | current block {{block}}",
+      "handBlock": "hand block sum: {{block}} (individual projections; ignores cost, order and play limits)",
+      "playable": "playable (damage per hit before block; adjusted for the listed target):"
+    },
+    "piles": {
+      "heading": "Combat piles (unordered; current combat, not the permanent deck)",
+      "draw": "Draw",
+      "discard": "Discard",
+      "exhaust": "Exhaust",
+      "empty": "empty",
+      "row": "{{label}} [{{count}}]: {{cards}}"
+    }
   }
 }

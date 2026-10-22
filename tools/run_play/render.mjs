@@ -1,5 +1,10 @@
 // Rendering the run-play readings and the map grid.
 // Pure string shaping: no protocol or side effects.
+import { createPresentation } from '@sts-simulator/presentation';
+
+export function presentationFor(ctx) {
+  return ctx.presentation ??= createPresentation({ locale: ctx.agentLocale ?? 'en' });
+}
 
 // ---------------------------------------------------------------------------
 // Map graph helpers use the typed public observation, which is available
@@ -36,38 +41,51 @@ export function writeText(text) { return process.stdout.write(text); }
 
 // Compare permanent inventory from the typed real root and private successor.
 // The comparison itself reads no RNG and publishes no game action.
-export function previewInventoryChanges(previous, endpoint) {
+export async function previewInventoryChanges(previous, endpoint, { presentation, locale = 'en' } = {}) {
   const next = endpoint?.kind === 'decision' ? endpoint.observation : null;
   if (previous?.domain !== 'strategic' || next?.domain !== 'strategic') return '';
+  const view = await (presentation ?? createPresentation({ locale }));
   const changes = [];
-  for (const [label, field, name, count] of [
-    ['Deck', 'cards', card => `${card.card}${card.upgrades ? `+${card.upgrades}` : ''}`, card => card.count],
-    ['Relics', 'relics', relic => relic.relic, () => 1],
+  for (const [field, identity, label, count] of [
+    ['cards', card => `${card.card}+${card.upgrades}`, card => view.cardName(card.card, card.upgrades), card => card.count],
+    ['relics', relic => relic.relic, relic => view.entity('relic', relic.relic), () => 1],
   ]) {
     if (!Array.isArray(previous.observation[field]) || !Array.isArray(next.observation[field])) continue;
     const totals = items => {
       const values = new Map();
-      for (const item of items) values.set(name(item), (values.get(name(item)) ?? 0) + count(item));
+      for (const item of items) values.set(identity(item), (values.get(identity(item)) ?? 0) + count(item));
       return values;
     };
     const old = totals(previous.observation[field]), current = totals(next.observation[field]);
+    const entries = new Map([...previous.observation[field], ...next.observation[field]].map(item => [identity(item), item]));
+    const nameIds = new Map();
+    if (field === 'cards') {
+      for (const card of entries.values()) {
+        const name = view.entity('card', card.card);
+        const ids = nameIds.get(name) ?? new Set();
+        ids.add(card.card);
+        nameIds.set(name, ids);
+      }
+    }
     const differences = [...new Set([...old.keys(), ...current.keys()])].flatMap(item => {
       const delta = (current.get(item) ?? 0) - (old.get(item) ?? 0);
-      return delta ? [`${delta > 0 ? '+' : ''}${delta} ${item}`] : [];
+      const entry = entries.get(item);
+      const disambiguation = field === 'cards' && nameIds.get(view.entity('card', entry.card)).size > 1 ? ` [${entry.card}]` : '';
+      return delta ? [`${delta > 0 ? '+' : ''}${delta} ${label(entry)}${disambiguation}`] : [];
     });
-    if (differences.length) changes.push(`${label}: ${differences.join(', ')}`);
+    if (differences.length) changes.push(`${view.text(`workbench:preview.${field === 'cards' ? 'deck' : 'relics'}`)}: ${differences.join(', ')}`);
   }
-  return changes.length ? `Preview inventory changes:\n${changes.map(line => `  ${line}`).join('\n')}\n` : '';
+  return changes.length ? `${view.text('workbench:preview.changes')}\n${changes.map(line => `  ${line}`).join('\n')}\n` : '';
 }
 
-export function printReading(reading, {
-  expanded = false, combatCommands = [], write = writeText } = {}) {
+export async function printReading(reading, {
+  expanded = false, combatCommands = [], write = writeText, presentation, locale = 'en' } = {}) {
   // The source renderer owns choice commands and their presentation. Leave
   // localized labels and hypothetical preview rows exactly as received.
   write(`${reading.view.trimEnd()}\n`);
   if (combatCommands.length > 0) {
-    write(expanded ? 'Legal commands (current position):\n'
-      : 'Playable now (equivalent copies grouped; options lists all):\n');
+    const view = await (presentation ?? createPresentation({ locale }));
+    write(`${view.text(expanded ? 'workbench:legalExpanded' : 'workbench:legalBrief')}\n`);
     for (const command of combatCommands) write(`  ./p act ${command}\n`);
   }
 }

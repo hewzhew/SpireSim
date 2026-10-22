@@ -12,6 +12,7 @@
 /tools/dsh_player/node_modules/
 /tools/dsh_player/client.js
 /tools/presentation/node_modules/
+/tools/run_play/node_modules/
 
 # Python
 **/__pycache__/

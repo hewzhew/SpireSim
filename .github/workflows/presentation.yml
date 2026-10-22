@@ -41,10 +41,14 @@ jobs:
         working-directory: tools/presentation
       - run: npm ci
         working-directory: tools/dsh_player
+      - run: npm ci
+        working-directory: tools/run_play
       - run: npm run test:client
         working-directory: tools/dsh_player
       - run: node --test tools/run_play/client.test.mjs tools/run_play/workbench.test.mjs tools/dsh_player/native-control.test.mjs
       - run: node --test --test-name-pattern='chat binding|bundle distribution' tools/dsh_player/native.test.mjs
+      - run: npm run pack:distribution -- --output "${{ runner.temp }}/sts-node-distribution"
+        working-directory: tools/dsh_player
   native-catalogs:
     runs-on: ubuntu-latest
     steps:

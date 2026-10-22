@@ -136,7 +136,7 @@ test('native preset capability is lazy and isolates real games for two agents sh
     const trade = await execute(b, 'preview event:Neow:3');
     assert.equal(Boolean(trade.isError), false, textOf(trade));
     assert.match(textOf(trade), /Preview inventory changes:\n/);
-    assert.match(textOf(trade), /^  Relics: -1 BurningBlood, \+1 /m);
+    assert.match(textOf(trade), /^  Relics: -1 Burning Blood, \+1 /m);
     assert.equal(textOf(await execute(b, 'read')), textOf(initialB));
     const mixed = await execute(b, 'info, inventory effects, deck');
     assert.equal(mixed.isError, true);

@@ -12,6 +12,17 @@ export async function createPresentation({ locale = 'en', resources = catalogs, 
     interpolation: { escapeValue: false },
     missingInterpolationHandler(_text, match) { throw new Error(`Missing translation parameter: ${match[1]}`); },
   });
+  function entity(kind, id) {
+    const key = `${kind}.${id}`;
+    if (typeof instance.getResource(instance.language, 'game', key) !== 'string') {
+      const gap = `${instance.language}:${key}`;
+      if (!reported.has(gap)) {
+        reported.add(gap);
+        onMissing({ locale: instance.language, kind, id, fallback: typeof instance.getResource('en', 'game', key) === 'string' ? 'en' : 'id' });
+      }
+    }
+    return instance.t(`game:${key}`, { defaultValue: String(id) });
+  }
   return Object.freeze({
     get locale() { return instance.language; },
     async setLocale(tag) { await instance.changeLanguage(resolveLocale(tag)); },
@@ -19,16 +30,10 @@ export async function createPresentation({ locale = 'en', resources = catalogs, 
       if (!instance.exists(key, params)) throw new Error(`Unknown presentation message: ${key}`);
       return instance.t(key, { ...params, lng: instance.language });
     },
-    entity(kind, id) {
-      const key = `${kind}.${id}`;
-      if (typeof instance.getResource(instance.language, 'game', key) !== 'string') {
-        const gap = `${instance.language}:${key}`;
-        if (!reported.has(gap)) {
-          reported.add(gap);
-          onMissing({ locale: instance.language, kind, id, fallback: typeof instance.getResource('en', 'game', key) === 'string' ? 'en' : 'id' });
-        }
-      }
-      return instance.t(`game:${key}`, { defaultValue: String(id) });
+    entity,
+    cardName(id, upgrades = 0) {
+      const suffix = upgrades === 0 ? '' : upgrades === 1 && id !== 'SearingBlow' ? '+' : `+${upgrades}`;
+      return entity('card', id) + suffix;
     },
     number(value) { return new Intl.NumberFormat(instance.language).format(value); },
   });

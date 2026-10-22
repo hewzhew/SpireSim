@@ -5,7 +5,7 @@ import { join, dirname } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { openRunPlay } from './client.mjs';
 import { commandGroups, commandTokens, freshRecordDirectory } from './session.mjs';
-import { printReading, writeText } from './render.mjs';
+import { printReading, writeText, presentationFor } from './render.mjs';
 import { expandedCombatCommands, distinctCombatCommands,
   assertCurrentDecision, resolveOptionName, decisionDocumentFromObservation, currentCommandHint } from './contract.mjs';
 import { actOrPreview, board, publicPiles } from './commands/combat.mjs';
@@ -25,8 +25,9 @@ export function createWorkbenchContext(options) {
       ? document ?? await ctx.decisionDocument(reading) : null;
     if (doc) assertCurrentDecision(reading, doc);
     const chunks = [];
-    printReading(reading, {
+    await printReading(reading, {
       write: text => chunks.push(text), expanded,
+      presentation: presentationFor(ctx),
       combatCommands: doc ? (expanded ? expandedCombatCommands(reading, doc)
         : distinctCombatCommands(reading, doc)) : [],
     });

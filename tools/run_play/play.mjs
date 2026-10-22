@@ -124,7 +124,7 @@ export async function main() {
     const recordDirectory = freshRecordDirectory(repository, sessionLabel, 'new');
     const newGame = await openRunPlay({ repository, session: resolvedSession, recordDirectory });
     try {
-      printReading(await newGame.decision({ details: ['brief'] }));
+      await printReading(await newGame.decision({ details: ['brief'] }));
     } finally {
       await newGame.close();
     }
@@ -169,7 +169,7 @@ export async function main() {
     }
     await writeFileAsync(stateFile, target);
     process.stdout.write(`Verified current state in new session ${label}; source unchanged.\n`);
-    printReading(reading);
+    await printReading(reading);
     return;
   }
   if (currentSession !== session) {

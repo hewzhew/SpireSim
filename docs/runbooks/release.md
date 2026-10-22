@@ -28,6 +28,14 @@
 
 ## 验收与发布
 
+Node 工作台与 dsh 插件通过同一入口打包：
+
+```powershell
+npm --prefix tools/dsh_player run pack:distribution -- --output D:/path/to/new-distribution
+```
+
+[pack_node.mjs](../../tools/release/pack_node.mjs) 用 npm 自己的文件清单选择源码，在隔离目录安装实际依赖，再生成语言资源、工作台和插件三个包。第三方版本沿现有锁文件保留，本地依赖改为同次产物；开发目录的源码链接保持不动。直接 `npm pack` 不接受带链接的捆绑依赖，因为 npm 会为其传递依赖生成越出包根的路径。分发构建检查包内路径，并从新目录离线安装工作台和插件，分别加载中英文读数。输出的 `distribution.json` 记录源码版本、文件摘要、包摘要和实际安装检查，临时构建目录在结束后移除。
+
 从生成的 ZIP 解压到新目录，在独立解释器安装 wheel，按[入门说明](../getting-started.md)
 运行全部角色。另用 `--runner` 对打包后的原始来源重新比较，确认来源重定位后仍可复验。
 源码发布 ZIP 中的文件也应能独立构建，不能依赖未跟踪的本机资料。

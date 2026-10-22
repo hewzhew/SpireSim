@@ -63,13 +63,15 @@ view.entity('card', 'ShrugItOff'); // Shrug It Off
 view.text('game:effect.draw', { count: 2 }); // Draw 2 cards.
 ```
 
+Node 工作台按连接建立独立语言实例，`printReading` 与预演库存格式化等待该实例完成。board 的数值直接使用现有 typed 公共投影；无序牌堆与库存差异先按稳定身份和升级分组，再取原版名称。同名不同 ID 保留区分，`cardName` 与原生端一致保留灼热攻击的实际升级次数。
+
 每个展示端创建独立实例。`setLocale` 只改变该实例的呈现语言，调用者拥有重绘和偏好保存。不要用它替换 dsh 的宿主 locale provider；插件应沿其公开 locale/slot API 接入，游戏名称使用这里的共用资源。
 
 只消费资源或运行构建检查的 JavaScript 端可导入 `@sts-simulator/presentation/catalogs`，该入口不加载 i18next。JSON 资源也可通过 `@sts-simulator/presentation/locales/en.json` 等导出路径直接读取。dsh 地图只将所需领域名称注册到宿主，客户端构建时包含实际资源。
 
 ## 资源职责
 
-共用内容位于 `locales/en.json` 和 `zh-CN.json`：`game` 拥有名称、术语、状态计数、遗物触发状态和规则，`mechanics` 拥有机制查询和卡牌规则消息，`inventory` 拥有永久库存消息，`combat` 拥有战斗与选牌读数，`decision` 拥有战略概览、选项与共用选择提示，`map` 拥有原生地图和路线读数，`replay` 拥有离线演示消息。dsh 地图和工作台自己的界面消息位于其 `locale/` 资源中，不在其中复制游戏名称。
+共用内容位于 `locales/en.json` 和 `zh-CN.json`：`game` 拥有名称、术语、状态计数、遗物触发状态和规则，`mechanics` 拥有机制查询和卡牌规则消息，`inventory` 拥有永久库存消息，`combat` 拥有战斗与选牌读数，`decision` 拥有战略概览、选项与共用选择提示，`map` 拥有原生地图和路线读数，`workbench` 拥有 Node 追加的命令、board、牌堆与预演读数，`replay` 拥有离线演示消息。dsh 地图和工作台自己的界面消息位于其 `locale/` 资源中，不在其中复制游戏名称。
 
 `game.card`、`relic`、`potion`、`enemy`、`character`、`event`、`power`、`stance`、`encounter` 是原版资源导入的名称区段，由 [import_original.py](import_original.py) 更新，不手工翻译。卡牌、遗物、药水、敌人和状态按当前模拟器稳定身份核对；角色覆盖四名可玩角色，事件按现役 `EventId` 显式绑定原版条目，Neow 名称取 `characters.json`；退役事件不加入运行词典。遭遇取地图使用的具名遭遇。状态的本地化键差异显式记录，例如 `Regen` 对应怪物 `Regenerate`，`Regeneration` 对应会递减的再生，`DexterityDown` 对应 `DexLoss`；它们不按译名或相似类名合并。多敌人遭遇 `DonuAndDeca` 用原版的两个敌人名与本项目的连接词组合。房间类型、界面消息和补充规则说明由项目维护。
 

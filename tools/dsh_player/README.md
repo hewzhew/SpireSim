@@ -15,7 +15,7 @@
 (Resolve-Path ./tools/dsh_player).Path
 ```
 
-首次从源码使用时，在 `tools/dsh_player` 执行 `npm ci` 和 `npm run build:client`。客户端由 [client/index.mjs](client/index.mjs) 与本地化资源构建为 `client.js`；`npm pack` 自动重新构建，安装包包含完整客户端，不需要运行时读取仓库里的词典。
+首次从源码使用时，依次在 `tools/presentation`、`tools/run_play`、`tools/dsh_player` 执行 `npm ci`，再在 `tools/dsh_player` 执行 `npm run build:client`。客户端由 [client/index.mjs](client/index.mjs) 与本地化资源构建为 `client.js`；[分发构建](../../docs/runbooks/release.md)会重新构建客户端，并在隔离目录装入真实依赖后打包；安装包包含客户端和语言资源，不读取仓库相邻目录。
 
 安装后应出现“杀戮尖塔”。新建会话时把本仓库选作工作区，并选择玩法预设：
 

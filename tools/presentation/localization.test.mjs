@@ -83,6 +83,9 @@ test('names are keyed by exact typed identity; changing one view leaves other vi
   assert.equal(first.entity('card', 'StrikeG'), 'Strike');
   await first.setLocale('zh-CN');
   assert.equal(second.locale, 'en');
+  assert.equal(first.cardName('SearingBlow', 1), '灼热攻击+1');
+  assert.equal(first.cardName('StrikeG', 1), '打击+');
+  assert.equal(second.cardName('SearingBlow', 1), 'Searing Blow+1');
 });
 
 test('plural and number formatting uses the chosen locale; missing parameters fail', async () => {

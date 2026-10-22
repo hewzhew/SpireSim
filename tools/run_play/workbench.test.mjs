@@ -272,12 +272,33 @@ test('manual public piles use only public card sets and reveal neither pile orde
   const first = (await wb.execute('piles')).text;
   cards.draw.cards.reverse(); cards.exhaust.cards.reverse();
   assert.equal((await wb.execute('piles')).text, first);
-  assert.match(first, /Draw \[3\]: BodySlam\+, 2x Strike/);
-  assert.match(first, /Discard \[1\]: PommelStrike\+/);
+  assert.match(first, /Draw \[3\]: Body Slam\+, 2x Strike/);
+  assert.match(first, /Discard \[1\]: Pommel Strike\+/);
   assert.match(first, /Exhaust \[2\]: Defend, Impervious/);
   assert.doesNotMatch(first, /must-not-leak|next ->|shuffle input/);
   cards.draw.evidence = 'hidden';
   await assert.rejects(wb.execute('piles'), /Public draw pile contents are unavailable/);
+});
+
+test('Chinese public piles preserve same-name identities upgrades and unordered contents', async t => {
+  const cards = { draw: { evidence: 'public_unordered_collection', cards: [
+    { card_id: 'Strike', upgrades: 0 }, { card_id: 'StrikeG', upgrades: 0 }, { card_id: 'SearingBlow', upgrades: 1 },
+  ] }, discard: { evidence: 'public_unordered_collection', cards: [] }, exhaust: { evidence: 'public_unordered_collection', cards: [] } };
+  const wb = await fixture(t, async () => ({
+    async observe() { return { position: { kind: 'decision', public_snapshot_id: 'zh-piles', actions: [], observation: { domain: 'combat', observation: { cards } } } }; },
+    async slPiles() { assert.fail('no exact pile inspection'); }, async close() {},
+  }), undefined, { manual: true, agentLocale: 'zh-CN' });
+  const before = structuredClone(cards);
+  const result = (await wb.execute('piles')).text;
+  assert.match(result, /战斗牌堆（无序/);
+  assert.match(result, /打击 \[Strike\]/);
+  assert.match(result, /打击 \[StrikeG\]/);
+  assert.match(result, /灼热攻击\+1/);
+  assert.match(result, /弃牌堆 \[0\]：空/);
+  cards.draw.cards.reverse();
+  assert.equal((await wb.execute('piles')).text, result);
+  cards.draw.cards.reverse();
+  assert.deepEqual(cards, before);
 });
 
 test('literal act/preview notation gives the actual command choices without attempting a game selection', async t => {

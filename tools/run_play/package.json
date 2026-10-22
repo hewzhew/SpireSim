@@ -2,6 +2,12 @@
   "name": "@sts-simulator/run-play",
   "version": "0.1.0",
   "private": true,
+  "dependencies": { "@sts-simulator/presentation": "file:../presentation" },
+  "bundledDependencies": ["@sts-simulator/presentation"],
+  "scripts": {
+    "prepack": "node ../release/pack_node.mjs --check",
+    "pack:distribution": "node ../release/pack_node.mjs"
+  },
   "description": "Shared command and pipe client for the Rust run-play controller",
   "type": "module",
   "exports": {

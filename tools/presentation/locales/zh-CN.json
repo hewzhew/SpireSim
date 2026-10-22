@@ -1528,5 +1528,32 @@
     "publishedBoss": "已公开的 Boss：{{boss}}",
     "coordinates": "地图坐标 (x,y)；当前位置 ({{x}},{{y}})",
     "emeraldSuffix": " + 绿宝石钥匙"
+  },
+  "workbench": {
+    "legalExpanded": "合法命令（当前局面）：",
+    "legalBrief": "当前可打出（同效果副本合并，options 列出全部）：",
+    "preview": {
+      "heading": "预演（当前局面不变）",
+      "actual": "实际局面：\n{{summary}}",
+      "unresolved": "预演在私有分支边界停止，请修正失败动作及后续步骤后再 act：",
+      "terminal": "预演分支的终局：",
+      "result": "预演分支结果：",
+      "changes": "预演库存变化：",
+      "deck": "卡组",
+      "relics": "遗物"
+    },
+    "board": {
+      "incoming": "下个敌方回合来袭伤害：{{incoming}} | 当前格挡 {{block}}",
+      "handBlock": "手牌格挡合计：{{block}}（各牌独立投影，未计费用、顺序及出牌限制）",
+      "playable": "可打出（每段伤害未扣格挡，已按所列目标修正）："
+    },
+    "piles": {
+      "heading": "战斗牌堆（无序；当前战斗中的牌）",
+      "draw": "抽牌堆",
+      "discard": "弃牌堆",
+      "exhaust": "消耗堆",
+      "empty": "空",
+      "row": "{{label}} [{{count}}]：{{cards}}"
+    }
   }
 }

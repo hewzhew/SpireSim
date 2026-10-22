@@ -339,7 +339,7 @@ test('native list skips bindings absent from this home, and CLI inspection needs
   const list = await observeNative({ repository: f.repository, parameters: ['list', '--home', f.home] });
   assert.match(list.text, /session-observe-fixture/); assert.doesNotMatch(list.text, /absent-chat/);
   const packageDir = dirname(fileURLToPath(import.meta.url));
-  await cp(join(packageDir, '../run_play'), join(f.repository, 'tools/run_play'), { recursive: true });
+  await cp(join(packageDir, '../run_play'), join(f.repository, 'tools/run_play'), { recursive: true, dereference: true });
   await symlink(packageDir, join(f.repository, 'tools/dsh_player'), process.platform === 'win32' ? 'junction' : 'dir');
   await rm(f.focus);
   const text = execFileSync(process.execPath, [join(f.repository, 'tools/run_play/play.mjs'), 'observe', '--home', f.home, '--chat', f.id], { encoding: 'utf8', windowsHide: true });
