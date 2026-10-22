@@ -1299,7 +1299,7 @@ fn render_selections(
     Ok(())
 }
 
-fn option_label(
+pub(crate) fn option_label(
     candidate: &TaskPublicCandidateV1,
     observation: &TaskStrategicObservationV1,
     public: &TaskPublicObservationV1,

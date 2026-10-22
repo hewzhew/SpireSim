@@ -555,8 +555,8 @@ fn preview_defeat_shows_observed_terminal_hp_without_moving_the_head() {
         "Defeat | HP {}/{} → {}/{}",
         hp_change.0, hp_change.1, hp_change.2, hp_change.3
     );
-    let preview = crate::compact::render_preview_v1(&comparison, false).unwrap();
-    let detail = crate::compact::render_preview_v1(&comparison, true).unwrap();
+    let preview = crate::compact::render_preview_v1(&comparison, false, Locale::En).unwrap();
+    let detail = crate::compact::render_preview_v1(&comparison, true, Locale::En).unwrap();
     assert!(
         preview.contains(&format!("Result: {expected}")),
         "{preview}"

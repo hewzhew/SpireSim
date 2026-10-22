@@ -1328,93 +1328,186 @@ pub fn render_inventory_change_v1(
 
 /// Default private rehearsal output: the accepted public actions and the
 /// hypothetical successor. Full comparison evidence remains behind --detail.
-pub fn render_preview_v1(comparison: &RunPlayComparisonV1, detail: bool) -> Result<String, String> {
+pub fn render_preview_v1(
+    comparison: &RunPlayComparisonV1,
+    detail: bool,
+    locale: Locale,
+) -> Result<String, String> {
     if detail {
         return render_comparison_v1(comparison, true);
     }
-    let mut output = String::from("Preview only — current position unchanged\n");
+    let mut output = compact_text(locale, "preview.heading", &[]);
     for (line_index, line) in comparison.lines.iter().enumerate() {
         if comparison.lines.len() > 1 {
-            writeln!(output, "Line {}", line_index + 1).expect("string write");
+            writeln!(
+                output,
+                "{}",
+                compact_text(
+                    locale,
+                    "preview.line",
+                    &[("index", &(line_index + 1).to_string())]
+                )
+            )
+            .expect("string write");
         }
         let actions = line
             .steps
             .iter()
             .take(8)
-            .map(|step| {
-                render_preview_action_v1(
-                    &step.selected_candidate,
-                    &step.source_decision.observation,
-                )
-            })
-            .collect::<Vec<_>>();
+            .map(|step| render_preview_action_v1(step, locale))
+            .collect::<Result<Vec<_>, _>>()?;
         let remaining = line.steps.len().saturating_sub(actions.len());
         writeln!(
             output,
-            "Actions ({}): {}{}",
-            line.steps.len(),
-            actions.join(" → "),
-            if remaining > 0 {
-                format!(" → … (+{remaining}; --detail shows all)")
-            } else {
-                String::new()
-            }
+            "{}",
+            compact_text(
+                locale,
+                "preview.actions",
+                &[
+                    ("count", &line.steps.len().to_string()),
+                    ("actions", &actions.join(" → ")),
+                    (
+                        "remaining",
+                        &if remaining > 0 {
+                            compact_text(
+                                locale,
+                                "preview.more",
+                                &[("count", &remaining.to_string())],
+                            )
+                        } else {
+                            String::new()
+                        }
+                    ),
+                ]
+            )
         )
         .expect("string write");
         let Some(last) = line.steps.last() else {
-            writeln!(output, "Result: no action was executed").expect("string write");
+            writeln!(output, "{}", compact_text(locale, "preview.empty", &[]))
+                .expect("string write");
             continue;
         };
         if let Some(next) = &last.next_decision {
             let before = crate::decision::read_preview_decision_v1(
                 &line.steps[0].source_decision,
                 None,
-                Locale::En,
+                locale,
             )?;
-            let after = crate::decision::read_preview_decision_v1(
-                next,
-                before.context.as_ref(),
-                Locale::En,
-            )?;
-            let deck_change =
-                render_deck_change_v1(&line.steps[0].source_decision, next, Locale::En);
-            writeln!(output, "Result:").expect("string write");
+            let after =
+                crate::decision::read_preview_decision_v1(next, before.context.as_ref(), locale)?;
+            let deck_change = render_deck_change_v1(&line.steps[0].source_decision, next, locale);
+            writeln!(output, "{}", compact_text(locale, "preview.result", &[]))
+                .expect("string write");
             output.push_str(&render_reading_status_v1(
                 next,
                 &after,
                 true,
                 deck_change.as_deref(),
-                Locale::En,
+                locale,
             )?);
         } else {
-            writeln!(output, "Result: {}", render_terminal_result_v1(last)).expect("string write");
+            writeln!(
+                output,
+                "{}",
+                compact_text(
+                    locale,
+                    "preview.terminalResult",
+                    &[("result", &render_terminal_result_v1(last, locale))]
+                )
+            )
+            .expect("string write");
         }
     }
     Ok(output)
 }
 
 fn render_preview_action_v1(
-    candidate: &TaskPublicCandidateV1,
-    observation: &TaskPublicObservationV1,
-) -> String {
-    if let TaskPublicCandidateV1::Strategic {
-        action:
-            TaskStrategicActionV1::ChooseEventOption {
-                event,
-                option_index,
-                public_semantics,
-                ..
-            },
-    } = candidate
-    {
-        return public_semantics
-            .public_label
-            .as_deref()
-            .filter(|label| !label.trim().is_empty())
-            .map(str::to_owned)
-            .unwrap_or_else(|| format!("{} option {option_index}", event.stable_id()));
+    step: &ExactRunPlayProbeStepV1,
+    locale: Locale,
+) -> Result<String, String> {
+    let candidate = &step.selected_candidate;
+    let public = &step.source_decision.observation;
+    if let TaskPublicObservationV1::Strategic { observation } = public {
+        return crate::decision::option_label(candidate, observation, public, false, locale);
     }
-    render_candidate_compact(candidate, observation)
+    use crate::combat_trace::{RunPlayCombatActionDisplayV1 as Display, RunPlayPlayedCardV1};
+    let TaskPublicObservationV1::Combat { observation, .. } = public else {
+        unreachable!()
+    };
+    let atomic = match candidate {
+        TaskPublicCandidateV1::CombatAtomic { action }
+        | TaskPublicCandidateV1::CombatIndexedChoice { action, .. } => Some(action),
+        _ => None,
+    };
+    let target_slot = |target: Option<usize>| -> Result<Option<u8>, String> {
+        target
+            .map(|index| {
+                observation
+                    .monsters
+                    .get(index)
+                    .map(|monster| monster.slot)
+                    .ok_or_else(|| {
+                        compact_text(
+                            locale,
+                            "preview.targetUnavailable",
+                            &[("index", &index.to_string())],
+                        )
+                    })
+            })
+            .transpose()
+    };
+    let display = match atomic {
+        Some(PublicCombatAtomicActionV1::PlayCard {
+            hand_index,
+            target_monster_index,
+        }) => {
+            let card = observation
+                .cards
+                .hand
+                .cards
+                .get(*hand_index)
+                .ok_or_else(|| {
+                    compact_text(
+                        locale,
+                        "preview.cardUnavailable",
+                        &[("index", &hand_index.to_string())],
+                    )
+                })?;
+            Display::PlayCard(RunPlayPlayedCardV1 {
+                card_id: card.card_id,
+                upgrades: card.upgrades,
+                target_slot: target_slot(*target_monster_index)?,
+            })
+        }
+        Some(PublicCombatAtomicActionV1::UsePotion {
+            potion_index,
+            target_monster_index,
+        }) => {
+            let potion = observation
+                .potions
+                .get(*potion_index)
+                .and_then(Option::as_ref)
+                .ok_or_else(|| {
+                    compact_text(
+                        locale,
+                        "preview.potionUnavailable",
+                        &[("index", &potion_index.to_string())],
+                    )
+                })?;
+            Display::UsePotion {
+                slot: *potion_index,
+                potion_id: potion.potion_id,
+                target_slot: target_slot(*target_monster_index)?,
+            }
+        }
+        _ => crate::combat_trace::selected_action_display(
+            candidate,
+            &step.choice.ordinal_path,
+            None,
+            None,
+        )?,
+    };
+    Ok(crate::combat_reading::action_label(&display, locale))
 }
 
 pub fn render_comparison_v1(
@@ -1495,7 +1588,7 @@ pub fn render_comparison_v1(
                 let outcome = line
                     .steps
                     .last()
-                    .map(render_terminal_result_v1)
+                    .map(|step| render_terminal_result_v1(step, Locale::En))
                     .unwrap_or_else(|| "empty".to_string());
                 writeln!(output, "  final {outcome}").expect("string write");
             }
@@ -1504,13 +1597,13 @@ pub fn render_comparison_v1(
     Ok(output)
 }
 
-pub(crate) fn render_terminal_result_v1(step: &ExactRunPlayProbeStepV1) -> String {
+pub(crate) fn render_terminal_result_v1(step: &ExactRunPlayProbeStepV1, locale: Locale) -> String {
     let outcome = match &step.outcome {
         TaskEpisodeOutcomeV1::Failure {
             game_outcome: Some(GameOutcomeV1::Defeat),
             ..
-        } => "Defeat".to_string(),
-        _ => render_outcome_compact(&step.outcome, Locale::En),
+        } => compact_text(locale, "outcome.defeat", &[]),
+        _ => render_outcome_compact(&step.outcome, locale),
     };
     let hp = step.action_result.as_ref().and_then(|result| {
         result.changes.iter().find_map(|change| match change {
@@ -1519,8 +1612,15 @@ pub(crate) fn render_terminal_result_v1(step: &ExactRunPlayProbeStepV1) -> Strin
                 before_max,
                 after_current,
                 after_max,
-            } => Some(format!(
-                "HP {before_current}/{before_max} → {after_current}/{after_max}"
+            } => Some(compact_text(
+                locale,
+                "preview.health",
+                &[
+                    ("beforeHp", &before_current.to_string()),
+                    ("beforeMax", &before_max.to_string()),
+                    ("afterHp", &after_current.to_string()),
+                    ("afterMax", &after_max.to_string()),
+                ],
             )),
             _ => None,
         })

@@ -1002,7 +1002,7 @@ pub(crate) fn trace_step_v1(
     })
 }
 
-fn selected_action_display(
+pub(crate) fn selected_action_display(
     candidate: &TaskPublicCandidateV1,
     ordinal_path: &[usize],
     card: Option<&RunPlayPlayedCardV1>,

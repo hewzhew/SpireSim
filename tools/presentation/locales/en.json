@@ -5627,6 +5627,28 @@
     },
     "transition": {
       "relicGained": "Relic gained: {{relic}}"
+    },
+    "preview": {
+      "heading": "Preview only — current position unchanged\n",
+      "line": "Line {{index}}",
+      "actions": "Actions ({{count}}): {{actions}}{{remaining}}",
+      "more": " → … (+{{count}}; --detail shows all)",
+      "empty": "Result: no action was executed",
+      "result": "Result:",
+      "terminalResult": "Result: {{result}}",
+      "health": "HP {{beforeHp}}/{{beforeMax}} → {{afterHp}}/{{afterMax}}",
+      "targetUnavailable": "Preview target {{index}} is absent from the public decision",
+      "cardUnavailable": "Preview hand card {{index}} is absent from the public decision",
+      "potionUnavailable": "Preview potion slot {{index}} is absent or empty in the public decision",
+      "privateTerminal": "Terminal | {{result}}\n",
+      "automaticRow": "action {{index}} {{action}}: T{{before}} -> T{{after}}",
+      "automaticChanges": "Automatic turn changes: {{changes}}\n",
+      "skippedTail": "Preview reached a terminal after {{count}} actions; {{remaining}} following actions were not simulated.\n{{view}}",
+      "unresolved": "Preview stopped before action {{index}}: {{error}}\n{{turnChanges}}Private position after {{count}} simulated actions:\n{{view}}",
+      "input": "Preview input: {{command}}",
+      "complete": "Preview complete: current position unchanged",
+      "startFlush": "failed to flush preview start signal: {{error}}",
+      "completeFlush": "failed to flush preview completion signal: {{error}}"
     }
   }
 }

@@ -2,6 +2,29 @@ use super::*;
 use crate::decision_tests::{controller_with_session, fixture, TestDirectory};
 
 #[test]
+fn ordinary_preview_uses_shared_localized_actions_and_terminal_health() {
+    let dir = TestDirectory::new();
+    for (kind, action) in [("combat_finish", "play:Strike@0"), ("combat_defeat", "end")] {
+        let mut game = controller_with_session(&dir.0, kind, &fixture(kind));
+        let head = game.head().clone();
+        let fingerprints = game.current_state_fingerprints_v1().unwrap();
+        let actions = crate::selector::parse_action_line_v1(action, "locale test").unwrap();
+        let comparison = game.compare_action_lines_v1(&[actions]).unwrap();
+        let en = render_preview_v1(&comparison, false, Locale::En).unwrap();
+        let zh = render_preview_v1(&comparison, false, Locale::ZhCn).unwrap();
+        assert!(en.contains("Preview only") && zh.contains("预演结果"));
+        assert!(zh.contains("结果："));
+        if kind == "combat_finish" {
+            assert!(zh.contains("打击 @M0"), "{zh}");
+        } else {
+            assert!(zh.contains("失败 | 生命 1/75 → 0/75"), "{zh}");
+        }
+        assert_eq!(game.head(), &head);
+        assert_eq!(game.current_state_fingerprints_v1().unwrap(), fingerprints);
+    }
+}
+
+#[test]
 fn permanent_card_changes_do_not_cancel_same_name_card_identities() {
     let dir = TestDirectory::new();
     let game = controller_with_session(&dir.0, "card-identity-change", &fixture("reward"));

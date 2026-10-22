@@ -2829,6 +2829,7 @@ pub(crate) fn project_agent_decision_v1(
 fn render_private_automatic_turn_changes_v1(
     line: &ExactRunPlayProbeLineV1,
     steps: &[AgentProbeStepV1],
+    locale: Locale,
 ) -> String {
     let changes = line
         .steps
@@ -2853,12 +2854,21 @@ fn render_private_automatic_turn_changes_v1(
                 return None;
             };
             (after.turn.turn_count > before.turn.turn_count).then(|| {
-                format!(
-                    "action {} {}: T{} -> T{}",
-                    index + 1,
-                    projected.action,
-                    before.turn.turn_count.saturating_add(1),
-                    after.turn.turn_count.saturating_add(1),
+                crate::compact::compact_text(
+                    locale,
+                    "preview.automaticRow",
+                    &[
+                        ("index", &(index + 1).to_string()),
+                        ("action", &projected.action),
+                        (
+                            "before",
+                            &before.turn.turn_count.saturating_add(1).to_string(),
+                        ),
+                        (
+                            "after",
+                            &after.turn.turn_count.saturating_add(1).to_string(),
+                        ),
+                    ],
                 )
             })
         })
@@ -2866,7 +2876,11 @@ fn render_private_automatic_turn_changes_v1(
     if changes.is_empty() {
         String::new()
     } else {
-        format!("Automatic turn changes: {}\n", changes.join("; "))
+        crate::compact::compact_text(
+            locale,
+            "preview.automaticChanges",
+            &[("changes", &changes.join("; "))],
+        )
     }
 }
 
@@ -2906,14 +2920,18 @@ fn project_agent_probe_line_v1(
                 _ => reading.view,
             }
         }
-        None => format!(
-            "Terminal | {}\n",
-            crate::compact::render_terminal_result_v1(last)
+        None => crate::compact::compact_text(
+            locale,
+            "preview.privateTerminal",
+            &[(
+                "result",
+                &crate::compact::render_terminal_result_v1(last, locale),
+            )],
         ),
     };
     let view = format!(
         "{}{view}",
-        render_private_automatic_turn_changes_v1(line, &steps)
+        render_private_automatic_turn_changes_v1(line, &steps, locale)
     );
     Ok(AgentProbeLineV1 {
         view,
@@ -2943,8 +2961,15 @@ fn project_agent_inspection_v1(
                 unapplied_actions: *unapplied_steps,
             };
             if *unapplied_steps > 0 {
-                result.view = format!("Preview reached a terminal after {} actions; {} following actions were not simulated.\n{}",
-                    result.steps.len(), unapplied_steps, result.view);
+                result.view = crate::compact::compact_text(
+                    locale,
+                    "preview.skippedTail",
+                    &[
+                        ("count", &result.steps.len().to_string()),
+                        ("remaining", &unapplied_steps.to_string()),
+                        ("view", &result.view),
+                    ],
+                );
             }
             Ok(result)
         }
@@ -2974,13 +2999,27 @@ fn project_agent_inspection_v1(
                 })
                 .collect::<Result<Vec<_>, String>>()?;
             let count = steps.len();
-            let turn_changes = render_private_automatic_turn_changes_v1(&inspection.line, &steps);
+            let turn_changes =
+                render_private_automatic_turn_changes_v1(&inspection.line, &steps, locale);
             Ok(AgentProbeLineV1 {
-                view: format!("Preview stopped before action {requested_step}: {error}\n{turn_changes}Private position after {count} simulated actions:\n{view}"),
+                view: crate::compact::compact_text(
+                    locale,
+                    "preview.unresolved",
+                    &[
+                        ("index", &requested_step.to_string()),
+                        ("error", error),
+                        ("turnChanges", &turn_changes),
+                        ("count", &count.to_string()),
+                        ("view", &view),
+                    ],
+                ),
                 steps,
                 endpoint: project_agent_decision_v1(decision)?,
-                stop: AgentProbeStopV1::Unresolved { requested_step: *requested_step, error: error.clone(),
-                    unapplied_actions: inspection.requested_steps - count },
+                stop: AgentProbeStopV1::Unresolved {
+                    requested_step: *requested_step,
+                    error: error.clone(),
+                    unapplied_actions: inspection.requested_steps - count,
+                },
             })
         }
     }
@@ -2996,6 +3035,34 @@ mod private_preview_command_tests {
         core::EngineState,
         events::{EventId, EventState},
     };
+
+    #[test]
+    fn private_preview_locales_preserve_stops_endpoints_actions_and_exact_state() {
+        let dir = TestDirectory::new();
+        for (kind, line) in [
+            ("combat_finish", "play:Strike@0/end"),
+            ("combat_defeat", "end/end"),
+            ("combat_multiturn", "end/play:Corruption"),
+        ] {
+            let mut game = controller_with_session(&dir.0, kind, &fixture(kind));
+            let head = game.head().clone();
+            let fingerprints = game.current_state_fingerprints_v1().unwrap();
+            let actions = crate::selector::parse_action_line_v1(line, "locale test").unwrap();
+            let inspections = game.inspect_action_lines_v1(&[actions]).unwrap();
+            let en = project_agent_inspection_v1(&inspections[0], Locale::En).unwrap();
+            let zh = project_agent_inspection_v1(&inspections[0], Locale::ZhCn).unwrap();
+            assert_eq!(en.steps, zh.steps);
+            assert_eq!(en.stop, zh.stop);
+            assert_eq!(en.endpoint, zh.endpoint);
+            assert_ne!(en.view, zh.view);
+            assert!(zh.view.contains("预演"), "{}", zh.view);
+            if let AgentProbeStopV1::Unresolved { error, .. } = &zh.stop {
+                assert!(zh.view.contains(error));
+            }
+            assert_eq!(game.head(), &head);
+            assert_eq!(game.current_state_fingerprints_v1().unwrap(), fingerprints);
+        }
+    }
 
     #[test]
     fn event_preview_displays_the_successors_exact_command_without_advancing() {
@@ -3018,6 +3085,11 @@ mod private_preview_command_tests {
             projected.view
         );
         assert!(!projected.view.contains("0: [Continue]"));
+        let chinese = crate::compact::render_preview_v1(&comparison, false, Locale::ZhCn).unwrap();
+        assert!(
+            chinese.contains("预演结果") && chinese.contains("继续"),
+            "{chinese}"
+        );
         assert_eq!(*game.head(), before);
         game.anchor_action_line_v1(&actions).unwrap();
         let actual = game
@@ -3220,6 +3292,17 @@ mod private_preview_command_tests {
                 ..
             }
         ));
+        let chinese = project_agent_inspection_v1(&inspections[1], Locale::ZhCn).unwrap();
+        assert_eq!(chinese.steps, projected.steps);
+        assert_eq!(chinese.stop, projected.stop);
+        assert_eq!(chinese.endpoint, projected.endpoint);
+        assert!(
+            chinese
+                .view
+                .contains("自动换回合：动作 1 play:Defend+0#0：T1 -> T2"),
+            "{}",
+            chinese.view
+        );
         assert_eq!(*game.head(), before);
     }
 }

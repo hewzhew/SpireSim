@@ -3892,10 +3892,21 @@ fn run(cli: Cli) -> Result<(), String> {
             if let Some(selector) = at.as_deref() {
                 require_exact_node_selector_v1(selector, "preview")?;
             }
-            eprintln!("Preview input: {}", compact_action_input_v1(&actions));
-            io::stderr()
-                .flush()
-                .map_err(|error| format!("failed to flush preview start signal: {error}"))?;
+            eprintln!(
+                "{}",
+                compact::compact_text(
+                    locale,
+                    "preview.input",
+                    &[("command", &compact_action_input_v1(&actions))]
+                )
+            );
+            io::stderr().flush().map_err(|error| {
+                compact::compact_text(
+                    locale,
+                    "preview.startFlush",
+                    &[("error", &error.to_string())],
+                )
+            })?;
             let paths = RunPlayPathsV1::new(session);
             let mut controller = match at {
                 Some(selector) => RunPlayControllerV1::open_at(paths, &selector)?,
@@ -3916,12 +3927,16 @@ fn run(cli: Cli) -> Result<(), String> {
                 None => controller.compare_action_lines_v1(&[selectors])?,
             };
             if detail {
-                eprintln!("Preview complete: current position unchanged");
+                eprintln!("{}", compact::compact_text(locale, "preview.complete", &[]));
                 io::stderr().flush().map_err(|error| {
-                    format!("failed to flush preview completion signal: {error}")
+                    compact::compact_text(
+                        locale,
+                        "preview.completeFlush",
+                        &[("error", &error.to_string())],
+                    )
                 })?;
             }
-            print!("{}", render_preview_v1(&comparison, detail)?);
+            print!("{}", render_preview_v1(&comparison, detail, locale)?);
         }
         Command::Act {
             session,

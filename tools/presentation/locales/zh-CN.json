@@ -5627,6 +5627,28 @@
     },
     "transition": {
       "relicGained": "获得遗物：{{relic}}"
+    },
+    "preview": {
+      "heading": "预演结果，当前位置未改变\n",
+      "line": "方案 {{index}}",
+      "actions": "动作（{{count}}）：{{actions}}{{remaining}}",
+      "more": " → …（还有 {{count}} 个；--detail 查看全部）",
+      "empty": "结果：未执行动作",
+      "result": "结果：",
+      "terminalResult": "结果：{{result}}",
+      "health": "生命 {{beforeHp}}/{{beforeMax}} → {{afterHp}}/{{afterMax}}",
+      "targetUnavailable": "公开决策中没有预演目标 {{index}}",
+      "cardUnavailable": "公开决策中没有预演手牌 {{index}}",
+      "potionUnavailable": "公开决策中的预演药水槽 {{index}} 不存在或为空",
+      "privateTerminal": "终局 | {{result}}\n",
+      "automaticRow": "动作 {{index}} {{action}}：T{{before}} -> T{{after}}",
+      "automaticChanges": "自动换回合：{{changes}}\n",
+      "skippedTail": "预演在 {{count}} 个动作后到达终局；后续 {{remaining}} 个动作未模拟。\n{{view}}",
+      "unresolved": "预演在动作 {{index}} 前停止：{{error}}\n{{turnChanges}}模拟 {{count}} 个动作后的位置：\n{{view}}",
+      "input": "预演输入：{{command}}",
+      "complete": "预演完成：当前位置未改变",
+      "startFlush": "无法刷新预演开始提示：{{error}}",
+      "completeFlush": "无法刷新预演完成提示：{{error}}"
     }
   }
 }
