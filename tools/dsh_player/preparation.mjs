@@ -861,7 +861,7 @@ export function preparationClassificationContext(observation, normalize, draft, 
   if (offered('Clash')) checks.push(
     preparationText(locale, 'checkClash'));
   const bindingByCommand = new Map(bindings.map(binding => [binding.command, binding]));
-  const guidance = preparationExpertGuidance(observation, normalize);
+  const guidance = preparationExpertGuidance(observation, normalize, locale);
   const adviceByCommand = new Map((guidance?.candidates ?? []).map(row => [row.command, row]));
   return [...(observation.declinedRewardItems?.length ? [
     preparationText(locale, 'declinedRewards', { declinedRewardItems: observation.declinedRewardItems.map(i => i + 1).join(', ') })
@@ -1049,7 +1049,7 @@ export function preparationRecordedTable(classification, observation, normalize,
     const row = classification.rows.find(row => row.command === group.command);
     return `  ${row.command} | ${row.category} | ${row.realization} | ${row.conditionIds?.join(',') ?? preparationText(locale, 'basisBelow')}`;
   }), renderDeckComparison(preparationDeckComparison(observation, normalize, locale), { candidateCommands: representatives.map(group => group.command), locale }),
-  renderExpertGuidance(preparationExpertGuidance(observation, normalize)),
+  renderExpertGuidance(preparationExpertGuidance(observation, normalize, locale)),
   preparationText(locale, 'recordedFacts'), ...[...shared].flatMap(([commands, texts]) => [
     preparationText(locale, 'appliesTo', { commands: commands }), ...texts.map(text => `    ${text}`),
   ]),
@@ -1216,7 +1216,7 @@ export function preparationCommandBasis([command, args], progress, basis, observ
 
 function preparationPriorityBaselines(observation, normalize, locale = 'en') {
   const legal = new Set(preparationCandidates(observation, normalize, locale));
-  return (preparationExpertGuidance(observation, normalize)?.construction?.priorities ?? []).flatMap(priority => {
+  return (preparationExpertGuidance(observation, normalize, locale)?.construction?.priorities ?? []).flatMap(priority => {
     const baseline = priority.comparisonBaseline;
     const commands = baseline?.commands.filter(command => legal.has(command));
     return commands?.length ? [{ id: priority.id, commands, comparisonIds: baseline.comparisonIds }] : [];

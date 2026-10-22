@@ -396,7 +396,7 @@ export function shopSpendingReading(native, reading, normalize = command => comm
         && row.candidate.action.shop_slot === item.slot && row.candidate.action.card === item.card
         && row.candidate.action.upgrades === item.upgrades)
       ?? { semantic_action: `public-card:${item.slot}`, candidate: { action: { kind: 'buy_card', card: item.card, upgrades: item.upgrades } } }) } };
-  const advice = preparationCardExpertGuidance(adviceReading).map(row =>
+  const advice = preparationCardExpertGuidance(adviceReading, undefined, locale).map(row =>
     renderCandidateExpertGuidance(row, { includeCommand: false })).filter(Boolean);
   return [native.overview,
     shopText(locale, 'ownedOriginals', { count: scope.profile.size, cards: reading.deck_evidence.cards.map(row => `${row.card.count}x ${row.card.card}${row.card.upgrades > 0 ? '+' : ''}`).join(', ') }),

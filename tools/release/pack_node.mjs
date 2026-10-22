@@ -150,6 +150,7 @@ if (process.argv.slice(2).join(' ') === '--check') {
           const { playedCardLifecycle, strengthTiming } = await import(pathToFileURL(join(installed, 'deck.mjs')).href);
           const { playerPauseText } = await import(pathToFileURL(join(installed, 'supervision.mjs')).href);
           const { renderInspection } = await import(pathToFileURL(join(installed, 'inspection.mjs')).href);
+          const { preparationCardExpertGuidance, preparationExpertGuidance } = await import(pathToFileURL(join(installed, 'strategy.mjs')).href);
           for (const locale of ['en', 'zh-CN']) {
             const manual = nativeGuide(true, locale), assisted = nativeGuide(false, locale);
             if (!manual.includes(locale === 'en' ? 'public-information manual play' : '依据公开信息手动出牌')
@@ -198,6 +199,16 @@ if (process.argv.slice(2).join(' ') === '--check') {
                 || !inspected.includes('player inspect N input')) {
               throw new Error(`Installed inspection lost language or command: ${locale}`);
             }
+            const strategyObservation = { position: { observation: { domain: 'strategic', observation: {
+              context: { kind: 'shop' }, cards: [], relics: [], potions: [],
+            } }, actions: [{ semantic_action: 'take:SwordBoomerang#0', candidate: { action: { kind: 'take_card', card: 'SwordBoomerang' } } }] } };
+            const strategy = preparationExpertGuidance(strategyObservation, undefined, locale);
+            const cardAdvice = preparationCardExpertGuidance(strategyObservation, undefined, locale);
+            if (!strategy.policies[0].preference.startsWith(locale === 'en' ? 'Spend on improvements' : '把金币用于改善')
+                || cardAdvice[0].command !== 'take:SwordBoomerang#0'
+                || !cardAdvice[0].preference.includes(locale === 'en' ? 'cautious default' : '谨慎默认')) {
+              throw new Error(`Installed strategy lost static language or card identity: ${locale}`);
+            }
             const preparation = preparationInstructions(locale), card = cardChoiceInstructions(locale), shop = shopInstructions(locale);
             if (!preparationStageGuide('pending', undefined, {}, undefined, locale).includes(locale === 'en' ? 'Current task: rate' : '当前任务：评估')
                 || !preparation.text('eventCombatEntry').includes(locale === 'en' ? 'received after victory' : '在获胜后取得')
@@ -212,7 +223,7 @@ if (process.argv.slice(2).join(' ') === '--check') {
                 || !renderShopBudget({ gold: 40, starts: [] }, undefined, locale).includes(locale === 'en' ? 'Shop budget: Gold 40' : '商店预算：金币 40')) {
               throw new Error(`Installed preparation guide lost language or protocol: ${locale}`);
             }
-            report.installed_scripted_checks.push({ package: manifest.name, locale, imported_entries: true, preserved_guide_commands_and_operator: true, runtime_control_messages: true, launcher_operator_locale_independent: true, supervision_record_content_preserved: true, inspection_typed_scope_messages: true, preparation_guides_and_schemas: true, deck_mechanism_messages: true, card_choice_messages: true, shop_messages: true, preparation_card_conditions: true, preparation_resource_conditions: true, preparation_classification_messages: true });
+            report.installed_scripted_checks.push({ package: manifest.name, locale, imported_entries: true, preserved_guide_commands_and_operator: true, runtime_control_messages: true, launcher_operator_locale_independent: true, supervision_record_content_preserved: true, inspection_typed_scope_messages: true, static_strategy_language_and_card_identity: true, preparation_guides_and_schemas: true, deck_mechanism_messages: true, card_choice_messages: true, shop_messages: true, preparation_card_conditions: true, preparation_resource_conditions: true, preparation_classification_messages: true });
           }
         }
       }

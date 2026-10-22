@@ -2,6 +2,7 @@
 // preferences are distinct from the simulator's card effects and legal actions.
 import catalogue from './strategy-roles.json' with { type: 'json' };
 import { isDeepStrictEqual } from 'node:util';
+import { createPresentation, resolveLocale } from '@sts-simulator/presentation';
 import { preparationDeckComparison, preparationCardAcquisition, enduringStrengthGain, expandsHandAccess, renderOnPlayDrawCoverage } from './deck.mjs';
 export const STRATEGY_SOURCES = {
   jorbs: { author: 'Jorbs', reference: 'reference/expert/notes/extra-expert-reading-20260923.md',
@@ -30,137 +31,145 @@ const triggeredAccess = names('Headbutt Exhume DarkEmbrace Evolve Dropkick Havoc
 const damage = names('Anger TwinStrike Headbutt WildStrike HeavyBlade PerfectedStrike SwordBoomerang Clothesline IronWave ThunderClap Cleave Uppercut BloodForBlood Hemokinesis SeverSoul Whirlwind Carnage RecklessCharge Pummel Rampage Immolate Bludgeon FiendFire');
 const attackPlayRelics = names('Kunai Shuriken OrnamentalFan Nunchaku PenNib');
 
+const strategyViews = Object.fromEntries(['en', 'zh-CN'].map(locale => [locale, createPresentation({ locale })]));
+const strategyText = (locale, key, parameters = {}) => strategyViews[resolveLocale(locale)].text(`scripted:strategy.${key}`,
+  Object.fromEntries(Object.entries(parameters).map(([name, value]) => [name, String(value)])));
+
 const policy = (id, sources, preference, change) => ({ id, sources, preference, change });
 // Maintained applicability index. The source role text is retained separately:
 // a draw payoff is not a draw source, and terminal protection is not growth.
-const families = [
-  { id: 'transition', cards: names('BodySlam PommelStrike TwinStrike Headbutt PerfectedStrike Anger WildStrike HeavyBlade Clothesline IronWave ThunderClap Cleave SwordBoomerang Uppercut BloodForBlood InfernalBlade Hemokinesis SeverSoul Whirlwind RecklessCharge Rampage Carnage SearingBlow Combust Pummel Dropkick FiendFire Immolate Bludgeon'),
-    text: 'Transition damage: prioritize a meaningful improvement in early payable damage. Once several transition attacks are owned, favor access, protection or a more useful engine contribution. Compare an added attack with the whole owned payable attack suite and skipping: it occupies another draw among those attacks. Another attack earns priority through an actual damage/payment improvement, useful interaction or upcoming matchup.' },
-  { id: 'scaling', cards: names('BodySlam DualWield Entrench Rupture Rampage SearingBlow Inflame SpotWeakness Combust Juggernaut DoubleTap Barricade DemonForm LimitBreak'),
-    text: 'Growth and repeated output: rate the first available contribution separately from later gains. Replay growth needs reaching Hand and paying again; deployed Power output needs its actual later triggers. Permanent upgrade growth uses the reachable upgrade opportunities. Prefer support for an existing growth plan before adding another slow growth dependency.' },
-  { id: 'strength', cards: names('TwinStrike Anger Flex HeavyBlade SwordBoomerang Rupture Whirlwind Inflame SpotWeakness Pummel FiendFire DemonForm LimitBreak'),
-    text: 'Strength: a source contributes at its supplied deployment and trigger timing. For payoff cards, use named owned sources for additional per-hit output. Current base damage supplies transition value; acquiring another Strength source is a separate investment condition.' },
-  { id: 'access', cards: names('PommelStrike Headbutt Warcry Havoc ShrugItOff BattleTrance BurningPact Evolve Dropkick DarkEmbrace Exhume Brutality Offering'),
-    text: 'Access: usually prioritize reaching useful damage, protection and enabling cards over repeating a transition attack. A standalone draw supplies access after payment; conditional draw and retrieval use their supplied triggers and targets. Energy must support the cards reached.' },
-  { id: 'payment', cards: names('Clash BodySlam Anger Havoc BloodForBlood Sentinel InfernalBlade Intimidate Bloodletting Whirlwind RecklessCharge Rage SeeingRed Dropkick Berserk Offering Corruption'),
-    text: 'Payment: extra Energy or lower-cost useful plays help when drawn actions compete for Energy. Limited access lowers the value of another Energy resource. A zero-cost play still occupies a draw and Hand slot. Its printed on-play effects resolve on that play; copies created by the play enter the stated pile then, and using those copies requires subsequent access. Use actual printed costs and any deployment/HP costs for the comparison.' },
-  { id: 'protection', cards: names('TrueGrit Armaments ShrugItOff IronWave Sentinel Entrench GhostlyArmor FeelNoPain FlameBarrier Rage PowerThrough Disarm SecondWind Metallicize Barricade Impervious'),
-    text: 'Protection: prioritize usable protection that keeps early setup and subsequent turns affordable. Multi-turn Weak, persistent mitigation, repeated Block and Status-supported access can support an existing damage engine. Their triggers and payment determine useful timing.' },
-  { id: 'debuff', cards: names('Clothesline ThunderClap Uppercut Intimidate Disarm Shockwave'),
-    text: 'Debuffs: Weak can protect several attack turns; Vulnerable can improve the damage of subsequent attacks. Prefer useful coverage at an affordable payment, accounting for Artifact and owned coverage. The debuff after an attack applies to subsequent hits rather than that attack\'s earlier hit.' },
-  { id: 'matchup', cards: names('Clash WildStrike ThunderClap Cleave Whirlwind RecklessCharge FireBreathing FlameBarrier PowerThrough Disarm Evolve Immolate'),
-    text: 'Encounter coverage: raise priority when owned effects or the current public encounter pool supply the actual targets or triggers. Status draws, multi-hit attacks and multi-enemy fights reward different counters. Prefer a useful current counter over a distant matchup label.' },
-  { id: 'exhaust', cards: names('TrueGrit Havoc Sentinel SeverSoul FeelNoPain BurningPact SecondWind DarkEmbrace Exhume Impervious FiendFire Corruption'),
-    text: 'Exhaust: use specific owned fuel and trigger payoffs. Cleanup can improve later draws; spending useful Skills also changes later protection and access. Prefer usable compensation and a sustainable remaining deck over accumulating unrelated Exhaust components.' },
-  { id: 'hp-resource', cards: names('Reaper Feed'),
-    text: 'HP resources: favor useful recovery or maximum HP as a distinct route and survival benefit, supporting later development opportunities. An existing fixed post-victory heal still leaves value in additional useful recovery. Damage-linked recovery uses the actual damage with current resources; additional Strength can amplify that recovery. Evaluate the printed trigger, actual resource gain and timing alongside Energy, access and immediate damage.' },
-];
-const sitePolicies = {
-  card_reward: policy('draft', ['jorbs', 'panacea', 'cx'],
-    'Build early survival with a small set of useful damage cards, then give draft priority to access, payment, protection and useful engine support. Treat skip as an ordinary competitive choice when an addition mainly repeats an owned function.',
-    'A stronger frontloaded attack, a concrete upcoming matchup or a useful existing interaction can justify another damage card. Early damage still has priority while the available attacks are weak.'),
-  shop: policy('shop', ['panacea', 'cx'],
-    'Spend on improvements for upcoming fights: useful cards, protective potions, relics and removal compete in the same Gold budget. Prefer an item that fixes an immediate weakness over another copy of slow growth. Keeping Gold is a useful continuation.',
-    'A price discount, immediate survival potion, or major engine improvement can outweigh removal. After securing those purchases, prioritize affordable removal of a weak recurring draw when it competes with useful setup, damage or protection. Compare saving Gold using the connected later shopping opportunity and the fights before it. Removal prices rise after an actual removal purchase.'),
-  campfire: policy('campfire', ['panacea', 'cx'],
-    'Use a meaningful upgrade while HP and owned protection support the next route; use recovery to keep a dangerous upcoming fight affordable. Upgrade an enabling payment, access or targeting improvement before a small numerical increase on a redundant card.',
-    'Low HP, limited recovery, an unavoidable hard fight or a required key can make another campfire action more useful.'),
-  map: policy('route', ['panacea', 'jorbs'],
-    'Prefer development routes with preparation before the first hard fight and a usable retreat branch after bad outcomes. Ordinary fights provide early card choices and permitted Gold rewards; owned income restrictions determine the spending budget. Campfires and shops prepare only the fights reached after them.',
-    'Strong immediate resources can support an extra elite. A missing Emerald can be collected in a later Act, giving the current route room to prioritize survival and development.'),
-  event: policy('event', ['panacea', 'equation'],
-    'Trade HP or Gold for a useful improvement that can repay the cost along the available route. Prefer a modest certain gain or leaving when a reward adds substantial immediate burden. Evaluate random rewards using their declared pool before revelation.',
-    'Available recovery, immediate curse removal, current deck needs and large reward upside can make a costly option worthwhile.'),
-  boss_relic: policy('boss-relic', ['panacea', 'cx', 'jorbs'],
-    'Prioritize resources that help deploy and use the current deck in the next Act. Extra Energy helps payable hands; draw helps reaching useful cards. Attach each relic restriction to the actual deck and preparation route.',
-    'Exhaust, high-cost cards, short fights, potion reliance, upgrade demand and recovery reliance change which resource is most valuable.'),
-  treasure: policy('treasure', ['panacea'],
-    'Compare the offered relic with the remaining Sapphire opportunities and the owned resources. Preserve a feasible plan to collect all missing keys before the end of Act 3.',
-    'A highly useful relic and another reachable chest can favor taking the relic now; the last opportunity favors securing the missing key.'),
-  reward: policy('reward', ['panacea'],
-    'Collect useful resources; reserve or replace potions for named dangerous fights and setup needs. An empty slot gives a new bottle room. Compare a key reward with the remaining opportunities.',
-    'Slot pressure, potion denial or an offered replacement changes the best bottle to keep.'),
-  run_transition: policy('act-entry', ['cx', 'panacea'],
-    'Prepare for the next Act using its actual entry HP and encounters. Prioritize finding and paying for useful actions early, protection during deployment, and damage that arrives in time.',
-    'An already effective growth plan makes access and protection more valuable than another slow growth card.'),
-};
+function maintainedAdvice(locale) {
+  const families = [
+    { id: 'transition', cards: names('BodySlam PommelStrike TwinStrike Headbutt PerfectedStrike Anger WildStrike HeavyBlade Clothesline IronWave ThunderClap Cleave SwordBoomerang Uppercut BloodForBlood InfernalBlade Hemokinesis SeverSoul Whirlwind RecklessCharge Rampage Carnage SearingBlow Combust Pummel Dropkick FiendFire Immolate Bludgeon'),
+      text: strategyText(locale, 'familyTransition') },
+    { id: 'scaling', cards: names('BodySlam DualWield Entrench Rupture Rampage SearingBlow Inflame SpotWeakness Combust Juggernaut DoubleTap Barricade DemonForm LimitBreak'),
+      text: strategyText(locale, 'familyScaling') },
+    { id: 'strength', cards: names('TwinStrike Anger Flex HeavyBlade SwordBoomerang Rupture Whirlwind Inflame SpotWeakness Pummel FiendFire DemonForm LimitBreak'),
+      text: strategyText(locale, 'familyStrength') },
+    { id: 'access', cards: names('PommelStrike Headbutt Warcry Havoc ShrugItOff BattleTrance BurningPact Evolve Dropkick DarkEmbrace Exhume Brutality Offering'),
+      text: strategyText(locale, 'familyAccess') },
+    { id: 'payment', cards: names('Clash BodySlam Anger Havoc BloodForBlood Sentinel InfernalBlade Intimidate Bloodletting Whirlwind RecklessCharge Rage SeeingRed Dropkick Berserk Offering Corruption'),
+      text: strategyText(locale, 'familyPayment') },
+    { id: 'protection', cards: names('TrueGrit Armaments ShrugItOff IronWave Sentinel Entrench GhostlyArmor FeelNoPain FlameBarrier Rage PowerThrough Disarm SecondWind Metallicize Barricade Impervious'),
+      text: strategyText(locale, 'familyProtection') },
+    { id: 'debuff', cards: names('Clothesline ThunderClap Uppercut Intimidate Disarm Shockwave'),
+      text: strategyText(locale, 'familyDebuff') },
+    { id: 'matchup', cards: names('Clash WildStrike ThunderClap Cleave Whirlwind RecklessCharge FireBreathing FlameBarrier PowerThrough Disarm Evolve Immolate'),
+      text: strategyText(locale, 'familyMatchup') },
+    { id: 'exhaust', cards: names('TrueGrit Havoc Sentinel SeverSoul FeelNoPain BurningPact SecondWind DarkEmbrace Exhume Impervious FiendFire Corruption'),
+      text: strategyText(locale, 'familyExhaust') },
+    { id: 'hp-resource', cards: names('Reaper Feed'),
+      text: strategyText(locale, 'familyHpResource') },
+  ];
+  const sitePolicies = {
+    card_reward: policy('draft', ['jorbs', 'panacea', 'cx'],
+      strategyText(locale, 'siteCardRewardPreference'),
+      strategyText(locale, 'siteCardRewardChange')),
+    shop: policy('shop', ['panacea', 'cx'],
+      strategyText(locale, 'siteShopPreference'),
+      strategyText(locale, 'siteShopChange')),
+    campfire: policy('campfire', ['panacea', 'cx'],
+      strategyText(locale, 'siteCampfirePreference'),
+      strategyText(locale, 'siteCampfireChange')),
+    map: policy('route', ['panacea', 'jorbs'],
+      strategyText(locale, 'siteMapPreference'),
+      strategyText(locale, 'siteMapChange')),
+    event: policy('event', ['panacea', 'equation'],
+      strategyText(locale, 'siteEventPreference'),
+      strategyText(locale, 'siteEventChange')),
+    boss_relic: policy('boss-relic', ['panacea', 'cx', 'jorbs'],
+      strategyText(locale, 'siteBossRelicPreference'),
+      strategyText(locale, 'siteBossRelicChange')),
+    treasure: policy('treasure', ['panacea'],
+      strategyText(locale, 'siteTreasurePreference'),
+      strategyText(locale, 'siteTreasureChange')),
+    reward: policy('reward', ['panacea'],
+      strategyText(locale, 'siteRewardPreference'),
+      strategyText(locale, 'siteRewardChange')),
+    run_transition: policy('act-entry', ['cx', 'panacea'],
+      strategyText(locale, 'siteRunTransitionPreference'),
+      strategyText(locale, 'siteRunTransitionChange')),
+  };
 
-// Per-card advice retains the expert's default preference and its reversal
-// conditions. It supplies opinions, never a new runtime implementation.
-const cardPolicies = {
-  SwordBoomerang: policy('sword-boomerang', ['je'],
-    'Use a cautious default for early transition damage. Its strongest purpose is converting substantial existing Strength into damage.',
-    'Owned Strength support raises its payoff; random target selection still reduces focused damage in multi-enemy fights. Judge the early base damage separately from that Strength payoff.'),
-  Combust: policy('combust', ['cx', 'equation'],
-    'A first affordable repeated area-damage function can help early multi-enemy and longer fights when area output is thin and HP can fund its recurring loss.',
-    'Pay deployment once, then count the actual player turn-end triggers and their HP loss. Additional copies, low HP and existing area coverage change the increment.'),
-  Headbutt: policy('headbutt', ['cx', 'equation'],
-    'Use for useful early targeted damage while attack coverage is scarce, or for retrieving a named useful discard with timely subsequent draw. In an attack-rich deck, prioritize that retrieval contribution when comparing it with skipping or access/protection additions.',
-    'Strong targets and timely subsequent draws raise retrieval value. Compare its damage with the owned payable attack suite; repeated Headbutts can spend draws recycling mediocre targets.'),
-  PerfectedStrike: policy('perfected-strike', ['cx', 'equation'],
-    'Treat as a situational frontloaded transition attack. Its current damage can help early elites; weigh another two-Energy attack against owned attacks and future access.',
-    'A meaningful early damage improvement favors taking it. Removing or exhausting counted Strike-tagged cards lowers later output. Count tags across Hand, Draw and Discard together.'),
-  SeverSoul: policy('sever-soul', ['cx', 'equation'],
-    'Treat as a situational two-Energy transition attack with a broad Hand-exhaust function. Added burst is more valuable while early attacks are weak.',
-    'Owned Exhaust payoffs or obstructive non-Attacks improve its exhaust use. Useful defense and setup cards also share that Hand; compare an extra transition attack with access and protection.'),
-  Bloodletting: policy('bloodletting', ['cx'],
-    'Prioritize when useful drawn cards need more Energy and the HP payment is affordable. Independent access makes repeatable Energy easier to use.',
-    'Limited access and already affordable hands lower the gain; expensive useful plays raise it. Apply each owned recovery source at its actual trigger and available uses.'),
-  Flex: policy('flex', ['cx'],
-    'Use a cautious default because temporary Strength consumes a draw for a same-turn payoff.',
-    'Accessible multi-hit attacks, same-turn Strength doubling or persistence support raise its value. Their access and timing determine the useful gain.'),
-  Clash: policy('clash', ['cx'],
-    'Use a low default in A20 hands containing AscendersBane and other non-Attacks; clearing the Hand is a substantial requirement.',
-    'A reliable owned Hand-clearing route can improve playability. Include encounter Statuses and the clearing action costs.'),
-  DemonForm: policy('demon-form', ['cx', 'equation'],
-    'One long-fight Strength engine can be useful; prioritize access and setup protection once that growth source is owned. Use a cautious default for another expensive delayed deployment.',
-    'Permanent lower cost, suitable protection or a specific long-fight need can make extra growth useful. Each copy has its own access, payment and later triggers.'),
-  LimitBreak: policy('limit-break', ['cx'],
-    'Prioritize a first useful Strength amplifier when an owned source supplies positive Strength and owned attacks can use the increase in time. One doubling already raises subsequent damage; an upgrade adds ordinary redraw opportunities.',
-    'Reach and pay for the source, then the doubling, then useful attacks while protecting those turns. Compare the gained output with the extra draw and play occupied. Temporary Strength uses same-turn access and its scheduled loss; an additional amplifier uses the output and access of the copies already owned.'),
-  DarkEmbrace: policy('dark-embrace', ['je', 'cx'],
-    'A strong access engine with usable Exhaust triggers. Its upgrade helps fit deployment into a tight turn.',
-    'Early deployment and Energy to use the accessed cards raise value. Sparse fuel and costly setup lower immediate payoff.'),
-  Corruption: policy('corruption', ['cx', 'panacea'],
-    'A valuable payment and Exhaust engine when useful Skills can supply protection and access after deployment.',
-    'DarkEmbrace, FeelNoPain and other Exhaust payoffs strengthen it. Count which functions remain after Skills are spent; repeated paid Skill cycles have a different deployment schedule.'),
-  Sentinel: policy('sentinel', ['cx'],
-    'Its Energy payoff is useful when an owned effect exhausts Sentinel itself and accessed cards can spend that Energy.',
-    'Corruption or usable targeted/Hand exhaust supplies the trigger. A Hand full of Energy resources still needs damage, access or protection to advance the fight.'),
-  BattleTrance: policy('battle-trance', ['cx', 'equation'],
-    'Usually a useful early access addition: reaching needed actions costs zero printed Energy.',
-    'Its draw restriction changes same-turn ordering with other draw effects. Upgrade competes with important payment, targeting and setup upgrades.'),
-  Metallicize: policy('metallicize', ['je'],
-    'Useful early multi-turn protection: passive Block can leave Energy for attacks on later turns.',
-    'Longer fights raise accumulated protection; short fights and costly deployment lower its gain.'),
-  Clothesline: policy('clothesline', ['je'],
-    'Treat primarily as a Weak source with transition damage; use a cautious default for its two-Energy payment.',
-    'An owned Weak gap and multi-turn incoming attacks can justify it. Existing Weak coverage and payment pressure reduce the increment.'),
-  DualWield: policy('dual-wield', ['je', 'cx'],
-    'Use a cautious early default; prioritize later when copying a specific useful Attack or Power solves a real need.',
-    'A useful same-Hand target, room for the copies and payment for the entire sequence raise value.'),
-  Evolve: policy('evolve', ['cx'],
-    'Prioritize as access support when owned cards or upcoming encounter effects supply Status draws.',
-    'Timely deployment and repeat Status draws improve its payoff. The setup payment and currently relevant encounters determine its priority.'),
-  Armaments: policy('armaments', ['cx'],
-    'Useful transition Block plus in-combat upgrades when owned unupgraded targets gain meaningfully.',
-    'Payment changes, targeted Exhaust upgrades or LimitBreak redraws can raise value. Current Hand access and later permanent upgrades change its increment.'),
-  TrueGrit: policy('true-grit', ['cx', 'equation'],
-    'Useful transition protection and combat deck cleanup; its upgrade improves control over the exhausted target.',
-    'Status pressure and owned Exhaust payoffs raise value. Unupgraded random targeting can spend a useful Hand card.'),
-  FeelNoPain: policy('feel-no-pain', ['cx', 'panacea'],
-    'Prioritize as efficient protection when actual Exhaust events provide triggers.',
-    'Sentries Dazed and owned Exhaust routes raise value; the trigger timing determines which turns receive protection.'),
-  Barricade: policy('barricade', [],
-    'A long-fight protection engine when owned Block generation can build a reserve through enemy turns. Reach and pay for deployment, then generate Block while protecting setup. Owned Entrench can multiply the surviving reserve; BodySlam can convert it into attack output.',
-    'Compare current Block supply, access and deployment payment with immediate protection. Once retention is owned, prioritize supplying and accessing that engine. Each additional copy contributes earlier access to deployment and occupies another draw.'),
-  Entrench: policy('entrench', [],
-    'For ordinary Block, evaluate one turn\'s extra protection: reach the Block generator and Entrench in the same Hand and pay for both. This conditional extra card is usually a low-priority addition while access or reliable protection still needs development.',
-    'An owned retention engine, substantial Block supply and repeatable access can make affordable doubling a long-fight growth plan. With Barricade, surplus surviving enemy attacks can be doubled again after re-access and payment. Extra draw or Energy improves same-turn combinations; the upgrade reduces each payment. Corruption changes the Skill lifecycle according to its supplied rules.'),
-  BodySlam: policy('body-slam', [],
-    'Convert Block already generated for protection into base attack output while preserving that Block. Its upgrade makes the attack zero Energy. Compare reaching and paying for the Block source and this attack with the owned damage suite.',
-    'Compare same-turn Block generation and damage conversion first. Cross-turn conversion uses deployed retention and the surplus surviving enemy actions; multiplication uses the Block present at its own resolution. Access and payment for these steps determine how soon the extra output works. Earlier access to protection can improve both defense and output.'),
-};
+  // Per-card advice retains the expert's default preference and its reversal
+  // conditions. It supplies opinions, never a new runtime implementation.
+  const cardPolicies = {
+    SwordBoomerang: policy('sword-boomerang', ['je'],
+      strategyText(locale, 'cardSwordBoomerangPreference'),
+      strategyText(locale, 'cardSwordBoomerangChange')),
+    Combust: policy('combust', ['cx', 'equation'],
+      strategyText(locale, 'cardCombustPreference'),
+      strategyText(locale, 'cardCombustChange')),
+    Headbutt: policy('headbutt', ['cx', 'equation'],
+      strategyText(locale, 'cardHeadbuttPreference'),
+      strategyText(locale, 'cardHeadbuttChange')),
+    PerfectedStrike: policy('perfected-strike', ['cx', 'equation'],
+      strategyText(locale, 'cardPerfectedStrikePreference'),
+      strategyText(locale, 'cardPerfectedStrikeChange')),
+    SeverSoul: policy('sever-soul', ['cx', 'equation'],
+      strategyText(locale, 'cardSeverSoulPreference'),
+      strategyText(locale, 'cardSeverSoulChange')),
+    Bloodletting: policy('bloodletting', ['cx'],
+      strategyText(locale, 'cardBloodlettingPreference'),
+      strategyText(locale, 'cardBloodlettingChange')),
+    Flex: policy('flex', ['cx'],
+      strategyText(locale, 'cardFlexPreference'),
+      strategyText(locale, 'cardFlexChange')),
+    Clash: policy('clash', ['cx'],
+      strategyText(locale, 'cardClashPreference'),
+      strategyText(locale, 'cardClashChange')),
+    DemonForm: policy('demon-form', ['cx', 'equation'],
+      strategyText(locale, 'cardDemonFormPreference'),
+      strategyText(locale, 'cardDemonFormChange')),
+    LimitBreak: policy('limit-break', ['cx'],
+      strategyText(locale, 'cardLimitBreakPreference'),
+      strategyText(locale, 'cardLimitBreakChange')),
+    DarkEmbrace: policy('dark-embrace', ['je', 'cx'],
+      strategyText(locale, 'cardDarkEmbracePreference'),
+      strategyText(locale, 'cardDarkEmbraceChange')),
+    Corruption: policy('corruption', ['cx', 'panacea'],
+      strategyText(locale, 'cardCorruptionPreference'),
+      strategyText(locale, 'cardCorruptionChange')),
+    Sentinel: policy('sentinel', ['cx'],
+      strategyText(locale, 'cardSentinelPreference'),
+      strategyText(locale, 'cardSentinelChange')),
+    BattleTrance: policy('battle-trance', ['cx', 'equation'],
+      strategyText(locale, 'cardBattleTrancePreference'),
+      strategyText(locale, 'cardBattleTranceChange')),
+    Metallicize: policy('metallicize', ['je'],
+      strategyText(locale, 'cardMetallicizePreference'),
+      strategyText(locale, 'cardMetallicizeChange')),
+    Clothesline: policy('clothesline', ['je'],
+      strategyText(locale, 'cardClotheslinePreference'),
+      strategyText(locale, 'cardClotheslineChange')),
+    DualWield: policy('dual-wield', ['je', 'cx'],
+      strategyText(locale, 'cardDualWieldPreference'),
+      strategyText(locale, 'cardDualWieldChange')),
+    Evolve: policy('evolve', ['cx'],
+      strategyText(locale, 'cardEvolvePreference'),
+      strategyText(locale, 'cardEvolveChange')),
+    Armaments: policy('armaments', ['cx'],
+      strategyText(locale, 'cardArmamentsPreference'),
+      strategyText(locale, 'cardArmamentsChange')),
+    TrueGrit: policy('true-grit', ['cx', 'equation'],
+      strategyText(locale, 'cardTrueGritPreference'),
+      strategyText(locale, 'cardTrueGritChange')),
+    FeelNoPain: policy('feel-no-pain', ['cx', 'panacea'],
+      strategyText(locale, 'cardFeelNoPainPreference'),
+      strategyText(locale, 'cardFeelNoPainChange')),
+    Barricade: policy('barricade', [],
+      strategyText(locale, 'cardBarricadePreference'),
+      strategyText(locale, 'cardBarricadeChange')),
+    Entrench: policy('entrench', [],
+      strategyText(locale, 'cardEntrenchPreference'),
+      strategyText(locale, 'cardEntrenchChange')),
+    BodySlam: policy('body-slam', [],
+      strategyText(locale, 'cardBodySlamPreference'),
+      strategyText(locale, 'cardBodySlamChange')),
+  };
+  return { families, sitePolicies, cardPolicies };
+}
+const maintainedViews = Object.fromEntries(['en', 'zh-CN'].map(locale => [locale, maintainedAdvice(locale)]));
 
 // Inventory-bound strategy priorities. The deck owner validates instance facts;
 // these reviewed preferences organize development without predicting combat HP.
@@ -399,7 +408,8 @@ function constructionPriorities(observation, normalize) {
     preparationAct: act, priorities };
 }
 
-export function preparationExpertGuidance(observation, normalize = command => command) {
+export function preparationExpertGuidance(observation, normalize = command => command, locale = 'en') {
+  const { sitePolicies } = maintainedViews[resolveLocale(locale)];
   const state = observation.position?.observation?.observation;
   if (!state || !Array.isArray(state.cards)) return undefined;
   const owned = state.cards.filter(row => row.count > 0);
@@ -446,20 +456,21 @@ export function preparationExpertGuidance(observation, normalize = command => co
       ? policy('copy', ['cx', 'jorbs'], 'Prefer an extra useful play or better access to an important function. Protecting and reaching an existing engine often takes priority over another slow setup copy.', 'A cheap actual instance or insufficient existing output can make the extra copy valuable.')
       : policy('cleanup', ['cx', 'equation'], 'Default to giving up a weak recurring draw while preserving useful damage, protection, access and enabling cards.', 'An obstructive curse, redundant function or actual replacement distribution can change the best target.'));
   }
-  const candidates = preparationCardExpertGuidance(observation, normalize);
+  const candidates = preparationCardExpertGuidance(observation, normalize, locale);
   if (!selected.length && !candidates.length) return undefined;
   const construction = constructionPriorities(observation, normalize);
   for (const candidate of candidates) candidate.priorityIds = (construction?.priorities ?? [])
     .filter(row => row.supportFamilies.some(id => candidate.familyIds?.includes(id))).map(row => row.id);
   return { schema: 'sts-preparation-expert-guidance-v1', origin: 'maintainer_synthesis_of_tracked_expert_notes',
     inventory, policies: selected, candidates, ...(construction ? { construction } : {}),
-    families: preparationCardFamilyGuidance(candidates),
+    families: preparationCardFamilyGuidance(candidates, locale),
     sources: Object.fromEntries([...new Set([...selected, ...candidates, ...(construction?.priorities ?? [])].flatMap(row => row.sources))].map(id => [id, STRATEGY_SOURCES[id]])) };
 }
 
 // The small card-choice input uses the same maintained advice without building
 // the full preparation plan or asking the player to discover handbook entries.
-export function preparationCardExpertGuidance(observation, normalize = command => command) {
+export function preparationCardExpertGuidance(observation, normalize = command => command, locale = 'en') {
+  const { cardPolicies, families } = maintainedViews[resolveLocale(locale)];
   const state = observation.position.observation.observation;
   return (observation.position.actions ?? []).flatMap(row => {
     const acquisition = preparationCardAcquisition(observation, row);
@@ -503,7 +514,8 @@ function repeatedCombustAdvice(observation, acquisition) {
   };
 }
 
-export function preparationCardFamilyGuidance(candidates) {
+export function preparationCardFamilyGuidance(candidates, locale = 'en') {
+  const { families } = maintainedViews[resolveLocale(locale)];
   return families.filter(family => candidates.some(row => row.familyIds?.includes(family.id)))
     .map(({ id, text }) => ({ id, text }));
 }

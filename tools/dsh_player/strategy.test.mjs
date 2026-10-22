@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { access } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
-import { preparationExpertGuidance, preparationCardExpertGuidance, renderExpertGuidance, renderCandidateExpertGuidance, STRATEGY_SOURCES, preparationShopRemovalPolicy } from './strategy.mjs';
+import { preparationExpertGuidance, preparationCardExpertGuidance, preparationCardFamilyGuidance, renderExpertGuidance, renderCandidateExpertGuidance, STRATEGY_SOURCES, preparationShopRemovalPolicy } from './strategy.mjs';
 import catalogue from './strategy-roles.json' with { type: 'json' };
 import { conciseCardCommand } from '../run_play/contract.mjs';
 import { preparationClassificationContext, preparationRecordedTable, parsePreparationClassification, preparationCommandBasis, preparationReading } from './preparation.mjs';
@@ -21,6 +21,38 @@ const root = () => ({ schema: 'sts-run-play-agent-observation-v3', session_id: '
   ], relics: [{ relic: 'ToyOrnithopter' }], potions: [null, null],
 } }, actions: ['Bloodletting', 'PerfectedStrike'].map(card => ({ semantic_action: `take:${card}#0`,
   candidate: { action: { kind: 'take_card', card } } })) } });
+
+test('static strategy languages preserve card identities families source roles and site policy identities', () => {
+  const cards = 'SwordBoomerang Combust Headbutt PerfectedStrike SeverSoul Bloodletting Flex Clash DemonForm LimitBreak DarkEmbrace Corruption Sentinel BattleTrance Metallicize Clothesline DualWield Evolve Armaments TrueGrit FeelNoPain Barricade Entrench BodySlam'.split(' ');
+  const observation = root();
+  observation.position.actions = [...cards, 'Reaper'].map(card => ({ semantic_action: `take:${card}#0`,
+    candidate: { action: { kind: 'take_card', card } } }));
+  const original = structuredClone(observation);
+  const english = preparationCardExpertGuidance(observation), chinese = preparationCardExpertGuidance(observation, undefined, 'zh-CN');
+  const identities = rows => rows.map(({ preference, change, ...row }) => row);
+  assert.deepEqual(identities(chinese), identities(english));
+  for (const card of cards) {
+    const before = english.find(row => row.card === card), after = chinese.find(row => row.card === card);
+    assert.ok(before.preference && before.change, card);
+    assert.notEqual(before.preference, after.preference, card);
+    assert.notEqual(before.change, after.change, card);
+  }
+  const enFamilies = preparationCardFamilyGuidance(english), zhFamilies = preparationCardFamilyGuidance(chinese, 'zh-CN');
+  assert.equal(enFamilies.length, 10);
+  assert.deepEqual(zhFamilies.map(row => row.id), enFamilies.map(row => row.id));
+  assert.ok(zhFamilies.every((row, index) => row.text !== enFamilies[index].text));
+  assert.deepEqual(preparationCardExpertGuidance(observation), english, 'another language cannot change the default advice');
+  assert.deepEqual(observation, original);
+  for (const site of ['card_reward', 'shop', 'campfire', 'map', 'event', 'boss_relic', 'treasure', 'reward', 'run_transition']) {
+    const current = root(); current.position.actions = [];
+    current.position.observation.observation.context = { kind: site };
+    const en = preparationExpertGuidance(current), zh = preparationExpertGuidance(current, undefined, 'zh-CN');
+    assert.deepEqual(identities(zh.policies), identities(en.policies));
+    assert.notEqual(zh.policies[0].preference, en.policies[0].preference);
+    assert.notEqual(zh.policies[0].change, en.policies[0].change);
+    assert.deepEqual(zh.sources, en.sources);
+  }
+});
 
 test('the handbook supplies only current candidates and refreshes owned support after an inventory change', () => {
   const observation = root();

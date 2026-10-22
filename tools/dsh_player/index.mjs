@@ -329,7 +329,7 @@ export async function apply(ctx, config) {
                       : preparationContext?.shopSpending ? shop.spendingGuide : preparation.procedure,
                     ratingMeaning: preparationContext?.potionReplacement ? 'shop-bottle-tradeoff-v1'
                       : preparationContext?.shopSpending ? 'shop-spending-tradeoff-v1' : 'current-window-recommendation-v1',
-                    expertGuidance: preparationExpertGuidance(reading, strategicOptionCommand),
+                    expertGuidance: preparationExpertGuidance(reading, strategicOptionCommand, presentation.locale),
                     deckComparison: preparationDeckComparison(reading, strategicOptionCommand, presentation.locale),
                     shopBudget: reading.shopBudget, shopPlan: reading.shopPlan,
                     classificationContext: preparationClassificationContext(reading, strategicOptionCommand, undefined, presentation.locale),
