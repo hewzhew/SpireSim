@@ -3,6 +3,7 @@ use crate::decision_tests::{controller_with_session, fixture, TestDirectory};
 use cards::CardId;
 use relics::RelicId;
 use sts_oracle_learning::content::identity::StableGameplayId;
+use sts_oracle_learning::content::potions;
 use sts_presentation::Locale;
 
 fn card(id: CardId, ordinal: usize) -> TaskStrategicCardV1 {

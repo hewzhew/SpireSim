@@ -72,6 +72,7 @@ pub(crate) fn reading(
         None,
         None,
         locale,
+        super::DecisionDisplayV1::Standard,
     )?;
     let mut overview = rendered.summary.clone();
     crate::mechanics_info::write_preparation_window(&mut overview, observation, locale);

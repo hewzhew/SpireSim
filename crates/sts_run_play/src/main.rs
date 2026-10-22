@@ -1576,7 +1576,7 @@ fn run(cli: Cli) -> Result<(), String> {
             if focus {
                 set_focus_v1(Path::new(".oracle-lab/run-play-focus"), &session)?;
             }
-            print!("{}", render_status_v1(&workspace.head)?);
+            print!("{}", render_status_v1(&workspace.head, locale)?);
         }
         Command::ReplayMirrorPrefix {
             plan,
@@ -1740,7 +1740,7 @@ fn run(cli: Cli) -> Result<(), String> {
                 "Refreshed: {source_name} -> {target_name} (exact state/RNG verified; old session retained{})",
                 if from_focus || focus { "; focus updated" } else { "" },
             );
-            print!("{}", render_status_v1(&workspace.head)?);
+            print!("{}", render_status_v1(&workspace.head, locale)?);
         }
         Command::AdoptCurrent {
             session,
@@ -1760,7 +1760,7 @@ fn run(cli: Cli) -> Result<(), String> {
                 set_focus_v1(Path::new(".oracle-lab/run-play-focus"), &target)?;
             }
             println!("Current game state kept at {}", target.display());
-            print!("{}", render_status_v1(&workspace.head)?);
+            print!("{}", render_status_v1(&workspace.head, locale)?);
         }
         Command::Fork {
             session,
@@ -1868,7 +1868,7 @@ fn run(cli: Cli) -> Result<(), String> {
                 promotion.skipped_public_only_ancestors,
                 promotion.promoted_step_count,
             );
-            print!("{}", render_status_v1(&promotion.head)?);
+            print!("{}", render_status_v1(&promotion.head, locale)?);
         }
         Command::CounterfactualBranch {
             session,
@@ -2229,7 +2229,7 @@ fn run(cli: Cli) -> Result<(), String> {
             } else {
                 head
             };
-            print!("{}", render_status_v1(&head)?);
+            print!("{}", render_status_v1(&head, locale)?);
         }
         Command::Inventory { session, effects } => {
             let mut controller =
@@ -3457,7 +3457,7 @@ fn run(cli: Cli) -> Result<(), String> {
                 profile.endpoint_validation.as_secs_f64() * 1_000.0,
                 profile.publication.as_secs_f64() * 1_000.0,
             );
-            print!("{}", render_status_v1(controller.head())?);
+            print!("{}", render_status_v1(controller.head(), locale)?);
         }
         Command::CombatTrace {
             session,
@@ -3629,7 +3629,7 @@ fn run(cli: Cli) -> Result<(), String> {
                 selected.total_potions_consumed,
                 selected.total_action_count,
             );
-            print!("{}", render_status_v1(controller.head())?);
+            print!("{}", render_status_v1(controller.head(), locale)?);
         }
         Command::CombatDamageChallenge {
             session,
@@ -3724,7 +3724,7 @@ fn run(cli: Cli) -> Result<(), String> {
                 selected.total_potions_consumed,
                 selected.total_action_count,
             );
-            print!("{}", render_status_v1(controller.head())?);
+            print!("{}", render_status_v1(controller.head(), locale)?);
         }
         Command::ExportCombatCase {
             session,
@@ -3795,7 +3795,7 @@ fn run(cli: Cli) -> Result<(), String> {
             let choices = parse_action_line_v1(&line, "anchor-line")?;
             let mut controller = RunPlayControllerV1::open(RunPlayPathsV1::new(session))?;
             controller.anchor_action_line_v1(&choices)?;
-            print!("{}", render_status_v1(controller.head())?);
+            print!("{}", render_status_v1(controller.head(), locale)?);
         }
         Command::AnchorCombatPlan {
             session,
@@ -3838,7 +3838,7 @@ fn run(cli: Cli) -> Result<(), String> {
                     candidate,
                 )?;
             }
-            print!("{}", render_status_v1(controller.head())?);
+            print!("{}", render_status_v1(controller.head(), locale)?);
         }
         Command::ProtocolChoose {
             session,
@@ -3970,14 +3970,14 @@ fn run(cli: Cli) -> Result<(), String> {
                     compact::render_inventory_change_v1(&before, &after.public_decision_v1()?)
                 );
             }
-            print!("{}", render_status_v1(controller.head())?);
+            print!("{}", render_status_v1(controller.head(), locale)?);
         }
         Command::Undo { session } => {
             let workspace = back_v1(&RunPlayPathsV1::new(session), 1)?;
             print!(
                 "{}",
                 if workspace.head.scratch {
-                    render_status_v1(&workspace.head)?
+                    render_status_v1(&workspace.head, locale)?
                 } else {
                     render_show_v1(&workspace.head)?
                 }
@@ -4051,7 +4051,7 @@ fn run(cli: Cli) -> Result<(), String> {
             print!(
                 "{}",
                 if workspace.head.scratch {
-                    render_status_v1(&workspace.head)?
+                    render_status_v1(&workspace.head, locale)?
                 } else {
                     render_show_v1(&workspace.head)?
                 }
@@ -4195,7 +4195,7 @@ fn run(cli: Cli) -> Result<(), String> {
             let workspace = jump_v1(&RunPlayPathsV1::new(session), &selector)?;
             print!("{}", render_show_v1(&workspace.head)?);
         }
-        Command::Shell { session } => run_shell_v1(session)?,
+        Command::Shell { session } => run_shell_v1(session, locale)?,
         Command::AgentShell {
             session,
             knowledge_pack,
@@ -4675,7 +4675,7 @@ fn parse_shell_single_action_v1(
     Ok(selectors.into_iter().next().expect("checked one action"))
 }
 
-fn run_shell_v1(session: PathBuf) -> Result<(), String> {
+fn run_shell_v1(session: PathBuf, locale: Locale) -> Result<(), String> {
     let mut controller = RunPlayControllerV1::open(RunPlayPathsV1::new(session))?;
     let mut known = None;
     let mut displayed = None;
@@ -4708,7 +4708,7 @@ fn run_shell_v1(session: PathBuf) -> Result<(), String> {
         let command_result = (|| -> Result<bool, String> {
             match command {
                 "view" => print_shell_reading_v1(&mut controller, &mut known, &mut displayed)?,
-                "status" => print_shell_view_v1(&render_status_v1(controller.head())?),
+                "status" => print_shell_view_v1(&render_status_v1(controller.head(), locale)?),
                 "show" => print_shell_view_v1(&render_show_v1(controller.head())?),
                 "actions" => print_shell_actions_v1(controller.head())?,
                 "info" => {

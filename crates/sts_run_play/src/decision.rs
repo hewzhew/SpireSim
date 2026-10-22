@@ -221,6 +221,7 @@ pub(crate) fn read_decision(
         Some(decision_source(head)?),
         last_choice(head),
         locale,
+        DecisionDisplayV1::Standard,
     )
 }
 
@@ -238,6 +239,49 @@ pub(crate) fn read_preview_decision_v1(
         None,
         None,
         locale,
+        DecisionDisplayV1::Standard,
+    )
+}
+
+#[derive(Clone, Copy)]
+enum DecisionDisplayV1<'a> {
+    Standard,
+    Compact {
+        preview: bool,
+        deck_change: Option<&'a str>,
+    },
+}
+
+impl DecisionDisplayV1<'_> {
+    fn compact(self) -> bool {
+        matches!(self, Self::Compact { .. })
+    }
+}
+
+/// CLI layout uses the same facts and choice renderer as the model reading.
+/// Display text never becomes input to another renderer or action resolver.
+pub(crate) fn read_compact_decision_v1(
+    decision: &TaskPublicDecisionV1,
+    source: Option<ExactRunDecisionSourceV1>,
+    preview: bool,
+    deck_change: Option<&str>,
+    locale: Locale,
+) -> Result<RunPlayDecisionReadingV1, String> {
+    read_public_decision_v1(
+        decision,
+        if preview {
+            &[DecisionDetailV1::Brief]
+        } else {
+            &[]
+        },
+        None,
+        source,
+        None,
+        locale,
+        DecisionDisplayV1::Compact {
+            preview,
+            deck_change,
+        },
     )
 }
 
@@ -248,6 +292,7 @@ fn read_public_decision_v1(
     source: Option<ExactRunDecisionSourceV1>,
     last_choice: Option<DecisionChoiceReceiptV1>,
     locale: Locale,
+    display: DecisionDisplayV1<'_>,
 ) -> Result<RunPlayDecisionReadingV1, String> {
     let mut result = RunPlayDecisionReadingV1 {
         control: DecisionControlV1::Strategic,
@@ -276,6 +321,7 @@ fn read_public_decision_v1(
                 observation,
                 details.contains(&DecisionDetailV1::Brief),
                 locale,
+                display.compact(),
             );
             combat::pending_choices(
                 &decision,
@@ -627,66 +673,102 @@ fn read_public_decision_v1(
         }
     }
     if (repeat_deck && !brief) || show_build_resources {
-        let mut names = BTreeMap::<_, BTreeSet<_>>::new();
-        for card in &observation.cards {
-            names
-                .entry(locale.entity("card", card.card.stable_id()))
-                .or_default()
-                .insert(card.card.stable_id());
-        }
-        let deck = crate::compact::inventory_card_groups_v1(&observation.cards);
-        writeln!(
-            out,
-            "{}",
-            text(
-                locale,
-                "deck",
-                &[
-                    ("count", &observation.cards.len().to_string()),
-                    (
-                        "cards",
-                        &deck
-                            .into_iter()
-                            .map(|(count, card)| {
-                                let mut label = deck_card_label(&card, locale);
-                                if names[locale.entity("card", card.card.stable_id())].len() > 1 {
-                                    write!(label, " [{}]", card.card.stable_id()).unwrap();
-                                }
-                                if count == 1 {
-                                    label
-                                } else {
-                                    format!("{count}x {label}")
-                                }
-                            })
-                            .collect::<Vec<_>>()
-                            .join(", ")
-                    )
-                ]
+        if let DecisionDisplayV1::Compact { deck_change, .. } = display {
+            writeln!(
+                out,
+                "{}",
+                crate::compact::compact_text(
+                    locale,
+                    if deck_change.is_some() {
+                        "status.deckChange"
+                    } else {
+                        "status.deckCount"
+                    },
+                    &[
+                        ("change", deck_change.unwrap_or("")),
+                        ("count", &observation.cards.len().to_string())
+                    ],
+                )
             )
-        )
-        .unwrap();
+            .unwrap();
+        } else {
+            let mut names = BTreeMap::<_, BTreeSet<_>>::new();
+            for card in &observation.cards {
+                names
+                    .entry(locale.entity("card", card.card.stable_id()))
+                    .or_default()
+                    .insert(card.card.stable_id());
+            }
+            let deck = crate::compact::inventory_card_groups_v1(&observation.cards);
+            writeln!(
+                out,
+                "{}",
+                text(
+                    locale,
+                    "deck",
+                    &[
+                        ("count", &observation.cards.len().to_string()),
+                        (
+                            "cards",
+                            &deck
+                                .into_iter()
+                                .map(|(count, card)| {
+                                    let mut label = deck_card_label(&card, locale);
+                                    if names[locale.entity("card", card.card.stable_id())].len() > 1
+                                    {
+                                        write!(label, " [{}]", card.card.stable_id()).unwrap();
+                                    }
+                                    if count == 1 {
+                                        label
+                                    } else {
+                                        format!("{count}x {label}")
+                                    }
+                                })
+                                .collect::<Vec<_>>()
+                                .join(", ")
+                        )
+                    ]
+                )
+            )
+            .unwrap();
+        }
     }
     if (repeat_relics && !brief) || show_build_resources {
-        writeln!(
-            out,
-            "{}",
-            text(
-                locale,
-                "relics",
-                &[(
-                    "relics",
-                    &observation
+        if display.compact() {
+            writeln!(
+                out,
+                "{}",
+                crate::compact::relic_summary_v1(
+                    observation
                         .relics
                         .iter()
-                        .map(|r| crate::compact::relic_label_v1(
-                            r.relic, r.counter, r.used_up, locale
-                        ))
-                        .collect::<Vec<_>>()
-                        .join(", ")
-                )]
+                        .map(|r| (r.relic, r.counter, r.used_up)),
+                    locale,
+                )
             )
-        )
-        .unwrap();
+            .unwrap();
+        } else {
+            writeln!(
+                out,
+                "{}",
+                text(
+                    locale,
+                    "relics",
+                    &[(
+                        "relics",
+                        &observation
+                            .relics
+                            .iter()
+                            .map(|r| crate::compact::relic_label_v1(
+                                r.relic, r.counter, r.used_up, locale
+                            ))
+                            .collect::<Vec<_>>()
+                            .join(", ")
+                    )]
+                )
+            )
+            .unwrap();
+        }
     }
     if repeat_potions || brief {
         writeln!(
@@ -748,7 +830,10 @@ fn read_public_decision_v1(
         (!repeated).then(|| text(locale, &format!("resource.{name}"), &[]))
     })
     .collect();
-    if !reused.is_empty() && !brief {
+    if !reused.is_empty()
+        && !brief
+        && !matches!(display, DecisionDisplayV1::Compact { preview: true, .. })
+    {
         writeln!(
             out,
             "{}",
@@ -886,7 +971,12 @@ fn read_public_decision_v1(
         } else {
             option.label.clone()
         };
-        render_option_row(out, decision, option, ordinal, &label, bound, locale)?;
+        if display.compact() && !bound {
+            let command = crate::selector::semantic_action_for_choice_v1(decision, &option.choice)?;
+            writeln!(out, "  {command}  |  {label}").unwrap();
+        } else {
+            render_option_row(out, decision, option, ordinal, &label, bound, locale)?;
+        }
         if let TaskPublicCandidateV1::Strategic { action } = &option.candidate {
             write_choice_mechanics(out, action, brief, locale);
             write_event_resource_modifiers(out, action, observation, locale);

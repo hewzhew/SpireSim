@@ -3134,7 +3134,7 @@ fn compact_shop_shows_executable_offers_and_curse_removal() {
     let mut session = fixture("shop");
     session.run_state.add_card_to_deck(CardId::Doubt);
     let mut game = controller_with_session(&dir.0, "shop-with-curse", &session);
-    let status = crate::compact::render_status_v1(game.head()).unwrap();
+    let status = crate::compact::render_status_v1(game.head(), Locale::En).unwrap();
 
     let cards = status.find("Cards for sale").unwrap();
     let relics = status.find("Relics for sale").unwrap();
@@ -3183,7 +3183,7 @@ fn compact_shop_shows_executable_offers_and_curse_removal() {
     assert!(!receipt.contains("Relic gained:"));
 
     let twins = controller(&dir.0, "shop_twins");
-    let twins = crate::compact::render_status_v1(twins.head()).unwrap();
+    let twins = crate::compact::render_status_v1(twins.head(), Locale::En).unwrap();
     let commands: Vec<_> = twins
         .lines()
         .filter(|line| line.contains("· Shrug It Off ·"))
@@ -3193,7 +3193,7 @@ fn compact_shop_shows_executable_offers_and_curse_removal() {
     assert_ne!(commands[0], commands[1]);
 
     let poor = controller(&dir.0, "shop_poor");
-    let poor = crate::compact::render_status_v1(poor.head()).unwrap();
+    let poor = crate::compact::render_status_v1(poor.head(), Locale::En).unwrap();
     assert!(poor.contains("Shrug It Off 60g (insufficient gold)"));
     assert!(!poor.contains("buy:"));
     assert!(poor.contains("Leave: leave"));

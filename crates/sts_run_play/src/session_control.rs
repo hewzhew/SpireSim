@@ -749,7 +749,7 @@ pub fn build_overview_v1(
         }
         Some(RunPlayFocusedSessionV1 {
             catalog,
-            status: render_status_v1(&head)?,
+            status: render_status_v1(&head, sts_presentation::Locale::En)?,
             current_decision: head.current_decision,
             handoff,
         })

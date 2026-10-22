@@ -5563,6 +5563,41 @@
       "RunChoice": "选牌",
       "Treasure": "宝箱",
       "RunTransition": "跨幕"
+    },
+    "status": {
+      "terminal": "终局：{{outcome}}\n",
+      "savedDecision": "仅有保存的决策：{{compatibility}}；执行前请核验。",
+      "deckChange": "卡组变化：{{change}}",
+      "deckCount": "卡组：{{count}} 张（.\\scripts\\p.ps1 inventory 查看）",
+      "relicCount": "遗物：持有 {{count}} 个",
+      "relicStates": "遗物：持有 {{count}} 个；状态：{{states}}",
+      "hand": "手牌："
+    },
+    "shop": {
+      "header": "第 {{act}} 幕 F{{floor}} | A{{ascension}} | 生命 {{hp}}/{{maxHp}} | 金币 {{gold}} | 商店\n",
+      "potions": "药水：{{potions}}",
+      "boss": "Boss：{{boss}}",
+      "cards": "出售的卡牌（.\\scripts\\p.ps1 <action>）：",
+      "relics": "出售的遗物：",
+      "bottles": "出售的药水：",
+      "unknown": "效果说明不可用。",
+      "remove": "移除卡牌：{{price}} 金币{{status}}",
+      "removeTargets": "  其他目标：remove <CardId>（.\\scripts\\p.ps1 inventory 查看）。",
+      "leave": "离开：{{command}}",
+      "other": "其他操作：",
+      "unplayable": "不能打出"
+    },
+    "outcome": {
+      "heart": "心脏胜利",
+      "act3": "第三幕胜利",
+      "ended": "对局结束",
+      "paused": "已停在决策处",
+      "defeat": "失败",
+      "beforeObjective": "未达成目标，对局已结束",
+      "retries": "已停止：重试预算用尽",
+      "transitions": "已停止：转换预算用尽",
+      "unsupported": "已停止：决策类型不受支持",
+      "error": "已停止：{{message}}"
     }
   }
 }

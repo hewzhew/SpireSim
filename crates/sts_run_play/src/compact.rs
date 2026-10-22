@@ -15,7 +15,7 @@ use sts_oracle_learning::ai::planner_core::{
     PlannerDecisionContext, PlannerShopInventoryV1, PlannerShopPurchaseStatusV1,
 };
 use sts_oracle_learning::content::identity::gameplay_display_label_v1;
-use sts_oracle_learning::content::{cards, potions, relics};
+use sts_oracle_learning::content::{cards, relics};
 use sts_oracle_learning::eval::run_control::{ExactRunPlayProbeStepV1, RunActionResultChangeV1};
 
 use crate::combat_explain::CombatLineExplanationStateV1;
@@ -31,29 +31,56 @@ use crate::render::{
 #[cfg(test)]
 #[path = "compact/inventory_tests.rs"]
 mod inventory_tests;
+#[cfg(test)]
+#[path = "compact/status_tests.rs"]
+mod status_tests;
 /// Compact, typed resume context for humans and task handoffs. `show` remains
 /// the full evidence surface; this projection deliberately favors one-screen
 /// orientation without reading archive JSON or reconstructing private state.
-pub fn render_status_v1(head: &RunPlayHeadV1) -> Result<String, String> {
+pub fn render_status_v1(head: &RunPlayHeadV1, locale: Locale) -> Result<String, String> {
     if let RunPlayPositionV1::Terminal { outcome, .. } = &head.position {
-        return Ok(format!("Terminal: {}\n", render_outcome_compact(outcome)));
+        return Ok(compact_text(
+            locale,
+            "status.terminal",
+            &[("outcome", &render_outcome_compact(outcome, locale))],
+        ));
     }
     // The normal reading already owns human labels for combat, rewards, and
     // events. Keep status on that surface; `show` retains the exact diagnostic
     // ids, source proof and engine candidate dump when they are needed.
-    let reading = crate::decision::read_decision(head, &[], None, Locale::En)?;
     let decision = head
         .current_decision
         .as_ref()
         .ok_or_else(|| "run-play status has no cached decision".to_string())?
         .public_decision_v1()?;
-    let mut output = render_reading_status_v1(&decision, &reading, false, None)?;
+    let reading = crate::decision::read_compact_decision_v1(
+        &decision,
+        Some(crate::decision::decision_source(head)?),
+        false,
+        None,
+        locale,
+    )?;
+    let mut output =
+        if let TaskPublicObservationV1::Strategic { observation } = &decision.observation {
+            if let PlannerDecisionContext::Shop { inventory, .. } = &observation.context {
+                render_shop_status_v1(&decision, &reading, observation, inventory, None, locale)?
+            } else {
+                reading.view
+            }
+        } else {
+            reading.view
+        };
     let compatibility =
         RunPlayEvidenceIdentityV1::compatibility_label_v1(head.evidence_identity.as_ref());
     if !head.scratch && compatibility != "current" {
         writeln!(
             output,
-            "Saved decision only: {compatibility}; verify before acting."
+            "{}",
+            compact_text(
+                locale,
+                "status.savedDecision",
+                &[("compatibility", compatibility)]
+            )
         )
         .expect("string write");
     }
@@ -799,17 +826,30 @@ pub(crate) fn relic_label_v1(
     label
 }
 
-fn relic_summary_v1(relics: &[String]) -> String {
+pub(crate) fn relic_summary_v1(
+    relics: impl IntoIterator<Item = (relics::RelicId, i32, bool)>,
+    locale: Locale,
+) -> String {
+    let relics = relics.into_iter().collect::<Vec<_>>();
     let live = relics
         .iter()
-        .filter(|relic| relic.ends_with(']') || relic.ends_with(')'))
-        .cloned()
+        .filter(|(id, counter, used_up)| {
+            *counter >= 0 || relics::mechanics::trigger_state_v1(*id, *used_up).is_some()
+        })
+        .map(|(id, counter, used_up)| relic_label_v1(*id, *counter, *used_up, locale))
         .collect::<Vec<_>>();
-    if live.is_empty() {
-        format!("Relics: {} held", relics.len())
-    } else {
-        format!("Relics: {} held; states: {}", relics.len(), live.join(", "))
-    }
+    compact_text(
+        locale,
+        if live.is_empty() {
+            "status.relicCount"
+        } else {
+            "status.relicStates"
+        },
+        &[
+            ("count", &relics.len().to_string()),
+            ("states", &live.join(", ")),
+        ],
+    )
 }
 
 pub(crate) fn render_reading_status_v1(
@@ -817,36 +857,28 @@ pub(crate) fn render_reading_status_v1(
     reading: &RunPlayDecisionReadingV1,
     preview: bool,
     deck_change: Option<&str>,
+    locale: Locale,
 ) -> Result<String, String> {
     if let TaskPublicObservationV1::Strategic { observation } = &decision.observation {
         if let PlannerDecisionContext::Shop { inventory, .. } = &observation.context {
-            return render_shop_status_v1(decision, reading, observation, inventory, deck_change);
+            return render_shop_status_v1(
+                decision,
+                reading,
+                observation,
+                inventory,
+                deck_change,
+                locale,
+            );
         }
     }
-    let actions = if matches!(
-        &decision.observation,
-        TaskPublicObservationV1::Strategic { .. }
-    ) {
-        reading
-            .options
-            .iter()
-            .map(|option| {
-                crate::selector::semantic_action_for_choice_v1(decision, &option.choice).ok()
-            })
-            .collect::<Vec<_>>()
-    } else {
-        Vec::new()
-    };
-    Ok(wrap_status_lists_v1(
-        &reading.view,
-        &actions,
+    Ok(crate::decision::read_compact_decision_v1(
+        decision,
+        reading.source.clone(),
         preview,
         deck_change,
-        match &decision.observation {
-            TaskPublicObservationV1::Strategic { observation } => Some(observation.cards.len()),
-            TaskPublicObservationV1::Combat { .. } => None,
-        },
-    ))
+        locale,
+    )?
+    .view)
 }
 
 fn shop_action_v1(
@@ -878,6 +910,7 @@ fn render_shop_offer_v1(
     price: i32,
     detail: &str,
     status: &PlannerShopPurchaseStatusV1,
+    locale: Locale,
 ) {
     if let Some(command) = command {
         writeln!(output, "  {command}  |  {price}g · {name} · {detail}").expect("string write");
@@ -885,7 +918,7 @@ fn render_shop_offer_v1(
         writeln!(
             output,
             "  {name} {price}g{} · {detail}",
-            crate::decision::purchase_suffix(status, Locale::En)
+            crate::decision::purchase_suffix(status, locale)
         )
         .expect("string write");
     }
@@ -897,40 +930,72 @@ fn render_shop_status_v1(
     observation: &sts_oracle_learning::agent::task::TaskStrategicObservationV1,
     inventory: &PlannerShopInventoryV1,
     deck_change: Option<&str>,
+    locale: Locale,
 ) -> Result<String, String> {
     let run = &observation.run;
-    let mut output = format!(
-        "Act {} F{} | A{} | HP {}/{} | Gold {} | Shop\n",
-        run.act, run.floor, run.ascension_level, run.current_hp, run.max_hp, run.gold
+    let mut output = compact_text(
+        locale,
+        "shop.header",
+        &[
+            ("act", &run.act.to_string()),
+            ("floor", &run.floor.to_string()),
+            ("ascension", &run.ascension_level.to_string()),
+            ("hp", &run.current_hp.to_string()),
+            ("maxHp", &run.max_hp.to_string()),
+            ("gold", &run.gold.to_string()),
+        ],
     );
     writeln!(
         output,
-        "Potions: {}",
-        observation
-            .potions
-            .iter()
-            .map(|slot| format!(
-                "P{} {}",
-                slot.slot,
-                slot.potion
-                    .as_ref()
-                    .map_or("empty", |potion| gameplay_display_label_v1(potion.potion))
-            ))
-            .collect::<Vec<_>>()
-            .join(", ")
+        "{}",
+        compact_text(
+            locale,
+            "shop.potions",
+            &[(
+                "potions",
+                &observation
+                    .potions
+                    .iter()
+                    .map(|slot| format!(
+                        "P{} {}",
+                        slot.slot,
+                        slot.potion.as_ref().map_or_else(
+                            || locale.entry("decision", "empty").unwrap(),
+                            |potion| locale.entity("potion", potion.potion.stable_id())
+                        )
+                    ))
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            )]
+        )
     )
     .expect("string write");
-    let held_relics = observation
-        .relics
-        .iter()
-        .map(|relic| relic_label_v1(relic.relic, relic.counter, relic.used_up, Locale::En))
-        .collect::<Vec<_>>();
-    writeln!(output, "{}", relic_summary_v1(&held_relics)).expect("string write");
+    writeln!(
+        output,
+        "{}",
+        relic_summary_v1(
+            observation
+                .relics
+                .iter()
+                .map(|r| (r.relic, r.counter, r.used_up)),
+            locale
+        )
+    )
+    .expect("string write");
     if let Some(boss) = observation.public_map.boss {
-        writeln!(output, "Boss: {}", gameplay_display_label_v1(boss)).expect("string write");
+        writeln!(
+            output,
+            "{}",
+            compact_text(
+                locale,
+                "shop.boss",
+                &[("boss", locale.entity("encounter", boss.stable_id()))]
+            )
+        )
+        .expect("string write");
     }
 
-    writeln!(output, "Cards for sale (.\\scripts\\p.ps1 <action>):").expect("string write");
+    writeln!(output, "{}", compact_text(locale, "shop.cards", &[])).expect("string write");
     for offer in &inventory.cards {
         let action = TaskStrategicActionV1::BuyCard {
             shop_slot: offer.slot,
@@ -945,26 +1010,41 @@ fn render_shop_status_v1(
             .unwrap_or(i32::from(definition.cost));
         let cost = match cost {
             -1 => "X".to_owned(),
-            -2 => "unplayable".to_owned(),
+            -2 => compact_text(locale, "shop.unplayable", &[]),
             cost => format!("{cost}c"),
         };
         let detail = format!(
-            "{cost} {:?}: {}",
-            definition.card_type,
+            "{cost} {}: {}",
+            locale
+                .entry(
+                    "game",
+                    &format!(
+                        "cardType.{}",
+                        match definition.card_type {
+                            cards::CardType::Attack => "attack",
+                            cards::CardType::Skill => "skill",
+                            cards::CardType::Power => "power",
+                            cards::CardType::Curse => "curse",
+                            cards::CardType::Status => "status",
+                        }
+                    )
+                )
+                .expect("card type name"),
             cards::mechanics::get(offer.card)
-                .map(|rule| rule.explanation(Locale::En))
-                .unwrap_or_else(|| "Effect description unavailable.".to_owned())
+                .map(|rule| rule.explanation(locale))
+                .unwrap_or_else(|| compact_text(locale, "shop.unknown", &[]))
         );
         render_shop_offer_v1(
             &mut output,
             command.as_deref(),
-            &crate::render::format_card(offer.card, offer.upgrades),
+            &locale.card_name(offer.card.stable_id(), offer.upgrades),
             offer.price,
             &detail,
             &offer.purchase_status,
+            locale,
         );
     }
-    writeln!(output, "Relics for sale:").expect("string write");
+    writeln!(output, "{}", compact_text(locale, "shop.relics", &[])).expect("string write");
     for offer in &inventory.relics {
         let action = TaskStrategicActionV1::BuyRelic {
             shop_slot: offer.slot,
@@ -975,15 +1055,16 @@ fn render_shop_status_v1(
         render_shop_offer_v1(
             &mut output,
             command.as_deref(),
-            gameplay_display_label_v1(offer.relic),
+            locale.entity("relic", offer.relic.stable_id()),
             offer.price,
             &relics::mechanics::get(offer.relic)
-                .map(|rule| rule.explanation(Locale::En))
-                .unwrap_or_else(|| "Effect description unavailable.".to_owned()),
+                .map(|rule| rule.explanation(locale))
+                .unwrap_or_else(|| compact_text(locale, "shop.unknown", &[])),
             &offer.purchase_status,
+            locale,
         );
     }
-    writeln!(output, "Potions for sale:").expect("string write");
+    writeln!(output, "{}", compact_text(locale, "shop.bottles", &[])).expect("string write");
     for offer in &inventory.potions {
         let action = TaskStrategicActionV1::BuyPotion {
             shop_slot: offer.slot,
@@ -994,19 +1075,31 @@ fn render_shop_status_v1(
         render_shop_offer_v1(
             &mut output,
             command.as_deref(),
-            gameplay_display_label_v1(offer.potion),
+            locale.entity("potion", offer.potion.stable_id()),
             offer.price,
-            potions::mechanics::explanation(offer.potion)
-                .unwrap_or("Effect description unavailable."),
+            &locale
+                .entry("game", &format!("potionRule.{}", offer.potion.stable_id()))
+                .map(str::to_owned)
+                .unwrap_or_else(|| compact_text(locale, "shop.unknown", &[])),
             &offer.purchase_status,
+            locale,
         );
     }
     if let Some(purge) = &inventory.purge {
         writeln!(
             output,
-            "Remove card: {}g{}",
-            purge.price,
-            crate::decision::purchase_suffix(&purge.purchase_status, Locale::En)
+            "{}",
+            compact_text(
+                locale,
+                "shop.remove",
+                &[
+                    ("price", &purge.price.to_string()),
+                    (
+                        "status",
+                        &crate::decision::purchase_suffix(&purge.purchase_status, locale)
+                    )
+                ]
+            )
         )
         .expect("string write");
         for (ordinal, candidate) in decision.candidates.iter().enumerate() {
@@ -1022,7 +1115,7 @@ fn render_shop_status_v1(
                             decision,
                             &sts_oracle_learning::agent::task::TaskPublicChoiceV1::one(ordinal)
                         )?,
-                        crate::render::format_card(*card, *upgrades)
+                        locale.card_name(card.stable_id(), *upgrades)
                     )
                     .expect("string write");
                 }
@@ -1034,7 +1127,8 @@ fn render_shop_status_v1(
         ) {
             writeln!(
                 output,
-                "  Other targets: remove <CardId> (see .\\scripts\\p.ps1 inventory)."
+                "{}",
+                compact_text(locale, "shop.removeTargets", &[])
             )
             .expect("string write");
         }
@@ -1049,8 +1143,15 @@ fn render_shop_status_v1(
     }) {
         writeln!(
             output,
-            "Leave: {}",
-            crate::selector::semantic_action_for_choice_v1(decision, &option.choice)?
+            "{}",
+            compact_text(
+                locale,
+                "shop.leave",
+                &[(
+                    "command",
+                    &crate::selector::semantic_action_for_choice_v1(decision, &option.choice)?
+                )]
+            )
         )
         .expect("string write");
     }
@@ -1067,7 +1168,7 @@ fn render_shop_status_v1(
             continue;
         }
         if !other_heading {
-            writeln!(output, "Other actions:").expect("string write");
+            writeln!(output, "{}", compact_text(locale, "shop.other", &[])).expect("string write");
             other_heading = true;
         }
         writeln!(
@@ -1081,73 +1182,25 @@ fn render_shop_status_v1(
         .expect("string write");
     }
     if let Some(change) = deck_change {
-        writeln!(output, "Deck change: {change}").expect("string write");
+        writeln!(
+            output,
+            "{}",
+            compact_text(locale, "status.deckChange", &[("change", change)])
+        )
+        .expect("string write");
     } else {
         writeln!(
             output,
-            "Deck: {} cards (see .\\scripts\\p.ps1 inventory)",
-            observation.cards.len()
+            "{}",
+            compact_text(
+                locale,
+                "status.deckCount",
+                &[("count", &observation.cards.len().to_string())]
+            )
         )
         .expect("string write");
     }
     Ok(output)
-}
-
-fn wrap_status_lists_v1(
-    view: &str,
-    actions: &[Option<String>],
-    preview: bool,
-    deck_change: Option<&str>,
-    deck_size: Option<usize>,
-) -> String {
-    let mut output = String::new();
-    let mut action_heading = false;
-    for line in view.lines() {
-        if let Some(cards) = line.strip_prefix("Hand: ") {
-            writeln!(output, "Hand:").expect("string write");
-            for card in cards.split(", ") {
-                writeln!(output, "  {card}").expect("string write");
-            }
-        } else if line.starts_with("Deck: ") {
-            if let Some(change) = deck_change {
-                writeln!(output, "Deck change: {change}").expect("string write");
-            } else if let Some(size) = deck_size {
-                writeln!(
-                    output,
-                    "Deck: {size} cards (see .\\scripts\\p.ps1 inventory)"
-                )
-                .expect("string write");
-            }
-        } else if let Some(relics) = line.strip_prefix("Relics: ") {
-            let relics = relics.split(", ").map(str::to_owned).collect::<Vec<_>>();
-            writeln!(output, "{}", relic_summary_v1(&relics)).expect("string write");
-        } else if preview && line.starts_with("Unchanged: ") {
-            continue;
-        } else if let Some((number, label)) = line.split_once(": ") {
-            if let Ok(index) = number.parse::<usize>() {
-                if let Some(Some(action)) = actions.get(index) {
-                    if !action_heading {
-                        writeln!(output, "Actions:").expect("string write");
-                        action_heading = true;
-                    }
-                    if let Some(coordinates) = action.strip_prefix("route:") {
-                        let destination = coordinates.replace('.', ",");
-                        let room = label
-                            .strip_prefix(&format!("Go ({destination}) "))
-                            .unwrap_or(label);
-                        writeln!(output, "  go {destination}  |  {room}").expect("string write");
-                    } else {
-                        writeln!(output, "  {action}  |  {label}").expect("string write");
-                    }
-                    continue;
-                }
-            }
-            writeln!(output, "{line}").expect("string write");
-        } else if !line.starts_with("Damage: per-target hit") {
-            writeln!(output, "{line}").expect("string write");
-        }
-    }
-    output
 }
 
 pub(crate) fn preview_deck_change_v1(
@@ -1278,6 +1331,7 @@ pub fn render_preview_v1(comparison: &RunPlayComparisonV1, detail: bool) -> Resu
                 &after,
                 true,
                 deck_change.as_deref(),
+                Locale::En,
             )?);
         } else {
             writeln!(output, "Result: {}", render_terminal_result_v1(last)).expect("string write");
@@ -1372,7 +1426,7 @@ pub fn render_comparison_v1(
                         Some(&step.source_decision.observation)
                     ),
                     step.elapsed.as_secs_f64() * 1_000.0,
-                    render_outcome_compact(&step.outcome)
+                    render_outcome_compact(&step.outcome, Locale::En)
                 )
                 .expect("string write");
                 explanation.render_step_v1(&mut output, step);
@@ -1403,7 +1457,7 @@ pub(crate) fn render_terminal_result_v1(step: &ExactRunPlayProbeStepV1) -> Strin
             game_outcome: Some(GameOutcomeV1::Defeat),
             ..
         } => "Defeat".to_string(),
-        _ => render_outcome_compact(&step.outcome),
+        _ => render_outcome_compact(&step.outcome, Locale::En),
     };
     let hp = step.action_result.as_ref().and_then(|result| {
         result.changes.iter().find_map(|change| match change {
@@ -1734,41 +1788,41 @@ fn render_candidate_compact(
     }
 }
 
-pub(crate) fn render_outcome_compact(outcome: &TaskEpisodeOutcomeV1) -> String {
+pub(crate) fn render_outcome_compact(outcome: &TaskEpisodeOutcomeV1, locale: Locale) -> String {
     match outcome {
         TaskEpisodeOutcomeV1::Success {
             game_outcome: GameOutcomeV1::HeartVictory,
-        } => "Heart victory".to_string(),
+        } => compact_text(locale, "outcome.heart", &[]),
         TaskEpisodeOutcomeV1::Success {
             game_outcome: GameOutcomeV1::ActThreeVictory,
-        } => "Act 3 victory".to_string(),
+        } => compact_text(locale, "outcome.act3", &[]),
         TaskEpisodeOutcomeV1::Success {
             game_outcome: GameOutcomeV1::Defeat,
-        } => "Run ended".to_string(),
-        TaskEpisodeOutcomeV1::Paused { .. } => "Paused at a decision".to_string(),
+        } => compact_text(locale, "outcome.ended", &[]),
+        TaskEpisodeOutcomeV1::Paused { .. } => compact_text(locale, "outcome.paused", &[]),
         TaskEpisodeOutcomeV1::Failure {
             reason: TaskEpisodeFailureV1::CommittedDefeat,
             ..
-        } => "Defeat".to_string(),
+        } => compact_text(locale, "outcome.defeat", &[]),
         TaskEpisodeOutcomeV1::Failure {
             reason: TaskEpisodeFailureV1::CommittedTerminalWithoutObjective,
             ..
-        } => "Run ended before the objective".to_string(),
+        } => compact_text(locale, "outcome.beforeObjective", &[]),
         TaskEpisodeOutcomeV1::Failure {
             reason: TaskEpisodeFailureV1::RetryBudgetExhausted,
             ..
-        } => "Stopped: retry budget exhausted".to_string(),
+        } => compact_text(locale, "outcome.retries", &[]),
         TaskEpisodeOutcomeV1::Failure {
             reason: TaskEpisodeFailureV1::TransitionBudgetExhausted,
             ..
-        } => "Stopped: transition budget exhausted".to_string(),
+        } => compact_text(locale, "outcome.transitions", &[]),
         TaskEpisodeOutcomeV1::Failure {
             reason: TaskEpisodeFailureV1::UnsupportedDecisionSurface,
             ..
-        } => "Stopped: unsupported decision".to_string(),
+        } => compact_text(locale, "outcome.unsupported", &[]),
         TaskEpisodeOutcomeV1::Failure {
             reason: TaskEpisodeFailureV1::MechanicsOrProtocolError { message },
             ..
-        } => format!("Stopped: {message}"),
+        } => compact_text(locale, "outcome.error", &[("message", message)]),
     }
 }

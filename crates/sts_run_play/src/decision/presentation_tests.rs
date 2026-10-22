@@ -1689,7 +1689,16 @@ fn strategic_deck_summary_preserves_identities_and_permanent_modifiers() {
         },
     ];
     let before = public.clone();
-    let reading = read_public_decision_v1(&public, &[], None, None, None, Locale::ZhCn).unwrap();
+    let reading = read_public_decision_v1(
+        &public,
+        &[],
+        None,
+        None,
+        None,
+        Locale::ZhCn,
+        DecisionDisplayV1::Standard,
+    )
+    .unwrap();
     assert!(
         reading.view.contains("2x 打击 [Strike]"),
         "{}",
@@ -2041,6 +2050,7 @@ fn localized_or_command_like_event_labels_do_not_change_choice_commands() {
                 Some(decision_source(&before).unwrap()),
                 None,
                 Locale::En,
+                DecisionDisplayV1::Standard,
             )
             .unwrap();
             let displayed = if with_binding { "[Continue]" } else { label };

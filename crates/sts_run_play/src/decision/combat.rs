@@ -352,10 +352,11 @@ pub(crate) fn reading(
     state: &PublicCombatStateV1,
     brief: bool,
     locale: Locale,
+    compact: bool,
 ) -> String {
     let mut out = String::new();
     write_run_context(&mut out, context, locale);
-    out.push_str(&state_reading_with_rules(state, !brief, locale));
+    out.push_str(&state_reading_with_rules(state, !brief, locale, compact));
     if let PublicCombatRunContextV1::Available { run_goal, keys, .. } = context {
         if !brief {
             crate::mechanics_info::write_key_status(
@@ -376,7 +377,7 @@ pub(crate) fn summary(
 ) -> String {
     let mut out = String::new();
     write_run_context(&mut out, context, locale);
-    out.push_str(&state_summary(state, locale));
+    out.push_str(&state_summary(state, locale, false));
     out
 }
 
@@ -405,10 +406,10 @@ fn write_run_context(out: &mut String, context: &PublicCombatRunContextV1, local
 }
 
 pub(crate) fn state_reading(state: &PublicCombatStateV1, locale: Locale) -> String {
-    state_reading_with_rules(state, true, locale)
+    state_reading_with_rules(state, true, locale, false)
 }
 
-fn state_summary(state: &PublicCombatStateV1, locale: Locale) -> String {
+fn state_summary(state: &PublicCombatStateV1, locale: Locale, compact: bool) -> String {
     let mut out = String::new();
     writeln!(
         out,
@@ -463,9 +464,25 @@ fn state_summary(state: &PublicCombatStateV1, locale: Locale) -> String {
         .cards
         .iter()
         .map(|card| current_hand_card_label(card, state, locale))
-        .collect::<Vec<_>>()
-        .join(", ");
-    writeln!(out, "{}", text(locale, "hand", &[("cards", &hand)])).unwrap();
+        .collect::<Vec<_>>();
+    if compact {
+        writeln!(
+            out,
+            "{}",
+            crate::compact::compact_text(locale, "status.hand", &[])
+        )
+        .unwrap();
+        for card in hand {
+            writeln!(out, "  {card}").unwrap();
+        }
+    } else {
+        writeln!(
+            out,
+            "{}",
+            text(locale, "hand", &[("cards", &hand.join(", "))])
+        )
+        .unwrap();
+    }
     out
 }
 
@@ -473,12 +490,13 @@ fn state_reading_with_rules(
     state: &PublicCombatStateV1,
     include_rules: bool,
     locale: Locale,
+    compact: bool,
 ) -> String {
-    let mut out = state_summary(state, locale);
+    let mut out = state_summary(state, locale, compact);
     if state.turn.player_escaping {
         return out;
     }
-    if include_rules {
+    if include_rules && !compact {
         writeln!(out, "{}", text(locale, "damageNote", &[])).unwrap();
     }
     writeln!(
@@ -516,7 +534,23 @@ fn state_reading_with_rules(
         .map(|relic| crate::compact::relic_label_v1(relic.id, relic.counter, relic.used_up, locale))
         .collect::<Vec<_>>()
         .join(", ");
-    writeln!(out, "{}", text(locale, "relics", &[("relics", &relics)])).unwrap();
+    if compact {
+        writeln!(
+            out,
+            "{}",
+            crate::compact::relic_summary_v1(
+                state
+                    .player
+                    .relics
+                    .iter()
+                    .map(|r| (r.id, r.counter, r.used_up)),
+                locale,
+            )
+        )
+        .unwrap();
+    } else {
+        writeln!(out, "{}", text(locale, "relics", &[("relics", &relics)])).unwrap();
+    }
     if !state.player.powers.is_empty() {
         writeln!(
             out,

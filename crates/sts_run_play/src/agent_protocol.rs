@@ -2899,7 +2899,9 @@ fn project_agent_probe_line_v1(
             let reading = crate::decision::read_preview_decision_v1(decision, None, locale)?;
             match reading.control {
                 crate::decision::DecisionControlV1::Strategic => {
-                    crate::compact::render_reading_status_v1(decision, &reading, true, None)?
+                    crate::compact::render_reading_status_v1(
+                        decision, &reading, true, None, locale,
+                    )?
                 }
                 _ => reading.view,
             }
@@ -2954,7 +2956,9 @@ fn project_agent_inspection_v1(
             let reading = crate::decision::read_preview_decision_v1(decision, None, locale)?;
             let view = match reading.control {
                 crate::decision::DecisionControlV1::Strategic => {
-                    crate::compact::render_reading_status_v1(decision, &reading, true, None)?
+                    crate::compact::render_reading_status_v1(
+                        decision, &reading, true, None, locale,
+                    )?
                 }
                 _ => reading.view,
             };

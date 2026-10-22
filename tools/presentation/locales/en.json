@@ -5563,6 +5563,41 @@
       "RunChoice": "RunChoice",
       "Treasure": "Treasure",
       "RunTransition": "RunTransition"
+    },
+    "status": {
+      "terminal": "Terminal: {{outcome}}\n",
+      "savedDecision": "Saved decision only: {{compatibility}}; verify before acting.",
+      "deckChange": "Deck change: {{change}}",
+      "deckCount": "Deck: {{count}} cards (see .\\scripts\\p.ps1 inventory)",
+      "relicCount": "Relics: {{count}} held",
+      "relicStates": "Relics: {{count}} held; states: {{states}}",
+      "hand": "Hand:"
+    },
+    "shop": {
+      "header": "Act {{act}} F{{floor}} | A{{ascension}} | HP {{hp}}/{{maxHp}} | Gold {{gold}} | Shop\n",
+      "potions": "Potions: {{potions}}",
+      "boss": "Boss: {{boss}}",
+      "cards": "Cards for sale (.\\scripts\\p.ps1 <action>):",
+      "relics": "Relics for sale:",
+      "bottles": "Potions for sale:",
+      "unknown": "Effect description unavailable.",
+      "remove": "Remove card: {{price}}g{{status}}",
+      "removeTargets": "  Other targets: remove <CardId> (see .\\scripts\\p.ps1 inventory).",
+      "leave": "Leave: {{command}}",
+      "other": "Other actions:",
+      "unplayable": "unplayable"
+    },
+    "outcome": {
+      "heart": "Heart victory",
+      "act3": "Act 3 victory",
+      "ended": "Run ended",
+      "paused": "Paused at a decision",
+      "defeat": "Defeat",
+      "beforeObjective": "Run ended before the objective",
+      "retries": "Stopped: retry budget exhausted",
+      "transitions": "Stopped: transition budget exhausted",
+      "unsupported": "Stopped: unsupported decision",
+      "error": "Stopped: {{message}}"
     }
   }
 }
