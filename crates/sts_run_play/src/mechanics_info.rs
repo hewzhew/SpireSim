@@ -122,9 +122,11 @@ pub(crate) fn write_key_status(
         }
     }
 }
-const BLOCK_LIFETIME: &str = "Block normally clears at the start of its owner's turn: player Block before the next player turn, and each enemy's Block before that enemy acts. End-of-turn Block such as Metallicize protects until that owner's next turn. Barricade retains Block, and Blur preserves player Block for its duration. Otherwise player Calipers loses up to 15 Block at the usual clear point.";
-pub(crate) const EXHAUST_SCOPE: &str = "Exhaust removes a card from the current combat's draw/discard cycle. Its permanent deck copy remains and returns next combat. Permanent card removal is a separate deck-changing action.";
-pub(crate) const SHOP_REMOVAL_RULES: &str = "Shop card removal: each shop permits only one removal. Base price is 75 Gold + 25 per previous shop removal in this run. Skipping removal leaves the count and base price unchanged. Completing a shop removal increments the count by one, adding 25 Gold to the future base price. Each shop's displayed price includes its current relic price modifiers.";
+fn combat_rule_text(locale: Locale, key: &str, parameters: &[(&str, &str)]) -> String {
+    locale
+        .text("mechanics", &format!("combat.{key}"), parameters)
+        .expect("combat rule message")
+}
 
 pub(crate) fn write_preparation_window(
     out: &mut String,
@@ -219,17 +221,21 @@ pub(crate) fn write_combat_rules(out: &mut String, state: &PublicCombatStateV1, 
             .expect("combat rule heading")
     )
     .unwrap();
-    writeln!(out, "Hand numbers above are current modified values. Printed rules below describe base/upgraded effects; use the upgrade on each displayed card. A Power card in Hand is not an active power until deployed.").unwrap();
-    writeln!(out, "{EXHAUST_SCOPE}").unwrap();
-    writeln!(out, "{BLOCK_LIFETIME}").unwrap();
+    for key in ["handValues", "exhaustScope", "blockLifetime"] {
+        writeln!(out, "{}", combat_rule_text(locale, key, &[])).unwrap();
+    }
     let mut seen_cards = HashSet::new();
     for card in &state.cards.hand.cards {
         if seen_cards.insert((card.card_id, card.upgrades)) {
-            write_card_rule(out, card.card_id, card.upgrades, Locale::En);
+            write_card_rule(out, card.card_id, card.upgrades, locale);
         }
     }
     let mut seen_powers = HashSet::new();
-    for (owner, entries) in std::iter::once(("Player".to_owned(), &state.player.powers)).chain(
+    for (owner, entries) in std::iter::once((
+        combat_rule_text(locale, "player", &[]),
+        &state.player.powers,
+    ))
+    .chain(
         state
             .monsters
             .iter()
@@ -238,30 +244,52 @@ pub(crate) fn write_combat_rules(out: &mut String, state: &PublicCombatStateV1, 
     ) {
         for power in entries {
             if seen_powers.insert(power.power) {
-                write_power(out, power.power);
+                write_power(out, power.power, locale);
             }
-            write_observed_amount(out, &owner, power);
+            write_observed_amount(out, &owner, power, locale);
             if let Some(card) = &power.payload_card {
                 writeln!(
                     out,
-                    "  {owner} payload card: {}",
-                    crate::render::format_card(card.card_id, card.upgrades)
+                    "{}",
+                    combat_rule_text(
+                        locale,
+                        "payloadCard",
+                        &[
+                            ("owner", &owner),
+                            (
+                                "card",
+                                &locale.card_name(card.card_id.stable_id(), card.upgrades)
+                            )
+                        ]
+                    )
                 )
                 .unwrap();
             }
         }
     }
     for relic in &state.player.relics {
-        let status = relics::mechanics::trigger_state_description(relic.id, relic.used_up)
-            .map(|description| format!(" ({description})"))
-            .unwrap_or_default();
         writeln!(
             out,
-            "Relic {}{}: {}",
-            label(relic.id),
-            status,
-            relics::mechanics::explanation(relic.id).unwrap_or(
-                "Effect explanation unavailable; this does not mean unsupported gameplay."
+            "{}",
+            combat_rule_text(
+                locale,
+                "relic",
+                &[
+                    (
+                        "name",
+                        &crate::compact::relic_label_v1(
+                            relic.id,
+                            relic.counter,
+                            relic.used_up,
+                            locale
+                        )
+                    ),
+                    (
+                        "effect",
+                        relics::mechanics::explanation(relic.id)
+                            .unwrap_or(locale.entry("mechanics", "combat.unknownEffect").unwrap())
+                    )
+                ]
             )
         )
         .unwrap();
@@ -270,18 +298,59 @@ pub(crate) fn write_combat_rules(out: &mut String, state: &PublicCombatStateV1, 
         if let Some(potion) = potion {
             writeln!(
                 out,
-                "Potion P{slot} {} | usable {} | discardable {} | target required {}",
-                label(potion.potion_id),
-                potion.can_use,
-                potion.can_discard,
-                potion.requires_target
+                "{}",
+                combat_rule_text(
+                    locale,
+                    "potion",
+                    &[
+                        ("slot", &slot.to_string()),
+                        (
+                            "name",
+                            locale.entity("potion", potion.potion_id.stable_id())
+                        ),
+                        (
+                            "usable",
+                            locale
+                                .entry("mechanics", &format!("potion.boolean.{}", potion.can_use))
+                                .unwrap()
+                        ),
+                        (
+                            "discardable",
+                            locale
+                                .entry(
+                                    "mechanics",
+                                    &format!("potion.boolean.{}", potion.can_discard)
+                                )
+                                .unwrap()
+                        ),
+                        (
+                            "target",
+                            locale
+                                .entry(
+                                    "mechanics",
+                                    &format!("potion.boolean.{}", potion.requires_target)
+                                )
+                                .unwrap()
+                        )
+                    ]
+                )
             )
             .unwrap();
             writeln!(
                 out,
-                "  Base rule: {}",
-                potions::mechanics::explanation(potion.potion_id).unwrap_or(
-                    "Effect explanation unavailable; this does not mean unsupported gameplay."
+                "{}",
+                combat_rule_text(
+                    locale,
+                    "potionRule",
+                    &[(
+                        "effect",
+                        locale
+                            .entry(
+                                "game",
+                                &format!("potionRule.{}", potion.potion_id.stable_id())
+                            )
+                            .expect("reviewed potion rule")
+                    )]
                 )
             )
             .unwrap();
@@ -291,6 +360,18 @@ pub(crate) fn write_combat_rules(out: &mut String, state: &PublicCombatStateV1, 
     for monster in state.monsters.iter().filter(|m| m.alive || m.half_dead) {
         let CombatLearningEnemyIdentityV1::Known { enemy_id } = monster.enemy;
         if seen_enemies.insert(enemy_id) {
+            if locale != Locale::En {
+                writeln!(
+                    out,
+                    "{}",
+                    combat_rule_text(
+                        locale,
+                        "enemySupplement",
+                        &[("name", locale.entity("enemy", enemy_id.stable_id()))]
+                    )
+                )
+                .unwrap();
+            }
             write_enemy(out, enemy_id, state.player.ascension_level);
         }
     }
@@ -543,7 +624,10 @@ fn render_query(
         } else {
             "heal to Max HP"
         };
-        out.push_str(&format!("Run rules | A{asc}\nCombat hand: EndTurn normally discards unplayed cards. Retain or Runic Pyramid can prevent ordinary discard. Non-retained Ethereal cards exhaust before ordinary discard; Runic Pyramid alone does not prevent that exhaust.\nRemoving Ethereal does not add Retain: the unplayed card normally goes to discard at EndTurn rather than remaining in the next turn's hand.\nExhaust on play sends a played card to the exhaust pile instead of its usual discard destination. Ethereal is a separate end-turn rule for cards still in hand.\n{EXHAUST_SCOPE}\n{BLOCK_LIFETIME}\nAct transition: {healing} when entering the next Act, including Act 4. This is a dungeon transition effect, not a relic proc.\n{SHOP_REMOVAL_RULES}\nAt A20, Act 3 has two consecutive bosses. Heart access also requires all three keys.\n"));
+        let exhaust_scope = combat_rule_text(locale, "exhaustScope", &[]);
+        let block_lifetime = combat_rule_text(locale, "blockLifetime", &[]);
+        let shop_removal = combat_rule_text(locale, "shopRemoval", &[]);
+        out.push_str(&format!("Run rules | A{asc}\nCombat hand: EndTurn normally discards unplayed cards. Retain or Runic Pyramid can prevent ordinary discard. Non-retained Ethereal cards exhaust before ordinary discard; Runic Pyramid alone does not prevent that exhaust.\nRemoving Ethereal does not add Retain: the unplayed card normally goes to discard at EndTurn rather than remaining in the next turn's hand.\nExhaust on play sends a played card to the exhaust pile instead of its usual discard destination. Ethereal is a separate end-turn rule for cards still in hand.\n{exhaust_scope}\n{block_lifetime}\nAct transition: {healing} when entering the next Act, including Act 4. This is a dungeon transition effect, not a relic proc.\n{shop_removal}\nAt A20, Act 3 has two consecutive bosses. Heart access also requires all three keys.\n"));
         writeln!(out, "Use info transition <HP> to calculate recovery from an assumed surviving HP immediately before Act entry, using the bound Max HP and difficulty.").unwrap();
         let goal = current_observation.and_then(|observation| match observation {
             TaskPublicObservationV1::Strategic { observation } => Some(observation.run_goal),
@@ -793,7 +877,7 @@ fn render_query(
                 "Unknown power name: {name}. Use the full displayed name or stable ID."
             ));
         }
-        write_power_matches(&mut out, &matches, None);
+        write_power_matches(&mut out, &matches, None, locale);
         return Ok(out);
     }
     if lower.starts_with("card ") {
@@ -833,16 +917,28 @@ fn render_query(
                     .into(),
             );
         };
-        writeln!(out, "Player powers:").unwrap();
-        write_current_powers(&mut out, &state.player.powers);
+        writeln!(out, "{}", combat_rule_text(locale, "playerPowers", &[])).unwrap();
+        write_current_powers(&mut out, &state.player.powers, locale);
         if lower == "powers" {
             for monster in &state.monsters {
                 if !monster.alive && !monster.half_dead {
                     continue;
                 }
                 let CombatLearningEnemyIdentityV1::Known { enemy_id } = monster.enemy;
-                writeln!(out, "\nM{} {} powers:", monster.slot, label(enemy_id)).unwrap();
-                write_current_powers(&mut out, &monster.powers);
+                writeln!(
+                    out,
+                    "\n{}",
+                    combat_rule_text(
+                        locale,
+                        "enemyPowers",
+                        &[
+                            ("slot", &monster.slot.to_string()),
+                            ("name", locale.entity("enemy", enemy_id.stable_id()))
+                        ]
+                    )
+                )
+                .unwrap();
+                write_current_powers(&mut out, &monster.powers, locale);
             }
         }
         return Ok(out);
@@ -863,24 +959,50 @@ fn render_query(
         let CombatLearningEnemyIdentityV1::Known { enemy_id } = monster.enemy;
         writeln!(
             out,
-            "M{slot} {} | HP {}/{} | Block {}",
-            label(enemy_id),
-            monster.hp,
-            monster.max_hp,
-            monster.block
+            "{}",
+            combat_rule_text(
+                locale,
+                "enemyStatus",
+                &[
+                    ("slot", &slot.to_string()),
+                    ("name", locale.entity("enemy", enemy_id.stable_id())),
+                    ("hp", &monster.hp.to_string()),
+                    ("maxHp", &monster.max_hp.to_string()),
+                    ("block", &monster.block.to_string())
+                ]
+            )
         )
         .unwrap();
         if !monster.alive && !monster.half_dead {
-            writeln!(out, "Inactive; no current action.").unwrap();
+            writeln!(out, "{}", combat_rule_text(locale, "inactive", &[])).unwrap();
         } else {
             writeln!(
                 out,
-                "Current visible intent: {}",
-                crate::decision::combat::intent_label(&monster.intent, Locale::En)
+                "{}",
+                combat_rule_text(
+                    locale,
+                    "intent",
+                    &[(
+                        "intent",
+                        &crate::decision::combat::intent_label(&monster.intent, locale)
+                    )]
+                )
             )
             .unwrap();
         }
-        write_current_powers(&mut out, &monster.powers);
+        write_current_powers(&mut out, &monster.powers, locale);
+        if locale != Locale::En {
+            writeln!(
+                out,
+                "{}",
+                combat_rule_text(
+                    locale,
+                    "enemySupplement",
+                    &[("name", locale.entity("enemy", enemy_id.stable_id()))]
+                )
+            )
+            .unwrap();
+        }
         write_enemy(&mut out, enemy_id, state.player.ascension_level);
         return Ok(out);
     }
@@ -896,7 +1018,7 @@ fn render_query(
     }
     let matches = matching_powers(query);
     if !matches.is_empty() {
-        write_power_matches(&mut out, &matches, combat);
+        write_power_matches(&mut out, &matches, combat, locale);
         return Ok(out);
     }
     if let Some(enemy) = resolve::<monsters::EnemyId>(query) {
@@ -938,22 +1060,23 @@ fn write_power_matches(
     out: &mut String,
     matches: &[powers::PowerId],
     combat: Option<&PublicCombatStateV1>,
+    locale: Locale,
 ) {
     if matches.len() > 1 {
-        writeln!(out, "This name matches multiple power definitions; their stable IDs and timing distinguish them.").unwrap();
+        writeln!(out, "{}", combat_rule_text(locale, "multiplePowers", &[])).unwrap();
     }
     for &power in matches {
-        write_power(out, power);
+        write_power(out, power, locale);
         if let Some(state) = combat {
             for p in state.player.powers.iter().filter(|p| p.power == power) {
-                write_observed_amount(out, "Player", p);
+                write_observed_amount(out, &combat_rule_text(locale, "player", &[]), p, locale);
             }
             for monster in &state.monsters {
                 if !monster.alive && !monster.half_dead {
                     continue;
                 }
                 for p in monster.powers.iter().filter(|p| p.power == power) {
-                    write_observed_amount(out, &format!("M{}", monster.slot), p);
+                    write_observed_amount(out, &format!("M{}", monster.slot), p, locale);
                 }
             }
         }
@@ -1234,46 +1357,87 @@ fn write_card(
     Ok(())
 }
 
-fn write_power(out: &mut String, power: powers::PowerId) {
-    writeln!(out, "Power: {} | ID: {}", label(power), power.stable_id()).unwrap();
+fn write_power(out: &mut String, power: powers::PowerId, locale: Locale) {
+    writeln!(
+        out,
+        "{}",
+        combat_rule_text(
+            locale,
+            "power",
+            &[
+                ("name", locale.entity("power", power.stable_id())),
+                ("id", power.stable_id())
+            ]
+        )
+    )
+    .unwrap();
     match powers::mechanics::get(power) {
         Some(fact) => {
             writeln!(
                 out,
-                "  Amount means: {}\n  Effect: {}\n  Timing: {}",
-                fact.amount_unit, fact.effect, fact.timing
+                "{}",
+                combat_rule_text(
+                    locale,
+                    "powerSupplement",
+                    &[
+                        ("unit", fact.amount_unit),
+                        ("effect", fact.effect),
+                        ("timing", fact.timing)
+                    ]
+                )
             )
             .unwrap();
         }
         None => {
-            writeln!(
-                out,
-                "  Unknown: explanation not yet covered; this does not imply unsupported gameplay."
-            )
-            .unwrap();
+            writeln!(out, "{}", combat_rule_text(locale, "unknownPower", &[])).unwrap();
         }
     }
 }
 
-fn write_observed_amount(out: &mut String, owner: &str, power: &CombatLearningPowerV1) {
+fn write_observed_amount(
+    out: &mut String,
+    owner: &str,
+    power: &CombatLearningPowerV1,
+    locale: Locale,
+) {
+    let name = locale.entity("power", power.power.stable_id());
+    let base = [("owner", owner), ("name", name)];
     if powers::uses_sentinel_amount(power.power) {
-        writeln!(
-            out,
-            "  {owner} {}: present (not a numeric stack count)",
-            label(power.power)
-        )
-        .unwrap();
+        writeln!(out, "{}", combat_rule_text(locale, "present", &base)).unwrap();
         return;
     }
     if power.power == powers::PowerId::Invincible {
-        writeln!(out, "  {owner} Invincible: remaining damage allowance {}; reset cap {} at owner's turn start", power.amount, power.extra_data).unwrap();
+        writeln!(
+            out,
+            "{}",
+            combat_rule_text(
+                locale,
+                "invincible",
+                &[
+                    ("owner", owner),
+                    ("name", name),
+                    ("amount", &power.amount.to_string()),
+                    ("cap", &power.extra_data.to_string())
+                ]
+            )
+        )
+        .unwrap();
         return;
     }
     if power.power == powers::PowerId::Combust {
         writeln!(
             out,
-            "  {owner} Combust: damage to each enemy {}; self HP loss {} at player turn end",
-            power.amount, power.extra_data
+            "{}",
+            combat_rule_text(
+                locale,
+                "combust",
+                &[
+                    ("owner", owner),
+                    ("name", name),
+                    ("damage", &power.amount.to_string()),
+                    ("hpLoss", &power.extra_data.to_string())
+                ]
+            )
         )
         .unwrap();
         return;
@@ -1281,32 +1445,30 @@ fn write_observed_amount(out: &mut String, owner: &str, power: &CombatLearningPo
     let duration = powers::mechanics::get(power.power).is_some_and(|p| p.round_duration);
     writeln!(
         out,
-        "  {owner} {}: {} {}",
-        label(power.power),
-        if duration {
-            "remaining duration"
-        } else {
-            "current amount"
-        },
-        power.amount
+        "{}",
+        combat_rule_text(
+            locale,
+            if duration { "duration" } else { "amount" },
+            &[
+                ("owner", owner),
+                ("name", name),
+                ("amount", &power.amount.to_string())
+            ]
+        )
     )
     .unwrap();
     if duration && power.just_applied {
-        writeln!(
-            out,
-            "  Newly applied: the next end-of-round decrement is skipped while this flag is set."
-        )
-        .unwrap();
+        writeln!(out, "{}", combat_rule_text(locale, "justApplied", &[])).unwrap();
     }
 }
 
-fn write_current_powers(out: &mut String, entries: &[CombatLearningPowerV1]) {
+fn write_current_powers(out: &mut String, entries: &[CombatLearningPowerV1], locale: Locale) {
     if entries.is_empty() {
-        writeln!(out, "  No powers.").unwrap();
+        writeln!(out, "{}", combat_rule_text(locale, "noPowers", &[])).unwrap();
     }
     for p in entries {
-        write_power(out, p.power);
-        write_observed_amount(out, "Observed", p);
+        write_power(out, p.power, locale);
+        write_observed_amount(out, &combat_rule_text(locale, "observed", &[]), p, locale);
     }
 }
 
@@ -1556,7 +1718,7 @@ fn write_enemy(out: &mut String, enemy: monsters::EnemyId, ascension: u8) {
         )
         .unwrap();
         for power in referenced_powers {
-            write_power(out, power);
+            write_power(out, power, Locale::En);
         }
         for (card, upgrades) in referenced_cards {
             write_card_rule(out, card, upgrades, Locale::En);
@@ -2440,6 +2602,7 @@ mod tests {
                 payload_card: None,
                 source_creature: None,
             },
+            Locale::En,
         );
         assert!(out.contains("remaining damage allowance 17; reset cap 200"));
         assert!(render_query(None, Some(20), "power BeatOfDeath")
@@ -3098,7 +3261,7 @@ mod tests {
         .unwrap();
         for fact in [
             "heal 75% of missing HP",
-            SHOP_REMOVAL_RULES,
+            Locale::En.entry("mechanics", "combat.shopRemoval").unwrap(),
             KeyRuleV1::ChestOpportunities.text(Locale::En),
             "The Champ",
             "Scouring Whip: add 3 Wound to discard pile",
@@ -3450,7 +3613,7 @@ mod tests {
             source_creature: None,
         };
         let mut out = String::new();
-        write_observed_amount(&mut out, "Player", &p);
+        write_observed_amount(&mut out, "Player", &p, Locale::En);
         assert!(out.contains("remaining duration 1"));
         assert!(!out.contains("Newly applied"));
         write_observed_amount(
@@ -3460,6 +3623,7 @@ mod tests {
                 just_applied: true,
                 ..p
             },
+            Locale::En,
         );
         assert!(out.contains("decrement is skipped"));
     }

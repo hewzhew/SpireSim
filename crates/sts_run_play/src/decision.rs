@@ -904,7 +904,14 @@ fn read_public_decision_v1(
             if seen.insert((card.card, card.upgrades)) {
                 if seen.len() == 1 {
                     writeln!(out, "{}", text(locale, "ownedRules", &[])).unwrap();
-                    writeln!(out, "{}", crate::mechanics_info::EXHAUST_SCOPE).unwrap();
+                    writeln!(
+                        out,
+                        "{}",
+                        locale
+                            .entry("mechanics", "combat.exhaustScope")
+                            .expect("exhaust scope rule")
+                    )
+                    .unwrap();
                 }
                 crate::mechanics_info::write_card_rule(out, card.card, card.upgrades, locale);
             }

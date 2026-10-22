@@ -315,7 +315,7 @@ fn combat_locales_share_actual_state_commands_and_sources_across_pending_choices
         assert!(zh.summary.contains("手牌："), "{kind}: {}", zh.view);
         assert_eq!(zh.summary, full.summary);
         assert_eq!(zh.summary, preview.summary);
-        assert!(full.view.contains("完整机制补充（英文）"));
+        assert!(full.view.contains("本局面规则："));
         let commands = |reading: &RunPlayDecisionReadingV1| {
             reading
                 .options

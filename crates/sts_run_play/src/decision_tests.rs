@@ -3935,6 +3935,42 @@ fn combat_rules_bind_active_powers_and_hand_without_exposing_hidden_state() {
     assert!(view.contains("Intent hidden"));
     assert!(view.contains("Possible moves (base values before powers; not a prediction)"));
     assert!(!view.contains("987654") && !view.contains("Card Feed"));
+
+    let chinese = crate::decision::combat::state_reading(&state, Locale::ZhCn);
+    assert_eq!(state, before);
+    for card in &state.cards.hand.cards {
+        if let Some(original) =
+            sts_oracle_learning::content::cards::mechanics::original_printed_card_text(
+                card.card_id,
+                card.upgrades,
+                Locale::ZhCn,
+            )
+            .unwrap()
+        {
+            for line in original.lines() {
+                assert!(
+                    chinese.contains(line),
+                    "missing original rule for {:?}: {chinese}",
+                    card.card_id
+                );
+            }
+        }
+    }
+    for fact in [
+        "玩家 黑暗之拥：当前数值 2",
+        "玩家 腐化：已生效，不是数值层数",
+        "本回合剩余承伤额度 17；持有者回合开始时重置为 200",
+        "药水 P0 速度药水 | 可使用 否 | 可丢弃 是 | 需要目标 否",
+        "本局面规则：",
+    ] {
+        assert!(chinese.contains(fact), "{fact}: {chinese}");
+    }
+    assert!(chinese.contains(
+        Locale::ZhCn
+            .entry("game", "potionRule.SpeedPotion")
+            .unwrap()
+    ));
+    assert!(!chinese.contains("987654") && !chinese.contains("Card Feed"));
 }
 
 #[test]
