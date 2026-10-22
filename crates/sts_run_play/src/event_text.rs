@@ -3,7 +3,8 @@
 
 use std::fmt::Write;
 use sts_oracle_learning::ai::planner_core::{
-    PlannerEventOptionPublicSemanticsV1, PlannerEventPublicEffectV1, PlannerEventRelicPoolV1,
+    PlannerEventCardPoolV1, PlannerEventOptionPublicSemanticsV1, PlannerEventPublicEffectV1,
+    PlannerEventRelicPoolV1,
 };
 use sts_oracle_learning::content::events::face_trader::FaceTraderResult;
 use sts_oracle_learning::state::events::EventId;
@@ -16,6 +17,7 @@ enum Amount {
     GainGold,
     LoseGold,
     LoseHp,
+    LoseMaxHp,
 }
 
 impl Amount {
@@ -27,6 +29,7 @@ impl Amount {
             | (Self::GainGold, Effect::GainGold { amount })
             | (Self::LoseGold, Effect::LoseGold { amount })
             | (Self::LoseHp, Effect::LoseHp { amount }) => Some(*amount),
+            (Self::LoseMaxHp, Effect::LoseMaxHp { amount }) => Some(*amount),
             _ => None,
         });
         let value = values.next()?;
@@ -37,7 +40,94 @@ impl Amount {
 #[derive(Clone, Copy)]
 enum Part {
     Original(usize),
+    NeowReward(usize),
+    NeowUniqueReward(usize),
     Amount(Amount),
+    Literal(&'static str),
+}
+
+/// Neow's button ordinal identifies a rolled offer, not a fixed reward. Match
+/// the complete public effect sequence instead; drawback effects precede rewards.
+fn neow_parts(effects: &[PlannerEventPublicEffectV1]) -> Option<Vec<Part>> {
+    use Part::{Amount as Value, Literal, NeowReward as Text};
+    use PlannerEventPublicEffectV1 as Effect;
+    let (mut parts, reward) = match effects {
+        [Effect::LoseMaxHp { .. }, rest @ ..] => {
+            (vec![Text(17), Value(Amount::LoseMaxHp), Text(18)], rest)
+        }
+        [Effect::LoseGold { .. }, rest @ ..] => (vec![Text(19)], rest),
+        [Effect::ObtainCurse {
+            count: 1,
+            pool: PlannerEventCardPoolV1::RandomCurse,
+        }, rest @ ..] => (vec![Text(20)], rest),
+        [Effect::LoseHp { .. }, rest @ ..] => (
+            vec![Text(21), Value(Amount::LoseHp), Text(29), Literal(" ")],
+            rest,
+        ),
+        _ => (Vec::new(), effects),
+    };
+    let drawback = !parts.is_empty();
+    let (body, requires_drawback): (&[Part], bool) = match reward {
+        [Effect::OfferCards {
+            count: 3,
+            pool: PlannerEventCardPoolV1::RandomClassCommonOrUncommon,
+        }] => (&[Text(0)], false),
+        [Effect::ObtainCard {
+            count: 1,
+            pool: PlannerEventCardPoolV1::RandomClassRare,
+        }] => (&[Text(1)], false),
+        [Effect::RemoveCard { count: 1, .. }] => (&[Text(2)], false),
+        [Effect::UpgradeCard { count: 1 }] => (&[Text(3)], false),
+        [Effect::TransformCard { count: 1 }] => (&[Text(4)], false),
+        [Effect::ObtainRandomPotions { count: 3 }] => (&[Text(5)], false),
+        [Effect::ObtainRelic {
+            count: 1,
+            pool: PlannerEventRelicPoolV1::RandomCommonRelic,
+        }] => (&[Text(6)], false),
+        [Effect::GainMaxHp { .. }] if drawback => {
+            (&[Text(16), Value(Amount::GainMaxHp), Literal(" ]")], true)
+        }
+        [Effect::GainMaxHp { .. }] => (&[Text(7), Value(Amount::GainMaxHp), Literal(" ]")], false),
+        [Effect::GainGold { .. }] if drawback => {
+            (&[Text(13), Value(Amount::GainGold), Text(14)], true)
+        }
+        [Effect::GainGold { .. }] => (&[Text(8), Value(Amount::GainGold), Text(9)], false),
+        [Effect::RemoveCard { count: 2, .. }] => (&[Text(10)], true),
+        [Effect::ObtainRelic {
+            count: 1,
+            pool: PlannerEventRelicPoolV1::RandomRareRelic,
+        }] => (&[Text(11)], true),
+        [Effect::OfferCards {
+            count: 3,
+            pool: PlannerEventCardPoolV1::RandomClassRare,
+        }] => (&[Text(12)], true),
+        [Effect::TransformCard { count: 2 }] => (&[Text(15)], true),
+        [Effect::ObtainRelic {
+            count: 1,
+            pool:
+                PlannerEventRelicPoolV1::Specific {
+                    relic: sts_oracle_learning::content::relics::RelicId::NeowsLament,
+                },
+        }] => (&[Text(28)], false),
+        [Effect::OfferCards {
+            count: 3,
+            pool: PlannerEventCardPoolV1::RandomColorlessUncommon,
+        }] => (&[Text(30)], false),
+        [Effect::OfferCards {
+            count: 3,
+            pool: PlannerEventCardPoolV1::RandomColorlessRare,
+        }] => (&[Text(31)], true),
+        [Effect::LoseStarterRelic { .. }, Effect::ObtainRelic {
+            count: 1,
+            pool: PlannerEventRelicPoolV1::RandomBossRelic,
+        }] => (&[Part::NeowUniqueReward(0)], false),
+        _ => return None,
+    };
+    if drawback != requires_drawback {
+        return None;
+    }
+    parts.extend_from_slice(body);
+    Some(parts)
 }
 
 /// Explicit bindings to the event owner's screen and button indices. Neither
@@ -54,7 +144,18 @@ pub(crate) fn option_label(
     let Some(semantics) = &public.structured_semantics else {
         return Ok(None);
     };
+    let neow = if event == EventId::Neow && screen == 1 {
+        neow_parts(&semantics.effects)
+    } else {
+        None
+    };
     let recipe: &[Part] = match (event, screen, option) {
+        (EventId::Neow, 0, 0) => &[Text(0)],
+        (EventId::Neow, 1, _) => match neow.as_deref() {
+            Some(parts) => parts,
+            None => return Ok(None),
+        },
+        (EventId::Neow, 2, 0) => &[Text(3)],
         (EventId::FaceTrader, 0, 0) => &[Text(4)],
         (EventId::FaceTrader, 1, 0) => &[
             Text(0),
@@ -139,6 +240,17 @@ pub(crate) fn option_label(
                 };
                 write!(output, "{amount}").unwrap();
             }
+            Part::NeowReward(index) => output.push_str(
+                locale
+                    .original_neow_reward(*index)
+                    .ok_or_else(|| format!("missing original Neow reward: {locale}/{index}"))?,
+            ),
+            Part::NeowUniqueReward(index) => {
+                output.push_str(locale.original_neow_unique_reward(*index).ok_or_else(|| {
+                    format!("missing original unique Neow reward: {locale}/{index}")
+                })?)
+            }
+            Part::Literal(text) => output.push_str(text),
         }
     }
     Ok(Some(clean_text(&output)))
@@ -213,6 +325,236 @@ mod tests {
                 transition: sts_oracle_learning::ai::planner_core::PlannerEventTransitionV1::AdvanceScreen,
             }),
             ..Default::default()
+        }
+    }
+
+    #[test]
+    fn neow_original_rewards_cover_the_public_reward_and_drawback_combinations() {
+        use sts_oracle_learning::content::relics::RelicId;
+        use PlannerEventCardPoolV1 as CardPool;
+        use PlannerEventPublicEffectV1 as Effect;
+        use PlannerEventRelicPoolV1 as RelicPool;
+        let low = vec![
+            (
+                vec![Effect::OfferCards {
+                    count: 3,
+                    pool: CardPool::RandomClassCommonOrUncommon,
+                }],
+                "choose a card",
+                "选择并获得一张牌",
+            ),
+            (
+                vec![Effect::ObtainCard {
+                    count: 1,
+                    pool: CardPool::RandomClassRare,
+                }],
+                "random rare card",
+                "稀有牌",
+            ),
+            (
+                vec![Effect::RemoveCard {
+                    count: 1,
+                    target: None,
+                    pool: CardPool::Unknown,
+                }],
+                "remove a card",
+                "移除一张牌",
+            ),
+            (
+                vec![Effect::UpgradeCard { count: 1 }],
+                "upgrade a card",
+                "升级一张牌",
+            ),
+            (
+                vec![Effect::TransformCard { count: 1 }],
+                "transform a card",
+                "变化一张牌",
+            ),
+            (
+                vec![Effect::ObtainRandomPotions { count: 3 }],
+                "3 random potions",
+                "3 瓶药水",
+            ),
+            (
+                vec![Effect::ObtainRelic {
+                    count: 1,
+                    pool: RelicPool::RandomCommonRelic,
+                }],
+                "common relic",
+                "普通遗物",
+            ),
+            (vec![Effect::GainMaxHp { amount: 7 }], "max hp +7", "+7"),
+            (
+                vec![Effect::GainGold { amount: 100 }],
+                "100 gold",
+                "100 金币",
+            ),
+            (
+                vec![Effect::ObtainRelic {
+                    count: 1,
+                    pool: RelicPool::Specific {
+                        relic: RelicId::NeowsLament,
+                    },
+                }],
+                "next three combats",
+                "3 场战斗",
+            ),
+            (
+                vec![Effect::OfferCards {
+                    count: 3,
+                    pool: CardPool::RandomColorlessUncommon,
+                }],
+                "colorless card",
+                "无色牌",
+            ),
+            (
+                vec![
+                    Effect::LoseStarterRelic {
+                        specific: Some(RelicId::BurningBlood),
+                    },
+                    Effect::ObtainRelic {
+                        count: 1,
+                        pool: RelicPool::RandomBossRelic,
+                    },
+                ],
+                "starting relic",
+                "初始遗物",
+            ),
+        ];
+        let high = vec![
+            (
+                vec![Effect::RemoveCard {
+                    count: 2,
+                    target: None,
+                    pool: CardPool::Unknown,
+                }],
+                "remove 2 cards",
+                "2 张牌",
+            ),
+            (
+                vec![Effect::ObtainRelic {
+                    count: 1,
+                    pool: RelicPool::RandomRareRelic,
+                }],
+                "rare relic",
+                "稀有遗物",
+            ),
+            (
+                vec![Effect::OfferCards {
+                    count: 3,
+                    pool: CardPool::RandomClassRare,
+                }],
+                "rare card",
+                "稀有牌",
+            ),
+            (
+                vec![Effect::GainGold { amount: 250 }],
+                "250 gold",
+                "250 金币",
+            ),
+            (
+                vec![Effect::TransformCard { count: 2 }],
+                "transform 2 cards",
+                "2 张牌",
+            ),
+            (vec![Effect::GainMaxHp { amount: 14 }], "max hp +14", "+14"),
+            (
+                vec![Effect::OfferCards {
+                    count: 3,
+                    pool: CardPool::RandomColorlessRare,
+                }],
+                "rare colorless card",
+                "稀有无色牌",
+            ),
+        ];
+        let drawbacks = [
+            (Effect::LoseMaxHp { amount: 7 }, "lose 7 max hp"),
+            (Effect::LoseGold { amount: 99 }, "lose all gold"),
+            (
+                Effect::ObtainCurse {
+                    count: 1,
+                    pool: CardPool::RandomCurse,
+                },
+                "obtain a curse",
+            ),
+            (Effect::LoseHp { amount: 18 }, "take 18 damage"),
+        ];
+        let check = |effects: Vec<Effect>, en_fact: &str, zh_fact: &str, drawback: Option<&str>| {
+            let facts = public(effects);
+            for index in [0, 3] {
+                let en = option_label(EventId::Neow, 1, index, &facts, Locale::En)
+                    .unwrap()
+                    .unwrap();
+                let zh = option_label(EventId::Neow, 1, index, &facts, Locale::ZhCn)
+                    .unwrap()
+                    .unwrap();
+                assert!(en.to_ascii_lowercase().contains(en_fact), "{en}");
+                assert!(zh.contains(zh_fact), "{zh}");
+                if let Some(drawback) = drawback {
+                    let en = en.to_ascii_lowercase();
+                    assert!(
+                        en.find(drawback).unwrap() < en.find(en_fact).unwrap(),
+                        "{en}"
+                    );
+                }
+                for text in [&en, &zh] {
+                    assert_eq!(text.matches('[').count(), 1, "{text}");
+                    assert_eq!(text.matches(']').count(), 1, "{text}");
+                    assert!(!text.contains("#g") && !text.contains("#r"));
+                }
+            }
+        };
+        let mut combinations = 0;
+        for (effects, en, zh) in low {
+            check(effects, en, zh, None);
+            combinations += 1;
+        }
+        for (effects, en, zh) in high {
+            for (drawback, expected) in &drawbacks {
+                // These three pairs are excluded by the real Neow generator.
+                if matches!(
+                    (&effects[0], drawback),
+                    (
+                        Effect::RemoveCard { count: 2, .. },
+                        Effect::ObtainCurse { .. }
+                    ) | (Effect::GainGold { .. }, Effect::LoseGold { .. })
+                        | (Effect::GainMaxHp { .. }, Effect::LoseMaxHp { .. })
+                ) {
+                    continue;
+                }
+                let mut combined = vec![drawback.clone()];
+                combined.extend(effects.clone());
+                check(combined, en, zh, Some(expected));
+                combinations += 1;
+            }
+        }
+        assert_eq!(combinations, 37);
+    }
+
+    #[test]
+    fn neow_unknown_or_incomplete_effect_sequences_keep_the_recorded_label() {
+        use PlannerEventPublicEffectV1 as Effect;
+        for effects in [
+            vec![],
+            vec![Effect::StartCombat],
+            vec![
+                Effect::GainGold { amount: 100 },
+                Effect::GainGold { amount: 250 },
+            ],
+            vec![Effect::ObtainRelic {
+                count: 1,
+                pool: PlannerEventRelicPoolV1::Unknown,
+            }],
+            vec![Effect::TransformCard { count: 2 }],
+            vec![
+                Effect::LoseHp { amount: 18 },
+                Effect::UpgradeCard { count: 1 },
+            ],
+        ] {
+            assert_eq!(
+                option_label(EventId::Neow, 1, 0, &public(effects), Locale::ZhCn).unwrap(),
+                None
+            );
         }
     }
 

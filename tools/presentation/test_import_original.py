@@ -24,6 +24,9 @@ def sources():
         result[f"localization/{language}/cards.json"]["Strike_G"]["NAME"] = "Strike"
         characters = {key: {"NAMES": [f"{language}:{key}"]} for key in owner.CHARACTERS.values()}
         characters["Neow Event"] = {"NAMES": [f"{language}:Neow"]}
+        for fields in owner.CHARACTER_EVENT_FIELDS.values():
+            for key,field,count in fields.values():
+                characters.setdefault(key,{})[field] = [f'{language}:{key}:{field}:{index}' for index in range(count)]
         result[f"localization/{language}/characters.json"] = characters
         result[f"localization/{language}/powers.json"] = {key: {"NAME": f"{language}:{key}"} for key in owner.POWERS.values()}
         result[f"localization/{language}/stances.json"] = {key: {"NAME": f"{language}:{key}"} for key in owner.STANCES.values()}
@@ -120,12 +123,15 @@ def test_event_templates_keep_only_consumed_original_fields_with_their_source(tm
     _, manifest, bindings = owner.names_from_archive(jar)
     imported = owner.event_texts_from_archive(jar, bindings)
     for locale, language in owner.LANGUAGES.items():
-        assert set(imported["events"][locale]) == owner.EVENT_SCENES.keys() | owner.EVENT_OPTIONS.keys()
+        assert set(imported["events"][locale]) == owner.EVENT_SCENES.keys() | owner.EVENT_OPTIONS.keys() | owner.CHARACTER_EVENT_FIELDS.keys()
         assert imported["events"][locale]["FaceTrader"]["DESCRIPTIONS"] == sources[f"localization/{language}/events.json"]["FaceTrader"]["DESCRIPTIONS"]
         for stable in owner.EVENT_OPTIONS:
             assert imported["events"][locale][stable]["OPTIONS"] == sources[f"localization/{language}/events.json"][owner.EVENTS[stable]]["OPTIONS"]
             if stable not in owner.EVENT_SCENES:
                 assert "DESCRIPTIONS" not in imported["events"][locale][stable]
+        for stable,fields in owner.CHARACTER_EVENT_FIELDS.items():
+            for target,(key,field,count) in fields.items():
+                assert imported["events"][locale][stable][target] == sources[f"localization/{language}/characters.json"][key][field]
     assert all(manifest["entries_sha256"][entry] == digest for entry, digest in imported["entries_sha256"].items())
 
 
@@ -151,6 +157,15 @@ def test_changed_original_option_layout_stops_before_writing(tmp_path, sources, 
     with pytest.raises(ValueError, match="OPTIONS layout requires review"):
         owner.update(archive(tmp_path, sources), directory, write=True)
     assert list(directory.iterdir()) == []
+
+
+@pytest.mark.parametrize("key,field", [("Neow Event","OPTIONS"),("Neow Reward","TEXT"),("Neow Reward","UNIQUE_REWARDS")])
+def test_neow_character_resource_layouts_require_review(tmp_path,sources,key,field):
+    sources["localization/zhs/characters.json"][key][field].append("new fragment")
+    jar = archive(tmp_path,sources)
+    _,_,bindings = owner.names_from_archive(jar)
+    with pytest.raises(ValueError,match="layout requires review"):
+        owner.event_texts_from_archive(jar,bindings)
 
 
 def test_english_display_aliases_are_not_used_for_lookup(tmp_path, sources, monkeypatch):

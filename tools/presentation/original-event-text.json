@@ -2,11 +2,13 @@
   "schema": "sts-original-event-text-v1",
   "entries_sha256": {
     "localization/eng/events.json": "ed878f84ff97b86bae8b6c4b83b63fe3d8e61b58dc77d6396979333990f44517",
-    "localization/zhs/events.json": "a274ab52893804e2ae9b3361cc096bbec902bd2be0df55700d291c323379ada2"
+    "localization/eng/characters.json": "0649402af16b911fd61a5900927733f772fbfd8970fd3cd0dfea9664bb92db1c",
+    "localization/zhs/events.json": "a274ab52893804e2ae9b3361cc096bbec902bd2be0df55700d291c323379ada2",
+    "localization/zhs/characters.json": "dfe855326e920fcb0b240d3d9866279a21dee13e3c60413143a85062a2092b4d"
   },
   "bindings_sha256": {
-    "en": "b541f8b3cc01c062fc8793f1d6e43caa2483cf104f183d63708ecb0632d89301",
-    "zh-CN": "3f0f8a1cdaf7a10b9ce1f5e2671b8a22717c1d965a511fe7e8673d9122805db5"
+    "en": "08ac007337fd88ce9c12f9cc6caac3e7b5ef249db7ca7ca4bbbef42932ec7361",
+    "zh-CN": "7fbaf23318cbe75805c8619b7a87f37078eb8f88edfac3ceb07c7518bbef122a"
   },
   "events": {
     "en": {
@@ -136,6 +138,52 @@
           " #rGold.",
           "[Leave]"
         ]
+      },
+      "Neow": {
+        "OPTIONS": [
+          "[Continue]",
+          "[Talk]",
+          "[Skip]",
+          "[Leave]",
+          "Choose 10 cards to add to your deck."
+        ],
+        "REWARD_TEXT": [
+          "[ #gChoose #ga #gCard #gto #gobtain ]",
+          "[ #gObtain #ga #grandom #grare #gCard ]",
+          "[ #gRemove #ga #gCard #gfrom #gyour #gdeck ]",
+          "[ #gUpgrade #ga #gCard ]",
+          "[ #gTransform #ga #gCard ]",
+          "[ #gObtain #g3 #grandom #gPotions ]",
+          "[ #gObtain #ga #grandom #gcommon #gRelic ]",
+          "[ #gMax #gHP #g+",
+          "[ #gObtain #g",
+          " #gGold ]",
+          "#gRemove #g2 #gCards ]",
+          "#gObtain #ga #grandom #grare #gRelic ]",
+          "#gChoose #ga #grare #gCard #gto #gobtain ]",
+          "#gGain #g",
+          " #gGold ]",
+          "#gTransform #g2 #gCards ]",
+          "#gMax #gHP #g+",
+          "[ #rLose #r",
+          " #rMax #rHP ",
+          "[ #rLose #rall #rGold ",
+          "[ #rObtain #ra #rCurse ",
+          "[ #rTake #r",
+          "Choose a Card",
+          "Select a Card to Remove",
+          "Select 2 Cards to Remove",
+          "Select a Card to Transform",
+          "Select 2 Cards to Transform",
+          "Select a Card to Upgrade",
+          "[ #gEnemies #gin #gyour #gnext #gthree #gcombats #ghave #g1 #gHP ]",
+          " #rdamage",
+          "[ #gChoose #ga #gcolorless #gCard #gto #gobtain ]",
+          "#gChoose #ga #grare #gcolorless #gCard #gto #gobtain ]"
+        ],
+        "UNIQUE_REWARDS": [
+          "[ #rLose #ryour #rstarting #rRelic #gObtain #ga #grandom #gboss #gRelic ]"
+        ]
       }
     },
     "zh-CN": {
@@ -264,6 +312,52 @@
           "[放手吧] #r失去 #r",
           " #r金币。",
           "[离开]"
+        ]
+      },
+      "Neow": {
+        "OPTIONS": [
+          "[继续]",
+          "[对话]",
+          "[跳过]",
+          "[离开]",
+          "选择10张牌加入你的牌组。"
+        ],
+        "REWARD_TEXT": [
+          "[ #g选择并获得一张牌 ]",
+          "[ #g随机获得一张稀有牌 ]",
+          "[ #g从牌组中移除一张牌 ]",
+          "[ #g升级一张牌 ]",
+          "[ #g变化一张牌 ]",
+          "[ #g获得 #g3 #g瓶药水 ]",
+          "[ #g随机获得一个普通遗物 ]",
+          "[ #g最大生命值 #g+",
+          "[ #g获得 #g",
+          " #g金币 ]",
+          "#g去除 #g2 #g张牌 ]",
+          "#g获得一个稀有遗物 ]",
+          "#g选择并获得一张稀有牌 ]",
+          "#g获得 #g",
+          " #g金币 ]",
+          "#g变化 #g2 #g张牌 ]",
+          "#g最大生命 #g+",
+          "[ #r失去 #r",
+          " #r最大生命。 ",
+          "[ #r失去所有金币。 ",
+          "[ #r得到一张诅咒牌。 ",
+          "[ #r受到 #r",
+          "选一张牌",
+          "选择移除一张牌",
+          "选择移除两张牌",
+          "选择变化一张牌",
+          "选择变化两张牌",
+          "选择升级一张牌",
+          "[ #g接下来 #g3 #g场战斗中的敌人将只有 #g1 #g点生命 ]",
+          " #r点伤害。",
+          "[ #g选择并获得一张无色牌 ]",
+          "#g选择并获得一张稀有无色牌 ]"
+        ],
+        "UNIQUE_REWARDS": [
+          "[ #r失去你的初始遗物， #g获得一件随机Boss遗物。 ]"
         ]
       }
     }

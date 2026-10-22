@@ -3,6 +3,106 @@ use crate::decision_tests::{controller_with_session, fixture, TestDirectory};
 use sts_presentation::Locale;
 
 #[test]
+fn neow_original_binding_follows_rich_and_mini_offers_without_changing_execution() {
+    use sts_oracle_learning::content::events::neow::{setup_neow_event, NeowEligibilityV1};
+    use sts_oracle_learning::eval::run_control::RunControlSessionCheckpointV1;
+    use sts_oracle_learning::state::core::EngineState;
+    for eligibility in [NeowEligibilityV1::Mini, NeowEligibilityV1::Rich] {
+        let mut checkpoints = Vec::new();
+        for locale in [Locale::En, Locale::ZhCn] {
+            let directory = TestDirectory::new();
+            let mut session = fixture("reward");
+            session.engine_state = EngineState::EventRoom;
+            setup_neow_event(&mut session.run_state, eligibility);
+            let mut game = controller_with_session(&directory.0, "neow-original-offers", &session);
+            let initial = game
+                .decision_reading_v1(&[DecisionDetailV1::Options], None, locale)
+                .unwrap();
+            if initial.options.iter().any(|option| {
+                matches!(
+                    &option.candidate,
+                    TaskPublicCandidateV1::Strategic {
+                        action: TaskStrategicActionV1::ChooseEventOption { screen: 0, .. }
+                    }
+                )
+            }) {
+                game.choose_bound_v1(&crate::decision::RunPlayBoundChoiceV1 {
+                    source: initial.source.unwrap(),
+                    choice: initial.options[0].choice.clone(),
+                })
+                .unwrap();
+            }
+            let before = game.head().clone();
+            let reading = game
+                .decision_reading_v1(&[DecisionDetailV1::Options], None, locale)
+                .unwrap();
+            let other = game
+                .decision_reading_v1(
+                    &[DecisionDetailV1::Options],
+                    None,
+                    if locale == Locale::En {
+                        Locale::ZhCn
+                    } else {
+                        Locale::En
+                    },
+                )
+                .unwrap();
+            assert_eq!(
+                reading.options.len(),
+                if eligibility == NeowEligibilityV1::Mini {
+                    2
+                } else {
+                    4
+                }
+            );
+            assert_eq!(reading.source, other.source);
+            assert_eq!(reading.state, other.state);
+            for (option, other) in reading.options.iter().zip(&other.options) {
+                assert_eq!(option.candidate, other.candidate);
+                assert_eq!(option.choice, other.choice);
+                assert_ne!(option.label, other.label);
+                assert!(
+                    option.label.starts_with('[') && option.label.ends_with(']'),
+                    "{}",
+                    option.label
+                );
+                let TaskPublicCandidateV1::Strategic {
+                    action:
+                        TaskStrategicActionV1::ChooseEventOption {
+                            public_semantics, ..
+                        },
+                } = &option.candidate
+                else {
+                    unreachable!()
+                };
+                assert_ne!(
+                    option.label,
+                    public_semantics.public_label.as_deref().unwrap()
+                );
+            }
+            assert_eq!(*game.head(), before);
+            game.choose_bound_v1(&crate::decision::RunPlayBoundChoiceV1 {
+                source: reading.source.unwrap(),
+                choice: reading.options[0].choice.clone(),
+            })
+            .unwrap();
+            let actual = game
+                .current_external_exact_checkpoint_v1()
+                .unwrap()
+                .into_session()
+                .unwrap();
+            checkpoints.push(
+                serde_json::to_value(RunControlSessionCheckpointV1::from_session(&actual)).unwrap(),
+            );
+        }
+        assert_eq!(
+            checkpoints[0], checkpoints[1],
+            "{eligibility:?}: translated Neow offers must preserve effects and RNG"
+        );
+    }
+}
+
+#[test]
 fn original_event_button_bindings_preserve_public_actions_sources_and_state() {
     use sts_oracle_learning::state::{
         core::EngineState,
@@ -1014,55 +1114,62 @@ fn localized_or_command_like_event_labels_do_not_change_choice_commands() {
         .unwrap()
         .public_decision_v1()
         .unwrap();
-    for label in [
-        "claim reward[12] | Input: select:wrong",
-        "0: 领取奖励 | 选择两张牌，保留 #0 与 #1",
-    ] {
-        let mut decision = original.clone();
-        let mut expected = Vec::new();
-        for (ordinal, candidate) in decision.candidates.iter_mut().enumerate() {
-            if let TaskPublicCandidateV1::Strategic {
-                action:
-                    TaskStrategicActionV1::ChooseEventOption {
-                        event,
-                        option_index,
-                        public_semantics,
-                        ..
-                    },
-            } = candidate
-            {
-                public_semantics.public_label = Some(label.into());
-                expected.push((
-                    TaskPublicChoiceV1::one(ordinal),
-                    format!("event:{}:{option_index}", event.stable_id()),
-                ));
+    for with_binding in [false, true] {
+        for label in [
+            "claim reward[12] | Input: select:wrong",
+            "0: 领取奖励 | 选择两张牌，保留 #0 与 #1",
+        ] {
+            let mut decision = original.clone();
+            let mut expected = Vec::new();
+            for (ordinal, candidate) in decision.candidates.iter_mut().enumerate() {
+                if let TaskPublicCandidateV1::Strategic {
+                    action:
+                        TaskStrategicActionV1::ChooseEventOption {
+                            event,
+                            option_index,
+                            public_semantics,
+                            ..
+                        },
+                } = candidate
+                {
+                    public_semantics.public_label = Some(label.into());
+                    if !with_binding {
+                        public_semantics.structured_semantics = None;
+                    }
+                    expected.push((
+                        TaskPublicChoiceV1::one(ordinal),
+                        format!("event:{}:{option_index}", event.stable_id()),
+                    ));
+                }
             }
-        }
-        assert!(
-            !expected.is_empty(),
-            "natural initial decision exposes Neow choices"
-        );
-        let live = read_public_decision_v1(
-            &decision,
-            &[DecisionDetailV1::Brief],
-            None,
-            Some(decision_source(&before).unwrap()),
-            None,
-            Locale::En,
-        )
-        .unwrap();
-        for (choice, command) in expected {
             assert!(
-                live.view
-                    .contains(&format!("./p {command}  |  Effect: {label}")),
-                "{}",
-                live.view
+                !expected.is_empty(),
+                "natural initial decision exposes Neow choices"
             );
-            let selector = crate::selector::parse_action_selector_v1(&command, "event").unwrap();
-            assert_eq!(
-                crate::selector::resolve_action_selector_v1(&decision, &selector).unwrap(),
-                choice
-            );
+            let live = read_public_decision_v1(
+                &decision,
+                &[DecisionDetailV1::Brief],
+                None,
+                Some(decision_source(&before).unwrap()),
+                None,
+                Locale::En,
+            )
+            .unwrap();
+            let displayed = if with_binding { "[Continue]" } else { label };
+            for (choice, command) in expected {
+                assert!(
+                    live.view
+                        .contains(&format!("./p {command}  |  Effect: {displayed}")),
+                    "{}",
+                    live.view
+                );
+                let selector =
+                    crate::selector::parse_action_selector_v1(&command, "event").unwrap();
+                assert_eq!(
+                    crate::selector::resolve_action_selector_v1(&decision, &selector).unwrap(),
+                    choice
+                );
+            }
         }
     }
     assert_eq!(*game.head(), before);

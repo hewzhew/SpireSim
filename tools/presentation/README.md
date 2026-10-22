@@ -92,6 +92,8 @@ Node 工作台按连接建立独立语言实例，`printReading` 与预演库存
 
 [original-event-text.json](original-event-text.json) 保存已有消费者使用的原版正文、按钮片段及来源摘要，并通过 npm 和 Cargo 随包分发。[event_text](../../crates/sts_run_play/src/event_text.rs) 拥有原生展示绑定：换脸商正文按当前事件阶段与已公开结果选择原版段落；按钮按事件、阶段和选项编号明确组装 `OPTIONS`，动态数值直接取该候选已公开的 typed 效果。按钮的原始记录、执行身份和候选来源保持不变。未接入的阶段、缺失或重复的所需数值保留源端标签；实际替代奖励不套用不相符的原版概率说明。清理排版标记发生在模板组装之后。运行时不打开本机 JAR，也不依赖 `STS_GAME_JAR`。新增字段或数组布局变化需先在导入器和对应 renderer 核对，不按屏幕号猜正文索引，也不复制游戏数值公式。
 
+涅奥的对话按钮取 `characters.json` 的 `Neow Event.OPTIONS`，奖惩片段取 `Neow Reward.TEXT` 与 `UNIQUE_REWARDS`，输出字段 `REWARD_TEXT` 明确记录这层来源。一个编号在不同新局里可以对应不同奖励，因此奖励页按完整公开效果序列绑定，先组装代价、再组装奖励；生命与金币数值仍取该选项的公开效果。不支持的组合保留原始标签，不按初始随机数或未来结果补猜。
+
 原版牌面与工具补充说明承担不同用途。卡牌 `DESCRIPTION` 中的 `!D!`、`!B!`、`!M!` 由游戏提供数值，`NL` 和 `#y` 等控制换行与颜色；药水和遗物的 `DESCRIPTIONS` 常是由 Java 按顺序插入数值的片段。当前 `game.potionRule` 是项目整理的完整机制解释，包括触发时点、目标、限制和原版短描述未展开的交互；它与原版名称分别维护，导入器保留它以及所有工具、界面消息。
 
 [original-card-text.json](original-card-text.json) 保存同一次导入的卡牌 `DESCRIPTION`、`UPGRADE_DESCRIPTION` 与 `EXTENDED_DESCRIPTION` 原文和来源摘要，通过 `@sts-simulator/presentation/original-card-text` 导出，并嵌入 Rust crate。字段名不决定其用途：全身撞击的 `UPGRADE_DESCRIPTION` 是战斗伤害附加行，终结技用它显示不可打出的提示。`cards::mechanics::original_printed_card_text` 按原版实际升级方法选择定义牌面，使用同一份永久基础数值 owner 处理伤害、格挡和多次升级；`!M!` 使用当前升级态的定义数值。它不查询隐藏状态或计算当前战斗伤害。

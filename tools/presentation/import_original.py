@@ -116,6 +116,15 @@ EVENT_OPTIONS = {
     "UpgradeShrine": 4, "Transmorgrifier": 3, "BackTotheBasics": 4,
     "Mushrooms": 5,
 }
+# Neow stores dialog buttons and reward fragments in separate character entries.
+# The output field REWARD_TEXT explicitly refers to Neow Reward.TEXT.
+CHARACTER_EVENT_FIELDS = {
+    "Neow": {
+        "OPTIONS": ("Neow Event", "OPTIONS", 5),
+        "REWARD_TEXT": ("Neow Reward", "TEXT", 32),
+        "UNIQUE_REWARDS": ("Neow Reward", "UNIQUE_REWARDS", 1),
+    },
+}
 # Explicit original power localization keys, audited against original class IDs.
 # Regen is monster Regenerate, while Regeneration is the decaying RegenPower.
 POWERS = {
@@ -457,6 +466,18 @@ def event_texts_from_archive(jar: Path, bindings: dict) -> dict:
                         raise ValueError(f"Original event {field} layout requires review: {locale}/{stable}")
                     events[locale][stable][field] = texts
                     event_bindings[locale][stable][field] = {**binding, "field": field, "index": None}
+            entry = f"localization/{language}/characters.json"
+            raw = archive.read(entry)
+            entries[entry] = digest(raw)
+            source = json.loads(raw.decode("utf-8-sig"), strict=False)
+            for stable, fields in CHARACTER_EVENT_FIELDS.items():
+                events[locale][stable], event_bindings[locale][stable] = {}, {}
+                for target, (key, field, count) in fields.items():
+                    texts = source[key][field]
+                    if not isinstance(texts, list) or len(texts) != count or not all(isinstance(text, str) and text.strip() for text in texts):
+                        raise ValueError(f"Original event {field} layout requires review: {locale}/{stable}/{key}")
+                    events[locale][stable][target] = texts
+                    event_bindings[locale][stable][target] = {"entry": entry, "key": key, "field": field, "index": None}
     return {"schema": "sts-original-event-text-v1", "entries_sha256": entries,
             "bindings_sha256": {locale: digest(encoded(rows)) for locale, rows in event_bindings.items()},
             "events": events}

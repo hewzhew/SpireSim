@@ -78,6 +78,14 @@ impl Locale {
         self.original_event_text(id, "OPTIONS", index)
     }
 
+    pub fn original_neow_reward(self, index: usize) -> Option<&'static str> {
+        self.original_event_text("Neow", "REWARD_TEXT", index)
+    }
+
+    pub fn original_neow_unique_reward(self, index: usize) -> Option<&'static str> {
+        self.original_event_text("Neow", "UNIQUE_REWARDS", index)
+    }
+
     /// Native scalar text only. Plural selection remains with each renderer;
     /// this does not interpret i18next options or reparse substituted values.
     pub fn entry(self, namespace: &str, key: &str) -> Option<&'static str> {
