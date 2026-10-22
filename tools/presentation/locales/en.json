@@ -3227,7 +3227,20 @@
       "jumpTerminal": "No current decision at this terminal state. Earlier retained decisions do not require a prior jump call.\nUse ./p back to restore the previous retained decision, or ./p jump <a previously returned node>.",
       "jumpPoint": "Return point ({{session}}): ./p jump {{selector}}",
       "pilesCombat": "piles requires an active combat",
-      "pileUnavailable": "Public {{pile}} pile contents are unavailable"
+      "pileUnavailable": "Public {{pile}} pile contents are unavailable",
+      "compatibilitySummaryRequired": "Run-play reading has no public position summary; update the client and binary together",
+      "engineCommandFailed": "{{command}} failed ({{status}})",
+      "unknownExitStatus": "unknown status",
+      "returnPointUnavailable": "cannot read a return point from the current status and decision",
+      "rewardContextRequired": "reward reading lacks typed reward context",
+      "rewardPendingRequired": "reward reading lacks typed pending rewards",
+      "rewardSlotsRequired": "reward reading lacks typed potion slots",
+      "choiceCountsMismatch": "choice contract drifted: candidate and semantic action counts differ",
+      "combatObservationRequired": "decision JSON is missing its combat observation — contract drifted",
+      "decisionCountsMismatch": "decision JSON contract drifted: {{candidates}} candidates but {{actions}} semantic actions",
+      "manualBooleanRequired": "manual must be a boolean",
+      "unsupportedAgentLocale": "Unsupported agentLocale; use en or zh-CN",
+      "returnPointsSchemaUnsupported": "Unsupported return points schema. Update the run-play binary and plugin together."
     },
     "cli": {
       "usage": "usage: node scripts/p.mjs                          reading (current session)\n       node scripts/p.mjs <session> [command...]    exact name, unique fragment, or path\n       node scripts/p.mjs <name> | <verb> <name> | <index>   choose what you see\n       node scripts/p.mjs claim:BagOfPreparation#0  reward by name; reward rows reject numbers\n       node scripts/p.mjs go [x,y]                  sole map exit, or coordinate\n       node scripts/p.mjs act <actions...>         combat line (play:X potion:X end)\n       node scripts/p.mjs preview <actions...>     try a line without moving the current position\n       node scripts/p.mjs piles                    public unordered draw, discard and exhaust piles\n       node scripts/p.mjs piles sl                 current exact combat piles (SL internal information)\n       node scripts/p.mjs board | map [full|flip|set flip|normal|elites|route X Y] | loot | options | cancel\n       node scripts/p.mjs read [brief|full] | back [steps | floor N | mark NAME | list]\n       node scripts/p.mjs mark [NAME | drop NAME]   save/list/release exact return points\n       node scripts/p.mjs info [power/enemy/card name | card <name> | M0 | player | powers | transition <HP> | help]\n       node scripts/p.mjs undo | exe <args...> | use <session>\n       node scripts/p.mjs player [status|next|accept [--continue]|replace [--continue] <command>|reject <guidance>|coach <guidance>]\n       node scripts/p.mjs player inspect [STEP[.ATTEMPT] [input]] [--run RUN_DIRECTORY_NAME]\n       node scripts/p.mjs observe [STEP [input] | live | list] [--home DSH_HOME] [--chat ID_FRAGMENT] [--turn N]\n       node scripts/p.mjs jump [nNODE | source:hN | target:hN]   show a return point, or jump to one\n       node scripts/p.mjs refresh <fresh-session>   verify old exact state into a new session and select it\n       node scripts/p.mjs research [ms] [work transitions] | research <effort> [ms] | plans [full] | review <plan ID> [turn] | commit <plan ID> [expected effort]\n       node scripts/p.mjs new <session> <seed> [--ascension N] [--goal heart-victory|act-three-victory]\n       act/preview actions: spaces or comma-space; an explicit command starts a new group\n       other command groups: comma-space, or ';' to always start a new group\n       global option: --locale en|zh-CN (before the session or command)\n",

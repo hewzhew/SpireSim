@@ -167,10 +167,10 @@ export async function loot(ctx) {
     assertCurrentDecision(reading, doc, presentation);
     const actions = reading.raw.reading.options.map(o => o.candidate?.action);
     const context = decisionObservation(doc)?.context;
-    if (context?.kind !== 'reward') throw new Error('reward reading lacks typed reward context');
+    if (context?.kind !== 'reward') throw new Error(presentation.text('workbench:command.rewardContextRequired'));
     // Rust omits this Vec when empty; omission is its documented empty value.
     const pending = context.pending_rewards === undefined ? [] : context.pending_rewards;
-    if (!Array.isArray(pending)) throw new Error('reward reading lacks typed pending rewards');
+    if (!Array.isArray(pending)) throw new Error(presentation.text('workbench:command.rewardPendingRequired'));
     // Use the bound legal action's typed reward, regardless of row order or
     // rendered name. Rust omits potion claims when capacity/rules forbid them.
     const gold = actions.findIndex(a => a?.kind === 'claim_reward'
@@ -181,7 +181,7 @@ export async function loot(ctx) {
     const slots = observation?.potions;
     // Under Sozu, the legal claim clears the reward without filling a slot.
     const potionGainBlocked = observation?.relics?.some(relic => relic.relic === 'Sozu');
-    if (potion >= 0 && !Array.isArray(slots)) throw new Error('reward reading lacks typed potion slots');
+    if (potion >= 0 && !Array.isArray(slots)) throw new Error(presentation.text('workbench:command.rewardSlotsRequired'));
     const freeSlots = slots?.filter(slot => !slot.potion).length ?? 0;
     if (gold < 0 && potion >= 0 && !potionGainBlocked && potionRewards > freeSlots) {
       break;

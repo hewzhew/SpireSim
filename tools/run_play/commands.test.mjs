@@ -7,6 +7,43 @@ import { go, info, loot, mapView, cancel } from './commands/travel.mjs';
 import { join } from 'node:path';
 import { optionSemantics, readingOptionCommands, expandedCombatCommands, distinctCombatCommands, resolveOptionName, summarizeDecisionJson } from './contract.mjs';
 import { printReading, previewInventoryChanges } from './render.mjs';
+import { createPresentation } from '@sts-simulator/presentation';
+
+test('localized malformed readings stop before an action and preserve the same typed input', async () => {
+  for (const locale of ['en', 'zh-CN']) {
+    const presentation = createPresentation({ locale }), chinese = locale === 'zh-CN';
+    const doc = { decision: { information: { snapshot_id: 'source' }, candidates: [{}],
+      observation: { domain: 'combat', observation: {} } }, semantic_actions: [] };
+    const reading = { control: 'combat', options: [], selections: [], raw: { reading: {
+      source: { public_snapshot_id: 'source' }, options: [] } } };
+    const saved = JSON.stringify({ doc, reading });
+    for (const operation of [optionSemantics, expandedCombatCommands])
+      assert.throws(() => operation(reading, doc, presentation), chinese ? /候选数量与语义动作数量不同/ : /candidate and semantic action counts differ/);
+    assert.throws(() => summarizeDecisionJson(doc, presentation), chinese ? /1 个候选，0 个语义动作/ : /1 candidates but 0 semantic actions/);
+    assert.throws(() => summarizeDecisionJson({}, presentation), chinese ? /决策 JSON 缺少战斗观察/ : /missing its combat observation/);
+    assert.equal(JSON.stringify({ doc, reading }), saved);
+
+    const game = { decision: async () => ({ view: 'Native {{raw}} 原文', control: 'strategic' }),
+      act: async () => assert.fail('invalid reading must not act'), preview: async () => assert.fail('invalid reading must not preview') };
+    await assert.rejects(actOrPreview({ game, presentation }, 'preview', ['play:Strike']),
+      chinese ? /读数缺少公开位置摘要/ : /no public position summary/);
+
+    for (const [context, potions, en, zh] of [
+      [undefined, [], /typed reward context/, /带类型的奖励上下文/],
+      [{ kind: 'reward', pending_rewards: {} }, [], /typed pending rewards/, /带类型的待领取奖励/],
+      [{ kind: 'reward', pending_rewards: [{ kind: 'potion' }] }, undefined, /typed potion slots/, /带类型的药水槽/],
+    ]) {
+      const reward = { control: 'strategic', raw: { reading: { source: { public_snapshot_id: 'reward' },
+        options: [{ candidate: { action: { kind: 'claim_reward', reward: { kind: 'potion' } } } }] } } };
+      const decision = { decision: { information: { snapshot_id: 'reward' },
+        observation: { domain: 'strategic', observation: { context, potions } } } };
+      const before = JSON.stringify({ reward, decision });
+      await assert.rejects(loot({ presentation, game: { decision: async () => reward,
+        act: async () => assert.fail('malformed reward must not be claimed') }, decisionDocument: async () => decision }), chinese ? zh : en);
+      assert.equal(JSON.stringify({ reward, decision }), before);
+    }
+  }
+});
 
 test('command guidance changes language while invalid input keeps its command and submits no action', async () => {
   for (const agentLocale of ['en','zh-CN']) {

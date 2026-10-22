@@ -1,7 +1,25 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { jumpTo, jumpPoint, showJumpPoint, runEngine } from './commands/navigation.mjs';
+import { jumpTo, jumpPoint, showJumpPoint, runEngine, engineOutput } from './commands/navigation.mjs';
 import { commandGroups } from './session.mjs';
+import { createPresentation } from '@sts-simulator/presentation';
+
+test('navigation fallback language preserves native diagnostics and never retries a failed request', async () => {
+  for (const agentLocale of ['en', 'zh-CN']) {
+    let calls = 0;
+    const raw = 'Native {{original}} 原文 🐈';
+    const ctx = { agentLocale, binary: 'unused', session: 'unused', repository: 'unused',
+      runEngine: async () => { calls++; return { status: 4, stdout: raw, stderr: '' }; } };
+    await assert.rejects(engineOutput(ctx, ['show']), error => { assert.equal(error.message, raw); return true; });
+    assert.equal(calls, 1);
+    ctx.runEngine = async () => { calls++; return { status: null, stdout: '', stderr: '' }; };
+    await assert.rejects(engineOutput(ctx, ['show']), agentLocale === 'en'
+      ? /show failed \(unknown status\)/ : /show 失败（未知退出状态）/);
+    assert.equal(calls, 2);
+    assert.throws(() => jumpPoint({ control: 'combat' }, '', createPresentation({ locale: agentLocale })),
+      agentLocale === 'en' ? /cannot read a return point/ : /无法从当前状态和决策读取回退点/);
+  }
+});
 
 const status = 'status session=test h104 state=27 node=nd4c0bbde96ce evidence_compatibility=current\n'
   + 'depth=247 site=Combat proof=unknown snapshot=2a34bbe1dbe8\n';

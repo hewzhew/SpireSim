@@ -3227,7 +3227,20 @@
       "jumpTerminal": "当前对局已结束，没有当前决策。使用已有返回点不需要预先调用 jump。\n使用 ./p back 返回上一个保留的决策，或 ./p jump <此前返回的节点>。",
       "jumpPoint": "返回点（{{session}}）：./p jump {{selector}}",
       "pilesCombat": "piles 需要处于战斗中。",
-      "pileUnavailable": "无法读取公开的{{pile}}内容。"
+      "pileUnavailable": "无法读取公开的{{pile}}内容。",
+      "compatibilitySummaryRequired": "Run-play 读数缺少公开位置摘要；请同步更新客户端和可执行文件",
+      "engineCommandFailed": "{{command}} 失败（{{status}}）",
+      "unknownExitStatus": "未知退出状态",
+      "returnPointUnavailable": "无法从当前状态和决策读取回退点",
+      "rewardContextRequired": "奖励读数缺少带类型的奖励上下文",
+      "rewardPendingRequired": "奖励读数缺少带类型的待领取奖励",
+      "rewardSlotsRequired": "奖励读数缺少带类型的药水槽",
+      "choiceCountsMismatch": "选择合同不一致：候选数量与语义动作数量不同",
+      "combatObservationRequired": "决策 JSON 缺少战斗观察，合同不一致",
+      "decisionCountsMismatch": "决策 JSON 合同不一致：{{candidates}} 个候选，{{actions}} 个语义动作",
+      "manualBooleanRequired": "manual 必须是布尔值",
+      "unsupportedAgentLocale": "不支持此 agentLocale；请使用 en 或 zh-CN",
+      "returnPointsSchemaUnsupported": "不支持此回退点 schema。请同步更新 run-play 可执行文件和插件。"
     },
     "cli": {
       "usage": "用法：node scripts/p.mjs                          查看当前会话\n      node scripts/p.mjs <session> [command...]    会话全名、唯一片段或路径\n      node scripts/p.mjs <name> | <verb> <name> | <index>   按显示的名称或行号选择\n      node scripts/p.mjs claim:BagOfPreparation#0  按名称领取奖励；奖励不接受行号\n      node scripts/p.mjs go [x,y]                  走唯一出口，或指定地图坐标\n      node scripts/p.mjs act <actions...>         执行战斗动作（play:X potion:X end）\n      node scripts/p.mjs preview <actions...>     私下预演，不移动当前位置\n      node scripts/p.mjs piles                    查看公开的抽牌堆、弃牌堆与消耗堆，不显示隐藏顺序\n      node scripts/p.mjs piles sl                 查看本场精确牌序（SL 内部信息）\n      node scripts/p.mjs board | map [full|flip|set flip|normal|elites|route X Y] | loot | options | cancel\n      node scripts/p.mjs read [brief|full] | back [steps | floor N | mark NAME | list]\n      node scripts/p.mjs mark [NAME | drop NAME]   保留、列出或释放精确返回点\n      node scripts/p.mjs info [power/enemy/card name | card <name> | M0 | player | powers | transition <HP> | help]\n      node scripts/p.mjs undo | exe <args...> | use <session>\n      node scripts/p.mjs player [status|next|accept [--continue]|replace [--continue] <command>|reject <guidance>|coach <guidance>]\n      node scripts/p.mjs player inspect [STEP[.ATTEMPT] [input]] [--run RUN_DIRECTORY_NAME]\n      node scripts/p.mjs observe [STEP [input] | live | list] [--home DSH_HOME] [--chat ID_FRAGMENT] [--turn N]\n      node scripts/p.mjs jump [nNODE | source:hN | target:hN]   查看返回点，或返回指定位置\n      node scripts/p.mjs refresh <fresh-session>   将当前精确状态核验到新会话并选中它\n      node scripts/p.mjs research [ms] [work transitions] | research <effort> [ms] | plans [full] | review <plan ID> [turn] | commit <plan ID> [expected effort]\n      node scripts/p.mjs new <session> <seed> [--ascension N] [--goal heart-victory|act-three-victory]\n      act/preview 动作之间可用空格或逗号加空格；明确的命令开始新一组\n      其他命令组用逗号加空格分隔；分号 ; 总是开始新一组\n      全局选项：--locale en|zh-CN（放在会话或命令之前）\n",

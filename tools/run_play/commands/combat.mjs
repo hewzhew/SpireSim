@@ -13,7 +13,7 @@ export async function actOrPreview(ctx, command, parameters) {
   let tokens = normalizeActionTokens(expandRepeatSugar(parameters, presentation), presentation);
   const before = await game.decision();
   if (command === 'preview' && typeof before.summary !== 'string') {
-    throw new Error('Run-play reading has no public position summary; update the client and binary together');
+    throw new Error(text('compatibilitySummaryRequired'));
   }
   if (tokens.some(token => /^\d+$/.test(token) || token.startsWith('ordinal:'))) {
     throw new Error(text('semanticActions',{command,hint:await ctx.commandHint(before,{preview:command==='preview'})}));

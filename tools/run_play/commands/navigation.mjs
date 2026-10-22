@@ -33,8 +33,10 @@ export async function engineOutput(ctx, args, { signal } = {}) {
     { cwd: repository, encoding: 'utf8', windowsHide: true, ...(signal ? { signal } : {}) });
   if (result.error) throw result.error;
   if (result.status !== 0) {
+    const presentation = await presentationFor(ctx);
     throw new Error([result.stdout, result.stderr].filter(Boolean).join('\n').trim()
-      || `${args[0]} failed (${result.signal ?? result.status ?? 'unknown status'})`);
+      || presentation.text('workbench:command.engineCommandFailed', { command: args[0],
+        status: result.signal ?? result.status ?? presentation.text('workbench:command.unknownExitStatus') }));
   }
   return result.stdout;
 }
@@ -53,7 +55,7 @@ export function jumpPoint(reading, status, presentation = createPresentation()) 
   const info = reading.raw?.reading;
   const observed = info?.state?.information?.snapshot_id;
   if (!node || !snapshot || typeof observed !== 'string') {
-    throw new Error('cannot read a return point from the current status and decision');
+    throw new Error(presentation.text('workbench:command.returnPointUnavailable'));
   }
   const source = info.source;
   if (!observed.split(':').at(-1).endsWith(snapshot)) {

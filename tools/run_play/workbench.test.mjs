@@ -9,6 +9,16 @@ import { commandTokens, commandGroups } from './session.mjs';
 import { info } from './commands/travel.mjs';
 import { runEngine } from './commands/navigation.mjs';
 
+test('invalid workbench flags use the requested language before opening any connection', async () => {
+  const dependencies = { connect: async () => assert.fail('invalid flags must not connect'),
+    run: async () => assert.fail('invalid flags must not run an engine') };
+  for (const agentLocale of ['en', 'zh-CN']) {
+    await assert.rejects(openWorkbench({ repository: 'unused', session: 'unused', manual: 'true', agentLocale }, dependencies),
+      agentLocale === 'en' ? /manual must be a boolean/ : /manual 必须是布尔值/);
+  }
+  await assert.rejects(openWorkbench({ repository: 'unused', session: 'unused', agentLocale: 'fr' }, dependencies), /Unsupported agentLocale/);
+});
+
 test('strategic reads preserve source-rendered localized choices without querying another observation', async () => {
   const view = '选择牌\n./p take:Armaments+0#0  |  效果：武装\n  Input: ./p act select:<tokens>\n0: claim reward[4] is descriptive text\n';
   let output = '';
@@ -784,9 +794,11 @@ test('a rejected typed return reconnects without retrying the restore', async t 
 });
 
 test('return points reject an incompatible response before presentation', async t => {
-  const wb = await fixture(t, async () => ({ async close() {} }),
-    () => ({ status: 0, stdout: JSON.stringify({ schema: 'run-play-return-points-v1' }) }));
-  await assert.rejects(wb.returnPoints(), /Unsupported return points schema/);
+  for (const agentLocale of ['en', 'zh-CN']) {
+    const wb = await fixture(t, async () => ({ async close() {} }),
+      () => ({ status: 0, stdout: JSON.stringify({ schema: 'run-play-return-points-v1' }) }), { agentLocale });
+    await assert.rejects(wb.returnPoints(), agentLocale === 'en' ? /Unsupported return points schema/ : /不支持此回退点 schema/);
+  }
 });
 
 test('a committed typed return retains its receipt when reconnecting fails', async t => {

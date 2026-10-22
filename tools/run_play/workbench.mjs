@@ -200,8 +200,9 @@ export function navigationArguments(command, parameters, presentation = createPr
 // gets a fresh transport transcript; it never changes the shared CLI focus.
 export async function openWorkbench({ repository, session, binary = join(repository, 'target/dev-opt/run_play.exe'),
   recordDirectory, commandPrefix = './p', manual = false, agentLocale = 'en', ...options }, { connect = openRunPlay, run = runEngine } = {}) {
-  if (typeof manual !== 'boolean') throw new Error('manual must be a boolean');
-  if (!['en', 'zh-CN'].includes(agentLocale)) throw new Error('Unsupported agentLocale; use en or zh-CN');
+  const presentation = createPresentation({ locale: agentLocale });
+  if (typeof manual !== 'boolean') throw new Error(presentation.text('workbench:command.manualBooleanRequired'));
+  if (!['en', 'zh-CN'].includes(agentLocale)) throw new Error(presentation.text('workbench:command.unsupportedAgentLocale'));
   const sessionLabel = session.split(/[\\/]/).at(-1);
   const records = recordDirectory ?? freshRecordDirectory(repository, sessionLabel, 'resident');
   await mkdir(dirname(records), { recursive: true });
@@ -211,10 +212,9 @@ export async function openWorkbench({ repository, session, binary = join(reposit
   let connectionNumber = 0, game, closed = false, closing = false, tail = Promise.resolve(), chunks;
   const formatOutput = text => commandPrefix === './p' ? text
     : text.replaceAll('./p ', commandPrefix ? `${commandPrefix} ` : '');
-  const ctx = createWorkbenchContext({ repository, session, binary, sessionLabel, recordDirectory: records, runEngine: run, commandPrefix, agentLocale,
+  const ctx = createWorkbenchContext({ repository, session, binary, sessionLabel, recordDirectory: records, runEngine: run, commandPrefix, agentLocale, presentation,
     write: text => chunks.push(formatOutput(text)),
   });
-  const presentation = await presentationFor(ctx);
   const text = (key, params = {}) => presentation.text(`workbench:command.${key}`, params);
   async function reconnect() {
     game = await connect({ ...options, repository, session, binary, manual, locale: agentLocale,
@@ -261,7 +261,7 @@ export async function openWorkbench({ repository, session, binary = join(reposit
   }
   async function readReturnPoints() {
     const points = JSON.parse(await engineOutput(ctx, ['back', '--list', '--json']));
-    if (points.schema !== 'run-play-return-points-v2') throw new Error('Unsupported return points schema. Update the run-play binary and plugin together.');
+    if (points.schema !== 'run-play-return-points-v2') throw new Error(text('returnPointsSchemaUnsupported'));
     return points;
   }
   return Object.freeze({

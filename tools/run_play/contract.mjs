@@ -57,7 +57,7 @@ export function optionSemantics(reading, doc, presentation = createPresentation(
   assertCurrentDecision(reading, doc, presentation);
   const semantics = doc.semantic_actions ?? [];
   if (semantics.length !== doc.decision?.candidates?.length) {
-    throw new Error('choice contract drifted: candidate and semantic action counts differ');
+    throw new Error(presentation.text('workbench:command.choiceCountsMismatch'));
   }
   return (reading.raw.reading.options ?? []).map(option => {
     const path = option.choice.ordinal_path;
@@ -114,7 +114,7 @@ export function expandedCombatCommands(reading, doc, presentation = createPresen
   assertCurrentDecision(reading, doc, presentation);
   const commands = doc.semantic_actions ?? [];
   if (commands.length !== doc.decision?.candidates?.length) {
-    throw new Error('choice contract drifted: candidate and semantic action counts differ');
+    throw new Error(presentation.text('workbench:command.choiceCountsMismatch'));
   }
   return commands.filter(command => typeof command === 'string' && command.length > 0)
     .map(conciseCardCommand);
@@ -246,12 +246,12 @@ export function parseDecisionPotions(doc) {
 export function summarizeDecisionJson(doc, presentation = createPresentation()) {
   const inner = decisionObservation(doc);
   if (inner === null) {
-    throw new Error('decision JSON is missing its combat observation — contract drifted');
+    throw new Error(presentation.text('workbench:command.combatObservationRequired'));
   }
   const candidates = doc.decision?.candidates ?? [];
   const semanticActions = doc.semantic_actions ?? null;
   if (semanticActions !== null && semanticActions.length !== candidates.length) {
-    throw new Error(`decision JSON contract drifted: ${candidates.length} candidates but ${semanticActions.length} semantic actions`);
+    throw new Error(presentation.text('workbench:command.decisionCountsMismatch', { candidates: candidates.length, actions: semanticActions.length }));
   }
   let incoming = 0;
   for (const monster of inner.monsters ?? []) {
