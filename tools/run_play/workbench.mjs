@@ -16,7 +16,7 @@ import { engineOutput, runEngine, showJumpPoint } from './commands/navigation.mj
 
 export function createWorkbenchContext(options) {
   const ctx = { write: writeText, join, runEngine, ...options };
-  ctx.usage ??= () => { throw new Error('act and preview each require at least one semantic action'); };
+  ctx.usage ??= async () => { throw new Error((await presentationFor(ctx)).text('workbench:command.actionsRequired')); };
   ctx.decisionDocument = async reading => decisionDocumentFromObservation(
     reading?.raw?.observation ?? await ctx.game.observe());
   ctx.commandHint = async (reading, options) => currentCommandHint(reading, await ctx.decisionDocument(reading), options);
@@ -41,27 +41,29 @@ export function createWorkbenchContext(options) {
 }
 
 export async function dispatchWorkbench(ctx, command, parameters) {
+  const presentation = await presentationFor(ctx);
+  const text = (key, params = {}) => presentation.text(`workbench:command.${key}`, params);
   if (command === 'deck') {
-    throw new Error('deck is not a command. Use inventory for the permanent deck and resources, or inventory effects for their rules.');
+    throw new Error(text('deck'));
   }
   if (/^play:/.test(command ?? '')) {
-    throw new Error(`Use act ${[command, ...parameters].join(' ')} to play, or preview with the same actions to rehearse. Start the action line with act or preview; commas can separate its actions.`);
+    throw new Error(text('barePlay',{actions:[command,...parameters].join(' ')}));
   }
   if (command === 'act/preview') {
-    throw new Error('Use preview <actions> for a private rehearsal, or act <actions> to adopt it. act/preview is help notation, not a command. No action was submitted.');
+    throw new Error(text('actPreviewNotation'));
   }
   if (['research', 'plans', 'commit', 'review'].includes(command)) return researchOrCommitOrReview(ctx, command, parameters);
   if (command === 'act' || command === 'preview') return actOrPreview(ctx, command, parameters);
   if (command === 'read') {
     if (parameters.length > 1 || (parameters.length && !['brief', 'full'].includes(parameters[0]))) {
-      throw new Error('read [brief|full] reads the current decision');
+      throw new Error(text('readUsage'));
     }
     return ctx.printCurrentReading(await ctx.game.decision(
       { details: parameters[0] === 'full' ? [] : ['brief'] }));
   }
   if (command === 'inventory') {
     if (parameters.length > 1 || (parameters.length && parameters[0] !== 'effects')) {
-      throw new Error('inventory [effects] reads the permanent master deck and relics');
+      throw new Error(text('inventoryUsage'));
     }
     return ctx.write(await engineOutput(ctx, ['inventory', '--locale', ctx.agentLocale ?? 'en', ...(parameters.length ? ['--effects'] : [])]));
   }
@@ -70,7 +72,7 @@ export async function dispatchWorkbench(ctx, command, parameters) {
     const usage = 'deck-lab list | ' + invocation;
     if (parameters.length === 1 && parameters[0] === 'list') {
       const catalog = await engineOutput(ctx, ['deck-lab', '--list'], { signal: ctx.signal });
-      return ctx.write(`${catalog.trimEnd()}\n\nRun: ${invocation}\nAppend after followed by a displayed preparation command to test rest, an upgrade, removal, purchase or card choice privately. The game stays unchanged; no need to apply or undo the preparation.\nUse the same encounter, scenarios, work, ms and potion limit when comparing preparations.\n`);
+      return ctx.write(`${catalog.trimEnd()}\n\n${text('deckLabGuide',{invocation})}\n`);
     }
     if (!parameters.length || parameters[0] === 'list' || parameters[0].startsWith('-')) throw new Error(usage);
     const args = ['deck-lab', '--encounter', parameters[0]];
@@ -106,7 +108,7 @@ export async function dispatchWorkbench(ctx, command, parameters) {
   if (command === 'info') return info(ctx, parameters);
   if (command === 'piles') {
     if (!parameters.length) return publicPiles(ctx);
-    if (parameters.length !== 1 || parameters[0] !== 'sl') throw new Error('Use piles for public unordered draw, discard and exhaust contents. Exact inspection uses piles sl in assisted play.');
+    if (parameters.length !== 1 || parameters[0] !== 'sl') throw new Error(text('pilesUsage'));
     return ctx.write((await ctx.game.slPiles()).view);
   }
   if (command === 'jump') return showJumpPoint(ctx);
@@ -154,9 +156,10 @@ export async function executeWorkbenchCommands(ctx, groups, dispatch = dispatchW
     return chunks.join('');
   } catch (error) {
     const output = chunks.join('');
-    const prefix = applied.length ? `Applied before error:\n${applied.map(action => `  ${action}`).join('\n')}\n` : '';
+    const presentation = await presentationFor(ctx);
+    const prefix = applied.length ? presentation.text('workbench:command.applied',{actions:applied.map(action => `  ${action}`).join('\n')}) : '';
     if (prefix || output) {
-      const wrapped = new Error(`${error.message}\n${prefix}${output ? `Earlier results:\n${output}` : ''}`.trimEnd(), { cause: error });
+      const wrapped = new Error(`${error.message}\n${prefix}${output ? presentation.text('workbench:command.earlier',{output}) : ''}`.trimEnd(), { cause: error });
       Object.assign(wrapped, error);
       throw wrapped;
     }
@@ -209,6 +212,8 @@ export async function openWorkbench({ repository, session, binary = join(reposit
   const ctx = createWorkbenchContext({ repository, session, binary, sessionLabel, recordDirectory: records, runEngine: run, commandPrefix, agentLocale,
     write: text => chunks.push(formatOutput(text)),
   });
+  const presentation = await presentationFor(ctx);
+  const text = (key, params = {}) => presentation.text(`workbench:command.${key}`, params);
   async function reconnect() {
     game = await connect({ ...options, repository, session, binary, manual, locale: agentLocale,
       recordDirectory: join(records, `connection-${connectionNumber++}`) });
@@ -236,7 +241,7 @@ export async function openWorkbench({ repository, session, binary = join(reposit
     return result;
   }
   function requireAssistance() {
-    if (manual) throw new Error('Public manual play disables search, private previews, deck-lab and exact hidden piles. Use act for actual actions and back for retained returns.');
+    if (manual) throw new Error(text('manualOnly'));
   }
   async function navigate(operation) {
     if (game) await game.close();
@@ -246,7 +251,7 @@ export async function openWorkbench({ repository, session, binary = join(reposit
     catch (error) { navigationError = error; }
     try { await reconnect(); }
     catch (error) {
-      if (navigationError) throw new Error(`${navigationError.message}\nReconnecting also failed: ${error.message}`, { cause: error });
+      if (navigationError) throw new Error(text('reconnectFailed',{error:navigationError.message,reconnect:error.message}), { cause: error });
       throw error;
     }
     if (navigationError) throw navigationError;
@@ -261,7 +266,7 @@ export async function openWorkbench({ repository, session, binary = join(reposit
     recordDirectory: records,
     manual,
     observe({ signal } = {}) {
-      if (closing || closed) return Promise.reject(new Error('workbench is closed'));
+      if (closing || closed) return Promise.reject(new Error(text('closed')));
       return serial(async () => {
         signal?.throwIfAborted();
         if (!game) await reconnect();
@@ -269,7 +274,7 @@ export async function openWorkbench({ repository, session, binary = join(reposit
       });
     },
     preview(actions, { signal } = {}) {
-      if (closing || closed) return Promise.reject(new Error('workbench is closed'));
+      if (closing || closed) return Promise.reject(new Error(text('closed')));
       return serial(() => recorded('preview', actions, async () => {
         signal?.throwIfAborted();
         requireAssistance();
@@ -278,7 +283,7 @@ export async function openWorkbench({ repository, session, binary = join(reposit
       }));
     },
     execute(line, { signal } = {}) {
-      if (closing || closed) return Promise.reject(new Error('workbench is closed'));
+      if (closing || closed) return Promise.reject(new Error(text('closed')));
       return serial(() => recorded('execute', line, async () => {
         signal?.throwIfAborted();
         const tokens = Array.isArray(line) ? line : commandTokens(line);
@@ -288,9 +293,9 @@ export async function openWorkbench({ repository, session, binary = join(reposit
           if (['preview', 'research', 'plans', 'review', 'commit', 'deck-lab'].includes(command)
               || (command === 'piles' && args[0] === 'sl')) requireAssistance();
           if (['new', 'use', 'refresh', 'exe', 'scout', 'pick'].includes(command)) {
-            throw new Error(`${command} is not available in a bound game session`);
+            throw new Error(text('boundCommand',{command}));
           }
-          if (command === 'map' && args[0] === 'set') throw new Error('Use map flip or map normal; shared preferences are not changed by this player');
+          if (command === 'map' && args[0] === 'set') throw new Error(text('mapPreference'));
           if (['back', 'undo', 'jump', 'mark'].includes(command)) navigationArguments(command, args);
         }
         chunks = [];
@@ -330,12 +335,13 @@ export async function openWorkbench({ repository, session, binary = join(reposit
             const failed = game;
             game = null; ctx.game = null;
             try { await failed.close(); }
-            catch (closeError) { recovery = `\nClosing the failed connection also failed: ${closeError.message}`; }
-            recovery += '\nThe failed connection was released. Use read to reconnect and inspect the actual saved state before retrying; no game command was retried.';
+            catch (closeError) { recovery = text('closeFailed',{error:closeError.message}); }
+            recovery += text('connectionReleased');
           }
           const prefix = chunks.join('');
           if (prefix || recovery) {
-            const wrapped = new Error(`${prefix ? `${prefix}\nError: ` : ''}${error.message}${recovery}\nRead the current state before continuing.`, { cause: error });
+            const message=prefix?text('errorAfterOutput',{output:prefix,error:error.message}):error.message;
+            const wrapped = new Error(`${message}${recovery}\n${text('readBeforeContinue')}`, { cause: error });
             Object.assign(wrapped, error);
             throw wrapped;
           }
@@ -344,11 +350,11 @@ export async function openWorkbench({ repository, session, binary = join(reposit
       }));
     },
     returnPoints() {
-      if (closing || closed) return Promise.reject(new Error('workbench is closed'));
+      if (closing || closed) return Promise.reject(new Error(text('closed')));
       return serial(readReturnPoints);
     },
     restorePoint(request) {
-      if (closing || closed) return Promise.reject(new Error('workbench is closed'));
+      if (closing || closed) return Promise.reject(new Error(text('closed')));
       return serial(() => recorded('restorePoint', request, async () => {
         const operation = `return-${randomUUID()}`;
         const requestFile = join(records, `${operation}-request.json`);

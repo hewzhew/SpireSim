@@ -1,12 +1,27 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { researchOrCommitOrReview, planId } from './commands/search.mjs';
+import { researchOrCommitOrReview } from './commands/search.mjs';
 import { actOrPreview, board } from './commands/combat.mjs';
 import { choose } from './commands/choose.mjs';
 import { go, info, loot, mapView, cancel } from './commands/travel.mjs';
 import { join } from 'node:path';
 import { optionSemantics, readingOptionCommands, expandedCombatCommands, distinctCombatCommands, resolveOptionName, summarizeDecisionJson } from './contract.mjs';
 import { printReading, previewInventoryChanges } from './render.mjs';
+
+test('command guidance changes language while invalid input keeps its command and submits no action', async () => {
+  for (const agentLocale of ['en','zh-CN']) {
+    let reads=0;
+    const ctx={agentLocale,game:{async decision(){reads++;return {control:'strategic',view:'original',options:[]};},async act(){assert.fail('invalid input must not act');},async research(){assert.fail('invalid input must not search');}},async commandHint(){return 'go 1,2';}};
+    for (const [operation,en,zh] of [
+      [()=>researchOrCommitOrReview(ctx,'research',['whole_combat','0']),/milliseconds must be in 1\.\.20000/,/毫秒数必须在 1\.\.20000/],
+      [()=>researchOrCommitOrReview(ctx,'research',['whole_combat','eight']),/invalid search milliseconds: eight/,/搜索毫秒数无效：eight/],
+      [()=>researchOrCommitOrReview(ctx,'review',['c0']),/complete plan ID/,/完整方案 ID/],
+      [()=>go(ctx,['1,2','extra']),/usage: go/,/用法：go/],
+      [()=>choose(ctx,'choose',[]),/choose is not a standalone command/,/choose 不是独立命令/],
+    ]) {await assert.rejects(operation,agentLocale==='en'?en:zh);}
+    assert.equal(reads,1);
+  }
+});
 
 test('parallel reading presentations preserve native text and executable commands across languages', async () => {
   const reading = { view: 'Native reading stays exactly as recorded\n' };
@@ -934,7 +949,7 @@ test('review and commit use saved objects and never request research', async () 
     async commit() { calls.push(['commit']); return { view: 'adopted' }; },
   };
   const report = { candidates: [candidate], effort: 'expanded', raw: { report_id: 'test-report-a' } };
-  const id = planId(report, 0);
+  const id = report.candidates[0].planId;
   const ctx = { write: text => { output += text; }, game: {
     async decision() { return { control: 'combat' }; },
     async plans() { calls.push(['plans']); return report; },
@@ -956,7 +971,7 @@ test('review preserves source-rendered commands and localized text without decod
   }] };
   const ctx = { game: { async decision() { return { control: 'combat' }; }, async plans() { return report; } },
     async printCurrentReading(reading) { shown = reading.view; } };
-  const id = planId(report, 0);
+  const id = report.candidates[0].planId;
   await researchOrCommitOrReview(ctx, 'review', [id]);
   assert.equal(shown, `${id} | 回合记录\n查看回合: review ${id} 4\n继续: review ${id} 12\n`);
 });
@@ -970,12 +985,12 @@ test('a replaced report cannot silently rebind the same candidate index', async 
   const ctx = { game: { async decision() { return { control: 'combat' }; }, async plans() { return current; } },
     async printCurrentReading() {} };
   for (const command of ['review', 'commit']) {
-    await assert.rejects(researchOrCommitOrReview(ctx, command, [planId(oldReport, 0)]), /replaced search report.*no action was applied/);
+    await assert.rejects(researchOrCommitOrReview(ctx, command, [oldReport.candidates[0].planId]), /replaced search report.*no action was applied/);
     await assert.rejects(researchOrCommitOrReview(ctx, command, ['c0']), /complete plan ID/);
     await assert.rejects(researchOrCommitOrReview(ctx, command, ['0']), /complete plan ID/);
   }
   assert.equal(commits, 0); assert.equal(reviews, 0);
-  const id = planId(current, 0);
+  const id = current.candidates[0].planId;
   await researchOrCommitOrReview(ctx, 'review', [id]);
   await researchOrCommitOrReview(ctx, 'commit', [id]);
   assert.equal(reviews, 1); assert.equal(commits, 1);

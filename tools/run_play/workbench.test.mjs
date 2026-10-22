@@ -618,6 +618,49 @@ test('bound sessions reject process and focus controls before any prefix action'
   await assert.rejects(wb.execute('info first, back'), /separate command/);
 });
 
+test('localized bound-session guidance rejects a whole batch before its prefix can run', async t => {
+  const wb=await fixture(t,async()=>({async info(){assert.fail('prefix must not run');},async close(){}}),undefined,{agentLocale:'zh-CN',manual:true});
+  for(const command of ['research 1','preview end','plans','review c0','deck-lab list','piles sl']) {
+    await assert.rejects(wb.execute('info first, '+command),/公开信息手打不提供搜索/);
+  }
+  await assert.rejects(wb.execute('info first, exe status'),/不支持 exe/);
+  await assert.rejects(wb.execute('info first, map set flip'),/使用 map flip 或 map normal/);
+  await wb.close();
+  await assert.rejects(wb.execute('read'),/工作台已关闭/);
+});
+
+test('localized transport recovery preserves raw errors and metadata without retrying an action', async t => {
+  let connections=0,plays=0;
+  const literal='{{literal}} $t(replay:title)';
+  const wb=await fixture(t,async()=>{
+    const connection=++connections;
+    return {
+      async info(){return {view:'raw previous output '+literal+'\n'};},
+      async decision(){return {view:'actual current position\n'};},
+      async act(){plays++;throw Object.assign(new Error('raw error '+literal),{transportFailed:true,outcomeUncertain:true,code:'RUN_PLAY_TIMEOUT',requestId:'original-request',recordDirectory:'original-records'});},
+      async close(){if(connection===1) throw new Error('raw close '+literal);},
+    };
+  },undefined,{agentLocale:'zh-CN'});
+  await assert.rejects(wb.execute('info powers, act end'),error=>{
+    assert.ok(error.message.includes('raw previous output '+literal));
+    assert.ok(error.message.includes('raw error '+literal));
+    assert.ok(error.message.includes('raw close '+literal));
+    assert.match(error.message,/此前返回|错误：/);
+    assert.match(error.message,/故障连接已释放/);
+    assert.match(error.message,/没有重试游戏命令/);
+    assert.equal(error.code,'RUN_PLAY_TIMEOUT');
+    assert.equal(error.requestId,'original-request');
+    assert.equal(error.recordDirectory,'original-records');
+    assert.equal(error.outcomeUncertain,true);
+    return true;
+  });
+  assert.equal(plays,1);
+  assert.equal(connections,1);
+  assert.equal((await wb.execute('read')).text,'actual current position\n');
+  assert.equal(connections,2);
+  assert.equal(plays,1);
+});
+
 test('a broken transport releases its connection and read observes real state without replaying actions', async t => {
   let connections = 0, plays = 0, hp = 75;
   const closed = [];

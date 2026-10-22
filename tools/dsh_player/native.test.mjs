@@ -218,7 +218,7 @@ test('native workspace returns and restores its prior endpoint through the same 
     assert.deepEqual(prompt.sections.map(section => section.text), [Native.nativeGuide(true)]);
     assert.doesNotMatch(prompt.sections[0].text, /research whole_combat|deck-lab|piles sl|preview play:/);
     assert.equal((await control.workbench.observe()).capabilities.permission_envelope.profile, 'public_manual_v1');
-    assert.match(textOf(await execute('preview end')), /Public manual play disables/);
+    assert.match(textOf(await execute('preview end')), /公开信息手打不提供搜索/);
     const start = (await control.points()).points.current;
     await execute('event:Neow:1');
     const endpoint = await control.live();

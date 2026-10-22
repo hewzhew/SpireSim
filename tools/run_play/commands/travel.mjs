@@ -1,19 +1,21 @@
 // Room and map commands: go (route), map (routes/grid and
 // preferences), loot (routine reward claiming), info (mechanics),
 // cancel (back into the room), use (switch the default session).
-import { writeText } from '../render.mjs';
+import { writeText, presentationFor } from '../render.mjs';
 import { resolveSession } from '../session.mjs';
 import { isRewardReading, assertCurrentDecision, decisionObservation, readingOptionCommands } from '../contract.mjs';
 import { engineOutput } from './navigation.mjs';
 
 export async function go(ctx, parameters) {
   const { game, printCurrentReading } = ctx;
+  const presentation = await presentationFor(ctx);
+  const text = (key, params = {}) => presentation.text(`workbench:command.${key}`, params);
   // Routes are picked by destination coordinate, never by display
   // index: indices shift with potion-discard entries and stale listings,
   // which caused wrong-fork picks. Room type does not change the command.
   let target = parameters[0] ?? '';
   if (parameters.length > 1 || (parameters.length && !/^\d+\s*,\s*\d+$/.test(target))) {
-    throw new Error('usage: go [x,y] - omit coordinates only for a single current route');
+    throw new Error(text('goUsage'));
   }
   let reading = await game.decision({ details: ['brief'] });
   let crossedContinuation = false;
@@ -62,7 +64,7 @@ export async function go(ctx, parameters) {
         await (ctx.showSuccessor ?? printCurrentReading)(reading);
         return { needsChoice: true };
       }
-      throw new Error('go without coordinates requires a map route; finish the current room first');
+      throw new Error(text('goNeedsMap'));
     }
     target = routes[0].split(' ')[1];
   }
@@ -101,7 +103,7 @@ export async function go(ctx, parameters) {
       await (ctx.showSuccessor ?? printCurrentReading)(reading);
       return { needsChoice: true };
     }
-    throw new Error(`no route option to ${wanted}; options: ${route.commands.filter(Boolean).join(' | ') || 'none'}`);
+    throw new Error(text('noRoute',{destination:wanted,options:route.commands.filter(Boolean).join(' | ') || text('none')}));
   }
   reading = await option.choose();
   ctx.recordAction?.(`go ${wanted}`);
@@ -142,7 +144,7 @@ export async function mapView(ctx, parameters) {
   if (parameters[0] === 'normal') flipped = false;
   if (parameters[0] === 'set') {
     if (parameters[1] !== 'flip' && parameters[1] !== 'normal') {
-      throw new Error('usage: map set flip|normal - stores the default map direction');
+      throw new Error((await presentationFor(ctx)).text('workbench:command.mapSetUsage'));
     }
     await writePrefs(mapPrefsFile, parameters[1]).catch(() => {});
     write(`map set ${parameters[1]}\n`);
@@ -232,7 +234,7 @@ export async function cancel(ctx) {
     .findIndex(option => ['strategic', 'combat_atomic'].includes(option.candidate?.domain)
       && option.candidate.action?.kind === 'cancel');
   if (cancelIndex === -1) {
-    throw new Error(`no cancel option on the current reading (options: ${(reading.options ?? []).map(o => o.label).join(' | ')})`);
+    throw new Error((await presentationFor(ctx)).text('workbench:command.noCancel',{options:(reading.options ?? []).map(o=>o.label).join(' | ')}));
   }
   reading = await reading.options[cancelIndex].choose();
   ctx.recordAction?.('cancel');
@@ -243,7 +245,7 @@ export async function use(ctx, parameters) {
   const { stateFile } = ctx;
   // Switch the current session (the default target for every bare
   // command); short names resolve like session arguments do.
-  if (parameters.length < 1) throw new Error('usage: use <session> - makes that session the default for bare commands');
+  if (parameters.length < 1) throw new Error((await presentationFor(ctx)).text('workbench:command.useUsage'));
   const target = resolveSession(parameters[0]);
   const { writeFile: writeState } = await import('node:fs/promises');
   await writeState(stateFile, target).catch(() => {});

@@ -7,14 +7,16 @@ import { expandRepeatSugar, normalizeActionTokens, actTrimmingEndedCombat } from
 export async function actOrPreview(ctx, command, parameters) {
   const { game, usage, printCurrentReading, decisionDocument } = ctx;
   const write = ctx.write ?? writeText;
-  if (parameters.length < 1) usage();
+  if (parameters.length < 1) await usage();
+  const presentation = await presentationFor(ctx);
+  const text = (key, params = {}) => presentation.text(`workbench:command.${key}`, params);
   let tokens = normalizeActionTokens(expandRepeatSugar(parameters));
   const before = await game.decision();
   if (command === 'preview' && typeof before.summary !== 'string') {
     throw new Error('Run-play reading has no public position summary; update the client and binary together');
   }
   if (tokens.some(token => /^\d+$/.test(token) || token.startsWith('ordinal:'))) {
-    throw new Error(`${command} requires semantic actions, not row numbers or ordinal addressing.\n${await ctx.commandHint(before, { preview: command === 'preview' })}`);
+    throw new Error(text('semanticActions',{command,hint:await ctx.commandHint(before,{preview:command==='preview'})}));
   }
   const previewSource = command === 'preview' && before.control === 'strategic'
     ? await decisionDocument(before) : null;
@@ -35,8 +37,8 @@ export async function actOrPreview(ctx, command, parameters) {
   } catch (error) {
     if (/^exact run-play (?:prepared line|probe) could not resolve step \d+:/.test(error.message)) {
       error.message += command === 'act'
-        ? '\nPreparation failed; this act line was not applied.'
-        : '\nPreview preparation failed; actual position unchanged.';
+        ? text('actPreparationFailed')
+        : text('previewPreparationFailed');
     }
     throw error;
   }
