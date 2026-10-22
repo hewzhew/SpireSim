@@ -1142,6 +1142,86 @@
       "input": "  输入：{{prefix}}select:<卡牌 token，以英文逗号分隔，不加空格>",
       "distinct": "  一次选择中的卡牌 token 不能重复；#0 和 #1 表示不同副本，不能重复选择同一个 #0。",
       "none": "不选"
+    },
+    "terminal": "终局 | {{outcome}}",
+    "transition": {
+      "secondBoss": "前往第二位 Boss",
+      "finalAct": "前往第 4 幕",
+      "victory": "前往胜利画面"
+    },
+    "context": {
+      "mapOverlay": "地图 | 选择下一个房间，或取消以返回房间",
+      "map": "地图 | 选择下一个房间",
+      "currentNode": " | 当前节点 ({{x}},{{y}}) {{room}}",
+      "completedNode": " | 已完成节点 ({{x}},{{y}}) {{room}}",
+      "cardReward": "卡牌奖励",
+      "shop": "商店",
+      "rewardsComplete": "奖励已领取完毕",
+      "rewards": "奖励（剩余 {{count}} 项）",
+      "campfire": "营火",
+      "bossRelic": "Boss 遗物",
+      "cardSelection": "选牌 | {{reason}}{{source}}",
+      "selectionSource": " | 来源标识：{{source}}",
+      "treasure": "宝箱",
+      "event": "{{event}} | 事件阶段 {{screen}}"
+    },
+    "summary": "第 {{act}} 幕 第 {{floor}} 层 | 生命 {{hp}}/{{maxHp}} | 金币 {{gold}} | {{context}}",
+    "fullSummary": "第 {{act}} 幕 第 {{floor}} 层 | A{{ascension}} | 生命 {{hp}}/{{maxHp}} | 金币 {{gold}} | 每回合基础能量 {{energy}} | {{context}}",
+    "deckCount": "卡组：{{count}} 张",
+    "deck": "卡组：{{count}} 张 | {{cards}}",
+    "relics": "遗物：{{relics}}",
+    "potions": "药水：{{potions}}",
+    "empty": "空",
+    "none": "无",
+    "resource": {
+      "deck": "卡组",
+      "relics": "遗物",
+      "potions": "药水"
+    },
+    "unchanged": "未变：{{resources}}",
+    "goldBlocked": "{{relic}} 阻止获得金币。已有金币仍可花费，金币支出仍会扣除。",
+    "sceneEnglish": "事件正文（英文）：{{scene}}",
+    "potionChoice": "药水选择：{{rewards}} 份奖励，{{slots}} 个空槽。选择领取的奖励，或使用下方用药、弃药命令腾出药槽。",
+    "sozuReward": "添水阻止获得药水。领取药水奖励会清除该奖励，已有药水保持不变。",
+    "keys": {
+      "ruby": "红宝石",
+      "sapphire": "蓝宝石",
+      "emerald": "绿宝石",
+      "stillNeeded": "进入心脏仍需钥匙：{{keys}}",
+      "act3Exit": "未集齐三把钥匙时，击败第三幕的这些 Boss 后本局结束，无法进入第四幕。",
+      "held": "钥匙：{{keys}}",
+      "missing": "缺少钥匙：{{keys}}",
+      "rubySource": "红宝石：营火回忆",
+      "sapphireSource": "蓝宝石：放弃关联的宝箱遗物以领取钥匙",
+      "emeraldSource": "绿宝石：燃烧精英的钥匙奖励"
+    },
+    "room": {
+      "monster": "战斗",
+      "questionMark": "?",
+      "elite": "精英",
+      "rest": "营火",
+      "shop": "商店",
+      "treasure": "宝箱",
+      "boss": "Boss",
+      "victory": "胜利"
+    },
+    "deckSelection": {
+      "upgrade": "升级牌组中的牌",
+      "purge": "移除牌组中的牌",
+      "transform": "变化牌组中的牌",
+      "transformUpgraded": "变化并升级",
+      "duplicate": "复制牌组中的牌",
+      "bottleAttack": "瓶装一张攻击牌",
+      "bottleSkill": "瓶装一张技能牌",
+      "bottlePower": "瓶装一张能力牌"
+    },
+    "preparation": {
+      "completedBoss": "已击败第 {{act}} 幕 Boss：{{boss}}",
+      "entry": "准备阶段：处理完当前奖励与选择后进入第 {{act}} 幕。如果进幕前生命及生命上限不变，跨幕回复后为 {{hp}}/{{maxHp}} 生命。请为下一幕评估补强。",
+      "unknownMap": "下一幕地图及 Boss 在进入该幕时揭晓。",
+      "act4": "第四幕固定顺序：营火、商店、{{elites}}、{{heart}}。",
+      "secondBoss": "准备阶段：已击败第三幕第一位 Boss，接下来是本幕第二位 Boss。当前生命延续至该战斗；进入新幕时才会触发跨幕回复。",
+      "boss": "Boss：{{boss}}"
     }
   }
 }

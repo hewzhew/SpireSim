@@ -2859,7 +2859,8 @@ fn render_strategic_action(
             Some(TaskPublicObservationV1::Strategic { observation }) => match &observation.context {
                 sts_oracle_learning::ai::planner_core::PlannerDecisionContext::RunTransition {
                     stage,
-                } => crate::decision::run_transition_label_v1(*stage).into(),
+                } => crate::decision::run_transition_label_v1(*stage, sts_presentation::Locale::En)
+                    .into(),
                 _ => "Proceed".into(),
             },
             _ => "Proceed".into(),

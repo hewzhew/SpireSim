@@ -362,6 +362,7 @@ pub(crate) fn reading(
                 &mut out,
                 *keys,
                 *run_goal == sts_oracle_learning::ai::planner_core::PlannerRunGoal::HeartVictory,
+                locale,
             );
         }
     }

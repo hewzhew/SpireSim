@@ -1142,6 +1142,86 @@
       "input": "  Input: {{prefix}}select:<card tokens joined by commas without spaces>",
       "distinct": "  Select distinct listed card tokens in this one selection; #0 and #1 identify different copies, not the same #0 twice.",
       "none": "choose none"
+    },
+    "terminal": "Terminal | {{outcome}}",
+    "transition": {
+      "secondBoss": "Continue to second boss",
+      "finalAct": "Continue to Act 4",
+      "victory": "Continue to victory screen"
+    },
+    "context": {
+      "mapOverlay": "Map | choose next room, or cancel to return to the room screen",
+      "map": "Map | choose next room",
+      "currentNode": " | current node ({{x}},{{y}}) {{room}}",
+      "completedNode": " | completed node ({{x}},{{y}}) {{room}}",
+      "cardReward": "Card reward",
+      "shop": "Shop",
+      "rewardsComplete": "Rewards complete",
+      "rewards": "Rewards ({{count}} remaining)",
+      "campfire": "Campfire",
+      "bossRelic": "Boss relic",
+      "cardSelection": "Card selection | {{reason}}{{source}}",
+      "selectionSource": " | source: {{source}}",
+      "treasure": "Treasure",
+      "event": "{{event}} | Event screen {{screen}}"
+    },
+    "summary": "Act {{act}} F{{floor}} | HP {{hp}}/{{maxHp}} | Gold {{gold}} | {{context}}",
+    "fullSummary": "Act {{act}} F{{floor}} | A{{ascension}} | HP {{hp}}/{{maxHp}} | Gold {{gold}} | Base energy/turn {{energy}} | {{context}}",
+    "deckCount": "Deck: {{count}} cards",
+    "deck": "Deck: {{count}} cards | {{cards}}",
+    "relics": "Relics: {{relics}}",
+    "potions": "Potions: {{potions}}",
+    "empty": "empty",
+    "none": "none",
+    "resource": {
+      "deck": "Deck",
+      "relics": "Relics",
+      "potions": "Potions"
+    },
+    "unchanged": "Unchanged: {{resources}}",
+    "goldBlocked": "Gold gains: prevented by {{relic}}. Held Gold remains spendable; Gold costs still apply.",
+    "sceneEnglish": "Scene: {{scene}}",
+    "potionChoice": "Potion choice: {{rewards}} rewards, {{slots}} empty slots. Choose rewards to claim or use a held potion/discard command below to free a slot.",
+    "sozuReward": "Sozu prevents obtaining potions. Claiming a potion reward clears it and keeps the held inventory unchanged.",
+    "keys": {
+      "ruby": "Ruby",
+      "sapphire": "Sapphire",
+      "emerald": "Emerald",
+      "stillNeeded": "Heart keys still needed: {{keys}}",
+      "act3Exit": "Without all three keys, these Act 3 bosses end the run before Act 4.",
+      "held": "Keys: {{keys}}",
+      "missing": "Missing keys: {{keys}}",
+      "rubySource": "Ruby: Recall at campfire",
+      "sapphireSource": "Sapphire: chest key instead of linked relic",
+      "emeraldSource": "Emerald: burning elite key reward"
+    },
+    "room": {
+      "monster": "Monster",
+      "questionMark": "?",
+      "elite": "Elite",
+      "rest": "Campfire",
+      "shop": "Shop",
+      "treasure": "Treasure",
+      "boss": "Boss",
+      "victory": "Victory"
+    },
+    "deckSelection": {
+      "upgrade": "Upgrade from deck",
+      "purge": "Remove from deck",
+      "transform": "Transform from deck",
+      "transformUpgraded": "Transform and upgrade",
+      "duplicate": "Duplicate from deck",
+      "bottleAttack": "Bottle an attack",
+      "bottleSkill": "Bottle a skill",
+      "bottlePower": "Bottle a power"
+    },
+    "preparation": {
+      "completedBoss": "Completed Act {{act}} Boss: {{boss}}",
+      "entry": "Preparation window: finish these rewards and selections, then enter Act {{act}}. With HP and Max HP unchanged until entry, transition recovery gives {{hp}}/{{maxHp}} HP. Evaluate additions for the upcoming Act.",
+      "unknownMap": "Upcoming map and Boss: Unknown until Act entry.",
+      "act4": "Upcoming Act 4: fixed Rest site, Shop, {{elites}}, then {{heart}}.",
+      "secondBoss": "Preparation window: first Act 3 Boss completed; the second Boss is next in this Act. Current HP carries into that fight. Act-entry recovery occurs when entering a new Act.",
+      "boss": "Boss: {{boss}}"
     }
   }
 }

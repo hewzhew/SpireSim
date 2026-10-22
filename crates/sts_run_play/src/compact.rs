@@ -429,36 +429,16 @@ pub(crate) fn inventory_reading_decision_v1(
     if effects {
         writeln!(output, "{}", message("permanent", &[])).expect("string write");
     }
-    let mut counts = BTreeMap::new();
     let mut name_ids = BTreeMap::<_, std::collections::BTreeSet<_>>::new();
-    for card in cards {
+    for card in &cards {
         name_ids
             .entry(locale.entity("card", card.card.stable_id()))
             .or_default()
             .insert(card.card.stable_id());
-        // Display names are neither identity nor instance grouping keys.
-        let key = (
-            card.card.stable_id(),
-            card.upgrades,
-            card.misc_value,
-            card.base_damage_override,
-            card.base_block_override,
-            card.cost_modifier,
-            card.bottled_by.map(|relic| relic.stable_id()),
-        );
-        counts.entry(key).or_insert((0, card)).0 += 1;
     }
-    let mut groups = counts.values().collect::<Vec<_>>();
-    // Keep a stable order across locales; sorting never merges identities.
-    groups.sort_by_key(|(_, card)| {
-        (
-            gameplay_display_label_v1(card.card),
-            card.card.stable_id(),
-            card.upgrades,
-        )
-    });
+    let groups = inventory_card_groups_v1(&cards);
     let mut card_readings = Vec::new();
-    for &&(count, card) in &groups {
+    for &(count, card) in &groups {
         let id = card.card;
         let upgrades = card.upgrades;
         let start = output.len();
@@ -523,7 +503,7 @@ pub(crate) fn inventory_reading_decision_v1(
             &mut links,
             groups
                 .iter()
-                .map(|&&(count, card)| (card.card, card.upgrades, card.cost_modifier, count)),
+                .map(|&(count, card)| (card.card, card.upgrades, card.cost_modifier, count)),
         );
         if !links.is_empty() {
             if locale != Locale::En {
@@ -593,6 +573,35 @@ pub(crate) fn inventory_reading_decision_v1(
         cards: card_readings,
         relics: relic_readings,
     })
+}
+
+/// Permanent instances group by identity and all public instance modifiers.
+/// The result and its order do not depend on translated display names.
+pub(crate) fn inventory_card_groups_v1(
+    cards: &[TaskStrategicCardV1],
+) -> Vec<(usize, TaskStrategicCardV1)> {
+    let mut counts = BTreeMap::new();
+    for &card in cards {
+        let key = (
+            card.card.stable_id(),
+            card.upgrades,
+            card.misc_value,
+            card.base_damage_override,
+            card.base_block_override,
+            card.cost_modifier,
+            card.bottled_by.map(|relic| relic.stable_id()),
+        );
+        counts.entry(key).or_insert((0, card)).0 += 1;
+    }
+    let mut groups = counts.into_values().collect::<Vec<_>>();
+    groups.sort_by_key(|(_, card)| {
+        (
+            gameplay_display_label_v1(card.card),
+            card.card.stable_id(),
+            card.upgrades,
+        )
+    });
+    groups
 }
 
 fn inventory_card_label_v1(card: &TaskStrategicCardV1, locale: Locale) -> String {
@@ -1032,12 +1041,12 @@ pub(crate) fn preview_deck_change_v1(
     let mut changes = BTreeMap::<String, i32>::new();
     for card in &before.cards {
         *changes
-            .entry(crate::decision::deck_card_label(card))
+            .entry(crate::decision::deck_card_label(card, Locale::En))
             .or_default() -= 1;
     }
     for card in &after.cards {
         *changes
-            .entry(crate::decision::deck_card_label(card))
+            .entry(crate::decision::deck_card_label(card, Locale::En))
             .or_default() += 1;
     }
     let changes = changes

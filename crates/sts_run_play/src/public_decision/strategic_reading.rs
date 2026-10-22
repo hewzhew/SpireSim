@@ -52,7 +52,7 @@ pub(super) fn project(decision: &TaskPublicDecisionV1) -> Result<Value, String> 
             format!("Card selection · {reason:?} · choose {min_choices}..{max_choices}; expand candidates for eligible cards"),
         PlannerDecisionContext::Treasure => "Treasure".into(),
         PlannerDecisionContext::RunTransition { stage } => {
-            crate::decision::run_transition_label_v1(*stage).into()
+            crate::decision::run_transition_label_v1(*stage, sts_presentation::Locale::En).into()
         }
     };
     let candidates = decision.candidates.iter()

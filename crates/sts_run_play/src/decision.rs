@@ -25,19 +25,27 @@ pub(crate) mod combat;
 pub(crate) mod preparation;
 mod smith;
 
+fn text(locale: Locale, key: &str, parameters: &[(&str, &str)]) -> String {
+    locale
+        .text("decision", key, parameters)
+        .expect("decision presentation message")
+}
+
 #[cfg(test)]
 #[path = "decision/presentation_tests.rs"]
 mod presentation_tests;
 
 pub(crate) fn run_transition_label_v1(
     stage: sts_oracle_learning::ai::planner_core::PlannerRunTransitionV1,
+    locale: Locale,
 ) -> &'static str {
     use sts_oracle_learning::ai::planner_core::PlannerRunTransitionV1;
-    match stage {
-        PlannerRunTransitionV1::SecondBoss => "Continue to second boss",
-        PlannerRunTransitionV1::FinalAct => "Continue to Act 4",
-        PlannerRunTransitionV1::VictoryScreen => "Continue to victory screen",
-    }
+    let key = match stage {
+        PlannerRunTransitionV1::SecondBoss => "transition.secondBoss",
+        PlannerRunTransitionV1::FinalAct => "transition.finalAct",
+        PlannerRunTransitionV1::VictoryScreen => "transition.victory",
+    };
+    locale.entry("decision", key).expect("transition message")
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize)]
@@ -184,7 +192,10 @@ pub(crate) fn read_decision(
     locale: Locale,
 ) -> Result<RunPlayDecisionReadingV1, String> {
     if let RunPlayPositionV1::Terminal { outcome, .. } = &head.position {
-        let summary = format!("Terminal | {outcome:?}\n");
+        let summary = format!(
+            "{}\n",
+            text(locale, "terminal", &[("outcome", &format!("{outcome:?}"))])
+        );
         return Ok(RunPlayDecisionReadingV1 {
             control: DecisionControlV1::Terminal,
             view: summary.clone(),
@@ -292,7 +303,7 @@ fn read_public_decision_v1(
     for (ordinal, candidate) in decision.candidates.iter().enumerate() {
         if let Some(family) = project_run_selection_family_v1(&decision, candidate)? {
             result.selections.push(DecisionSelectionV1 {
-                label: run_selection_label(family.reason)?.into(),
+                label: run_selection_label(family.reason, locale)?.into(),
                 choice: TaskPublicChoiceV1::one(ordinal),
                 min: family.min_choices as u64,
                 max: family.max_choices as u64,
@@ -310,11 +321,11 @@ fn read_public_decision_v1(
                             {
                                 format!(
                                     "{} | {}",
-                                    run_selection_card_label(card, observation),
+                                    run_selection_card_label(card, observation, locale),
                                     smith::changes_for(*card)?
                                 )
                             } else {
-                                run_selection_card_label(card, observation)
+                                run_selection_card_label(card, observation, locale)
                             },
                         })
                     })
@@ -434,9 +445,9 @@ fn read_public_decision_v1(
     let context = match &observation.context {
         PlannerDecisionContext::Map { overlay } => {
             let mut label = if *overlay {
-                "Map overlay · choose next room, or cancel to return to the room screen".to_string()
+                text(locale, "context.mapOverlay", &[])
             } else {
-                "Map · choose next room".to_string()
+                text(locale, "context.map", &[])
             };
             let map = &observation.public_map;
             if let Some(node) = map
@@ -444,61 +455,106 @@ fn read_public_decision_v1(
                 .iter()
                 .find(|node| node.x == map.current_x && node.y == map.current_y)
             {
-                write!(
-                    label,
-                    " · {} node ({},{}) {}",
-                    if *overlay { "current" } else { "completed" },
-                    node.x,
-                    node.y,
-                    room_label(node.room)
-                )
-                .unwrap();
+                label.push_str(&text(
+                    locale,
+                    if *overlay {
+                        "context.currentNode"
+                    } else {
+                        "context.completedNode"
+                    },
+                    &[
+                        ("x", &node.x.to_string()),
+                        ("y", &node.y.to_string()),
+                        ("room", room_label(node.room, locale)),
+                    ],
+                ));
             }
             label
         }
-        PlannerDecisionContext::CardReward { .. } => "Card reward".into(),
-        PlannerDecisionContext::Shop { .. } => "Shop".into(),
+        PlannerDecisionContext::CardReward { .. } => text(locale, "context.cardReward", &[]),
+        PlannerDecisionContext::Shop { .. } => text(locale, "context.shop", &[]),
         PlannerDecisionContext::Reward { pending_rewards } if pending_rewards.is_empty() => {
-            "Rewards complete".into()
+            text(locale, "context.rewardsComplete", &[])
         }
-        PlannerDecisionContext::Reward { pending_rewards } => {
-            format!("Rewards ({} remaining)", pending_rewards.len())
-        }
-        PlannerDecisionContext::Campfire => "Campfire".into(),
-        PlannerDecisionContext::BossRelic => "Boss relic".into(),
-        PlannerDecisionContext::RunChoice { reason, source, .. } => format!(
-            "Card selection · {reason:?}{}",
-            source.map_or_else(String::new, |source| format!(" · source: {source:?}"))
+        PlannerDecisionContext::Reward { pending_rewards } => text(
+            locale,
+            "context.rewards",
+            &[("count", &pending_rewards.len().to_string())],
         ),
-        PlannerDecisionContext::Treasure => "Treasure".into(),
-        PlannerDecisionContext::RunTransition { stage } => run_transition_label_v1(*stage).into(),
-        PlannerDecisionContext::Event { event, screen, .. } => format!(
-            "{} | Event screen {screen}",
-            gameplay_display_label_v1(*event)
+        PlannerDecisionContext::Campfire => text(locale, "context.campfire", &[]),
+        PlannerDecisionContext::BossRelic => text(locale, "context.bossRelic", &[]),
+        PlannerDecisionContext::RunChoice { reason, source, .. } => text(
+            locale,
+            "context.cardSelection",
+            &[
+                ("reason", run_selection_label(*reason, locale)?),
+                (
+                    "source",
+                    &source.map_or_else(String::new, |source| {
+                        text(
+                            locale,
+                            "context.selectionSource",
+                            &[("source", &format!("{source:?}"))],
+                        )
+                    }),
+                ),
+            ],
+        ),
+        PlannerDecisionContext::Treasure => text(locale, "context.treasure", &[]),
+        PlannerDecisionContext::RunTransition { stage } => {
+            run_transition_label_v1(*stage, locale).into()
+        }
+        PlannerDecisionContext::Event { event, screen, .. } => text(
+            locale,
+            "context.event",
+            &[
+                (
+                    "event",
+                    locale
+                        .entry("game", &format!("event.{}", event.stable_id()))
+                        .unwrap_or_else(|| gameplay_display_label_v1(*event)),
+                ),
+                ("screen", &screen.to_string()),
+            ],
         ),
     };
-    result.summary = format!(
-        "Act {} F{} | HP {}/{} | Gold {} | {context}\n",
-        run.act, run.floor, run.current_hp, run.max_hp, run.gold
-    );
+    let header = |key| {
+        text(
+            locale,
+            key,
+            &[
+                ("act", &run.act.to_string()),
+                ("floor", &run.floor.to_string()),
+                ("hp", &run.current_hp.to_string()),
+                ("maxHp", &run.max_hp.to_string()),
+                ("gold", &run.gold.to_string()),
+                ("context", &context),
+                ("ascension", &run.ascension_level.to_string()),
+                (
+                    "energy",
+                    &crate::agent_protocol::public_base_energy_per_turn_v1(&observation.relics)
+                        .to_string(),
+                ),
+            ],
+        )
+    };
+    result.summary = format!("{}\n", header("summary"));
     if brief {
         out.push_str(&result.summary);
         if !show_build_resources {
-            writeln!(out, "Deck: {} cards", observation.cards.len()).unwrap();
+            writeln!(
+                out,
+                "{}",
+                text(
+                    locale,
+                    "deckCount",
+                    &[("count", &observation.cards.len().to_string())]
+                )
+            )
+            .unwrap();
         }
     } else {
-        writeln!(
-            out,
-            "Act {} F{} | A{} | HP {}/{} | Gold {} | Base energy/turn {} | {context}",
-            run.act,
-            run.floor,
-            run.ascension_level,
-            run.current_hp,
-            run.max_hp,
-            run.gold,
-            crate::agent_protocol::public_base_energy_per_turn_v1(&observation.relics)
-        )
-        .unwrap();
+        writeln!(out, "{}", header("fullSummary")).unwrap();
     }
     if brief && heart_goal && run.act == 3 {
         let key_choice = matches!(
@@ -509,13 +565,18 @@ fn read_public_decision_v1(
         ) || matches!(&observation.context, PlannerDecisionContext::Reward { pending_rewards }
                 if pending_rewards.iter().any(|reward| matches!(reward,
                     PlannerRewardDescriptor::SapphireKey | PlannerRewardDescriptor::EmeraldKey)));
-        let missing = ["Ruby", "Sapphire", "Emerald"]
+        let missing = ["ruby", "sapphire", "emerald"]
             .into_iter()
             .zip(run.keys)
-            .filter_map(|(name, held)| (!held).then_some(name))
+            .filter_map(|(name, held)| (!held).then(|| text(locale, &format!("keys.{name}"), &[])))
             .collect::<Vec<_>>();
         if key_choice && !missing.is_empty() {
-            writeln!(out, "Heart keys still needed: {}", missing.join(", ")).unwrap();
+            writeln!(
+                out,
+                "{}",
+                text(locale, "keys.stillNeeded", &[("keys", &missing.join(", "))])
+            )
+            .unwrap();
             let routes = result
                 .options
                 .iter()
@@ -535,11 +596,7 @@ fn read_public_decision_v1(
                     node.room == sts_oracle_learning::ai::planner_core::PlannerMapRoom::Boss
                 })
             {
-                writeln!(
-                    out,
-                    "Without all three keys, these Act 3 bosses end the run before Act 4."
-                )
-                .unwrap();
+                writeln!(out, "{}", text(locale, "keys.act3Exit", &[])).unwrap();
             }
         }
     }
@@ -548,8 +605,12 @@ fn read_public_decision_v1(
     }) {
         writeln!(
             out,
-            "Gold gains: prevented by {}. Held Gold remains spendable; Gold costs still apply.",
-            gameplay_display_label_v1(relic.relic)
+            "{}",
+            text(
+                locale,
+                "goldBlocked",
+                &[("relic", locale.entity("relic", relic.relic.stable_id()))]
+            )
         )
         .unwrap();
     }
@@ -561,66 +622,117 @@ fn read_public_decision_v1(
     {
         if let Some(scene) = crate::event_scene::current_scene(*event, *screen, *face_trader_result)
         {
-            writeln!(out, "Scene: {scene}").unwrap();
+            writeln!(
+                out,
+                "{}",
+                text(locale, "sceneEnglish", &[("scene", &scene)])
+            )
+            .unwrap();
         }
     }
     if (repeat_deck && !brief) || show_build_resources {
-        let mut deck = BTreeMap::<String, usize>::new();
+        let mut names = BTreeMap::<_, BTreeSet<_>>::new();
         for card in &observation.cards {
-            *deck.entry(deck_card_label(card)).or_default() += 1;
+            names
+                .entry(locale.entity("card", card.card.stable_id()))
+                .or_default()
+                .insert(card.card.stable_id());
         }
+        let deck = crate::compact::inventory_card_groups_v1(&observation.cards);
         writeln!(
             out,
-            "Deck: {} cards | {}",
-            observation.cards.len(),
-            deck.into_iter()
-                .map(|(card, count)| {
-                    if count == 1 {
-                        card
-                    } else {
-                        format!("{count}x {card}")
-                    }
-                })
-                .collect::<Vec<_>>()
-                .join(", ")
+            "{}",
+            text(
+                locale,
+                "deck",
+                &[
+                    ("count", &observation.cards.len().to_string()),
+                    (
+                        "cards",
+                        &deck
+                            .into_iter()
+                            .map(|(count, card)| {
+                                let mut label = deck_card_label(&card, locale);
+                                if names[locale.entity("card", card.card.stable_id())].len() > 1 {
+                                    write!(label, " [{}]", card.card.stable_id()).unwrap();
+                                }
+                                if count == 1 {
+                                    label
+                                } else {
+                                    format!("{count}x {label}")
+                                }
+                            })
+                            .collect::<Vec<_>>()
+                            .join(", ")
+                    )
+                ]
+            )
         )
         .unwrap();
     }
     if (repeat_relics && !brief) || show_build_resources {
         writeln!(
             out,
-            "Relics: {}",
-            observation
-                .relics
-                .iter()
-                .map(|r| crate::compact::relic_label_v1(r.relic, r.counter, r.used_up, locale))
-                .collect::<Vec<_>>()
-                .join(", ")
+            "{}",
+            text(
+                locale,
+                "relics",
+                &[(
+                    "relics",
+                    &observation
+                        .relics
+                        .iter()
+                        .map(|r| crate::compact::relic_label_v1(
+                            r.relic, r.counter, r.used_up, locale
+                        ))
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                )]
+            )
         )
         .unwrap();
     }
     if repeat_potions || brief {
         writeln!(
             out,
-            "Potions: {}",
-            observation
-                .potions
-                .iter()
-                .map(|slot| format!(
-                    "P{} {}",
-                    slot.slot,
-                    slot.potion.map_or_else(
-                        || "empty".to_owned(),
-                        |p| gameplay_display_label_v1(p.potion).to_string()
-                    )
-                ))
-                .collect::<Vec<_>>()
-                .join(", ")
+            "{}",
+            text(
+                locale,
+                "potions",
+                &[(
+                    "potions",
+                    &observation
+                        .potions
+                        .iter()
+                        .map(|slot| format!(
+                            "P{} {}",
+                            slot.slot,
+                            slot.potion.map_or_else(
+                                || text(locale, "empty", &[]),
+                                |p| locale.entity("potion", p.potion.stable_id()).to_string()
+                            )
+                        ))
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                )]
+            )
         )
         .unwrap();
     }
     if potion_choice {
-        writeln!(out, "Potion choice: {potion_rewards} rewards, {free_potion_slots} empty slots. Choose rewards to claim or use a held potion/discard command below to free a slot.").unwrap();
+        writeln!(
+            out,
+            "{}",
+            text(
+                locale,
+                "potionChoice",
+                &[
+                    ("rewards", &potion_rewards.to_string()),
+                    ("slots", &free_potion_slots.to_string())
+                ]
+            )
+        )
+        .unwrap();
     }
     if potion_rewards > 0
         && observation
@@ -628,21 +740,28 @@ fn read_public_decision_v1(
             .iter()
             .any(|relic| relic.relic == sts_oracle_learning::content::relics::RelicId::Sozu)
     {
-        writeln!(out, "Sozu prevents obtaining potions. Claiming a potion reward clears it and keeps the held inventory unchanged.").unwrap();
+        writeln!(out, "{}", text(locale, "sozuReward", &[])).unwrap();
     }
     let reused: Vec<_> = [
-        ("Deck", repeat_deck),
-        ("Relics", repeat_relics),
-        ("Potions", repeat_potions),
+        ("deck", repeat_deck),
+        ("relics", repeat_relics),
+        ("potions", repeat_potions),
     ]
     .into_iter()
-    .filter_map(|(name, repeated)| (!repeated).then_some(name))
+    .filter_map(|(name, repeated)| {
+        (!repeated).then(|| text(locale, &format!("resource.{name}"), &[]))
+    })
     .collect();
     if !reused.is_empty() && !brief {
-        writeln!(out, "Unchanged: {}", reused.join(", ")).unwrap();
+        writeln!(
+            out,
+            "{}",
+            text(locale, "unchanged", &[("resources", &reused.join(", "))])
+        )
+        .unwrap();
     }
     if !brief {
-        crate::mechanics_info::write_key_status(out, run.keys, heart_goal);
+        crate::mechanics_info::write_key_status(out, run.keys, heart_goal, locale);
     }
     let bound = result.source.is_some();
     let shop_choices = if let PlannerDecisionContext::Shop { inventory, .. } = &observation.context
@@ -801,7 +920,7 @@ fn read_public_decision_v1(
         }
     }
     if !brief {
-        crate::mechanics_info::write_preparation_window(out, observation);
+        crate::mechanics_info::write_preparation_window(out, observation, locale);
     }
     if !brief && heart_goal && run.keys.contains(&false) {
         writeln!(out, "{}", crate::mechanics_info::KEY_COLLECTION_TIMING).unwrap();
@@ -838,7 +957,7 @@ fn read_public_decision_v1(
                 "({},{}) {}{} -> {}",
                 node.x,
                 node.y,
-                room_label(node.room),
+                room_label(node.room, locale),
                 if node.has_emerald_key {
                     " + Emerald Key"
                 } else {
@@ -856,22 +975,58 @@ fn read_public_decision_v1(
     Ok(result)
 }
 
-pub(crate) fn deck_card_label(card: &TaskStrategicCardV1) -> String {
-    let mut label = format_card(card.card, card.upgrades);
+pub(crate) fn deck_card_label(card: &TaskStrategicCardV1, locale: Locale) -> String {
+    let mut label = locale.card_name(card.card.stable_id(), card.upgrades);
     if card.misc_value != 0 {
-        write!(label, " (misc {})", card.misc_value).unwrap();
+        write!(
+            label,
+            " ({})",
+            locale
+                .text(
+                    "inventory",
+                    "misc",
+                    &[("amount", &card.misc_value.to_string())]
+                )
+                .unwrap()
+        )
+        .unwrap();
     }
     if card.cost_modifier != 0 {
-        write!(label, " (cost {:+})", card.cost_modifier).unwrap();
+        write!(
+            label,
+            " ({})",
+            locale
+                .text(
+                    "inventory",
+                    "cost",
+                    &[("amount", &format!("{:+}", card.cost_modifier))]
+                )
+                .unwrap()
+        )
+        .unwrap();
     }
     if let Some(damage) = card.base_damage_override {
-        write!(label, " (damage {damage})").unwrap();
+        write!(
+            label,
+            " ({})",
+            locale
+                .text("inventory", "damage", &[("amount", &damage.to_string())])
+                .unwrap()
+        )
+        .unwrap();
     }
     if let Some(block) = card.base_block_override {
-        write!(label, " (block {block})").unwrap();
+        write!(
+            label,
+            " ({})",
+            locale
+                .text("inventory", "block", &[("amount", &block.to_string())])
+                .unwrap()
+        )
+        .unwrap();
     }
     if let Some(relic) = card.bottled_by {
-        write!(label, " [{}]", gameplay_display_label_v1(relic)).unwrap();
+        write!(label, " [{}]", locale.entity("relic", relic.stable_id())).unwrap();
     }
     label
 }
@@ -879,29 +1034,36 @@ pub(crate) fn deck_card_label(card: &TaskStrategicCardV1) -> String {
 fn run_selection_card_label(
     card: &TaskStrategicCardV1,
     observation: &TaskStrategicObservationV1,
+    locale: Locale,
 ) -> String {
     let reward = crate::render::run_selection_reward_label_v1(observation, card.card)
         .map_or_else(String::new, |label| format!(" | {label}"));
-    format!("{}{reward}", deck_card_label(card))
+    format!("{}{reward}", deck_card_label(card, locale))
 }
 
 fn run_selection_label(
     reason: sts_oracle_learning::state::selection::SelectionReason,
+    locale: Locale,
 ) -> Result<&'static str, String> {
     use sts_oracle_learning::state::selection::SelectionReason::*;
-    match reason {
-        Upgrade => Ok("Upgrade from deck"),
-        Purge => Ok("Remove from deck"),
-        Transform => Ok("Transform from deck"),
-        TransformUpgraded => Ok("Transform and upgrade"),
-        Duplicate => Ok("Duplicate from deck"),
-        BottleFlame => Ok("Bottle an attack"),
-        BottleLightning => Ok("Bottle a skill"),
-        BottleTornado => Ok("Bottle a power"),
-        _ => Err(format!(
-            "Unexpected master-deck selection reason: {reason:?}"
-        )),
-    }
+    let key = match reason {
+        Upgrade => "upgrade",
+        Purge => "purge",
+        Transform => "transform",
+        TransformUpgraded => "transformUpgraded",
+        Duplicate => "duplicate",
+        BottleFlame => "bottleAttack",
+        BottleLightning => "bottleSkill",
+        BottleTornado => "bottlePower",
+        _ => {
+            return Err(format!(
+                "Unexpected master-deck selection reason: {reason:?}"
+            ))
+        }
+    };
+    Ok(locale
+        .entry("decision", &format!("deckSelection.{key}"))
+        .expect("deck selection reason"))
 }
 
 /// Commands are projections of typed choices. Presentation never resolves a
@@ -1101,7 +1263,7 @@ fn option_label(
             action: TaskStrategicActionV1::Smith { card_ordinal, .. },
         } => {
             let card = project_deck_cards_v1(&observation.cards, &[*card_ordinal])?[0];
-            format!("Upgrade one {}", deck_card_label(&card))
+            format!("Upgrade one {}", deck_card_label(&card, Locale::En))
         }
         TaskPublicCandidateV1::Strategic {
             action:
@@ -1123,7 +1285,7 @@ fn option_label(
                 cards
                     .iter()
                     .map(|card| {
-                        let label = run_selection_card_label(card, observation);
+                        let label = run_selection_card_label(card, observation, Locale::En);
                         if upgrading {
                             Ok(format!("{label} | {}", smith::changes_for(*card)?))
                         } else {
@@ -1180,7 +1342,7 @@ fn route_option_label(
         .nodes
         .iter()
         .find(|n| n.x == x && n.y == y)
-        .map_or("Unknown", |n| room_label(n.room));
+        .map_or("Unknown", |n| room_label(n.room, Locale::En));
     format!(
         "Go ({x},{y}) {room}{}{}",
         if flight { " using Wing Boots" } else { "" },
@@ -1604,15 +1766,18 @@ pub(crate) fn purchase_suffix(status: &PlannerShopPurchaseStatusV1) -> String {
     format!(" ({reason})")
 }
 
-fn room_label(room: PlannerMapRoom) -> &'static str {
-    match room {
-        PlannerMapRoom::Monster => "Monster",
-        PlannerMapRoom::QuestionMark => "?",
-        PlannerMapRoom::Elite => "Elite",
-        PlannerMapRoom::Rest => "Campfire",
-        PlannerMapRoom::Shop => "Shop",
-        PlannerMapRoom::Treasure => "Treasure",
-        PlannerMapRoom::Boss => "Boss",
-        PlannerMapRoom::Victory => "Victory",
-    }
+fn room_label(room: PlannerMapRoom, locale: Locale) -> &'static str {
+    let key = match room {
+        PlannerMapRoom::Monster => "monster",
+        PlannerMapRoom::QuestionMark => "questionMark",
+        PlannerMapRoom::Elite => "elite",
+        PlannerMapRoom::Rest => "rest",
+        PlannerMapRoom::Shop => "shop",
+        PlannerMapRoom::Treasure => "treasure",
+        PlannerMapRoom::Boss => "boss",
+        PlannerMapRoom::Victory => "victory",
+    };
+    locale
+        .entry("decision", &format!("room.{key}"))
+        .expect("room label")
 }

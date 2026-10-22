@@ -30,34 +30,51 @@ pub(crate) const KEY_COLLECTION_TIMING: &str = "Heart access requires all three 
 pub(crate) const EMERALD_KEY_REWARD_RELATIONSHIP: &str =
     "The Emerald Key and the elite's other rewards can all be claimed.";
 
-pub(crate) fn write_key_status(out: &mut String, keys: [bool; 3], show_missing: bool) {
-    let held: Vec<_> = ["Ruby", "Sapphire", "Emerald"]
+pub(crate) fn write_key_status(
+    out: &mut String,
+    keys: [bool; 3],
+    show_missing: bool,
+    locale: Locale,
+) {
+    let message = |key: &str, parameters: &[(&str, &str)]| {
+        locale
+            .text("decision", key, parameters)
+            .expect("key status message")
+    };
+    let held: Vec<_> = ["ruby", "sapphire", "emerald"]
         .into_iter()
         .zip(keys)
-        .filter_map(|(name, held)| held.then_some(name))
+        .filter_map(|(name, held)| held.then(|| message(&format!("keys.{name}"), &[])))
         .collect();
     writeln!(
         out,
-        "Keys: {}",
-        if held.is_empty() {
-            "none".into()
-        } else {
-            held.join(", ")
-        }
+        "{}",
+        message(
+            "keys.held",
+            &[(
+                "keys",
+                &if held.is_empty() {
+                    message("none", &[])
+                } else {
+                    held.join(", ")
+                }
+            )]
+        )
     )
     .unwrap();
     if show_missing {
-        let missing: Vec<_> = [
-            "Ruby: Recall at campfire",
-            "Sapphire: chest key instead of linked relic",
-            "Emerald: burning elite key reward",
-        ]
-        .into_iter()
-        .zip(keys)
-        .filter_map(|(source, held)| (!held).then_some(source))
-        .collect();
+        let missing: Vec<_> = ["rubySource", "sapphireSource", "emeraldSource"]
+            .into_iter()
+            .zip(keys)
+            .filter_map(|(source, held)| (!held).then(|| message(&format!("keys.{source}"), &[])))
+            .collect();
         if !missing.is_empty() {
-            writeln!(out, "Missing keys: {}", missing.join("; ")).unwrap();
+            writeln!(
+                out,
+                "{}",
+                message("keys.missing", &[("keys", &missing.join("; "))])
+            )
+            .unwrap();
         }
     }
 }
@@ -69,25 +86,61 @@ pub(crate) const SHOP_REMOVAL_RULES: &str = "Shop card removal: each shop permit
 pub(crate) fn write_preparation_window(
     out: &mut String,
     observation: &sts_oracle_learning::agent::task::TaskStrategicObservationV1,
+    locale: Locale,
 ) {
     use sts_oracle_learning::ai::planner_core::{PlannerDecisionContext, PlannerRunTransitionV1};
     let run = &observation.run;
+    let message = |key, parameters: &[(&str, &str)]| {
+        locale
+            .text("decision", key, parameters)
+            .expect("preparation window message")
+    };
     if let Some(next_act) = run.pending_act_entry {
         if let Some(boss) = observation.public_map.boss {
-            writeln!(out, "Completed Act {} Boss: {}", run.act, label(boss)).unwrap();
+            writeln!(
+                out,
+                "{}",
+                message(
+                    "preparation.completedBoss",
+                    &[
+                        ("act", &run.act.to_string()),
+                        ("boss", locale.entity("encounter", boss.stable_id()))
+                    ]
+                )
+            )
+            .unwrap();
         }
         let entry_hp = sts_oracle_learning::state::run::RunState::dungeon_transition_hp(
             run.current_hp,
             run.max_hp,
             run.ascension_level,
         );
-        writeln!(out, "Preparation window: finish these rewards and selections, then enter Act {next_act}. With HP and Max HP unchanged until entry, transition recovery gives {entry_hp}/{} HP. Evaluate additions for the upcoming Act.", run.max_hp).unwrap();
+        writeln!(
+            out,
+            "{}",
+            message(
+                "preparation.entry",
+                &[
+                    ("act", &next_act.to_string()),
+                    ("hp", &entry_hp.to_string()),
+                    ("maxHp", &run.max_hp.to_string())
+                ]
+            )
+        )
+        .unwrap();
         if next_act <= 3 {
-            writeln!(out, "Upcoming map and Boss: Unknown until Act entry.").unwrap();
+            writeln!(out, "{}", message("preparation.unknownMap", &[])).unwrap();
         } else {
             writeln!(
                 out,
-                "Upcoming Act 4: fixed Rest site, Shop, ShieldAndSpear, then TheHeart."
+                "{}",
+                message(
+                    "preparation.act4",
+                    &[
+                        ("elites", locale.entity("encounter", "ShieldAndSpear")),
+                        ("heart", locale.entity("encounter", "TheHeart"))
+                    ]
+                )
             )
             .unwrap();
         }
@@ -97,9 +150,17 @@ pub(crate) fn write_preparation_window(
             stage: PlannerRunTransitionV1::SecondBoss
         }
     ) {
-        writeln!(out, "Preparation window: first Act 3 Boss completed; the second Boss is next in this Act. Current HP carries into that fight. Act-entry recovery occurs when entering a new Act.").unwrap();
+        writeln!(out, "{}", message("preparation.secondBoss", &[])).unwrap();
     } else if let Some(boss) = observation.public_map.boss {
-        writeln!(out, "Boss: {}", label(boss)).unwrap();
+        writeln!(
+            out,
+            "{}",
+            message(
+                "preparation.boss",
+                &[("boss", locale.entity("encounter", boss.stable_id()))]
+            )
+        )
+        .unwrap();
     }
 }
 
@@ -453,7 +514,7 @@ fn render_query(
             goal == Some(sts_oracle_learning::ai::planner_core::PlannerRunGoal::HeartVictory);
         let public_run = current_observation.and_then(|observation| match observation {
             TaskPublicObservationV1::Strategic { observation } => {
-                write_preparation_window(&mut out, observation);
+                write_preparation_window(&mut out, observation, locale);
                 Some(match observation.run.pending_act_entry {
                     Some(act) => (act, None),
                     None if matches!(observation.context, sts_oracle_learning::ai::planner_core::PlannerDecisionContext::RunTransition { .. }) => (observation.run.act, None),
@@ -535,7 +596,7 @@ fn render_query(
         if heart_goal {
             if let Some(keys) = run_keys {
                 out.push('\n');
-                write_key_status(&mut out, keys, true);
+                write_key_status(&mut out, keys, true, locale);
                 if keys.contains(&false) {
                     writeln!(out, "{KEY_COLLECTION_TIMING}").unwrap();
                 }
@@ -606,7 +667,7 @@ fn render_query(
     match lower.replace([' ', '_', '-'], "").as_str() {
         "keys" => {
             if let Some(keys) = run_keys {
-                write_key_status(&mut out, keys, true);
+                write_key_status(&mut out, keys, true, locale);
             } else if current_observation.is_some() {
                 out.push_str("Current key status unavailable: this detached combat has no run context.\n");
             }

@@ -74,11 +74,12 @@ pub(crate) fn reading(
         locale,
     )?;
     let mut overview = rendered.summary.clone();
-    crate::mechanics_info::write_preparation_window(&mut overview, observation);
+    crate::mechanics_info::write_preparation_window(&mut overview, observation, locale);
     crate::mechanics_info::write_key_status(
         &mut overview,
         observation.run.keys,
         observation.run_goal == sts_oracle_learning::ai::planner_core::PlannerRunGoal::HeartVictory,
+        locale,
     );
     let mut selections = String::new();
     super::render_selections(

@@ -2258,7 +2258,7 @@ fn map_reading_distinguishes_room_actions_completed_nodes_and_overlays() {
     let mut game = controller_with_session(&dir.0, "map-room-stage", &session);
 
     let entrance = game.decision_reading_v1(&[], None, Locale::En).unwrap();
-    assert!(entrance.view.contains("| Map · choose next room"));
+    assert!(entrance.view.contains("| Map | choose next room"));
     assert!(!entrance.view.contains("completed node"));
     assert!(!entrance.view.contains("current node"));
     game.choose_bound_v1(&pick(&entrance, |action| {
@@ -2289,7 +2289,7 @@ fn map_reading_distinguishes_room_actions_completed_nodes_and_overlays() {
     let overlay = overlay_game
         .decision_reading_v1(&[], None, Locale::En)
         .unwrap();
-    assert!(overlay.view.contains("| Map overlay · choose next room, or cancel to return to the room screen · current node (0,0) Campfire"));
+    assert!(overlay.view.contains("| Map | choose next room, or cancel to return to the room screen | current node (0,0) Campfire"));
     assert!(!overlay.view.contains("completed node"));
     overlay_game
         .choose_bound_v1(&pick(&overlay, |action| {
@@ -2314,7 +2314,7 @@ fn map_reading_distinguishes_room_actions_completed_nodes_and_overlays() {
     let completed = game.decision_reading_v1(&[], None, Locale::En).unwrap();
     assert!(completed
         .view
-        .contains("| Map · choose next room · completed node (0,0) Campfire"));
+        .contains("| Map | choose next room | completed node (0,0) Campfire"));
     assert!(completed.options.iter().any(|option| matches!(
         option.candidate,
         TaskPublicCandidateV1::Strategic {

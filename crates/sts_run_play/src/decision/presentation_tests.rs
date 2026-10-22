@@ -3,6 +3,143 @@ use crate::decision_tests::{controller_with_session, fixture, TestDirectory};
 use sts_presentation::Locale;
 
 #[test]
+fn strategic_locales_preserve_public_choices_and_share_preparation_overviews() {
+    for kind in [
+        "reward",
+        "route",
+        "shop_twins",
+        "full_reward",
+        "empty_cage",
+        "bottled_flame",
+    ] {
+        let dir = TestDirectory::new();
+        let mut game = controller_with_session(&dir.0, kind, &fixture(kind));
+        let before = game.head().clone();
+        let details = [DecisionDetailV1::Brief, DecisionDetailV1::State];
+        let en = game
+            .decision_reading_v1(&details, None, Locale::En)
+            .unwrap();
+        let zh = game
+            .decision_reading_v1(&details, None, Locale::ZhCn)
+            .unwrap();
+        let full = game.decision_reading_v1(&[], None, Locale::ZhCn).unwrap();
+        let public = en.state.as_ref().unwrap();
+        let preview = read_preview_decision_v1(public, None, Locale::ZhCn).unwrap();
+        let prepared = preparation::reading(public, Locale::ZhCn).unwrap().unwrap();
+        assert_eq!(en.state, zh.state);
+        assert_eq!(en.source, zh.source);
+        assert_ne!(en.summary, zh.summary);
+        assert!(zh.summary.starts_with("第 "), "{kind}: {}", zh.summary);
+        assert_eq!(zh.summary, full.summary);
+        assert_eq!(zh.summary, preview.summary);
+        assert!(prepared.overview.starts_with(&zh.summary));
+        assert!(prepared.overview.contains("钥匙："));
+        assert!(zh.view.contains("药水："));
+        let choices = |reading: &RunPlayDecisionReadingV1| {
+            reading
+                .options
+                .iter()
+                .map(|option| (option.choice.clone(), option.candidate.clone()))
+                .collect::<Vec<_>>()
+        };
+        assert_eq!(choices(&en), choices(&zh));
+        assert_eq!(
+            en.selections
+                .iter()
+                .map(|s| (&s.choice, s.min, s.max, s.members.len()))
+                .collect::<Vec<_>>(),
+            zh.selections
+                .iter()
+                .map(|s| (&s.choice, s.min, s.max, s.members.len()))
+                .collect::<Vec<_>>()
+        );
+        assert_eq!(*game.head(), before);
+    }
+}
+
+#[test]
+fn strategic_deck_summary_preserves_identities_and_permanent_modifiers() {
+    use sts_oracle_learning::content::cards::CardId;
+    let dir = TestDirectory::new();
+    let game = controller_with_session(&dir.0, "summary-copies", &fixture("reward"));
+    let mut public = game
+        .head()
+        .current_decision
+        .as_ref()
+        .unwrap()
+        .public_decision_v1()
+        .unwrap();
+    let TaskPublicObservationV1::Strategic { observation } = &mut public.observation else {
+        panic!("strategic fixture")
+    };
+    let mut card = observation.cards[0];
+    card.card = CardId::Strike;
+    card.ordinal = 0;
+    card.upgrades = 0;
+    card.cost_modifier = 0;
+    card.base_damage_override = None;
+    card.base_block_override = None;
+    card.misc_value = 0;
+    card.bottled_by = None;
+    observation.cards = vec![
+        card,
+        TaskStrategicCardV1 { ordinal: 1, ..card },
+        TaskStrategicCardV1 {
+            card: CardId::StrikeG,
+            ordinal: 2,
+            ..card
+        },
+        TaskStrategicCardV1 {
+            ordinal: 3,
+            cost_modifier: -1,
+            ..card
+        },
+    ];
+    let before = public.clone();
+    let reading = read_public_decision_v1(&public, &[], None, None, None, Locale::ZhCn).unwrap();
+    assert!(
+        reading.view.contains("2x 打击 [Strike]"),
+        "{}",
+        reading.view
+    );
+    assert!(reading.view.contains("打击 [StrikeG]"));
+    assert!(reading.view.contains("费用 -1"));
+    assert_eq!(public, before);
+}
+
+#[test]
+fn preparation_window_locales_keep_transition_recovery_and_boss_scope() {
+    let dir = TestDirectory::new();
+    let game = controller_with_session(&dir.0, "entry-locale", &fixture("reward"));
+    let public = game
+        .head()
+        .current_decision
+        .as_ref()
+        .unwrap()
+        .public_decision_v1()
+        .unwrap();
+    let TaskPublicObservationV1::Strategic { mut observation } = public.observation else {
+        panic!("strategic fixture")
+    };
+    observation.run.act = 2;
+    observation.run.current_hp = 10;
+    observation.run.max_hp = 80;
+    observation.run.ascension_level = 20;
+    observation.run.pending_act_entry = Some(3);
+    observation.public_map.boss =
+        Some(sts_oracle_learning::content::monsters::factory::EncounterId::Collector);
+    let mut en = String::new();
+    let mut zh = String::new();
+    crate::mechanics_info::write_preparation_window(&mut en, &observation, Locale::En);
+    crate::mechanics_info::write_preparation_window(&mut zh, &observation, Locale::ZhCn);
+    assert!(en.contains("63/80 HP"), "{en}");
+    assert!(zh.contains("63/80 生命"), "{zh}");
+    assert!(zh.contains("已击败第 2 幕 Boss：收藏家"));
+    assert!(zh.contains("进入该幕时揭晓"));
+    assert!(!zh.contains("Boss：收藏家\nBoss："));
+}
+
+#[test]
 fn combat_locales_share_actual_state_commands_and_sources_across_pending_choices() {
     for kind in [
         "combat_multiturn",
