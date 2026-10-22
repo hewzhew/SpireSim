@@ -31,7 +31,7 @@ export const PREPARATION_SHOP_TOOL_PARAMETERS = defaultInstructions.shopParamete
 
 // The native frame binds rule blocks to actions and entity IDs. Display text is
 // opaque; it never identifies a command, card, relic or section boundary.
-export function preparationReadingSupply(observation, normalize = command => command) {
+export function preparationReadingSupply(observation, normalize = command => command, locale = 'en') {
   const native = observation.preparation_reading;
   if (native?.schema !== 'sts-preparation-reading-v1'
       || !native.public_snapshot_id || native.public_snapshot_id !== observation.position?.public_snapshot_id) {
@@ -52,7 +52,7 @@ export function preparationReadingSupply(observation, normalize = command => com
     } else reading.push(`${command}  |  ${block.label}\n${block.view}`);
   }
   reading.push(...native.stock.filter(row => !row.command).map(row => row.view), native.inventory.view, native.routes);
-  return { reading: shopPotionComparisonReading(native, observation) ?? shopSpendingReading(native, observation, normalize)
+  return { reading: shopPotionComparisonReading(native, observation, locale) ?? shopSpendingReading(native, observation, normalize, locale)
     ?? reading.filter(Boolean).join('\n'),
     relicReadings: Object.fromEntries(native.inventory.relics.map(row => [row.relic, row.view])), candidates };
 }
@@ -304,10 +304,10 @@ export function preparationCandidateGroups(observation, normalize = command => c
 // A reference selects an emphasis, not a claim that its access conditions hold.
 // Fixed mechanics accompany every selection, including a low rating.
 export function preparationConditionBindings(observation, normalize = command => command, locale = 'en') {
-  const potionScope = shopPotionReplacementScope(observation, normalize);
-  if (potionScope) return shopPotionConditionBindings(potionScope);
-  const spendingScope = shopSpendingScope(observation, normalize);
-  if (spendingScope) return shopSpendingConditionBindings(spendingScope);
+  const potionScope = shopPotionReplacementScope(observation, normalize, locale);
+  if (potionScope) return shopPotionConditionBindings(potionScope, locale);
+  const spendingScope = shopSpendingScope(observation, normalize, locale);
+  if (spendingScope) return shopSpendingConditionBindings(spendingScope, locale);
   const specific = [...preparationEnergyBindings(observation, normalize), ...armamentsConditionBindings(observation, normalize),
     ...etherealUpgradeConditionBindings(observation, normalize),
     ...attackUpgradeConditionBindings(observation, normalize),
@@ -789,10 +789,10 @@ function armamentsConditionBindings(observation, normalize) {
 // Expert preferences supply default tradeoffs; shared Rust readings continue
 // to own card effects and legal actions. Classification stays with the player.
 export function preparationClassificationContext(observation, normalize, draft, locale = 'en') {
-  const potionScope = shopPotionReplacementScope(observation, normalize);
-  if (potionScope) return renderShopPotionComparison(potionScope, draft);
-  const spendingScope = shopSpendingScope(observation, normalize);
-  if (spendingScope) return renderShopSpendingComparison(observation, spendingScope, preparationCandidateGroups(observation, normalize), draft);
+  const potionScope = shopPotionReplacementScope(observation, normalize, locale);
+  if (potionScope) return renderShopPotionComparison(potionScope, draft, locale);
+  const spendingScope = shopSpendingScope(observation, normalize, locale);
+  if (spendingScope) return renderShopSpendingComparison(observation, spendingScope, preparationCandidateGroups(observation, normalize), draft, locale);
   const state = observation.position.observation.observation;
   const cards = state.cards ?? [];
   const owns = (id, upgrades) => cards.some(card => card.card === id && card.count > 0
@@ -875,7 +875,7 @@ export function preparationClassificationContext(observation, normalize, draft, 
       ? ['For grouped copies, classify one copy on its command line. The host expands the row to the matching legal commands.'] : []),
     renderDeckComparison(preparationDeckComparison(observation, normalize, locale), { candidateCommands: allGroups.map(group => group.command), locale }),
     renderExpertGuidance(guidance, { includeCandidates: false }),
-    renderShopBudget(observation.shopBudget, observation.shopPlan),
+    renderShopBudget(observation.shopBudget, observation.shopPlan, locale),
     ...(observation.shopRemovalPolicy ? [
       `Removal target strategy (maintainer preference): ${observation.shopRemovalPolicy.preference}`,
       ...observation.shopRemovalPolicy.conditions.map(text => `  Checked: ${text}`),
@@ -906,8 +906,8 @@ export function parsePreparationClassification(basis, observation, normalize = c
 // Independent row validation preserves usable assessments from the same source.
 // Drafts are host-owned; model prose stays in the raw submission journal only.
 export function collectPreparationClassification(basis, observation, normalize = command => command, previous, submission = {}, locale = 'en') {
-  const potionScope = shopPotionReplacementScope(observation, normalize);
-  const spendingScope = shopSpendingScope(observation, normalize);
+  const potionScope = shopPotionReplacementScope(observation, normalize, locale);
+  const spendingScope = shopSpendingScope(observation, normalize, locale);
   const simpleScope = potionScope ?? spendingScope;
   if (typeof basis !== 'string' || !basis.trim()) throw new Error(`Supply basis. ${simpleScope ? 'One row per supplied command: command | high/medium/low/review.' : PREPARATION_BASIS}`);
   const groups = preparationCandidateGroups(observation, normalize), rows = new Map();
@@ -1012,14 +1012,13 @@ export function preparationClassificationReceipt(draft) {
 }
 
 export function preparationRecordedTable(classification, observation, normalize, locale = 'en') {
-  const potionScope = shopPotionReplacementScope(observation, normalize);
+  const potionScope = shopPotionReplacementScope(observation, normalize, locale);
   if (potionScope) return ['Recorded shop bottle recommendations:', ...potionScope.candidates.map(candidate => {
     const row = classification.rows.find(row => row.command === candidate.command);
     return `  ${row.command} | ${row.category}\n    ${candidate.fact}`;
   }), 'Submit command choose and the selected complete command in choice.'].join('\n');
-  const spendingScope = shopSpendingScope(observation, normalize);
-  if (spendingScope) return renderShopSpendingComparison(observation, spendingScope,
-    preparationCandidateGroups(observation, normalize), classification);
+  const spendingScope = shopSpendingScope(observation, normalize, locale);
+  if (spendingScope) return renderShopSpendingComparison(observation, spendingScope, preparationCandidateGroups(observation, normalize), classification, locale);
   const representatives = preparationCandidateGroups(observation, normalize);
   const rows = representatives.map(group => classification.rows.find(row => row.command === group.command));
   // Preserve every recorded condition and fact, including old reason-only
@@ -1051,7 +1050,7 @@ export function preparationRecordedTable(classification, observation, normalize,
   'Recorded basis facts and conditions:', ...[...shared].flatMap(([commands, texts]) => [
     `  Applies to ${commands}:`, ...texts.map(text => `    ${text}`),
   ]),
-  renderShopBudget(observation.shopBudget, observation.shopPlan),
+  renderShopBudget(observation.shopBudget, observation.shopPlan, locale),
   ...(observation.position?.observation?.observation?.context?.kind === 'map'
     ? ['Map adoption: choose from the highest-rated assessed routes. Close tradeoffs may share a rating.'] : []),
   ...(preparationSelectionFamily(observation) ? [
@@ -1130,7 +1129,7 @@ function preparationChoiceMembers(choice, observation, normalize) {
   return { command, members };
 }
 
-export function preparationCommandBasis([command, args], progress, basis, observation, classification, normalize = command => command) {
+export function preparationCommandBasis([command, args], progress, basis, observation, classification, normalize = command => command, locale = 'en') {
   if (!['pending', 'selection'].includes(progress) || queries.has(command)) return;
   const candidates = preparationCandidates(observation, normalize);
   if (!classification || !sameGameContextSource(classification.source, observation)
@@ -1158,11 +1157,11 @@ export function preparationCommandBasis([command, args], progress, basis, observ
   const multi = family && family.max_choices > 1 && selected.startsWith('act select:');
   const bound = { command: selected, ...(selectedRows.length === 1 ? { selectedRow: selectedRows[0] } : {}), selectedRows };
   const rendered = selectedRows.map(renderRow).join('; ');
-  if (shopSpendingScope(observation, normalize)) {
+  if (shopSpendingScope(observation, normalize, locale)) {
     const keep = /^(?:then\s+)?keep the balance$/.test(basis?.trim() ?? '');
     const match = basis?.trim() && !keep ? /^then\s+([^|\r\n]+)$/.exec(basis.trim()) : undefined;
     if (basis?.trim() && !match && !keep) throw new Error('An optional second spend uses comparison: then FOLLOW_UP_COMMAND from the selected first spend\'s budget row; keeping the balance uses keep the balance.');
-    const continuation = match ? shopContinuation(observation, selected, match[1].trim()) : undefined;
+    const continuation = match ? shopContinuation(observation, selected, match[1].trim(), locale) : undefined;
     return { ...bound, basisKind: 'shop-recommendations', alternativeRow: null,
       comparisonIds: [], comparisons: [], ...(continuation ? { shopContinuation: continuation } : {}),
       renderedBasis: `${selected} | ${selectedRows[0].category}${continuation ? `; then ${continuation.next}` : ''}; native budget bound by host.` };
@@ -1205,7 +1204,7 @@ export function preparationCommandBasis([command, args], progress, basis, observ
       throw new Error(`Include ${baseline.comparisonIds.join(',')} when comparing this choice under ${baseline.id}; weigh access with the actual function, protection and resource tradeoff.`);
     }
   }
-  const continuation = match[3] ? shopContinuation(observation, selected, match[3].trim()) : undefined;
+  const continuation = match[3] ? shopContinuation(observation, selected, match[3].trim(), locale) : undefined;
   return { ...bound, alternativeRow, comparisonIds, comparisons, basisKind,
     ...(priorityComparisons.length ? { priorityComparisons } : {}), ...(continuation ? { shopContinuation: continuation } : {}),
     renderedBasis: `${rendered}; Compared with ${renderRow(alternativeRow)}; Emphasis: ${comparisonIds.join(',')}` };

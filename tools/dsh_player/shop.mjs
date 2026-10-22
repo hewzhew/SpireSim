@@ -1,4 +1,4 @@
-import { createPresentation } from '@sts-simulator/presentation';
+import { createPresentation, resolveLocale } from '@sts-simulator/presentation';
 // Gold, prices, purchase side effects and attached choices come from Rust.
 // These private prefixes organize the current publicly offered shopping window.
 import { gameContextSource, sameGameContextSource } from './context.mjs';
@@ -28,7 +28,7 @@ export function shopNeedsPotionSlot(reading) {
 
 // A single known replacement and no other spending/use choice form a bottle
 // comparison. Keep broader shops with the spending owner.
-export function shopPotionReplacementScope(reading, normalize = command => command) {
+export function shopPotionReplacementScope(reading, normalize = command => command, locale = 'en') {
   const state = stateOf(reading), slots = state?.potions, actions = reading.position?.actions;
   if (shopNeedsPotionSlot(reading) !== true || !Array.isArray(slots) || !slots.length
       || slots.some(slot => !Number.isSafeInteger(slot.slot) || !slot.potion?.potion)
@@ -50,14 +50,17 @@ export function shopPotionReplacementScope(reading, normalize = command => comma
       const action = row.candidate.action, keep = action.kind === 'leave_shop';
       return { command: normalize(row.semantic_action, reading), realization: keep ? 'direct' : 'sequence',
         reference: keep ? '@keep-stock' : '@replacement',
-        fact: keep ? `Keep all held bottles and ${state.run.gold} Gold; leave this shop.`
-          : `Give up P${action.slot} ${action.potion}, then buy ${offer.potion} for ${offer.price} Gold; purchase balance ${state.run.gold - offer.price}. Discard opens the slot; the purchase is the next preparation.` };
+        fact: keep ? shopText(locale, 'keepBottles', { gold: state.run.gold })
+          : shopText(locale, 'replaceBottle', { slot: action.slot, heldPotion: action.potion, offeredPotion: offer.potion, price: offer.price, balance: state.run.gold - offer.price }) };
     }) };
 }
 
+const shopViews = Object.fromEntries(['en', 'zh-CN'].map(locale => [locale, createPresentation({ locale })]));
+const shopText = (locale, key, parameters = {}) => shopViews[resolveLocale(locale)].text(`scripted:shop.${key}`,
+  Object.fromEntries(Object.entries(parameters).map(([name, value]) => [name, String(value)])));
+
 export function shopInstructions(locale = 'en') {
-  const presentation = createPresentation({ locale });
-  const text = key => presentation.text(`scripted:shop.${key}`);
+  const text = key => shopText(locale, key);
   return { potionGuide: text('potionGuide'), spendingGuide: text('spendingGuide'), naming: text('naming'),
     parameters: Object.fromEntries(['command', 'basis', 'choice', 'comparison'].map(key => [key,
       { type: 'string', ...(key === 'command' ? { required: true } : {}), description: text(`parameter${key[0].toUpperCase()}${key.slice(1)}`) }])) };
@@ -72,26 +75,26 @@ export function measureShopPotionInputBudget(parts) {
     includes: ['reading', 'guide', 'classification', 'progress'], componentBytes: parts.map(part => Buffer.byteLength(part)) };
 }
 
-export function renderShopPotionComparison(scope, draft) {
+export function renderShopPotionComparison(scope, draft, locale = 'en') {
   const accepted = sameGameContextSource(draft?.source, scope.source) ? draft.rows : [];
-  return ['Shop bottle comparison: one replacement or keep the current stock.',
-    ...(sameGameContextSource(draft?.source, scope.source) && draft.pendingChoice ? [`Saved choice: ${draft.pendingChoice}. Complete the remaining rows through classify.`] : []),
-    `Offered replacement: ${scope.offer.potion}, ${scope.offer.price} Gold. Current Gold ${scope.gold}.`,
-    'Strategy (maintainer preference): pay for a useful improvement in protection or setup; compare it with the held bottle function and Gold retained.',
-    'Row format: command | high/medium/low/review.',
+  return [shopText(locale, 'potionComparison'),
+    ...(sameGameContextSource(draft?.source, scope.source) && draft.pendingChoice ? [shopText(locale, 'savedChoice', { pendingChoice: draft.pendingChoice })] : []),
+    shopText(locale, 'offeredPotion', { potion: scope.offer.potion, price: scope.offer.price, gold: scope.gold }),
+    shopText(locale, 'potionPreference'),
+    shopText(locale, 'recommendationFormat'),
     ...scope.candidates.map(row => {
       const recorded = accepted.find(item => item.command === row.command);
-      return `  ${row.command}${recorded ? ` | ${recorded.category} (recorded)` : ''}\n    ${row.fact}`;
+      return `  ${row.command}${recorded ? shopText(locale, 'recordedGrade', { category: recorded.category }) : ''}\n    ${row.fact}`;
     }),
-    ...(sameGameContextSource(draft?.source, scope.source) ? (draft.issues ?? []).map(issue => `Correction: ${issue.message}`) : []),
+    ...(sameGameContextSource(draft?.source, scope.source) ? (draft.issues ?? []).map(issue => shopText(locale, 'correction', { message: issue.message })) : []),
   ].join('\n');
 }
 
-export function shopPotionConditionBindings(scope) {
+export function shopPotionConditionBindings(scope, locale = 'en') {
   return scope.candidates.map(row => ({ command: row.command, id: 'shop-potion-tradeoff-v1',
     fixedMechanics: [row.fact], choices: [
-      { id: row.reference, text: 'Compare the bottle function gained or kept with the bottle and Gold given up.', realizations: [row.realization] },
-      { id: '@review-access', text: 'A concrete bottle-comparison fact needs maintainer review.' },
+      { id: row.reference, text: shopText(locale, 'potionTradeoff'), realizations: [row.realization] },
+      { id: '@review-access', text: shopText(locale, 'potionReview') },
     ] }));
 }
 
@@ -113,14 +116,14 @@ export function bindShopPotionPlan(scope, selected, reading, normalize = command
 
 // The native shelf and held-resource effects supply this small question. The
 // permanent inventory stays visible as names/counts; full evidence is host-owned.
-export function shopPotionComparisonReading(native, reading) {
-  if (!shopPotionReplacementScope(reading)) return;
+export function shopPotionComparisonReading(native, reading, locale = 'en') {
+  if (!shopPotionReplacementScope(reading, undefined, locale)) return;
   const state = stateOf(reading);
   const offers = native?.stock?.filter(row => row.action.kind === 'buy_potion');
   if (!offers || offers.length !== state.context.inventory.potions.length || !native.inventory?.resources) return;
   return [native.overview,
-    `Owned permanent cards: ${(state.cards ?? []).map(row => `${row.count}x ${row.card}${row.upgrades > 0 ? '+' : ''}`).join(', ') || 'none'}.`,
-    ...(Number.isSafeInteger(state.base_energy_per_turn) ? [`Base Energy: ${state.base_energy_per_turn}/turn.`] : []),
+    shopText(locale, 'permanentCards', { cards: (state.cards ?? []).map(row => `${row.count}x ${row.card}${row.upgrades > 0 ? '+' : ''}`).join(', ') || shopText(locale, 'none') }),
+    ...(Number.isSafeInteger(state.base_energy_per_turn) ? [shopText(locale, 'baseEnergy', { base_energy_per_turn: state.base_energy_per_turn })] : []),
     ...offers.map(row => row.view), native.inventory.resources].filter(Boolean).join('\n');
 }
 
@@ -132,7 +135,7 @@ function offer(action, inventory) {
     && (action.kind !== 'buy_card' || row.upgrades === (action.upgrades ?? 0)));
 }
 
-function spendingRows(reading, normalize) {
+function spendingRows(reading, normalize, locale = 'en') {
   const state = stateOf(reading), inventory = state?.context?.inventory;
   if (state?.context?.kind !== 'shop' || !inventory) return [];
   const rows = [], byOffer = new Map();
@@ -142,7 +145,7 @@ function spendingRows(reading, normalize) {
     const stock = offer(action, inventory);
     if (!stock || stock.purchase_status?.status !== 'purchasable'
         || !Number.isSafeInteger(stock.price) || stock.price < 0 || stock.price > state.run.gold) {
-      throw new Error('Shop budget lacks the matching native purchasable offer.');
+      throw new Error(shopText(locale, 'offerMismatch'));
     }
     const key = action.kind === 'remove_card' ? 'purge' : `${action.kind}:${action.shop_slot}`;
     const member = { command: normalize(row.semantic_action, reading), semantic: row.semantic_action, action };
@@ -153,9 +156,9 @@ function spendingRows(reading, normalize) {
   return rows;
 }
 
-function previewReading(endpoint, original) {
+function previewReading(endpoint, original, locale = 'en') {
   if (endpoint?.kind !== 'decision' || endpoint.observation?.domain !== 'strategic') {
-    throw new Error('Shop preparation preview lacks a strategic successor.');
+    throw new Error(shopText(locale, 'previewMissingSuccessor'));
   }
   return { ...gameContextSource(original), position: endpoint };
 }
@@ -185,15 +188,15 @@ function suppliedRemovalTargets(original, successor) {
         && action.upgrades === row.candidate.action.upgrades))) } };
 }
 
-export async function preparationShopBudget(reading, preview, normalize = command => command) {
+export async function preparationShopBudget(reading, preview, normalize = command => command, locale = 'en') {
   const state = stateOf(reading);
   if (state?.context?.kind !== 'shop' || !state.context.inventory) return;
-  if (!Number.isSafeInteger(state.run?.gold) || state.run.gold < 0) throw new Error('Shop budget requires current Gold.');
-  const firstRows = spendingRows(reading, normalize), starts = [];
+  if (!Number.isSafeInteger(state.run?.gold) || state.run.gold < 0) throw new Error(shopText(locale, 'missingGold'));
+  const firstRows = spendingRows(reading, normalize, locale), starts = [];
   for (const first of firstRows) {
     const probe = await preview([first.semantic]);
-    if (probe.preview !== true) throw new Error('Shop budget requires a non-publishing native preview.');
-    const successor = previewReading(probe.endpoint, reading), after = stateOf(successor);
+    if (probe.preview !== true) throw new Error(shopText(locale, 'privatePreviewRequired'));
+    const successor = previewReading(probe.endpoint, reading, locale), after = stateOf(successor);
     const row = { ...first, goldAfterFirst: after.run.gold, afterFirstSnapshot: probe.endpoint.public_snapshot_id,
       boundary: after.context.kind, continuations: [] };
     // A replenished shop reveals new random stock only after real adoption.
@@ -211,10 +214,10 @@ export async function preparationShopBudget(reading, preview, normalize = comman
       for (const item of inventory.potions) if (first.action.kind !== 'buy_potion' || item.slot !== first.action.shop_slot)
         known.add(`potion:${item.potion}`);
       if (first.action.kind !== 'remove_card') known.add('purge');
-      for (const next of spendingRows(suppliedRemovalTargets(reading, successor), normalize).filter(item => known.has(item.identity))) {
+      for (const next of spendingRows(suppliedRemovalTargets(reading, successor), normalize, locale).filter(item => known.has(item.identity))) {
         const pair = await preview([first.semantic, next.semantic]);
-        if (pair.preview !== true) throw new Error('Shop combination preview published a state.');
-        const end = stateOf(previewReading(pair.endpoint, reading));
+        if (pair.preview !== true) throw new Error(shopText(locale, 'previewPublished'));
+        const end = stateOf(previewReading(pair.endpoint, reading, locale));
         row.continuations.push({ ...next, goldAfterPair: end.run.gold, boundary: end.context.kind });
       }
     }
@@ -224,12 +227,12 @@ export async function preparationShopBudget(reading, preview, normalize = comman
     coverage: 'one_or_two_spends_on_public_stock', starts };
 }
 
-export function shopContinuation(reading, selected, text) {
+export function shopContinuation(reading, selected, text, locale = 'en') {
   const budget = reading.shopBudget;
-  if (!budget || !sameGameContextSource(budget.source, reading)) throw new Error('Shop continuation requires the current budget table.');
+  if (!budget || !sameGameContextSource(budget.source, reading)) throw new Error(shopText(locale, 'missingBudget'));
   const first = budget.starts.find(row => row.members.some(member => member.command === selected));
   const next = first?.continuations.find(row => row.members.some(member => member.command === text));
-  if (!next) throw new Error('Choose a supplied follow-up command from this first purchase\'s budget row.');
+  if (!next) throw new Error(shopText(locale, 'followupRequired'));
   return { expectedSnapshot: first.afterFirstSnapshot, first: selected, next: text,
     nextAction: next.members.find(member => member.command === text).action,
     reservedPrice: next.price, goldAfterFirst: first.goldAfterFirst, goldAfterPair: next.goldAfterPair };
@@ -249,15 +252,15 @@ export function currentShopPlan(plan, reading) {
     && bindShopPlan(plan, reading) ? plan : undefined;
 }
 
-export function renderShopBudget(budget, plan) {
+export function renderShopBudget(budget, plan, locale = 'en') {
   if (!budget) return '';
-  return [`Shop budget: Gold ${budget.gold}. Native private previews of one or two spends on currently public stock.`,
-    ...(plan ? [`Planned follow-up from the preceding purchase: ${plan.next}; reserve ${plan.reservedPrice} Gold. Reassess it alongside the current legal alternatives.`] : []),
-    ...budget.starts.map(first => `  First ${first.command} (${first.price} Gold): balance ${first.goldAfterFirst}. `
-      + (first.boundary !== 'shop' ? `Complete ${first.boundary === 'restock' ? 'the actual purchase and refresh the new stock' : `the attached ${first.boundary} choices`}, then rebuild the budget.`
-        : first.continuations.length ? `Then ${first.continuations.map(next => `${next.command} (${next.price} Gold; balance ${next.goldAfterPair}${next.boundary === 'shop' ? '' : `; ${next.boundary}`})`).join('; ')}.`
-          : 'Keeping this balance is the available continuation.')),
-    'Compare the whole intended spend with retaining Gold. The classification table covers the current single actions. For adoption, an intended follow-up uses: alternative | @resources[, other comparison references] | then <displayed follow-up command>. The host adopts the first action and supplies the intended next spend to its fresh classification.'].join('\n');
+  return [shopText(locale, 'budgetHeading', { gold: budget.gold }),
+    ...(plan ? [shopText(locale, 'previousPlan', { command: plan.next, reservedGold: plan.reservedPrice })] : []),
+    ...budget.starts.map(first => shopText(locale, 'firstSpend', { command: first.command, price: first.price, balance: first.goldAfterFirst })
+      + (first.boundary !== 'shop' ? shopText(locale, 'completeBeforeBudget', { boundary: first.boundary === 'restock' ? shopText(locale, 'purchaseAndRefresh') : shopText(locale, 'attachedChoices', { boundary: first.boundary }) })
+        : first.continuations.length ? shopText(locale, 'thenSpend', { continuations: first.continuations.map(next => shopText(locale, 'followupSpend', { command: next.command, price: next.price, balance: next.goldAfterPair, boundary: next.boundary === 'shop' ? '' : `; ${next.boundary}` })).join('; ') })
+          : shopText(locale, 'keepContinuation'))),
+    shopText(locale, 'wholeSpendComparison')].join('\n');
 }
 
 export const SHOP_SPENDING_GUIDE = defaultInstructions.spendingGuide;
@@ -268,7 +271,7 @@ export const SHOP_SPENDING_NAMING_GUIDE = defaultInstructions.naming;
 // Ordinary purchases share one spending comparison. Native budget previews
 // bind their prices and continuations; a reviewed removal policy owns the target.
 // Slot operations, target ambiguity and attached choices keep their own contract.
-export function shopSpendingScope(reading, normalize = command => command) {
+export function shopSpendingScope(reading, normalize = command => command, locale = 'en') {
   const state = stateOf(reading), budget = reading.shopBudget;
   if (state?.context?.kind !== 'shop' || !budget || !sameGameContextSource(budget.source, reading)
       || !reading.deck_evidence || !budget.starts.length
@@ -289,16 +292,16 @@ export function shopSpendingScope(reading, normalize = command => command) {
         || (state.relics ?? []).some(row => ['BottledFlame', 'BottledLightning', 'BottledTornado'].includes(row.relic))) return;
   }
   if (purge && !sameGameContextSource(reading.shopRemovalPolicy?.source, reading)) return;
-  const profile = preparationDeckComparison(reading, normalize);
+  const profile = preparationDeckComparison(reading, normalize, locale);
   if (!profile) return;
   const supplied = new Set(budget.starts.flatMap(row => row.members.map(member => member.command)));
   if (actions.some(row => purchases.has(row.candidate.action.kind) && !supplied.has(normalize(row.semantic_action, reading)))) return;
   return { schema: 'sts-shop-spending-comparison-v1', source: gameContextSource(reading), profile,
     candidates: actions.map(row => {
       const command = normalize(row.semantic_action, reading), action = row.candidate.action;
-      return { command, fact: action.kind === 'leave_shop' ? `Keep ${state.run.gold} Gold and leave this shop.`
-        : action.kind === 'remove_card' ? `Remove one owned ${action.card}${action.upgrades > 0 ? '+' : ''}; pay ${action.price} Gold.`
-          : `Buy one ${action.card ?? action.relic ?? action.potion}${action.upgrades > 0 ? '+' : ''}; pay ${action.price} Gold.` };
+      return { command, fact: action.kind === 'leave_shop' ? shopText(locale, 'leaveGold', { gold: state.run.gold })
+        : action.kind === 'remove_card' ? shopText(locale, 'removeCard', { card: action.card, upgradeSuffix: action.upgrades > 0 ? '+' : '', price: action.price })
+          : shopText(locale, 'buyCard', { card: action.card ?? action.relic ?? action.potion, upgradeSuffix: action.upgrades > 0 ? '+' : '', price: action.price }) };
     }) };
 }
 
@@ -308,44 +311,44 @@ export function measureShopSpendingInputBudget(parts) {
     includes: ['reading', 'guide', 'classification', 'progress'], componentBytes: parts.map(part => Buffer.byteLength(part)) };
 }
 
-export function shopSpendingConditionBindings(scope) {
+export function shopSpendingConditionBindings(scope, locale = 'en') {
   return scope.candidates.map(row => ({ command: row.command, id: 'shop-spending-tradeoff-v1', fixedMechanics: [row.fact],
-    choices: [{ id: '@shop-tradeoff', text: 'Recommendation for this spend or keeping Gold using the supplied inventory and budget.' },
-      { id: '@review-access', text: 'A concrete shopping fact needs maintainer review.' }] }));
+    choices: [{ id: '@shop-tradeoff', text: shopText(locale, 'spendRecommendation') },
+      { id: '@review-access', text: shopText(locale, 'spendReview') }] }));
 }
 
-export function renderShopSpendingComparison(reading, scope, groups, draft) {
+export function renderShopSpendingComparison(reading, scope, groups, draft, locale = 'en') {
   const accepted = sameGameContextSource(draft?.source, scope.source) ? draft.rows : [];
   const pending = groups.filter(group => !accepted.some(row => row.command === group.command));
-  return ['Shop recommendations: current spends and keeping Gold.',
-    ...(sameGameContextSource(draft?.source, scope.source) && draft.pendingChoice ? [`Saved choice: ${draft.pendingChoice}. Complete the remaining rows through classify.`] : []),
-    `Recommendation rows (${pending.length} pending of ${groups.length}):`,
-    ...pending.map(group => `  ${group.command} | <recommendation> · ${scope.candidates.find(row => row.command === group.command).fact}`),
-    ...(accepted.length ? ['Recorded recommendations:', ...groups.flatMap(group => {
+  return [shopText(locale, 'spendingHeading'),
+    ...(sameGameContextSource(draft?.source, scope.source) && draft.pendingChoice ? [shopText(locale, 'savedChoice', { pendingChoice: draft.pendingChoice })] : []),
+    shopText(locale, 'pendingRecommendations', { pendingCount: pending.length, totalCount: groups.length }),
+    ...pending.map(group => shopText(locale, 'recommendationRow', { command: group.command, fact: scope.candidates.find(row => row.command === group.command).fact })),
+    ...(accepted.length ? [shopText(locale, 'recordedRecommendations'), ...groups.flatMap(group => {
       const row = accepted.find(row => row.command === group.command);
       return row ? [`  ${group.command} | ${row.category}`] : [];
     })] : []),
-    'Strategy (maintainer preference): prefer useful protection, access or enabled engines; compare Gold retained.',
+    shopText(locale, 'spendingPreference'),
     ...(reading.shopRemovalPolicy ? [
-      `Removal strategy: ${reading.shopRemovalPolicy.preference}`,
-      ...reading.shopRemovalPolicy.conditions.map(text => `  Checked: ${text}`),
+      shopText(locale, 'removalStrategy', { preference: reading.shopRemovalPolicy.preference }),
+      ...reading.shopRemovalPolicy.conditions.map(text => shopText(locale, 'checkedCondition', { text: text })),
     ] : []),
-    'Native budget: command (price, balance), then follow-up command (price, balance). All amounts are Gold.',
-    ...(reading.shopPlan ? [`Planned next spend: ${reading.shopPlan.next}; reserve ${reading.shopPlan.reservedPrice} Gold.`] : []),
+    shopText(locale, 'budgetFormat'),
+    ...(reading.shopPlan ? [shopText(locale, 'nextSpend', { command: reading.shopPlan.next, reservedGold: reading.shopPlan.reservedPrice })] : []),
     ...reading.shopBudget.starts.map(first => {
       return `  ${first.command} (${first.price}, ${first.goldAfterFirst}); `
-        + (first.continuations.length ? `then ${first.continuations.map(next => `${next.command} (${next.price}, ${next.goldAfterPair})`).join('; ')}` : 'keep the balance');
+        + (first.continuations.length ? shopText(locale, 'thenCommands', { continuations: first.continuations.map(next => `${next.command} (${next.price}, ${next.goldAfterPair})`).join('; ') }) : shopText(locale, 'keepBalance'));
     }),
-    ...(sameGameContextSource(draft?.source, scope.source) ? (draft.issues ?? []).map(issue => `Correction: ${issue.message}`) : []),
+    ...(sameGameContextSource(draft?.source, scope.source) ? (draft.issues ?? []).map(issue => shopText(locale, 'correction', { message: issue.message })) : []),
   ].join('\n');
 }
 
 // Preserve full printed rules and current instance numbers. Remove repeated
 // explanatory scaffolding rather than asking Flash to assemble those facts.
-export function shopSpendingReading(native, reading, normalize = command => command) {
-  const scope = shopSpendingScope(reading, normalize);
+export function shopSpendingReading(native, reading, normalize = command => command, locale = 'en') {
+  const scope = shopSpendingScope(reading, normalize, locale);
   if (!scope) return;
-  const missing = () => { throw Object.assign(new Error('Small shop comparison needs the complete native stock, owned rules and resource effects.'),
+  const missing = () => { throw Object.assign(new Error(shopText(locale, 'missingNativeRules')),
     { preparationGap: { kind: 'facts', reason: 'shop-spending-native-rules' } }); };
   if (!native?.inventory?.cards || !native.inventory.resources || !Array.isArray(native.stock)) return missing();
   if (native.inventory.cards.reduce((n, row) => n + row.count, 0) !== scope.profile.size) return missing();
@@ -394,18 +397,18 @@ export function shopSpendingReading(native, reading, normalize = command => comm
         && row.candidate.action.upgrades === item.upgrades)
       ?? { semantic_action: `public-card:${item.slot}`, candidate: { action: { kind: 'buy_card', card: item.card, upgrades: item.upgrades } } }) } };
   const advice = preparationCardExpertGuidance(adviceReading).map(row =>
-    renderCandidateExpertGuidance(row).replace(` (${row.command})`, '')).filter(Boolean);
+    renderCandidateExpertGuidance(row, { includeCommand: false })).filter(Boolean);
   return [native.overview,
-    `Owned ${scope.profile.size} originals: ${reading.deck_evidence.cards.map(row => `${row.card.count}x ${row.card.card}${row.card.upgrades > 0 ? '+' : ''}`).join(', ')}.`,
+    shopText(locale, 'ownedOriginals', { count: scope.profile.size, cards: reading.deck_evidence.cards.map(row => `${row.card.count}x ${row.card.card}${row.card.upgrades > 0 ? '+' : ''}`).join(', ') }),
     ...reading.deck_evidence.cards.filter(row => row.card.cost_modifier || row.card.base_damage_override !== null
       || row.card.base_block_override !== null || row.card.misc_value)
-      .map(row => `Current ${row.card.card}${row.card.upgrades > 0 ? '+' : ''}: ${row.persistent_cost} Energy, ${row.persistent_damage} damage, ${row.persistent_block} Block; misc ${row.card.misc_value}.`),
-    attackInventoryText(scope.profile),
-    'Related owned rules (before combat modifiers):', ...relatedRules.map(row => row.view),
-    'Public stock and legal choices:', ...stock,
+      .map(row => shopText(locale, 'currentCard', { card: row.card.card, upgradeSuffix: row.card.upgrades > 0 ? '+' : '', cost: row.persistent_cost, damage: row.persistent_damage, block: row.persistent_block, misc: row.card.misc_value })),
+    attackInventoryText(scope.profile, locale),
+    shopText(locale, 'relatedRules'), ...relatedRules.map(row => row.view),
+    shopText(locale, 'publicStock'), ...stock,
     ...scope.candidates.filter(row => row.command === 'leave').map(row => `${row.command}  |  ${row.fact}`),
-    ...(inactive.length ? [`Other public stock: ${inactive.join('; ')}.`] : []),
-    'Strategy (maintainer preferences):', ...advice,
+    ...(inactive.length ? [shopText(locale, 'otherStock', { inactive: inactive.join('; ') })] : []),
+    shopText(locale, 'strategyHeading'), ...advice,
     native.inventory.resources,
     native.routes,
   ].join('\n');

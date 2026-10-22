@@ -2,10 +2,16 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { access } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
-import { preparationExpertGuidance, preparationCardExpertGuidance, renderExpertGuidance, STRATEGY_SOURCES, preparationShopRemovalPolicy } from './strategy.mjs';
+import { preparationExpertGuidance, preparationCardExpertGuidance, renderExpertGuidance, renderCandidateExpertGuidance, STRATEGY_SOURCES, preparationShopRemovalPolicy } from './strategy.mjs';
 import catalogue from './strategy-roles.json' with { type: 'json' };
 import { conciseCardCommand } from '../run_play/contract.mjs';
 import { preparationClassificationContext, preparationRecordedTable, parsePreparationClassification, preparationCommandBasis, preparationReading } from './preparation.mjs';
+
+test('candidate guidance hides only its command label and keeps the supplied preference opaque', () => {
+  const candidate = { card: 'Strike', command: 'take:Strike#0', preference: 'Keep (take:Strike#0) {{raw}} in this recorded explanation.', change: '原始 🐈' };
+  assert.equal(renderCandidateExpertGuidance(candidate, { includeCommand: false }), 'Offered Strike: Keep (take:Strike#0) {{raw}} in this recorded explanation. Adjust using current conditions: 原始 🐈');
+  assert.match(renderCandidateExpertGuidance(candidate), /^Offered Strike \(take:Strike#0\):/);
+});
 
 const root = () => ({ schema: 'sts-run-play-agent-observation-v3', session_id: 'strategy-unit', head_revision: 0, state_revision: 0,
   position: { observation: { domain: 'strategic', observation: {

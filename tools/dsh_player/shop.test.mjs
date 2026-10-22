@@ -53,6 +53,11 @@ test('shop combinations use actual successor prices, shifted slots and preserve 
   original.shopBudget = await preparationShopBudget(original, p.preview);
   assert.equal(original.position.actions.length, 4);
   assert.equal(p.calls.length, 9);
+  const firstCalls = structuredClone(p.calls);
+  const localizedBudget = await preparationShopBudget(original, p.preview, undefined, 'zh-CN');
+  assert.deepEqual(localizedBudget, original.shopBudget);
+  assert.deepEqual(p.calls.slice(firstCalls.length), firstCalls);
+  assert.match(renderShopBudget(localizedBudget, undefined, 'zh-CN'), /余额 80.*Strike#0.*余额 5/);
   assert.match(renderShopBudget(original.shopBudget), /DarkEmbrace#0.*balance 80.*Strike#0 \(75 Gold; balance 5/);
   const text = [a.command, b.command, r.command, 'leave'].map(command => `${command} | medium | direct | @effect,@resource-tradeoff`).join('\n');
   const classification = { source: original, rows: parsePreparationClassification(text, original) };
@@ -209,6 +214,22 @@ function bottleReading() {
   return current;
 }
 
+test('bottle comparison languages preserve ratings and replacements while keeping native resources opaque', () => {
+  const current = bottleReading(), before = JSON.stringify(current);
+  const en = shopPotionReplacementScope(current), zh = shopPotionReplacementScope(current, undefined, 'zh-CN');
+  assert.deepEqual(en.candidates.map(row => [row.command, row.reference, row.realization]), zh.candidates.map(row => [row.command, row.reference, row.realization]));
+  assert.match(zh.candidates[0].fact, /金币/);
+  const basis = 'discard-potion:SpeedPotion#0 | high\ndiscard-potion:FearPotion#0 | low\nleave | medium';
+  const rows = ['en', 'zh-CN'].map(locale => parsePreparationClassification(basis, current, undefined, locale));
+  assert.deepEqual(rows[0].map(row => [row.command, row.category, row.realization, row.conditionIds]), rows[1].map(row => [row.command, row.category, row.realization, row.conditionIds]));
+  assert.match(rows[1][0].reason, /SpeedPotion.*40 金币.*BlockPotion/);
+  const native = preparationFixture(current, { resources: 'Native {{opaque}} 资源 🐈' });
+  const supplied = shopPotionComparisonReading(native, current, 'zh-CN');
+  assert.ok(supplied.includes('Native {{opaque}} 资源 🐈'));
+  assert.match(preparationClassificationContext(current, undefined, undefined, 'zh-CN'), /商店药水比较/);
+  assert.equal(JSON.stringify(current), before);
+});
+
 test('single replacement supplies a bottle tradeoff and binds factual columns independently of model ratings', () => {
   const current = bottleReading(), before = JSON.stringify(current), scope = shopPotionReplacementScope(current);
   assert.equal(scope.candidates.length, 3);
@@ -333,6 +354,29 @@ function smallShopNative(current) {
   native.inventory.resources = 'Relics (0):\nPotions (2 slots):\nP0 empty\nP1 empty';
   return native;
 }
+
+test('localized spending comparison keeps discount continuations and raw rule blocks unchanged', async () => {
+  const { original } = await smallShop(), native = smallShopNative(original);
+  native.inventory.resources = 'Original {{resources}} 原文 🐈';
+  const position = JSON.stringify(original.position), rules = JSON.stringify(native);
+  const classifications = [];
+  for (const locale of ['en', 'zh-CN']) {
+    const scope = shopSpendingScope(original, undefined, locale);
+    assert.deepEqual(scope.candidates.map(row => row.command), ['buy:ShrugItOff#0', 'buy:MembershipCard#0', 'leave']);
+    const text = shopSpendingReading(native, original, undefined, locale);
+    assert.ok(text.includes(native.inventory.resources));
+    assert.match(text, locale === 'en' ? /Public stock and legal choices:/ : /公开商品与合法选择：/);
+    const rows = parsePreparationClassification('buy:ShrugItOff#0 | medium\nbuy:MembershipCard#0 | high\nleave | low', original, undefined, locale);
+    classifications.push(rows.map(row => [row.command, row.category, row.realization, row.conditionIds]));
+    const adopted = preparationCommandBasis(['buy:MembershipCard#0', []], 'pending', 'then buy:DarkEmbrace#0', original,
+      { source: original, rows }, undefined, locale);
+    assert.equal(adopted.shopContinuation.goldAfterPair, 30);
+    assert.match(preparationClassificationContext(original, undefined, undefined, locale), locale === 'en' ? /Shop recommendations/ : /商店建议/);
+  }
+  assert.deepEqual(classifications[0], classifications[1]);
+  assert.equal(JSON.stringify(original.position), position);
+  assert.equal(JSON.stringify(native), rules);
+});
 
 test('small shop advice preserves legal acquisition evidence for owned-copy increments', async () => {
   const combust = card('Combust', 41), original = reading(157, [combust]);

@@ -96,14 +96,14 @@ export async function apply(ctx, config) {
   async function prepareReading(raw, game, signal) {
     const reading = { ...preparationReading(raw, config.rewardProgress) };
     if (reading.preparation_reading) {
-      const supply = preparationReadingSupply(reading, strategicOptionCommand);
+      const supply = preparationReadingSupply(reading, strategicOptionCommand, presentation.locale);
       reading.candidateReadings = supply.candidates;
       reading.ownedRelicReadings = supply.relicReadings;
     }
     if (reading.position?.observation?.observation?.context?.kind !== 'shop'
         || (preparationRoot && preparationTaskProgress(preparationRoot, reading) !== 'pending')) return reading;
     if (!shopBudget || !sameGameContextSource(shopBudget.source, reading)) {
-      shopBudget = await preparationShopBudget(reading, actions => game.preview(actions, { signal }), strategicOptionCommand);
+      shopBudget = await preparationShopBudget(reading, actions => game.preview(actions, { signal }), strategicOptionCommand, presentation.locale);
       if (shopBudget && !sameGameContextSource(shopBudget.source, await game.observe({ signal }))) {
         throw new Error('Shop position changed while organizing its budget; recover the current reading.');
       }
@@ -131,8 +131,8 @@ export async function apply(ctx, config) {
   const updateTaskProgress = (reading, command, basis) => {
     if (taskScope !== 'preparation') return;
     const context = reading.position?.observation?.observation?.context;
-    preparationContext = context ? { ...context, potionReplacement: shopPotionReplacementScope(reading, strategicOptionCommand),
-      shopSpending: shopSpendingScope(reading, strategicOptionCommand) } : context;
+    preparationContext = context ? { ...context, potionReplacement: shopPotionReplacementScope(reading, strategicOptionCommand, presentation.locale),
+      shopSpending: shopSpendingScope(reading, strategicOptionCommand, presentation.locale) } : context;
     preparationRoot ??= preparationTaskRoot(reading);
     taskProgress = preparationTaskProgress(preparationRoot, reading);
     if (classification && !sameGameContextSource(classification.source, reading)) classification = undefined;
@@ -278,9 +278,9 @@ export async function apply(ctx, config) {
                 else requestBranchReset(exec.agent);
                 return { text: `Completed: ${adopted.command}\n${progressText()}` };
               }
-              if (taskProgress === 'pending' && (shopPotionReplacementScope(reading, strategicOptionCommand) || shopSpendingScope(reading, strategicOptionCommand))
+              if (taskProgress === 'pending' && (shopPotionReplacementScope(reading, strategicOptionCommand, presentation.locale) || shopSpendingScope(reading, strategicOptionCommand, presentation.locale))
                   && ['read', 'options'].includes(group[0])) {
-                const supply = preparationReadingSupply(reading, strategicOptionCommand);
+                const supply = preparationReadingSupply(reading, strategicOptionCommand, presentation.locale);
                 const context = preparationClassificationContext(reading, strategicOptionCommand, classificationDraft, presentation.locale);
                 return { text: `${supply.reading}\n${context}` };
               }
@@ -355,7 +355,7 @@ export async function apply(ctx, config) {
                 assertPreparationCommand(group, taskProgress, reading, strategicOptionCommand);
                 adoptionBasis = choiceComparison;
               }
-              const comparison = preparationCommandBasis(group, taskProgress, adoptionBasis, reading, classification, strategicOptionCommand);
+              const comparison = preparationCommandBasis(group, taskProgress, adoptionBasis, reading, classification, strategicOptionCommand, presentation.locale);
               const adoptedCommand = comparison?.command ?? [group[0], ...group[1]].join(' ');
               if (comparison) {
                 await recording();
@@ -379,7 +379,7 @@ export async function apply(ctx, config) {
               if (preparationExecution) preparationExecution.successor = successor;
               updateTaskProgress(successor, adoptedCommand, comparison?.renderedBasis);
               if (reading.position.observation.observation?.context?.kind === 'shop' && comparison) {
-                const plan = bindShopPotionPlan(shopPotionReplacementScope(reading, strategicOptionCommand),
+                const plan = bindShopPotionPlan(shopPotionReplacementScope(reading, strategicOptionCommand, presentation.locale),
                   comparison.command, successor, strategicOptionCommand) ?? bindShopPlan(comparison.shopContinuation, successor);
                 const temporary = `${shopPlanFile}.tmp`;
                 await writeFile(temporary, JSON.stringify(plan ?? null, null, 2));
@@ -470,7 +470,7 @@ export async function apply(ctx, config) {
     }
     const state = observed.observation;
     if (taskScope === 'preparation' && (preparationCardChoice(reading, strategicOptionCommand, presentation.locale)
-        || shopPotionReplacementScope(reading, strategicOptionCommand) || shopSpendingScope(reading, strategicOptionCommand))) {
+        || shopPotionReplacementScope(reading, strategicOptionCommand, presentation.locale) || shopSpendingScope(reading, strategicOptionCommand, presentation.locale))) {
       rulesText = '';
       rulesKey = undefined;
       return reading;
@@ -536,15 +536,15 @@ export async function apply(ctx, config) {
           throw new Error('Game position changed while rebuilding decision context; reconnect to read the actual state.');
         }
         const supply = taskScope === 'preparation' && reading.position.kind !== 'terminal'
-          ? preparationReadingSupply(reading, strategicOptionCommand) : { reading: fresh.text };
+          ? preparationReadingSupply(reading, strategicOptionCommand, presentation.locale) : { reading: fresh.text };
         if (supply.candidates) {
           reading.candidateReadings = supply.candidates;
           reading.ownedRelicReadings = supply.relicReadings;
           if (cardChoiceFrame) cardChoiceFrame = preparationCardChoice(reading, strategicOptionCommand, presentation.locale);
           classificationText = currentClassificationText(reading);
         }
-        if (taskScope === 'preparation' && (shopPotionReplacementScope(reading, strategicOptionCommand) || shopSpendingScope(reading, strategicOptionCommand))) {
-          const spending = shopSpendingScope(reading, strategicOptionCommand);
+        if (taskScope === 'preparation' && (shopPotionReplacementScope(reading, strategicOptionCommand, presentation.locale) || shopSpendingScope(reading, strategicOptionCommand, presentation.locale))) {
+          const spending = shopSpendingScope(reading, strategicOptionCommand, presentation.locale);
           const inputBudget = (spending ? measureShopSpendingInputBudget : measureShopPotionInputBudget)([supply.reading, guideText(), classificationText, progressText()]);
           await recording();
           await appendFile(join(records, 'input-budgets.jsonl'), JSON.stringify({

@@ -1614,9 +1614,9 @@ export function preparationCardPolicies(observation, profile, normalize = comman
 
 const labelCard = row => `${row.card.count}x ${row.card.card}${row.card.upgrades > 0 ? '+' : ''}`;
 
-export function renderCandidateExpertGuidance(candidate) {
+export function renderCandidateExpertGuidance(candidate, { includeCommand = true } = {}) {
   return candidate?.preference
-    ? `Offered ${candidate.card} (${candidate.command}): ${candidate.preference} Adjust using current conditions: ${candidate.change}` : '';
+    ? `Offered ${candidate.card}${includeCommand ? ` (${candidate.command})` : ''}: ${candidate.preference} Adjust using current conditions: ${candidate.change}` : '';
 }
 
 export function renderExpertGuidance(guidance, { includeCandidates = true } = {}) {
