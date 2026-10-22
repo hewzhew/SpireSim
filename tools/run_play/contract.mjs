@@ -274,7 +274,7 @@ export function summarizeDecisionJson(doc) {
       playableLines.push(semantic);
     }
   });
-  return { incoming, handBlock, playableLines };
+  return { incoming, currentBlock: inner.player?.block ?? null, handBlock, playableLines };
 }
 
 // Skin-layer spelling for potions: `potion:Essence` resolves against the

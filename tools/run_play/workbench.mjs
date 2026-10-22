@@ -20,9 +20,9 @@ export function createWorkbenchContext(options) {
   ctx.decisionDocument = async reading => decisionDocumentFromObservation(
     reading?.raw?.observation ?? await ctx.game.observe());
   ctx.commandHint = async (reading, options) => currentCommandHint(reading, await ctx.decisionDocument(reading), options);
-  ctx.printCurrentReading = async (reading, { expanded = false } = {}) => {
+  ctx.printCurrentReading = async (reading, { expanded = false, document } = {}) => {
     const doc = reading.control === 'combat'
-      ? await ctx.decisionDocument(reading) : null;
+      ? document ?? await ctx.decisionDocument(reading) : null;
     if (doc) assertCurrentDecision(reading, doc);
     printReading(reading, {
       write: ctx.write, expanded,

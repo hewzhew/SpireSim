@@ -181,6 +181,7 @@ async function connectRunPlay({ repository, session, recordDirectory, binary, ma
     Object.defineProperty(value, inspect.custom, { value: () => view.trimEnd() });
     if (reading) {
       value.control = reading.control;
+      value.summary = reading.summary;
       value.options = Object.freeze(reading.options.map(option => Object.freeze({
         label: option.label,
         [inspect.custom]: () => option.label,

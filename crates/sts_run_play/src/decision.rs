@@ -146,6 +146,9 @@ fn last_choice(head: &RunPlayHeadV1) -> Option<DecisionChoiceReceiptV1> {
 pub(crate) struct RunPlayDecisionReadingV1 {
     pub control: DecisionControlV1,
     pub view: String,
+    /// Current position rendered from the same public facts as `view`, without
+    /// options or expanded rules. Consumers must not extract it from headings.
+    pub summary: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub context: Option<DecisionKnownContextV1>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -178,9 +181,11 @@ pub(crate) fn read_decision(
     known: Option<&DecisionKnownContextV1>,
 ) -> Result<RunPlayDecisionReadingV1, String> {
     if let RunPlayPositionV1::Terminal { outcome, .. } = &head.position {
+        let summary = format!("Terminal | {outcome:?}\n");
         return Ok(RunPlayDecisionReadingV1 {
             control: DecisionControlV1::Terminal,
-            view: format!("Terminal | {outcome:?}\n"),
+            view: summary.clone(),
+            summary,
             context: None,
             source: None,
             options: vec![],
@@ -223,6 +228,7 @@ fn read_public_decision_v1(
     let mut result = RunPlayDecisionReadingV1 {
         control: DecisionControlV1::Strategic,
         view: String::new(),
+        summary: String::new(),
         context: None,
         source,
         options: vec![],
@@ -240,6 +246,7 @@ fn read_public_decision_v1(
             observation,
         } => {
             result.control = DecisionControlV1::Combat;
+            result.summary = combat::summary(run_context, observation);
             result.view = combat::reading(
                 run_context,
                 observation,
@@ -455,13 +462,12 @@ fn read_public_decision_v1(
             gameplay_display_label_v1(*event)
         ),
     };
+    result.summary = format!(
+        "Act {} F{} | HP {}/{} | Gold {} | {context}\n",
+        run.act, run.floor, run.current_hp, run.max_hp, run.gold
+    );
     if brief {
-        writeln!(
-            out,
-            "Act {} F{} | HP {}/{} | Gold {} | {context}",
-            run.act, run.floor, run.current_hp, run.max_hp, run.gold
-        )
-        .unwrap();
+        out.push_str(&result.summary);
         if !show_build_resources {
             writeln!(out, "Deck: {} cards", observation.cards.len()).unwrap();
         }

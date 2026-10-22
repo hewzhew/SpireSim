@@ -8391,6 +8391,9 @@ mod tests {
     #[test]
     fn terminal_agent_transport_observes_without_reconstructing_a_decision() {
         let head = terminal_head_fixture();
+        let reading = crate::decision::read_decision(&head, &[], None).unwrap();
+        assert_eq!(reading.summary, reading.view);
+        assert!(reading.summary.starts_with("Terminal | "));
         let capabilities =
             AgentCapabilitiesV1::new(AgentPermissionEnvelopeV1::a20_first_unrestricted_v1(None));
         let input = [

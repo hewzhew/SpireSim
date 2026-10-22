@@ -2,6 +2,72 @@ use super::*;
 use crate::decision_tests::{controller_with_session, fixture, TestDirectory};
 
 #[test]
+fn position_summaries_share_public_rendering_across_detail_and_binding_modes() {
+    for kind in [
+        "reward",
+        "route",
+        "shop_twins",
+        "empty_cage",
+        "combat_multiturn",
+        "combat_discovery",
+        "combat_discard",
+    ] {
+        let dir = TestDirectory::new();
+        let mut game = controller_with_session(&dir.0, kind, &fixture(kind));
+        let before = game.head().clone();
+        let brief = game
+            .decision_reading_v1(&[DecisionDetailV1::Brief], None)
+            .unwrap();
+        let full = game.decision_reading_v1(&[], None).unwrap();
+        let public = before
+            .current_decision
+            .as_ref()
+            .unwrap()
+            .public_decision_v1()
+            .unwrap();
+        let preview = read_preview_decision_v1(&public, None).unwrap();
+        assert!(!brief.summary.is_empty(), "{kind}");
+        assert!(brief.view.starts_with(&brief.summary), "{kind}");
+        assert_eq!(brief.summary, full.summary, "{kind}");
+        assert_eq!(brief.summary, preview.summary, "{kind}");
+        assert!(!brief.summary.contains("./p "), "{kind}");
+        if let TaskPublicObservationV1::Combat { observation, .. } = &public.observation {
+            assert!(brief.summary.contains(&format!(
+                "Energy {} | Block {}",
+                observation.turn.energy, observation.player.block
+            )));
+            assert!(brief.summary.contains("Hand:"));
+            assert!(!brief.summary.contains("Draw "));
+            assert!(!brief.summary.contains("M0 "));
+        }
+        assert_eq!(*game.head(), before, "rendering changed {kind}");
+    }
+}
+
+#[test]
+fn escape_summary_does_not_offer_the_inactive_hand() {
+    let dir = TestDirectory::new();
+    let game = controller_with_session(&dir.0, "escape-summary", &fixture("combat_multiturn"));
+    let mut public = game
+        .head()
+        .current_decision
+        .as_ref()
+        .unwrap()
+        .public_decision_v1()
+        .unwrap();
+    let TaskPublicObservationV1::Combat { observation, .. } = &mut public.observation else {
+        panic!("combat fixture");
+    };
+    assert!(!observation.cards.hand.cards.is_empty());
+    observation.turn.player_escaping = true;
+    let reading = read_preview_decision_v1(&public, None).unwrap();
+    assert!(reading.summary.contains("Escape settlement pending"));
+    assert!(!reading.summary.contains("Hand:"));
+    assert!(!reading.summary.contains("Player turn"));
+    assert!(reading.view.starts_with(&reading.summary));
+}
+
+#[test]
 fn live_choice_commands_round_trip_while_preview_choices_remain_hypothetical() {
     for kind in [
         "reward",

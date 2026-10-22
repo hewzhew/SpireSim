@@ -5616,6 +5616,7 @@ mod tests {
         let reading = decision::RunPlayDecisionReadingV1 {
             control: decision::DecisionControlV1::Combat,
             view: "Selection 0 | Exhaust from hand | Choose 1\n  0: Wound\n".into(),
+            summary: "Combat\n".into(),
             context: None,
             source: None,
             options: vec![],

@@ -428,6 +428,7 @@ preview 的假想终点。终局自身没有可返回的决策点，但此前保
   `choose`、`select`、`collectRewards`、`act`、`commit` 的后继及 `preview` 默认返回简洁读数；
   对象调用者需背景说明时再用 `decision()` 明确读取。
 - `reading.control` 区分 `strategic`、`combat`、`terminal`；不要解析标题猜阶段。
+  `reading.summary` 是源端从同一份公开状态生成的位置摘要，与正文共用渲染器，不含选项和展开规则；预演用执行前的这份摘要区分实际局面和假设后继，不从正文标题截取。
   战斗观察的 `turn.player_escaping` 表示已采用逃跑、尚待结算；读数直接给出 `act end`，
   不再展示无法执行的战术手牌与敌人意图。此输入完成既有逃跑结算，不是继续搜索胜局。
 - `options[i].choose()` 执行当前对象；多选用 `selection.select([selection.members[i], ...])`，

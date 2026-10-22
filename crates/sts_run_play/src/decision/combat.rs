@@ -262,18 +262,7 @@ pub(crate) fn reading(
     brief: bool,
 ) -> String {
     let mut out = String::new();
-    if let PublicCombatRunContextV1::Available {
-        act,
-        floor,
-        encounter_id,
-        ..
-    } = context
-    {
-        write!(out, "Act {act} F{floor} | ").unwrap();
-        if let Some(encounter) = encounter_id {
-            write!(out, "{} | ", gameplay_display_label_v1(*encounter)).unwrap();
-        }
-    }
+    write_run_context(&mut out, context);
     out.push_str(&state_reading_with_rules(state, !brief));
     if let PublicCombatRunContextV1::Available { run_goal, keys, .. } = context {
         if !brief {
@@ -287,11 +276,33 @@ pub(crate) fn reading(
     out
 }
 
+pub(crate) fn summary(context: &PublicCombatRunContextV1, state: &PublicCombatStateV1) -> String {
+    let mut out = String::new();
+    write_run_context(&mut out, context);
+    out.push_str(&state_summary(state));
+    out
+}
+
+fn write_run_context(out: &mut String, context: &PublicCombatRunContextV1) {
+    if let PublicCombatRunContextV1::Available {
+        act,
+        floor,
+        encounter_id,
+        ..
+    } = context
+    {
+        write!(out, "Act {act} F{floor} | ").unwrap();
+        if let Some(encounter) = encounter_id {
+            write!(out, "{} | ", gameplay_display_label_v1(*encounter)).unwrap();
+        }
+    }
+}
+
 pub(crate) fn state_reading(state: &PublicCombatStateV1) -> String {
     state_reading_with_rules(state, true)
 }
 
-fn state_reading_with_rules(state: &PublicCombatStateV1, include_rules: bool) -> String {
+fn state_summary(state: &PublicCombatStateV1) -> String {
     let mut out = String::new();
     writeln!(
         out,
@@ -335,6 +346,14 @@ fn state_reading_with_rules(state: &PublicCombatStateV1, include_rules: bool) ->
             .join(", ")
     )
     .unwrap();
+    out
+}
+
+fn state_reading_with_rules(state: &PublicCombatStateV1, include_rules: bool) -> String {
+    let mut out = state_summary(state);
+    if state.turn.player_escaping {
+        return out;
+    }
     if include_rules {
         writeln!(
             out,

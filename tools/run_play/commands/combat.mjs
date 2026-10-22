@@ -10,6 +10,9 @@ export async function actOrPreview(ctx, command, parameters) {
   if (parameters.length < 1) usage();
   let tokens = normalizeActionTokens(expandRepeatSugar(parameters));
   const before = await game.decision();
+  if (command === 'preview' && typeof before.summary !== 'string') {
+    throw new Error('Run-play reading has no public position summary; update the client and binary together');
+  }
   if (tokens.some(token => /^\d+$/.test(token) || token.startsWith('ordinal:'))) {
     throw new Error(`${command} requires semantic actions, not row numbers or ordinal addressing.\n${await ctx.commandHint(before, { preview: command === 'preview' })}`);
   }
@@ -39,8 +42,7 @@ export async function actOrPreview(ctx, command, parameters) {
   }
   if (command === 'preview') {
     write('Preview (current position unchanged)\n\n');
-    const actual = before.view.split('\n').filter(line => /^(Act \d|Turn \d|Hand:)/.test(line));
-    if (actual.length) write(`Actual position:\n${actual.join('\n')}\n\n`);
+    write(`Actual position:\n${before.summary.trimEnd()}\n\n`);
     if (reading.stop?.kind === 'unresolved') {
       write('Private boundary reached by preview; repair the failed action and suffix before act:\n');
     } else if (reading.stop?.kind === 'terminal') {
@@ -66,15 +68,14 @@ export async function board(ctx) {
   // pressure: look until the plan is worth committing.
   const reading = await game.decision({ details: ['brief'] });
   const doc = reading.control === 'combat' ? await decisionDocument(reading) : null;
-  await printCurrentReading(reading);
+  await printCurrentReading(reading, { document: doc });
   // The combat summary only exists mid-fight; outside combat the plain
   // reading already says everything.
   if (reading.control === 'combat') {
     assertCurrentDecision(reading, doc);
-    const { incoming, handBlock, playableLines } = summarizeDecisionJson(doc);
-    const blockNow = /Block (\d+)/.exec(reading.view)?.[1] ?? '?';
+    const { incoming, currentBlock, handBlock, playableLines } = summarizeDecisionJson(doc);
     if (incoming > 0) {
-      write(`incoming next enemy turn: ${incoming} | current block ${blockNow}\n`);
+      write(`incoming next enemy turn: ${incoming} | current block ${currentBlock ?? '?'}\n`);
       write(`hand block sum: ${handBlock} (individual projections; ignores cost, order and play limits)\n`);
     }
     if (playableLines.length > 0) {

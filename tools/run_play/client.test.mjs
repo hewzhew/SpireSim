@@ -21,7 +21,7 @@ lines.on('line', line => {
   if (r.command === 'commit_combat_plan') revision++;
   if (r.command === 'combat_research') result = { report_id:'test-report', view: 'c0: HP 70/75\\n', candidates: [{candidate_ref:'c0',plan_id:'c0@4bf5ca407322'}] };
   else if (r.command === 'combat_review') result = {view:'Turn '+(r.turn ?? 1)+' | Strike @M0\\n'};
-  else result = {reading:{view:'Decision '+revision+'\\n', control:'strategic', source:{revision},
+  else result = {reading:{view:'Decision '+revision+'\\n', summary:'当前位置 '+revision+'\\n', control:'strategic', source:{revision},
     context:{deck:'retained-deck'}, options:[{label:'Pick',choice:{ordinal_path:[3]}}],
     selections:[{label:'Discard',choice:{ordinal_path:[7]},min:0,max:2,
       members:[{ordinal:1,label:'Strike'},{ordinal:4,label:'Strike'}]}]},
@@ -58,6 +58,7 @@ test('direct pipes retain source objects, concise views and exact evidence', asy
   const first = await client.decision();
   assert.equal(first.raw.stdoutIsTTY, false);
   assert.equal(first.view, 'Decision 0\n');
+  assert.equal(first.summary, '当前位置 0\n');
   const next = await first.options[0].choose({retainContext:true});
   assert.deepEqual(next.raw.source, {revision:0});
   assert.deepEqual(next.raw.choice, {ordinal_path:[3]});

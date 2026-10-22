@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { researchOrCommitOrReview, planId } from './commands/search.mjs';
-import { actOrPreview } from './commands/combat.mjs';
+import { actOrPreview, board } from './commands/combat.mjs';
 import { choose } from './commands/choose.mjs';
 import { go, info, loot, mapView } from './commands/travel.mjs';
 import { join } from 'node:path';
@@ -367,7 +367,7 @@ function combatFixture(cards, monsters, plays, view) {
   return {
     reading: { control: 'combat', view, raw: { reading: { source: { public_snapshot_id: 'combat' } } } },
     doc: { decision: { information: { snapshot_id: 'combat' },
-      observation: { observation: { cards: { hand: { cards } }, monsters } },
+      observation: { observation: { player: { block: 7 }, cards: { hand: { cards } }, monsters } },
       candidates: plays.map(play => ({ action: { kind: 'play_card', hand_index: play.hand, target_monster_index: play.target ?? null } })),
     }, semantic_actions: plays.map(play => play.command) },
   };
@@ -500,7 +500,7 @@ test('board binds damage to active monster slots and candidate target indices', 
     { hand: 1, target: 2, command: 'play:Anger+0#0@6' },
   ], 'Hand: Cleave[1c], Anger[0c]');
   assert.deepEqual(summarizeDecisionJson(doc), {
-    incoming: 0, handBlock: 0, playableLines: [
+    incoming: 0, currentBlock: 7, handBlock: 0, playableLines: [
       'play:Cleave+0#0 cost=1 dmg=M2:12,M6:8',
       'play:Anger+0#0@2 cost=0 dmg=9',
       'play:Anger+0#0@6 cost=0 dmg=6',
@@ -1040,7 +1040,7 @@ test('whole combat can explicitly request independent time and work budgets', as
 test('preview uses no act or undo, even when rendering fails', async () => {
   const calls = [];
   const ctx = { game: {
-    async decision() { return { view: 'Energy 3\nHand: Strike[1c]' }; },
+    async decision() { return { summary: 'Hand: Strike[1c]\n', view: 'Energy 3\nHand: Strike[1c]' }; },
     async preview(line) {
       calls.push(line);
       return { get view() { throw new Error('render failed'); } };
@@ -1078,7 +1078,7 @@ test('act and preview preserve legality, transport and genuine ambiguity errors 
       const calls = [];
       const failure = new Error(message);
       const ctx = { game: {
-        async decision() { return { view: 'Energy 3\nHand: Strike[1c], Strike+[1c]\nM0 Jaw Worm: HP 20/46' }; },
+        async decision() { return { summary: 'Current combat\n', view: 'Energy 3\nHand: Strike[1c], Strike+[1c]\nM0 Jaw Worm: HP 20/46' }; },
         async act(line) { assert.equal(command, 'act'); calls.push(line); throw failure; },
         async preview(line) { assert.equal(command, 'preview'); calls.push(line); throw failure; },
       } };
@@ -1097,7 +1097,7 @@ test('combat-ended suffix trimming retries only the validated prefix through the
       return { view: 'Rewards' };
     };
     const ctx = { game: {
-      async decision() { return { view: 'Hand: Strike[1c], Defend[1c]' }; },
+      async decision() { return { summary: 'Hand: Strike[1c], Defend[1c]\n', view: 'Hand: Strike[1c], Defend[1c]' }; },
       async act(line) { assert.equal(command, 'act'); return execute(line); },
       async preview(line) { assert.equal(command, 'preview'); return execute(line); },
     }, async printCurrentReading() {} };
@@ -1110,7 +1110,7 @@ test('choice-resolution failures state atomic outcomes without asserting outcome
   for (const command of ['act', 'preview']) {
     const error = new Error(`exact run-play ${command === 'act' ? 'prepared line' : 'probe'} could not resolve step 2: a combat choice is pending`);
     const ctx = { write() {}, game: {
-      async decision() { return { view: 'Actual hand' }; },
+      async decision() { return { summary: 'Actual hand\n', view: 'Actual hand' }; },
       async act() { throw error; }, async preview() { throw error; },
     } };
     await assert.rejects(actOrPreview(ctx, command, ['play:Headbutt@0', 'play:Strike@0']), thrown => {
@@ -1128,18 +1128,52 @@ test('choice-resolution failures state atomic outcomes without asserting outcome
   }
 });
 
-test('preview labels the live hand separately from its hypothetical drawn hand', async () => {
-  const before = { view: 'Act 4 F56 | Combat\nTurn 2 | Energy 4\nHand: Defend[1c]' };
-  const after = { view: 'Act 4 F56 | Combat\nTurn 3 | Energy 4\nHand: Flex[0c]' };
-  let output = '', previews = 0;
-  await actOrPreview({ game: {
-    async decision() { return before; },
-    async preview() { previews++; return after; },
-    async act() { assert.fail('preview must stay private'); },
-  }, write: text => { output += text; } }, 'preview', ['end']);
-  assert.equal(previews, 1);
-  assert.match(output, /Actual position[^]*Turn 2[^]*Hand: Defend/);
-  assert.match(output, /Private result[^]*Turn 3[^]*Hand: Flex/);
+test('preview separates the source-rendered live summary from hypothetical results in either language', async () => {
+  for (const summary of [
+    'Act 4 F56 | Combat\nTurn 2 | Energy 4\nHand: Defend[1c]\n',
+    '第四幕 F56 | 战斗\n回合 2 | 能量 4\n手牌：防御[1费]\n',
+    '战斗来源未知 | HP 35/80\n等待逃跑结算\n',
+    'Act 1 F0 | HP 80/80 | Neow\n',
+  ]) {
+    const before = { summary, view: 'Act 99 | Block 999\nHand: misleading display text' };
+    const after = { view: 'Act 4 F56 | Combat\nTurn 3 | Energy 4\nHand: Flex[0c]' };
+    let output = '', previews = 0;
+    await actOrPreview({ game: {
+      async decision() { return before; },
+      async preview() { previews++; return after; },
+      async act() { assert.fail('preview must stay private'); },
+      async observe() { assert.fail('the summary must come from the reading itself'); },
+    }, write: text => { output += text; } }, 'preview', ['end']);
+    assert.equal(previews, 1);
+    assert.ok(output.includes(`Actual position:\n${summary.trimEnd()}\n\n`));
+    assert.match(output, /Private result[^]*Turn 3[^]*Hand: Flex/);
+    assert.doesNotMatch(output, /misleading|999/);
+  }
+});
+
+test('a preview without its source summary fails before private execution', async () => {
+  await assert.rejects(actOrPreview({ game: {
+    async decision() { return { view: 'Hand: not a summary' }; },
+    async preview() { assert.fail('missing source data must fail before preview'); },
+  } }, 'preview', ['end']), /no public position summary/);
+});
+
+test('board uses public block and reuses the same typed document for its reading', async () => {
+  const { reading, doc } = combatFixture([], [
+    { slot: 0, alive: true, intent: { preview_damage_per_hit: 12 } },
+  ], [], '当前格挡 7\nBlock 999 is descriptive text\n');
+  let output = '', queries = 0;
+  await board({ game: { async decision(options) {
+    assert.deepEqual(options, { details: ['brief'] }); return reading;
+  } }, async decisionDocument(current) {
+    assert.equal(current, reading); queries++; return doc;
+  }, async printCurrentReading(current, options) {
+    assert.equal(current, reading); assert.equal(options.document, doc);
+    output += current.view;
+  }, write(text) { output += text; } });
+  assert.equal(queries, 1);
+  assert.match(output, /incoming next enemy turn: 12 \| current block 7\n/);
+  assert.doesNotMatch(output, /current block 999/);
 });
 
 test('partial preview labels the private boundary and never offers to adopt the entire request', async () => {
@@ -1150,7 +1184,7 @@ test('partial preview labels the private boundary and never offers to adopt the 
   ]) {
     let output = '';
     await actOrPreview({ game: {
-      async decision() { return { view: 'Turn 1 | Energy 3\nHand: Defend[1c]' }; },
+      async decision() { return { summary: 'Turn 1 | Energy 3\nHand: Defend[1c]\n', view: 'Turn 1 | Energy 3\nHand: Defend[1c]' }; },
       async preview() { return { view: 'Private result', stop }; },
       async act() { assert.fail('inspection must stay private'); },
     }, write: text => { output += text; } }, 'preview', ['end', 'play:Defend']);

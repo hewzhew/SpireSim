@@ -31,6 +31,27 @@ test('printing a reading does not query plans based on an English or localized h
   }
 });
 
+test('board reads one typed observation for both commands and its numeric summary', async () => {
+  let observations = 0, text = '';
+  const ctx = createWorkbenchContext({ write(chunk) { text += chunk; }, game: {
+    async decision() { return { control: 'combat', view: '战斗\n当前格挡 8\n' }; },
+    async observe() {
+      observations++;
+      return { position: { kind: 'decision', public_snapshot_id: 'board', actions: [],
+        observation: { domain: 'combat', observation: {
+          player: { block: 8 }, cards: { hand: { cards: [] } },
+          monsters: [{ alive: true, intent: { preview_damage_per_hit: 13 } }],
+        } },
+      } };
+    },
+  } });
+  const { dispatchWorkbench } = await import('./workbench.mjs');
+  await dispatchWorkbench(ctx, 'board', []);
+  assert.equal(observations, 1);
+  assert.match(text, /当前格挡 8/);
+  assert.match(text, /incoming next enemy turn: 13 \| current block 8/);
+});
+
 for (const prefix of [false, true]) test(`cancelling a running diagnosis ${prefix ? 'after an applied action' : 'without a prefix'} waits for its child and preserves serialization`, { timeout: 8000 }, async t => {
   let plays = 0, observed = false, launches = 0;
   const controller = new AbortController();
