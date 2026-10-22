@@ -1593,10 +1593,13 @@ fn write_choice_mechanics(
                 "  {}",
                 text(
                     locale,
-                    "mechanics.eventEffectsEnglish",
+                    "mechanics.eventEffects",
                     &[(
                         "effects",
-                        &crate::render::render_event_structured_semantics_v1(Some(semantics))
+                        &crate::render::render_event_structured_semantics_v1(
+                            Some(semantics),
+                            locale
+                        )
                     )]
                 )
             )

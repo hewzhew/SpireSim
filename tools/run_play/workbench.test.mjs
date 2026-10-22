@@ -553,7 +553,7 @@ test('revealed transform results survive later successors and explicit page quer
 });
 
 test('current-page queries replace the automatic page, survive later actions, and preserve it if the query fails', async () => {
-  for (const command of ['read', 'options', 'board']) {
+  for (const command of ['read', 'options', 'board', 'info']) {
     let hp = 75, fail = false;
     const ctx = createWorkbenchContext({ write() {}, game: {
       async act() { hp--; return { view: `automatic HP ${hp}\n` }; },

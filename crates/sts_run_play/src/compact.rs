@@ -1590,6 +1590,7 @@ fn render_candidate_compact(
                 .unwrap_or("<label-unavailable>");
             let mechanics = render_event_structured_semantics_v1(
                 public_semantics.structured_semantics.as_ref(),
+                Locale::En,
             );
             format!(
                 "event:{}:s{screen}:o{option_index}:label={label:?}:{action:?}:mechanics=[{mechanics}]",

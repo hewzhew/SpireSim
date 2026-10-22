@@ -143,6 +143,7 @@ export async function executeWorkbenchCommands(ctx, groups, dispatch = dispatchW
       const beforeQuery = successorIndex;
       const result = await dispatch(ctx, command, parameters);
       const replacesPage = ['read', 'options', 'board'].includes(command)
+        || (command === 'info' && parameters.length === 0)
         || (command === 'map' && parameters[0] !== 'set' && successorIsMap);
       if (beforeQuery !== undefined && replacesPage) {
         chunks[beforeQuery] = '';

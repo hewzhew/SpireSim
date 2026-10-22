@@ -1440,7 +1440,6 @@
       "noRemoval": "no removable card"
     },
     "mechanics": {
-      "eventEffectsEnglish": "Effects: {{effects}}",
       "hp": "HP",
       "maxHp": "Max HP",
       "goldDelta": "Gold {{amount}}",
@@ -1449,7 +1448,8 @@
       "relicEnglish": "Relic: {{effect}}",
       "potion": "Potion (base rule): {{effect}}",
       "ectoplasm": "With Ectoplasm: Gold received 0; Gold paid {{paid}}.",
-      "sozu": "With Sozu: potions obtained 0."
+      "sozu": "With Sozu: potions obtained 0.",
+      "eventEffects": "Effects: {{effects}}"
     },
     "smith": {
       "unplayable": "unplayable",
@@ -1638,6 +1638,96 @@
       "exhaust": "Exhaust",
       "empty": "empty",
       "row": "{{label}} [{{count}}]: {{cards}}"
+    }
+  },
+  "event": {
+    "identity": "{{name}} [{{id}}]",
+    "unavailable": "Event effects are not available.",
+    "potions": {
+      "reward": "Potion delivery: reveal rewards for individual inspection and optional claims; current potions stay in their slots; free a slot before claiming a replacement.",
+      "immediate": "Potion delivery: immediately place in empty slots; a newly generated potion is lost when inventory is full."
+    },
+    "joust": "Joust odds: Owner wins {{owner}}%; Murderer wins {{murderer}}%. The chosen bet pays its listed prize when that side wins, or 0 Gold otherwise.",
+    "chance": "{{chance}}% chance",
+    "chanceUnknown": "probability not specified",
+    "random": "{{outcome}} ({{chance}}).",
+    "outcome": {
+      "wheel": "Gremlin Wheel result",
+      "joust": "Joust result",
+      "adventurer": "Dead Adventurer search result",
+      "flip": "Match and Keep card reveal",
+      "ooze": "Scrap Ooze relic roll"
+    },
+    "cardPool": {
+      "unknown": "an unspecified card pool",
+      "curse": "random ordinary curses",
+      "class": "random class cards",
+      "classCommonUncommon": "random common or uncommon class cards",
+      "classRare": "random rare class cards",
+      "colorless": "random colorless cards",
+      "colorlessUncommon": "random uncommon colorless cards",
+      "colorlessRare": "random rare colorless cards"
+    },
+    "relicPool": {
+      "unknown": "an unspecified relic pool",
+      "common": "random common relics",
+      "uncommon": "random uncommon relics",
+      "rare": "random rare relics",
+      "shop": "random shop relics",
+      "boss": "random Boss relics",
+      "any": "random relics",
+      "book": "random books",
+      "face": "random faces"
+    },
+    "transition": {
+      "stay": "Remain in this event.",
+      "advance": "Execute this option and enter the next event stage.",
+      "complete": "Complete this event.",
+      "selection": "Open card selection; choose the cards on the next screen.",
+      "remove": "Open permanent card removal; choose the cards on the next screen.",
+      "upgrade": "Open card upgrades; choose the cards on the next screen.",
+      "transform": "Open card transformation; choose the cards on the next screen.",
+      "duplicate": "Open card duplication; choose the cards on the next screen.",
+      "offer": "Open the card offering; choose the cards on the next screen.",
+      "reward": "Open the reward screen; choose which rewards to claim there.",
+      "combat": "Enter combat; combat rewards are received on victory."
+    },
+    "effect": {
+      "gainGold": "Gain {{amount}} Gold.",
+      "gainGoldRange": "Gain {{min}}–{{max}} Gold, depending on the outcome.",
+      "loseGold": "Lose {{amount}} Gold.",
+      "loseHp": "Lose {{amount}} HP.",
+      "loseMaxHp": "Lose {{amount}} Max HP.",
+      "heal": "Heal {{amount}} HP.",
+      "gainMaxHp": "Gain {{amount}} Max HP.",
+      "upgradeAll": "Upgrade all cards.",
+      "removeTarget": "Identified target: {{name}} [{{id}}].",
+      "removeTargetUnknown": "The specific target is not specified.",
+      "loseNamedStarter": "Lose the starter relic {{name}}.",
+      "loseNamedRelic": "Lose the relic {{name}}.",
+      "loseStarter": "Lose the starter relic.",
+      "loseRelic": "Lose a relic; its identity is not specified.",
+      "combat": "Start combat.",
+      "obtainRelic_one": "Obtain {{count}} relic: {{pool}}.",
+      "obtainRelic_other": "Obtain {{count}} relics: {{pool}}.",
+      "potions_one": "Obtain {{count}} random potion.",
+      "potions_other": "Obtain {{count}} random potions.",
+      "obtainCard_one": "Gain {{count}} permanent card: {{pool}}.",
+      "obtainCard_other": "Gain {{count}} permanent cards: {{pool}}.",
+      "colorless_one": "Gain {{count}} permanent colorless card: {{pool}}.",
+      "colorless_other": "Gain {{count}} permanent colorless cards: {{pool}}.",
+      "offer_one": "Offer {{count}} card from {{pool}} for selection.",
+      "offer_other": "Offer {{count}} cards from {{pool}} for selection.",
+      "curse_one": "Gain {{count}} curse: {{pool}}.",
+      "curse_other": "Gain {{count}} curses: {{pool}}.",
+      "remove_one": "Permanently remove {{count}} card; pool: {{pool}}.",
+      "remove_other": "Permanently remove {{count}} cards; pool: {{pool}}.",
+      "upgrade_one": "Upgrade {{count}} card.",
+      "upgrade_other": "Upgrade {{count}} cards.",
+      "transform_one": "Transform {{count}} card.",
+      "transform_other": "Transform {{count}} cards.",
+      "duplicate_one": "Duplicate {{count}} card.",
+      "duplicate_other": "Duplicate {{count}} cards."
     }
   }
 }

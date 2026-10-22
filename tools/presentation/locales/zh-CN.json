@@ -1440,7 +1440,6 @@
       "noRemoval": "没有可移除的牌"
     },
     "mechanics": {
-      "eventEffectsEnglish": "事件机制补充（英文）：{{effects}}",
       "hp": "生命",
       "maxHp": "生命上限",
       "goldDelta": "金币 {{amount}}",
@@ -1449,7 +1448,8 @@
       "relicEnglish": "遗物机制补充（英文）：{{effect}}",
       "potion": "药水基础规则：{{effect}}",
       "ectoplasm": "持有灵体外质：获得 0 金币，支出 {{paid}} 金币。",
-      "sozu": "持有添水：获得 0 瓶药水。"
+      "sozu": "持有添水：获得 0 瓶药水。",
+      "eventEffects": "效果：{{effects}}"
     },
     "smith": {
       "unplayable": "不可打出",
@@ -1638,6 +1638,96 @@
       "exhaust": "消耗堆",
       "empty": "空",
       "row": "{{label}} [{{count}}]：{{cards}}"
+    }
+  },
+  "event": {
+    "identity": "{{name}} [{{id}}]",
+    "unavailable": "暂无事件效果信息。",
+    "potions": {
+      "reward": "药水将显示在奖励页，可逐个查看并选择领取。现有药水保留；领取替换药水前需要腾出空槽。",
+      "immediate": "药水立即进入空槽；槽位已满时，新生成的药水会丢失。"
+    },
+    "joust": "长枪决斗胜率：宠物主人 {{owner}}%，杀宠凶手 {{murderer}}%。所选方获胜时得到对应奖金，否则奖金为 0 金币。",
+    "chance": "概率 {{chance}}%",
+    "chanceUnknown": "概率未提供",
+    "random": "{{outcome}}（{{chance}}）。",
+    "outcome": {
+      "wheel": "地精轮盘结果",
+      "joust": "长枪决斗结果",
+      "adventurer": "冒险者遗骸搜索结果",
+      "flip": "记忆配对翻牌结果",
+      "ooze": "废料堆遗物随机结果"
+    },
+    "cardPool": {
+      "unknown": "未指定的牌池",
+      "curse": "随机普通诅咒",
+      "class": "随机本职业牌",
+      "classCommonUncommon": "随机本职业普通或罕见牌",
+      "classRare": "随机本职业稀有牌",
+      "colorless": "随机无色牌",
+      "colorlessUncommon": "随机罕见无色牌",
+      "colorlessRare": "随机稀有无色牌"
+    },
+    "relicPool": {
+      "unknown": "未指定的遗物池",
+      "common": "随机普通遗物",
+      "uncommon": "随机罕见遗物",
+      "rare": "随机稀有遗物",
+      "shop": "随机商店遗物",
+      "boss": "随机 Boss 遗物",
+      "any": "随机遗物",
+      "book": "随机书籍遗物",
+      "face": "随机面具遗物"
+    },
+    "transition": {
+      "stay": "仍停留在此事件中。",
+      "advance": "执行此选项并进入事件下一阶段。",
+      "complete": "结束此事件。",
+      "selection": "进入选牌，具体卡牌在下一屏选择。",
+      "remove": "进入永久删牌，具体卡牌在下一屏选择。",
+      "upgrade": "进入升级选牌，具体卡牌在下一屏选择。",
+      "transform": "进入变化选牌，具体卡牌在下一屏选择。",
+      "duplicate": "进入复制选牌，具体卡牌在下一屏选择。",
+      "offer": "进入献牌选择，具体卡牌在下一屏选择。",
+      "reward": "进入奖励页，在该页选择领取奖励。",
+      "combat": "进入战斗，战斗奖励在胜利后获得。"
+    },
+    "effect": {
+      "gainGold": "获得 {{amount}} 金币。",
+      "gainGoldRange": "依结果获得 {{min}}–{{max}} 金币。",
+      "loseGold": "失去 {{amount}} 金币。",
+      "loseHp": "失去 {{amount}} 点生命。",
+      "loseMaxHp": "失去 {{amount}} 点生命上限。",
+      "heal": "恢复 {{amount}} 点生命。",
+      "gainMaxHp": "获得 {{amount}} 点生命上限。",
+      "upgradeAll": "升级所有卡牌。",
+      "removeTarget": "已指定目标：{{name}} [{{id}}]。",
+      "removeTargetUnknown": "尚未指定具体目标。",
+      "loseNamedStarter": "失去初始遗物 {{name}}。",
+      "loseNamedRelic": "失去遗物 {{name}}。",
+      "loseStarter": "失去初始遗物。",
+      "loseRelic": "失去一件遗物，具体遗物未提供。",
+      "combat": "开始战斗。",
+      "obtainRelic_one": "获得 {{count}} 件遗物：{{pool}}。",
+      "obtainRelic_other": "获得 {{count}} 件遗物：{{pool}}。",
+      "potions_one": "获得 {{count}} 瓶随机药水。",
+      "potions_other": "获得 {{count}} 瓶随机药水。",
+      "obtainCard_one": "永久获得 {{count}} 张牌：{{pool}}。",
+      "obtainCard_other": "永久获得 {{count}} 张牌：{{pool}}。",
+      "colorless_one": "永久获得 {{count}} 张无色牌：{{pool}}。",
+      "colorless_other": "永久获得 {{count}} 张无色牌：{{pool}}。",
+      "offer_one": "提供 {{count}} 张牌供选择：{{pool}}。",
+      "offer_other": "提供 {{count}} 张牌供选择：{{pool}}。",
+      "curse_one": "获得 {{count}} 张诅咒：{{pool}}。",
+      "curse_other": "获得 {{count}} 张诅咒：{{pool}}。",
+      "remove_one": "永久移除 {{count}} 张牌；牌池：{{pool}}。",
+      "remove_other": "永久移除 {{count}} 张牌；牌池：{{pool}}。",
+      "upgrade_one": "升级 {{count}} 张牌。",
+      "upgrade_other": "升级 {{count}} 张牌。",
+      "transform_one": "变化 {{count}} 张牌。",
+      "transform_other": "变化 {{count}} 张牌。",
+      "duplicate_one": "复制 {{count}} 张牌。",
+      "duplicate_other": "复制 {{count}} 张牌。"
     }
   }
 }

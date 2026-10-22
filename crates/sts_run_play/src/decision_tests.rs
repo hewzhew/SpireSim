@@ -1274,7 +1274,19 @@ fn potion_events_show_delivery_before_choice_and_preserve_full_inventory() {
             reading.view
         );
         assert!(
-            crate::render::render_event_structured_semantics_v1(Some(semantics)).contains(delivery)
+            crate::render::render_event_structured_semantics_v1(Some(semantics), Locale::En)
+                .contains(delivery)
+        );
+        let chinese = game.decision_reading_v1(&[], None, Locale::ZhCn).unwrap();
+        assert_eq!(chinese.source, reading.source);
+        assert!(
+            chinese.view.contains(if reward_screen {
+                "药水将显示在奖励页，可逐个查看并选择领取"
+            } else {
+                "槽位已满时，新生成的药水会丢失"
+            }),
+            "{event:?}: {}",
+            chinese.view
         );
         assert_eq!(
             *game.head(),
@@ -1340,10 +1352,11 @@ fn event_choices_show_joust_odds_from_shared_semantics_without_revealing_the_rol
                 outcome: Random::JoustOwnerWin,
                 chance_percent: Some(30),
             }));
-            assert!(
-                crate::render::render_event_public_effect_v1(effects.last().unwrap())
-                    .contains(odds)
-            );
+            assert!(crate::render::render_event_public_effect_v1(
+                effects.last().unwrap(),
+                Locale::En
+            )
+            .contains(odds));
         }
     }
     assert_eq!(*game.head(), before);
@@ -1697,10 +1710,16 @@ fn event_default_reading_exposes_random_rewards_and_colosseum_combat_stages() {
         .view;
     assert!(view.contains("ColosseumNobs"), "{view}");
     assert!(view.contains("On victory"), "{view}");
-    assert!(view.contains("obtain-relic:1:random-rare"), "{view}");
-    assert!(view.contains("obtain-relic:1:random-uncommon"), "{view}");
-    assert!(view.contains("gain-gold:100"), "{view}");
-    assert!(view.contains("start-combat"), "{view}");
+    assert!(
+        view.contains("Obtain 1 relic: random rare relics."),
+        "{view}"
+    );
+    assert!(
+        view.contains("Obtain 1 relic: random uncommon relics."),
+        "{view}"
+    );
+    assert!(view.contains("Gain 100 Gold."), "{view}");
+    assert!(view.contains("Enter combat"), "{view}");
     session
         .run_state
         .event_state

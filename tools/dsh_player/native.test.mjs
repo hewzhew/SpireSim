@@ -138,10 +138,14 @@ test('native preset capability is lazy and isolates real games for two agents sh
     assert.match(textOf(trade), /Preview inventory changes:\n/);
     assert.match(textOf(trade), /^  Relics: -1 Burning Blood, \+1 /m);
     assert.equal(textOf(await execute(b, 'read')), textOf(initialB));
+    const currentInfo = await execute(b, 'info');
+    assert.equal(Boolean(currentInfo.isError), false, textOf(currentInfo));
+    assert.ok(textOf(currentInfo).includes(currentInfo.meta.currentReading.text));
     const mixed = await execute(b, 'info, inventory effects, deck');
     assert.equal(mixed.isError, true);
     assert.match(textOf(mixed), /^Error: deck is not a command\. Use inventory/);
-    assert.match(textOf(mixed), /Earlier results:\ncandidates=/);
+    assert.ok(textOf(mixed).includes(`Earlier results:\n${currentInfo.meta.currentReading.text.trimEnd()}`));
+    assert.doesNotMatch(textOf(mixed), /candidates=|transition=/);
     assert.match(textOf(mixed), /Deck \(11\)/);
     assert.doesNotMatch(textOf(mixed), /\.\/p /);
     assert.equal(textOf(await execute(b, 'read')), textOf(initialB));

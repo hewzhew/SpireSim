@@ -3,6 +3,74 @@ use crate::decision_tests::{controller_with_session, fixture, TestDirectory};
 use sts_presentation::Locale;
 
 #[test]
+fn event_locales_preserve_sources_raw_labels_effects_and_game_state() {
+    use sts_oracle_learning::state::{
+        core::EngineState,
+        events::{EventId, EventState},
+    };
+    for (event, screen) in [
+        (EventId::Neow, 0),
+        (EventId::Lab, 0),
+        (EventId::Mushrooms, 0),
+        (EventId::TheJoust, 1),
+        (EventId::Colosseum, 2),
+        (EventId::ForgottenAltar, 0),
+        (EventId::DrugDealer, 0),
+        (EventId::GoldenIdol, 1),
+        (EventId::MatchAndKeep, 0),
+    ] {
+        let directory = TestDirectory::new();
+        let mut session = fixture("reward");
+        session.engine_state = EngineState::EventRoom;
+        let mut state = EventState::new(event);
+        state.current_screen = screen;
+        session.run_state.event_state = Some(state);
+        let mut game = controller_with_session(&directory.0, "event-locale", &session);
+        let before = game.head().clone();
+        let en = game
+            .decision_reading_v1(
+                &[DecisionDetailV1::Options, DecisionDetailV1::State],
+                None,
+                Locale::En,
+            )
+            .unwrap();
+        let zh = game
+            .decision_reading_v1(
+                &[DecisionDetailV1::Options, DecisionDetailV1::State],
+                None,
+                Locale::ZhCn,
+            )
+            .unwrap();
+        assert_eq!(en.source, zh.source, "{event:?}");
+        assert_eq!(en.state, zh.state, "{event:?}");
+        assert_eq!(
+            *game.head(),
+            before,
+            "{event:?}: language cannot advance the event or RNG"
+        );
+        let candidates = |reading: &RunPlayDecisionReadingV1| {
+            reading
+                .options
+                .iter()
+                .map(|o| (o.candidate.clone(), o.choice.clone()))
+                .collect::<Vec<_>>()
+        };
+        // Compare owned values so this also covers source public labels and all
+        // typed effects, rather than reconstructing semantics from either text.
+        assert_eq!(candidates(&en), candidates(&zh), "{event:?}");
+        assert!(zh.view.contains("效果："), "{event:?}: {}", zh.view);
+        assert!(!zh.view.contains("事件效果（英文）"));
+        if event == EventId::TheJoust {
+            assert!(zh.view.contains("宠物主人 30%，杀宠凶手 70%"));
+        }
+        if event == EventId::Colosseum {
+            assert!(zh.view.contains("战斗奖励在胜利后获得"));
+            assert!(zh.view.contains("随机稀有遗物"));
+        }
+    }
+}
+
+#[test]
 fn localized_key_queries_keep_current_keys_and_distinct_acquisition_rules() {
     let directory = TestDirectory::new();
     let game = controller_with_session(&directory.0, "key-query-locale", &fixture("reward"));

@@ -215,22 +215,12 @@ export async function info(ctx, parameters = []) {
     write((await ctx.game.info(parameters.join(' '), { locale: ctx.agentLocale ?? 'en' })).view);
     return;
   }
-  // Mechanics of the current decision straight from the executable's
-  // detailed view, so event outcomes never have to be guessed.
-  const show = await engineOutput(ctx, parameters.length ? ['info', '--locale', ctx.agentLocale ?? 'en', ...parameters] : ['show']);
   if (parameters.length) {
-    write(show);
+    write(await engineOutput(ctx, ['info', '--locale', ctx.agentLocale ?? 'en', ...parameters]));
     return;
   }
-  const start = show.indexOf('candidates=');
-  const body = (start === -1 ? show : show.slice(start)).trimEnd();
-  write(`${body}\n`);
-  if (/transition=advance-screen/.test(body)) {
-    write('advance-screen changes the event phase. Listed effects may apply immediately; it does not imply a later confirmation or a chance to cancel. Read the returned screen and its effects before continuing.\n');
-  }
-  if (/transition=open-selection/.test(body)) {
-    write('⚠ open-selection: the label only describes entering; the card choice follows on the next screen.' + String.fromCharCode(10));
-  }
+  const reading = await ctx.game.decision({ details: ['options'] });
+  await ctx.printCurrentReading(reading, { expanded: true });
 }
 
 export async function cancel(ctx) {

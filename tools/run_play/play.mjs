@@ -200,10 +200,10 @@ export async function main() {
     throw new Error('pick was retired — what you see is what you type: node scripts/p.mjs <name> (e.g. node scripts/p.mjs Disarm), node scripts/p.mjs <verb> <name>, or the row number');
   }
 
-  // Info already runs the read-only executable directly. Opening an unused
+  // Named info queries run the read-only executable directly. Opening an unused
   // agent-shell here adds a second process that may still be initializing
   // when EOF shutdown begins, turning a successful query into a timeout.
-  if (commands.every(([name]) => name === 'info')) {
+  if (commands.every(([name, query]) => name === 'info' && query.length > 0)) {
     for (const [, query] of commands) {
       await info({ binary, session, repository }, query);
     }

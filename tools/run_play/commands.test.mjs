@@ -855,35 +855,37 @@ test('chained ordinary row numbers are rejected before the first mutation', asyn
   }; } } }, '0', ['1']), /multiple row numbers are only valid within one card selection/);
 });
 
-test('info forwards complete queries to the Rust owner and preserves ordinary page info', async t => {
+test('info forwards a complete definition query without opening a decision connection', async () => {
   const calls = [];
   let output = '';
-  t.mock.method(process.stdout, 'write', chunk => { output += chunk; return true; });
   const ctx = { binary: 'run_play', session: 'selected', repository: 'repo',
+    write: text => { output += text; },
     runEngine(binary, args) {
       calls.push([binary, args]);
-      return { status: 0, stdout: args[0] === 'info' ? 'Power: Spore Cloud\n' : 'header\ncandidates=page mechanics\n', stderr: '' };
+      return { status: 0, stdout: 'Power: Spore Cloud\n', stderr: '' };
     },
   };
   await info(ctx, ['Spore', 'Cloud']);
-  await info(ctx);
-  assert.deepEqual(calls, [
-    ['run_play', ['info', '--session', 'selected', '--locale', 'en', 'Spore', 'Cloud']],
-    ['run_play', ['show', '--session', 'selected']],
-  ]);
-  assert.equal(output, 'Power: Spore Cloud\ncandidates=page mechanics\n');
+  assert.deepEqual(calls, [['run_play', ['info', '--session', 'selected', '--locale', 'en', 'Spore', 'Cloud']]]);
+  assert.equal(output, 'Power: Spore Cloud\n');
 });
 
-test('event phase advance does not imply that immediate trade effects wait for confirmation', async () => {
-  let output = '';
-  await info({ binary: 'run_play', session: 'selected', repository: 'repo',
-    write: text => { output += text; },
-    runEngine() { return { status: 0, stdout: 'candidates=1\nmechanics=[heal:18; obtain-curse:1:Parasite; transition=advance-screen]\n' }; },
-  });
-  assert.match(output, /heal:18; obtain-curse:1:Parasite/);
-  assert.match(output, /Listed effects may apply immediately/);
-  assert.match(output, /does not imply a later confirmation or a chance to cancel/);
-  assert.doesNotMatch(output, /first screen is not the final decision|cost\/confirm/);
+test('current event info preserves the native localized reading without diagnostic parsing or appended warnings', async () => {
+  for (const view of [
+    'Effects: Heal 18 HP. Gain 1 curse: Parasite. Execute this option and enter the next event stage.\n',
+    '效果：恢复 18 点生命。获得 1 张诅咒：寄生。执行此选项并进入事件下一阶段。\n',
+    'Original option label: transition=open-selection; transition=advance-screen\n',
+  ]) {
+    let output = '', reads = 0;
+    const reading = { view };
+    await info({
+      game: { async decision(options) { reads++; assert.deepEqual(options, { details: ['options'] }); return reading; } },
+      async printCurrentReading(actual, options) { assert.equal(actual, reading); assert.deepEqual(options, { expanded: true }); output += actual.view; },
+      runEngine() { assert.fail('current info must use the native reading'); },
+    });
+    assert.equal(reads, 1);
+    assert.equal(output, view);
+  }
 });
 
 test('successful choice shows only its successor view', async t => {

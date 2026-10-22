@@ -2645,6 +2645,7 @@ pub(crate) fn render_strategic_action(
                 .map_or_else(|| "<unavailable>".to_string(), |label| format!("{label:?}"));
             let mechanics = render_event_structured_semantics_v1(
                 public_semantics.structured_semantics.as_ref(),
+                locale,
             );
             format!(
                 "event {} option={option_index} label={label} action={action:?} mechanics=[{mechanics}] summary=[{}]",
@@ -2927,16 +2928,27 @@ pub(crate) fn render_strategic_action(
     }
 }
 
+fn event_text(locale: Locale, key: &str, parameters: &[(&str, &str)]) -> String {
+    locale
+        .text("event", key, parameters)
+        .expect("event reading message")
+}
+
 pub(crate) fn render_event_structured_semantics_v1(
     structured: Option<&PlannerEventOptionStructuredSemanticsV1>,
+    locale: Locale,
 ) -> String {
     let Some(structured) = structured else {
-        return "unavailable".to_string();
+        return event_text(locale, "unavailable", &[]);
     };
     let mut parts = structured
         .effects
         .iter()
-        .map(render_event_public_effect_v1)
+        .filter(|effect| {
+            !(matches!(effect, PlannerEventPublicEffectV1::StartCombat)
+                && structured.transition == PlannerEventTransitionV1::StartCombat)
+        })
+        .map(|effect| render_event_public_effect_v1(effect, locale))
         .collect::<Vec<_>>();
     if structured.effects.iter().any(|effect| {
         matches!(
@@ -2944,153 +2956,262 @@ pub(crate) fn render_event_structured_semantics_v1(
             PlannerEventPublicEffectV1::ObtainRandomPotions { .. }
         )
     }) {
-        match structured.transition {
-            PlannerEventTransitionV1::OpenReward => parts.push(
-                "Potion delivery: reveal rewards for individual inspection and optional claims; current potions stay in their slots; free a slot before claiming a replacement".to_string(),
-            ),
-            PlannerEventTransitionV1::None => parts.push(
-                "Potion delivery: immediately place in empty slots; a newly generated potion is lost when inventory is full".to_string(),
-            ),
-            _ => {}
+        let delivery = match structured.transition {
+            PlannerEventTransitionV1::OpenReward => Some("potions.reward"),
+            PlannerEventTransitionV1::None => Some("potions.immediate"),
+            _ => None,
+        };
+        if let Some(key) = delivery {
+            parts.push(event_text(locale, key, &[]));
         }
     }
-    parts.push(format!(
-        "transition={}",
-        render_event_transition_v1(structured.transition)
-    ));
-    parts.join("; ")
+    parts.push(render_event_transition_v1(structured.transition, locale));
+    parts.join(" ")
 }
 
-pub(crate) fn render_event_public_effect_v1(effect: &PlannerEventPublicEffectV1) -> String {
+pub(crate) fn render_event_public_effect_v1(
+    effect: &PlannerEventPublicEffectV1,
+    locale: Locale,
+) -> String {
+    use sts_oracle_learning::ai::planner_core::PlannerEventRandomOutcomeV1 as Random;
+    let count_text = |key: &str, count: usize, parameters: &[(&str, &str)]| {
+        let count_value = count.to_string();
+        let mut parameters = parameters.to_vec();
+        parameters.push(("count", &count_value));
+        event_text(
+            locale,
+            &format!("effect.{key}_{}", if count == 1 { "one" } else { "other" }),
+            &parameters,
+        )
+    };
+    let amount_text = |key: &str, amount: i32| {
+        event_text(
+            locale,
+            &format!("effect.{key}"),
+            &[("amount", &amount.to_string())],
+        )
+    };
     match effect {
-        PlannerEventPublicEffectV1::GainGold { amount } => format!("gain-gold:{amount}"),
-        PlannerEventPublicEffectV1::GainGoldRange { min, max } => {
-            format!("gain-gold:{min}..{max}")
-        }
-        PlannerEventPublicEffectV1::LoseGold { amount } => format!("lose-gold:{amount}"),
-        PlannerEventPublicEffectV1::LoseHp { amount } => format!("lose-hp:{amount}"),
-        PlannerEventPublicEffectV1::LoseMaxHp { amount } => format!("lose-max-hp:{amount}"),
-        PlannerEventPublicEffectV1::Heal { amount } => format!("heal:{amount}"),
-        PlannerEventPublicEffectV1::GainMaxHp { amount } => format!("gain-max-hp:{amount}"),
-        PlannerEventPublicEffectV1::ObtainRelic { count, pool } => {
-            format!("obtain-relic:{count}:{}", render_event_relic_pool_v1(pool))
-        }
-        PlannerEventPublicEffectV1::ObtainRandomPotions { count } => {
-            format!("obtain-random-potions:{count}")
-        }
-        PlannerEventPublicEffectV1::ObtainCard { count, pool } => {
-            format!(
-                "Gain {count} permanent card(s): {}",
-                render_event_card_pool_v1(pool)
-            )
-        }
-        PlannerEventPublicEffectV1::ObtainColorlessCard { count, pool } => format!(
-            "obtain-colorless-card:{count}:{}",
-            render_event_card_pool_v1(pool)
+        PlannerEventPublicEffectV1::GainGold { amount } => amount_text("gainGold", *amount),
+        PlannerEventPublicEffectV1::GainGoldRange { min, max } => event_text(
+            locale,
+            "effect.gainGoldRange",
+            &[("min", &min.to_string()), ("max", &max.to_string())],
         ),
-        PlannerEventPublicEffectV1::OfferCards { count, pool } => {
-            format!("offer-cards:{count}:{}", render_event_card_pool_v1(pool))
+        PlannerEventPublicEffectV1::LoseGold { amount } => amount_text("loseGold", *amount),
+        PlannerEventPublicEffectV1::LoseHp { amount } => amount_text("loseHp", *amount),
+        PlannerEventPublicEffectV1::LoseMaxHp { amount } => amount_text("loseMaxHp", *amount),
+        PlannerEventPublicEffectV1::Heal { amount } => amount_text("heal", *amount),
+        PlannerEventPublicEffectV1::GainMaxHp { amount } => amount_text("gainMaxHp", *amount),
+        PlannerEventPublicEffectV1::ObtainRelic { count, pool } => count_text(
+            "obtainRelic",
+            *count,
+            &[("pool", &render_event_relic_pool_v1(pool, locale))],
+        ),
+        PlannerEventPublicEffectV1::ObtainRandomPotions { count } => {
+            count_text("potions", *count, &[])
         }
-        PlannerEventPublicEffectV1::ObtainCurse { count, pool } => {
-            format!("obtain-curse:{count}:{}", render_event_card_pool_v1(pool))
-        }
+        PlannerEventPublicEffectV1::ObtainCard { count, pool } => count_text(
+            "obtainCard",
+            *count,
+            &[("pool", &render_event_card_pool_v1(pool, locale))],
+        ),
+        PlannerEventPublicEffectV1::ObtainColorlessCard { count, pool } => count_text(
+            "colorless",
+            *count,
+            &[("pool", &render_event_card_pool_v1(pool, locale))],
+        ),
+        PlannerEventPublicEffectV1::OfferCards { count, pool } => count_text(
+            "offer",
+            *count,
+            &[("pool", &render_event_card_pool_v1(pool, locale))],
+        ),
+        PlannerEventPublicEffectV1::ObtainCurse { count, pool } => count_text(
+            "curse",
+            *count,
+            &[("pool", &render_event_card_pool_v1(pool, locale))],
+        ),
         PlannerEventPublicEffectV1::RemoveCard {
             count,
             target,
             pool,
         } => {
-            let target = target.as_ref().map_or_else(
-                || "unspecified".to_string(),
-                |card| format_card(card.card, card.upgrades),
+            let mut result = count_text(
+                "remove",
+                *count,
+                &[("pool", &render_event_card_pool_v1(pool, locale))],
             );
-            format!(
-                "remove-card:{count}:{}:target={target}",
-                render_event_card_pool_v1(pool)
-            )
+            if let Some(card) = target {
+                result.push(' ');
+                result.push_str(&event_text(
+                    locale,
+                    "effect.removeTarget",
+                    &[
+                        (
+                            "name",
+                            &locale.card_name(card.card.stable_id(), card.upgrades),
+                        ),
+                        ("id", card.card.stable_id()),
+                    ],
+                ));
+            } else {
+                result.push(' ');
+                result.push_str(&event_text(locale, "effect.removeTargetUnknown", &[]));
+            }
+            result
         }
-        PlannerEventPublicEffectV1::UpgradeCard { count } => format!("upgrade-card:{count}"),
-        PlannerEventPublicEffectV1::UpgradeAllCards => "upgrade-all-cards".to_string(),
-        PlannerEventPublicEffectV1::TransformCard { count } => format!("transform-card:{count}"),
-        PlannerEventPublicEffectV1::DuplicateCard { count } => format!("duplicate-card:{count}"),
+        PlannerEventPublicEffectV1::UpgradeCard { count } => count_text("upgrade", *count, &[]),
+        PlannerEventPublicEffectV1::UpgradeAllCards => event_text(locale, "effect.upgradeAll", &[]),
+        PlannerEventPublicEffectV1::TransformCard { count } => count_text("transform", *count, &[]),
+        PlannerEventPublicEffectV1::DuplicateCard { count } => count_text("duplicate", *count, &[]),
         PlannerEventPublicEffectV1::LoseRelic {
             specific,
             starter_only,
-        } => format!(
-            "lose-relic:{}:starter-only={starter_only}",
-            specific.map_or_else(|| "unspecified".to_string(), format_identity)
-        ),
-        PlannerEventPublicEffectV1::LoseStarterRelic { specific } => format!(
-            "lose-starter-relic:{}",
-            specific.map_or_else(|| "unspecified".to_string(), format_identity)
-        ),
+        } => {
+            let name = specific.map(|relic| {
+                event_text(
+                    locale,
+                    "identity",
+                    &[
+                        ("name", locale.entity("relic", relic.stable_id())),
+                        ("id", relic.stable_id()),
+                    ],
+                )
+            });
+            let key = match (name.is_some(), starter_only) {
+                (true, true) => "effect.loseNamedStarter",
+                (true, false) => "effect.loseNamedRelic",
+                (false, true) => "effect.loseStarter",
+                (false, false) => "effect.loseRelic",
+            };
+            event_text(locale, key, &[("name", name.as_deref().unwrap_or(""))])
+        }
+        PlannerEventPublicEffectV1::LoseStarterRelic { specific } => match specific {
+            Some(relic) => event_text(
+                locale,
+                "effect.loseNamedStarter",
+                &[(
+                    "name",
+                    &event_text(
+                        locale,
+                        "identity",
+                        &[
+                            ("name", locale.entity("relic", relic.stable_id())),
+                            ("id", relic.stable_id()),
+                        ],
+                    ),
+                )],
+            ),
+            None => event_text(locale, "effect.loseStarter", &[]),
+        },
         PlannerEventPublicEffectV1::RandomOutcome {
-            outcome: sts_oracle_learning::ai::planner_core::PlannerEventRandomOutcomeV1::JoustOwnerWin,
+            outcome: Random::JoustOwnerWin,
             chance_percent: Some(chance),
-        } => format!(
-            "Joust odds: Owner wins {chance}%; Murderer wins {}%. The chosen bet pays its listed prize when that side wins, or 0 Gold otherwise.",
-            100_u8.saturating_sub(*chance)
+        } => event_text(
+            locale,
+            "joust",
+            &[
+                ("owner", &chance.to_string()),
+                ("murderer", &100_u8.saturating_sub(*chance).to_string()),
+            ],
         ),
         PlannerEventPublicEffectV1::RandomOutcome {
             outcome,
             chance_percent,
-        } => format!(
-            "random-outcome:{outcome:?}:chance={}",
-            chance_percent.map_or_else(|| "unspecified".to_string(), |chance| format!("{chance}%"))
-        ),
-        PlannerEventPublicEffectV1::StartCombat => "start-combat".to_string(),
-    }
-}
-
-fn render_event_card_pool_v1(pool: &PlannerEventCardPoolV1) -> String {
-    match pool {
-        PlannerEventCardPoolV1::Unknown => "unknown-pool".to_string(),
-        PlannerEventCardPoolV1::Specific { card, upgrades } => format_card(*card, *upgrades),
-        PlannerEventCardPoolV1::RandomCurse => "random-ordinary-curse".to_string(),
-        PlannerEventCardPoolV1::RandomClassCard => "random-class-card".to_string(),
-        PlannerEventCardPoolV1::RandomClassCommonOrUncommon => {
-            "random-class-common-or-uncommon".to_string()
+        } => {
+            let key = match outcome {
+                Random::GremlinWheel => "wheel",
+                Random::JoustOwnerWin => "joust",
+                Random::DeadAdventurerSearch => "adventurer",
+                Random::MatchAndKeepFlip => "flip",
+                Random::ScrapOozeRelicRoll => "ooze",
+            };
+            let chance = chance_percent.map_or_else(
+                || event_text(locale, "chanceUnknown", &[]),
+                |chance| event_text(locale, "chance", &[("chance", &chance.to_string())]),
+            );
+            event_text(
+                locale,
+                "random",
+                &[
+                    (
+                        "outcome",
+                        &event_text(locale, &format!("outcome.{key}"), &[]),
+                    ),
+                    ("chance", &chance),
+                ],
+            )
         }
-        PlannerEventCardPoolV1::RandomClassRare => "random-class-rare".to_string(),
-        PlannerEventCardPoolV1::RandomColorless => "random-colorless".to_string(),
-        PlannerEventCardPoolV1::RandomColorlessUncommon => "random-colorless-uncommon".to_string(),
-        PlannerEventCardPoolV1::RandomColorlessRare => "random-colorless-rare".to_string(),
+        PlannerEventPublicEffectV1::StartCombat => event_text(locale, "effect.combat", &[]),
     }
 }
 
-fn render_event_relic_pool_v1(pool: &PlannerEventRelicPoolV1) -> String {
-    match pool {
-        PlannerEventRelicPoolV1::Unknown => "unknown-pool".to_string(),
-        PlannerEventRelicPoolV1::Specific { relic } => format_identity(*relic),
-        PlannerEventRelicPoolV1::RandomCommonRelic => "random-common".to_string(),
-        PlannerEventRelicPoolV1::RandomUncommonRelic => "random-uncommon".to_string(),
-        PlannerEventRelicPoolV1::RandomRareRelic => "random-rare".to_string(),
-        PlannerEventRelicPoolV1::RandomShopRelic => "random-shop".to_string(),
-        PlannerEventRelicPoolV1::RandomBossRelic => "random-boss".to_string(),
-        PlannerEventRelicPoolV1::RandomRelic => "random-any".to_string(),
-        PlannerEventRelicPoolV1::RandomBook => "random-book".to_string(),
-        PlannerEventRelicPoolV1::RandomFace => "random-face".to_string(),
-    }
+fn render_event_card_pool_v1(pool: &PlannerEventCardPoolV1, locale: Locale) -> String {
+    let key = match pool {
+        PlannerEventCardPoolV1::Specific { card, upgrades } => {
+            return event_text(
+                locale,
+                "identity",
+                &[
+                    ("name", &locale.card_name(card.stable_id(), *upgrades)),
+                    ("id", card.stable_id()),
+                ],
+            )
+        }
+        PlannerEventCardPoolV1::Unknown => "unknown",
+        PlannerEventCardPoolV1::RandomCurse => "curse",
+        PlannerEventCardPoolV1::RandomClassCard => "class",
+        PlannerEventCardPoolV1::RandomClassCommonOrUncommon => "classCommonUncommon",
+        PlannerEventCardPoolV1::RandomClassRare => "classRare",
+        PlannerEventCardPoolV1::RandomColorless => "colorless",
+        PlannerEventCardPoolV1::RandomColorlessUncommon => "colorlessUncommon",
+        PlannerEventCardPoolV1::RandomColorlessRare => "colorlessRare",
+    };
+    event_text(locale, &format!("cardPool.{key}"), &[])
 }
 
-fn render_event_transition_v1(transition: PlannerEventTransitionV1) -> String {
-    match transition {
-        PlannerEventTransitionV1::None => "none".to_string(),
-        PlannerEventTransitionV1::AdvanceScreen => "advance-screen".to_string(),
-        PlannerEventTransitionV1::Complete => "complete".to_string(),
-        PlannerEventTransitionV1::OpenSelection { selection } => format!(
-            "open-selection:{}",
-            match selection {
-                PlannerEventSelectionV1::None => "none",
-                PlannerEventSelectionV1::RemoveCard => "remove-card",
-                PlannerEventSelectionV1::UpgradeCard => "upgrade-card",
-                PlannerEventSelectionV1::TransformCard => "transform-card",
-                PlannerEventSelectionV1::DuplicateCard => "duplicate-card",
-                PlannerEventSelectionV1::OfferCard => "offer-card",
-            }
-        ),
-        PlannerEventTransitionV1::OpenReward => "open-reward".to_string(),
-        PlannerEventTransitionV1::StartCombat => "start-combat".to_string(),
-    }
+fn render_event_relic_pool_v1(pool: &PlannerEventRelicPoolV1, locale: Locale) -> String {
+    let key = match pool {
+        PlannerEventRelicPoolV1::Specific { relic } => {
+            return event_text(
+                locale,
+                "identity",
+                &[
+                    ("name", locale.entity("relic", relic.stable_id())),
+                    ("id", relic.stable_id()),
+                ],
+            )
+        }
+        PlannerEventRelicPoolV1::Unknown => "unknown",
+        PlannerEventRelicPoolV1::RandomCommonRelic => "common",
+        PlannerEventRelicPoolV1::RandomUncommonRelic => "uncommon",
+        PlannerEventRelicPoolV1::RandomRareRelic => "rare",
+        PlannerEventRelicPoolV1::RandomShopRelic => "shop",
+        PlannerEventRelicPoolV1::RandomBossRelic => "boss",
+        PlannerEventRelicPoolV1::RandomRelic => "any",
+        PlannerEventRelicPoolV1::RandomBook => "book",
+        PlannerEventRelicPoolV1::RandomFace => "face",
+    };
+    event_text(locale, &format!("relicPool.{key}"), &[])
+}
+
+fn render_event_transition_v1(transition: PlannerEventTransitionV1, locale: Locale) -> String {
+    let key = match transition {
+        PlannerEventTransitionV1::None => "stay",
+        PlannerEventTransitionV1::AdvanceScreen => "advance",
+        PlannerEventTransitionV1::Complete => "complete",
+        PlannerEventTransitionV1::OpenSelection { selection } => match selection {
+            PlannerEventSelectionV1::None => "selection",
+            PlannerEventSelectionV1::RemoveCard => "remove",
+            PlannerEventSelectionV1::UpgradeCard => "upgrade",
+            PlannerEventSelectionV1::TransformCard => "transform",
+            PlannerEventSelectionV1::DuplicateCard => "duplicate",
+            PlannerEventSelectionV1::OfferCard => "offer",
+        },
+        PlannerEventTransitionV1::OpenReward => "reward",
+        PlannerEventTransitionV1::StartCombat => "combat",
+    };
+    event_text(locale, &format!("transition.{key}"), &[])
 }
 
 fn render_indexed_choice_candidate(candidate: PublicCombatIndexedChoiceCandidateV1) -> String {
@@ -3260,10 +3381,86 @@ mod tests {
     }
 
     #[test]
+    fn localized_event_effects_keep_costs_order_targets_and_followup_selection_distinct() {
+        let semantics = PlannerEventOptionStructuredSemanticsV1 {
+            effects: vec![
+                PlannerEventPublicEffectV1::LoseHp { amount: 18 },
+                PlannerEventPublicEffectV1::RemoveCard {
+                    count: 2,
+                    target: None,
+                    pool: PlannerEventCardPoolV1::Unknown,
+                },
+            ],
+            transition: PlannerEventTransitionV1::OpenSelection {
+                selection: PlannerEventSelectionV1::RemoveCard,
+            },
+        };
+        let before = semantics.clone();
+        let en = render_event_structured_semantics_v1(Some(&semantics), Locale::En);
+        let zh = render_event_structured_semantics_v1(Some(&semantics), Locale::ZhCn);
+        assert!(en.find("Lose 18 HP.").unwrap() < en.find("Permanently remove 2 cards").unwrap());
+        assert!(zh.find("失去 18 点生命。").unwrap() < zh.find("永久移除 2 张牌").unwrap());
+        assert!(zh.contains("未指定的牌池") && zh.contains("尚未指定具体目标"));
+        assert!(zh.contains("具体卡牌在下一屏选择"));
+        assert!(!zh.contains("生命上限"));
+        assert_eq!(semantics, before);
+
+        let specific = PlannerEventPublicEffectV1::ObtainCard {
+            count: 1,
+            pool: PlannerEventCardPoolV1::Specific {
+                card: CardId::SearingBlow,
+                upgrades: 2,
+            },
+        };
+        let zh = render_event_public_effect_v1(&specific, Locale::ZhCn);
+        assert!(zh.contains("永久获得 1 张牌：灼热攻击+2 [SearingBlow]"));
+        assert!(!zh.contains("随机"));
+    }
+
+    #[test]
+    fn localized_random_event_effects_do_not_turn_an_outcome_range_into_a_guaranteed_prize() {
+        use sts_oracle_learning::ai::planner_core::PlannerEventRandomOutcomeV1 as Random;
+        let semantics = PlannerEventOptionStructuredSemanticsV1 {
+            effects: vec![
+                PlannerEventPublicEffectV1::LoseGold { amount: 50 },
+                PlannerEventPublicEffectV1::GainGoldRange { min: 0, max: 250 },
+                PlannerEventPublicEffectV1::RandomOutcome {
+                    outcome: Random::JoustOwnerWin,
+                    chance_percent: Some(30),
+                },
+            ],
+            transition: PlannerEventTransitionV1::AdvanceScreen,
+        };
+        let zh = render_event_structured_semantics_v1(Some(&semantics), Locale::ZhCn);
+        assert!(zh.contains("失去 50 金币") && zh.contains("依结果获得 0–250 金币"));
+        assert!(zh.contains("宠物主人 30%，杀宠凶手 70%"));
+        assert!(zh.contains("否则奖金为 0 金币"));
+        assert!(zh.contains("进入事件下一阶段"));
+        let unknown = render_event_public_effect_v1(
+            &PlannerEventPublicEffectV1::RandomOutcome {
+                outcome: Random::ScrapOozeRelicRoll,
+                chance_percent: None,
+            },
+            Locale::ZhCn,
+        );
+        assert!(unknown.contains("概率未提供"));
+        assert!(!unknown.contains('%'));
+        let zero = render_event_public_effect_v1(
+            &PlannerEventPublicEffectV1::RandomOutcome {
+                outcome: Random::ScrapOozeRelicRoll,
+                chance_percent: Some(0),
+            },
+            Locale::ZhCn,
+        );
+        assert!(zero.contains("概率 0%"));
+        assert!(!zero.contains("概率未提供"));
+    }
+
+    #[test]
     fn random_curse_pool_renders_as_known_instead_of_unknown() {
         assert_eq!(
-            render_event_card_pool_v1(&PlannerEventCardPoolV1::RandomCurse),
-            "random-ordinary-curse"
+            render_event_card_pool_v1(&PlannerEventCardPoolV1::RandomCurse, Locale::En),
+            "random ordinary curses"
         );
     }
 
@@ -3471,8 +3668,9 @@ mod tests {
         );
 
         assert!(rendered.contains("label=\"Take Shrug It Off+.\""));
-        assert!(rendered
-            .contains("mechanics=[Gain 1 permanent card(s): Shrug It Off+; transition=complete]"));
+        assert!(rendered.contains(
+            "mechanics=[Gain 1 permanent card: Shrug It Off+ [ShrugItOff]. Complete this event.]"
+        ));
         assert!(rendered.contains("cards+=1"));
         assert!(rendered.contains("gain=[Shrug It Off+]"));
     }
