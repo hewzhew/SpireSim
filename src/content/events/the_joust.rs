@@ -123,7 +123,18 @@ pub fn get_options(_run_state: &RunState, event_state: &EventState) -> Vec<Event
                 "Murderer wins! You won 100 Gold!"
             };
             vec![EventOption::new(
-                EventChoiceMeta::new(format!("{} [Leave]", msg)),
+                EventChoiceMeta::new(format!("{} [Leave]", msg)).with_public_detail(
+                    crate::state::events::EventOptionPublicDetail::JoustResult {
+                        owner_wins,
+                        gold_received: if owner_wins && bet_for {
+                            WIN_OWNER
+                        } else if !owner_wins && !bet_for {
+                            WIN_MURDERER
+                        } else {
+                            0
+                        },
+                    },
+                ),
                 EventOptionSemantics {
                     action: EventActionKind::Leave,
                     transition: EventOptionTransition::Complete,

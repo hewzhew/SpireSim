@@ -151,6 +151,16 @@ fn original_event_button_bindings_preserve_public_actions_sources_and_state() {
         (EventId::CursedTome, &[0, 1, 2, 3, 4, 5]),
         (EventId::DeadAdventurer, &[0, 1, 2]),
         (EventId::ScrapOoze, &[0, 1]),
+        (EventId::Designer, &[0, 1, 2]),
+        (EventId::Falling, &[0, 1, 2]),
+        (EventId::GremlinWheelGame, &[0, 1, 2, 3]),
+        (EventId::KnowingSkull, &[0, 1, 2]),
+        (EventId::MatchAndKeep, &[0, 1, 2, 3]),
+        (EventId::Nloth, &[0, 1]),
+        (EventId::NoteForYourself, &[0, 1, 2]),
+        (EventId::SensoryStone, &[0, 1, 2, 3]),
+        (EventId::TheJoust, &[0, 1, 2, 3, 4, 5]),
+        (EventId::WeMeetAgain, &[0, 1]),
     ];
     for &(event, screens) in events {
         for &screen in screens {
@@ -207,6 +217,58 @@ fn original_event_button_bindings_preserve_public_actions_sources_and_state() {
                         .as_mut()
                         .unwrap()
                         .internal_state = 0;
+                }
+                if event == EventId::GremlinWheelGame {
+                    session
+                        .run_state
+                        .event_state
+                        .as_mut()
+                        .unwrap()
+                        .internal_state = 0;
+                }
+                if event == EventId::Falling {
+                    let state = sts_oracle_learning::content::events::falling::init_falling_state(
+                        &mut session.run_state,
+                    );
+                    session
+                        .run_state
+                        .event_state
+                        .as_mut()
+                        .unwrap()
+                        .internal_state = state;
+                }
+                if event == EventId::Nloth {
+                    session.run_state.relics.push(
+                        sts_oracle_learning::content::relics::RelicState::new(
+                            sts_oracle_learning::content::relics::RelicId::Anchor,
+                        ),
+                    );
+                    let state = sts_oracle_learning::content::events::nloth::init_nloth_state(
+                        &mut session.run_state,
+                    );
+                    session
+                        .run_state
+                        .event_state
+                        .as_mut()
+                        .unwrap()
+                        .internal_state = state;
+                }
+                if matches!(event, EventId::MatchAndKeep | EventId::WeMeetAgain) {
+                    let mut state = session.run_state.event_state.take().unwrap();
+                    if event == EventId::MatchAndKeep {
+                        sts_oracle_learning::content::events::match_and_keep::init_match_game_board(
+                            &mut session.run_state,
+                            &mut state,
+                        );
+                    } else {
+                        session.run_state.potions[0] =
+                            Some(sts_oracle_learning::content::potions::Potion::new(
+                                sts_oracle_learning::content::potions::PotionId::FirePotion,
+                                42,
+                            ));
+                        sts_oracle_learning::content::events::we_meet_again::init_we_meet_again_event_state(&mut session.run_state, &mut state);
+                    }
+                    session.run_state.event_state = Some(state);
                 }
                 let mut game = controller_with_session(&directory.0, "original-buttons", &session);
                 let before = game.head().clone();
@@ -319,6 +381,19 @@ fn original_event_variants_keep_costs_prerequisites_and_late_floor_outcomes() {
         (EventId::Cleric, "poor", "离开"),
         (EventId::Vampires, "vial", "小血瓶"),
         (EventId::ScrapOoze, "ooze_65", "65%"),
+        (
+            EventId::Designer,
+            "designer_random_transform",
+            "变化 2 张牌",
+        ),
+        (
+            EventId::Designer,
+            "designer_upgrade_transform",
+            "升级一张牌",
+        ),
+        (EventId::Designer, "designer_random_remove", "移除一张牌"),
+        (EventId::Designer, "designer_upgrade_remove", "移除一张牌"),
+        (EventId::Falling, "falling_empty", "无事发生"),
     ] {
         let directory = TestDirectory::new();
         let mut session = fixture("reward");
@@ -354,6 +429,31 @@ fn original_event_variants_keep_costs_prerequisites_and_late_floor_outcomes() {
                     .as_mut()
                     .unwrap()
                     .internal_state = (7 << 16) | 65
+            }
+            "designer_random_transform"
+            | "designer_upgrade_transform"
+            | "designer_random_remove"
+            | "designer_upgrade_remove" => {
+                let state = session.run_state.event_state.as_mut().unwrap();
+                state.current_screen = 1;
+                state.internal_state = match variant {
+                    "designer_random_transform" => 0,
+                    "designer_upgrade_transform" => 1,
+                    "designer_random_remove" => 2,
+                    _ => 3,
+                };
+            }
+            "falling_empty" => {
+                session
+                    .run_state
+                    .master_deck
+                    .retain(|card| card.id == CardId::AscendersBane);
+                let state = sts_oracle_learning::content::events::falling::init_falling_state(
+                    &mut session.run_state,
+                );
+                let event = session.run_state.event_state.as_mut().unwrap();
+                event.current_screen = 1;
+                event.internal_state = state;
             }
             _ => unreachable!(),
         }
@@ -409,6 +509,142 @@ fn original_event_variants_keep_costs_prerequisites_and_late_floor_outcomes() {
             ));
         }
         assert_eq!(*game.head(), before);
+    }
+}
+
+#[test]
+fn visible_event_results_localize_without_reapplying_settled_rewards() {
+    use sts_oracle_learning::content::cards::CardId;
+    use sts_oracle_learning::eval::run_control::RunControlSessionCheckpointV1;
+    use sts_oracle_learning::state::{
+        core::EngineState,
+        events::{EventId, EventOptionPublicDetail, EventState},
+    };
+    for (event, screen, results) in [
+        (EventId::GremlinWheelGame, 1, 0..6),
+        (EventId::TheJoust, 4, 0..4),
+    ] {
+        for result in results {
+            let mut checkpoints = Vec::new();
+            for locale in [Locale::En, Locale::ZhCn] {
+                let directory = TestDirectory::new();
+                let mut session = fixture("reward");
+                session.engine_state = EngineState::EventRoom;
+                session.run_state.gold = 400;
+                session.run_state.current_hp = 17;
+                session.run_state.max_hp = 83;
+                let mut state = EventState::new(event);
+                state.current_screen = screen;
+                state.internal_state = result;
+                session.run_state.event_state = Some(state);
+                let mut game =
+                    controller_with_session(&directory.0, "visible-result-locale", &session);
+                let reading = game
+                    .decision_reading_v1(&[DecisionDetailV1::Options], None, locale)
+                    .unwrap();
+                let option = &reading.options[0];
+                let TaskPublicCandidateV1::Strategic {
+                    action:
+                        TaskStrategicActionV1::ChooseEventOption {
+                            public_semantics, ..
+                        },
+                } = &option.candidate
+                else {
+                    panic!("event choice");
+                };
+                assert!(matches!(
+                    public_semantics.public_detail,
+                    Some(
+                        EventOptionPublicDetail::WheelReward { .. }
+                            | EventOptionPublicDetail::JoustResult { .. }
+                    )
+                ));
+                assert_eq!(
+                    public_semantics.gold_delta_min, 0,
+                    "these results have already paid gold"
+                );
+                if event == EventId::GremlinWheelGame && result == 0 {
+                    assert!(option.label.contains("100"));
+                }
+                if event == EventId::GremlinWheelGame && result == 5 {
+                    assert!(option.label.contains("12"));
+                }
+                game.choose_bound_v1(&crate::decision::RunPlayBoundChoiceV1 {
+                    source: reading.source.unwrap(),
+                    choice: option.choice.clone(),
+                })
+                .unwrap();
+                let actual = game
+                    .current_external_exact_checkpoint_v1()
+                    .unwrap()
+                    .into_session()
+                    .unwrap();
+                assert_eq!(actual.run_state.gold, 400);
+                if event == EventId::GremlinWheelGame {
+                    match result {
+                        0 => assert_eq!(actual.run_state.current_hp, 17),
+                        1 => assert!(matches!(actual.engine_state, EngineState::RewardScreen(_))),
+                        2 => assert_eq!(actual.run_state.current_hp, 83),
+                        3 => assert!(actual
+                            .run_state
+                            .master_deck
+                            .iter()
+                            .any(|card| card.id == CardId::Decay)),
+                        4 => assert!(matches!(
+                            actual.engine_state,
+                            EngineState::RunPendingChoice(_)
+                        )),
+                        5 => assert_eq!(actual.run_state.current_hp, 5),
+                        _ => unreachable!(),
+                    }
+                }
+                checkpoints.push(
+                    serde_json::to_value(RunControlSessionCheckpointV1::from_session(&actual))
+                        .unwrap(),
+                );
+            }
+            assert_eq!(checkpoints[0], checkpoints[1], "{event:?}/{result}");
+        }
+    }
+}
+
+#[test]
+fn unrevealed_event_results_do_not_enter_public_button_facts() {
+    use sts_oracle_learning::state::{
+        core::EngineState,
+        events::{EventId, EventState},
+    };
+    for (event, screen) in [(EventId::GremlinWheelGame, 3), (EventId::TheJoust, 3)] {
+        let mut candidates = Vec::new();
+        for result in [0, 2] {
+            let directory = TestDirectory::new();
+            let mut session = fixture("reward");
+            session.engine_state = EngineState::EventRoom;
+            let mut state = EventState::new(event);
+            state.current_screen = screen;
+            state.internal_state = result;
+            session.run_state.event_state = Some(state);
+            let mut game = controller_with_session(&directory.0, "hidden-event-result", &session);
+            let reading = game
+                .decision_reading_v1(&[DecisionDetailV1::Options], None, Locale::ZhCn)
+                .unwrap();
+            let candidate = reading.options[0].candidate.clone();
+            let TaskPublicCandidateV1::Strategic {
+                action:
+                    TaskStrategicActionV1::ChooseEventOption {
+                        public_semantics, ..
+                    },
+            } = &candidate
+            else {
+                panic!("event choice");
+            };
+            assert_eq!(public_semantics.public_detail, None);
+            candidates.push((candidate, reading.options[0].label.clone()));
+        }
+        assert_eq!(
+            candidates[0], candidates[1],
+            "{event:?}: hidden result must not affect a public button"
+        );
     }
 }
 
@@ -596,6 +832,16 @@ fn choices_from_original_translated_buttons_execute_the_same_actions_and_rng() {
         (EventId::CursedTome, 4, 0),
         (EventId::DeadAdventurer, 0, 1),
         (EventId::ScrapOoze, 0, 1),
+        (EventId::Designer, 1, 0),
+        (EventId::Falling, 1, 0),
+        (EventId::GremlinWheelGame, 0, 0),
+        (EventId::KnowingSkull, 1, 1),
+        (EventId::MatchAndKeep, 2, 0),
+        (EventId::Nloth, 0, 0),
+        (EventId::NoteForYourself, 1, 0),
+        (EventId::SensoryStone, 1, 2),
+        (EventId::TheJoust, 1, 1),
+        (EventId::WeMeetAgain, 0, 0),
     ] {
         let mut checkpoints = Vec::new();
         let mut labels = Vec::new();
@@ -610,6 +856,60 @@ fn choices_from_original_translated_buttons_execute_the_same_actions_and_rng() {
             state.current_screen = screen;
             state.internal_state = 23;
             session.run_state.event_state = Some(state);
+            if event == EventId::Designer {
+                session
+                    .run_state
+                    .event_state
+                    .as_mut()
+                    .unwrap()
+                    .internal_state = 0;
+            }
+            if event == EventId::Falling {
+                let state = sts_oracle_learning::content::events::falling::init_falling_state(
+                    &mut session.run_state,
+                );
+                session
+                    .run_state
+                    .event_state
+                    .as_mut()
+                    .unwrap()
+                    .internal_state = state;
+            }
+            if event == EventId::Nloth {
+                session.run_state.relics.push(
+                    sts_oracle_learning::content::relics::RelicState::new(RelicId::Anchor),
+                );
+                let state = sts_oracle_learning::content::events::nloth::init_nloth_state(
+                    &mut session.run_state,
+                );
+                session
+                    .run_state
+                    .event_state
+                    .as_mut()
+                    .unwrap()
+                    .internal_state = state;
+            }
+            if event == EventId::NoteForYourself {
+                session.run_state.note_for_yourself_card = CardId::SearingBlow;
+                session.run_state.note_for_yourself_upgrades = 2;
+            }
+            if matches!(event, EventId::MatchAndKeep | EventId::WeMeetAgain) {
+                let mut state = session.run_state.event_state.take().unwrap();
+                if event == EventId::MatchAndKeep {
+                    sts_oracle_learning::content::events::match_and_keep::init_match_game_board(
+                        &mut session.run_state,
+                        &mut state,
+                    );
+                } else {
+                    session.run_state.potions[0] =
+                        Some(sts_oracle_learning::content::potions::Potion::new(
+                            sts_oracle_learning::content::potions::PotionId::FirePotion,
+                            42,
+                        ));
+                    sts_oracle_learning::content::events::we_meet_again::init_we_meet_again_event_state(&mut session.run_state, &mut state);
+                }
+                session.run_state.event_state = Some(state);
+            }
             let deck_size = session.run_state.master_deck.len();
             let mut game =
                 controller_with_session(&directory.0, "translated-event-choice", &session);
@@ -619,6 +919,19 @@ fn choices_from_original_translated_buttons_execute_the_same_actions_and_rng() {
             let option = reading.options.iter().find(|option| matches!(&option.candidate,
                 TaskPublicCandidateV1::Strategic { action: TaskStrategicActionV1::ChooseEventOption { option_index: index, .. } } if *index == option_index)).unwrap();
             labels.push(option.label.clone());
+            if event == EventId::NoteForYourself {
+                let TaskPublicCandidateV1::Strategic {
+                    action:
+                        TaskStrategicActionV1::ChooseEventOption {
+                            public_semantics, ..
+                        },
+                } = &option.candidate
+                else {
+                    panic!("paper note choice");
+                };
+                assert_eq!(public_semantics.specific_cards_gained[0].upgrades, 2);
+                assert!(option.label.contains("+2"));
+            }
             game.choose_bound_v1(&crate::decision::RunPlayBoundChoiceV1 {
                 source: reading.source.clone().expect("bound event reading"),
                 choice: option.choice.clone(),
@@ -797,6 +1110,65 @@ fn choices_from_original_translated_buttons_execute_the_same_actions_and_rng() {
                     assert_eq!(actual.run_state.current_hp, 2);
                     assert!(matches!(actual.engine_state, EngineState::RewardScreen(_)));
                 }
+                EventId::Designer => {
+                    assert_eq!(actual.run_state.gold, 200);
+                    assert_eq!(
+                        actual
+                            .run_state
+                            .master_deck
+                            .iter()
+                            .filter(|card| card.upgrades > 0)
+                            .count(),
+                        2
+                    );
+                }
+                EventId::Falling => assert_eq!(actual.run_state.master_deck.len(), deck_size - 1),
+                EventId::GremlinWheelGame => {
+                    assert_eq!(
+                        actual
+                            .run_state
+                            .event_state
+                            .as_ref()
+                            .unwrap()
+                            .current_screen,
+                        3
+                    );
+                    assert_eq!(actual.run_state.gold, 250);
+                }
+                EventId::KnowingSkull => {
+                    assert_eq!(actual.run_state.gold, 340);
+                    assert_eq!(actual.run_state.current_hp, 11);
+                }
+                EventId::MatchAndKeep => assert_eq!(
+                    actual.run_state.event_state.as_ref().unwrap().extra_data[14],
+                    0
+                ),
+                EventId::Nloth => assert!(actual
+                    .run_state
+                    .relics
+                    .iter()
+                    .any(|relic| relic.id == RelicId::NlothsGift)),
+                EventId::NoteForYourself => {
+                    assert!(matches!(
+                        actual.engine_state,
+                        EngineState::RunPendingChoice(_)
+                    ));
+                    assert_eq!(actual.run_state.master_deck.len(), deck_size + 1);
+                    assert!(actual
+                        .run_state
+                        .master_deck
+                        .iter()
+                        .any(|card| card.id == CardId::SearingBlow && card.upgrades == 2));
+                }
+                EventId::SensoryStone => {
+                    assert_eq!(actual.run_state.current_hp, 7);
+                    let EngineState::RewardScreen(ref rewards) = actual.engine_state else {
+                        panic!("three colorless card rewards");
+                    };
+                    assert_eq!(rewards.items.len(), 3);
+                }
+                EventId::TheJoust => assert_eq!(actual.run_state.gold, 200),
+                EventId::WeMeetAgain => assert!(actual.run_state.potions[0].is_none()),
                 _ => unreachable!(),
             }
             checkpoints.push(

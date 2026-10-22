@@ -19,6 +19,15 @@ use crate::state::events::{
 use crate::state::run::RunState;
 use crate::state::selection::DomainEventSource;
 
+fn hp_loss(run_state: &RunState) -> i32 {
+    let pct = if run_state.ascension_level >= 15 {
+        0.15f32
+    } else {
+        0.10f32
+    };
+    (run_state.max_hp as f32 * pct) as i32
+}
+
 pub fn get_options(run_state: &RunState, event_state: &EventState) -> Vec<EventOption> {
     match event_state.current_screen {
         0 => vec![EventOption::new(
@@ -35,6 +44,25 @@ pub fn get_options(run_state: &RunState, event_state: &EventState) -> Vec<EventO
         )],
         1 => {
             // The result is visible, but only gold has been applied yet.
+            use crate::state::events::{EventOptionPublicDetail, WheelPublicReward};
+            let reward = match event_state.internal_state {
+                0 => WheelPublicReward::GoldReceived {
+                    amount: match run_state.act_num {
+                        1 => 100,
+                        2 => 200,
+                        _ => 300,
+                    },
+                },
+                1 => WheelPublicReward::RandomRelic,
+                2 => WheelPublicReward::FullHeal,
+                3 => WheelPublicReward::Curse {
+                    card: crate::content::cards::CardId::Decay,
+                },
+                4 => WheelPublicReward::RemoveCard,
+                _ => WheelPublicReward::LoseHp {
+                    amount: hp_loss(run_state),
+                },
+            };
             let desc = match event_state.internal_state {
                 0 => {
                     let gold = match run_state.act_num {
@@ -58,7 +86,8 @@ pub fn get_options(run_state: &RunState, event_state: &EventState) -> Vec<EventO
                 }
             };
             vec![EventOption::new(
-                EventChoiceMeta::new(format!("[Confirm] {}", desc)),
+                EventChoiceMeta::new(format!("[Confirm] {}", desc))
+                    .with_public_detail(EventOptionPublicDetail::WheelReward { reward }),
                 EventOptionSemantics {
                     action: EventActionKind::Special,
                     transition: EventOptionTransition::None,
@@ -173,12 +202,7 @@ pub fn handle_choice(engine_state: &mut EngineState, run_state: &mut RunState, _
                     // Java: player.damage(DamageInfo(null, damage, HP_LOSS)).
                     // HP_LOSS bypasses block, but AbstractPlayer.damage still applies
                     // onLoseHpLast, so Tungsten Rod reduces this by 1.
-                    let pct = if run_state.ascension_level >= 15 {
-                        0.15f32
-                    } else {
-                        0.10f32
-                    };
-                    let damage = (run_state.max_hp as f32 * pct) as i32;
+                    let damage = hp_loss(run_state);
                     super::apply_player_hp_loss_damage(
                         run_state,
                         damage,

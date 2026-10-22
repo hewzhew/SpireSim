@@ -7,8 +7,8 @@
     "localization/zhs/characters.json": "dfe855326e920fcb0b240d3d9866279a21dee13e3c60413143a85062a2092b4d"
   },
   "bindings_sha256": {
-    "en": "0e570f9731d1221e2fbf741c730d2a719cf434544048e0c0501a41f59cfc067a",
-    "zh-CN": "ae4270254b0738d2e934480ddbc136df2eb8bb810b7362b609c0c203412d047e"
+    "en": "dbdb5c016476ac0154b25e66985361ad310a5c7894cb64164b1a4b95a3474d63",
+    "zh-CN": "c43ee4218b94470382f96901d0d059a16f1908221fa1038c66534c51fbe0ba96"
   },
   "events": {
     "en": {
@@ -112,6 +112,28 @@
           "%: #rmonster #rreturns."
         ]
       },
+      "Designer": {
+        "OPTIONS": [
+          "[Continue]",
+          "[Adjustments] #rLose #r",
+          "[Clean Up] #rLose #r",
+          "[Full Service] #rLose #r",
+          "[Punch] #rLose #r",
+          " #rHP.",
+          " #rGold. ",
+          "#gUpgrade #g",
+          " #grandom #gcards.",
+          "#gUpgrade #ga #gcard.",
+          "#gRemove #ga #gcard.",
+          "#gTransform #g",
+          " #gcards.",
+          "#gRemove #ga #gcard #gand #gupgrade #ga #grandom #gcard.",
+          "[Leave]",
+          "Choose a Card to Upgrade",
+          "Choose 2 Cards to Transform",
+          "Choose a Card to Remove"
+        ]
+      },
       "DrugDealer": {
         "OPTIONS": [
           "[Test J.A.X.] #gGet #gJAXXED.",
@@ -144,6 +166,19 @@
           "[Leave]",
           "[Continue]",
           " #rHP, #ggain #g"
+        ]
+      },
+      "Falling": {
+        "OPTIONS": [
+          "[Continue]",
+          "[Land] #rLose ",
+          "[Locked] Requires: Skill Card",
+          "[Channel] #rLose ",
+          "[Locked] Requires: Power Card",
+          "[Strike] #rLose ",
+          "[Locked] Requires: Attack Card",
+          "[Leave]",
+          "[Land] "
         ]
       },
       "ForgottenAltar": {
@@ -206,6 +241,33 @@
           "Select a Card to Remove."
         ]
       },
+      "GremlinWheelGame": {
+        "OPTIONS": [
+          "[Play]",
+          "[Prize!] YAY!!!!",
+          "[Prize!] #gObtain #ga #gRelic.",
+          "[Prize!] #gHeal #gto #gfull #ghealth.",
+          "[Prize?] #rCurse #r- #rDecay.",
+          "[Prize!] #gRemove #ga #gcard #gfrom #gyour #gdeck.",
+          "[Prize?] #rLose #r",
+          " #rHP.",
+          "[Leave]",
+          "Select a Card to Remove."
+        ]
+      },
+      "KnowingSkull": {
+        "OPTIONS": [
+          "[Continue]",
+          " #rHP.",
+          "[Information?] #gReveal #gthe #gBoss. #rLose #r",
+          "[Success?] #gGet #ga #gColorless #gCard. #rLose #r",
+          "[A Pick Me Up?] #gGet #ga #gPotion. #rLose #r",
+          "[Riches?] #gGain #g",
+          " #gGold. #rLose #r",
+          "[How do I leave?] #rLose #r",
+          "[Leave]"
+        ]
+      },
       "Lab": {
         "OPTIONS": [
           "[Search] #gFind #gsome #gPotions!"
@@ -229,6 +291,14 @@
           "[Fight!]",
           "[Continue]",
           "[Leave]"
+        ]
+      },
+      "MatchAndKeep": {
+        "OPTIONS": [
+          "[Continue]",
+          "[Leave]",
+          "[Play]",
+          "Remaining Attempts: #y"
         ]
       },
       "Mausoleum": {
@@ -282,6 +352,22 @@
           "[Continue]"
         ]
       },
+      "Nloth": {
+        "OPTIONS": [
+          "[Offer: ",
+          "] #rLose #rthis #rrelic. #gObtain #ga #gspecial #grelic.",
+          "[Leave]"
+        ]
+      },
+      "NoteForYourself": {
+        "OPTIONS": [
+          "[Continue]",
+          "[Take and Give] #gReceive ",
+          " #gand #gStore #ga #gCard.",
+          "[Ignore]",
+          "[Leave]"
+        ]
+      },
       "Purifier": {
         "OPTIONS": [
           "[Pray] #gRemove #ga #gcard #gfrom #gyour #gdeck.",
@@ -302,6 +388,16 @@
         "OPTIONS": [
           "[Enter the Portal] IMMEDIATELY travel to the boss.",
           "[Leave]"
+        ]
+      },
+      "SensoryStone": {
+        "OPTIONS": [
+          "[Recall] #gAdd #g1 #gColorless #gcard #gto #gyour #gdeck.",
+          "[Recall] #gAdd #g2 #gColorless #gcards #gto #gyour #gdeck. #rLose #r",
+          "[Recall] #gAdd #g3 #gColorless #gcards #gto #gyour #gdeck. #rLose #r",
+          " #rHP.",
+          "[Leave]",
+          "[Interact]"
         ]
       },
       "ShiningLight": {
@@ -326,6 +422,18 @@
           " #gGold. #rBecome #rCursed #r- #rDoubt.",
           "[Disagree]",
           "[Continue]",
+          "[Leave]"
+        ]
+      },
+      "TheJoust": {
+        "OPTIONS": [
+          "[Continue]",
+          "[Murderer] #yBet #y",
+          " #yGold - #g70%: #gwin #g",
+          " #gGold.",
+          "[Owner] #yBet #y",
+          " #yGold - #g30%: #gwin #g",
+          "[Watch]",
           "[Leave]"
         ]
       },
@@ -370,6 +478,20 @@
           "[Lose ",
           "] #gRemove #gall Strikes. #gReceive #g5 Bites.",
           "[Leave]"
+        ]
+      },
+      "WeMeetAgain": {
+        "OPTIONS": [
+          "[Give Potion] #rLose ",
+          "[Locked] Requires: Potion.",
+          "[Give Gold] #rLose #r",
+          "[Locked] Requires: At least 50 Gold.",
+          "[Give Card] #rLose ",
+          "[Locked] Requires: Card.",
+          ". #gObtain #ga #gRelic.",
+          "[Attack]",
+          "[Leave]",
+          " #rGold"
         ]
       },
       "WindingHalls": {
@@ -553,6 +675,28 @@
           "%： #r遇见回来的怪物。"
         ]
       },
+      "Designer": {
+        "OPTIONS": [
+          "[继续]",
+          "[小修一下] #r失去 #r",
+          "[清洁一下] #r失去 #r",
+          "[全套服务] #r失去 #r",
+          "[一拳过去] #r失去 #r",
+          " #r生命。",
+          " #r金币。",
+          " #g随机升级 #g",
+          " #g张牌。",
+          " #g升级一张牌。",
+          " #g移除一张牌。",
+          " #g变化 #g",
+          " #g张牌。",
+          " #g移除一张牌，然后随机升级一张牌。",
+          "[离开]",
+          "选择一张牌升级",
+          "选择2张牌变化",
+          "选择一张牌移除"
+        ]
+      },
       "DrugDealer": {
         "OPTIONS": [
           "[试一下J.A.X.] #g来点猛药。",
@@ -585,6 +729,19 @@
           "[离开]",
           "[继续]",
           " #r生命， #g获得 #g"
+        ]
+      },
+      "Falling": {
+        "OPTIONS": [
+          "[继续]",
+          "[落地] #r失去 ",
+          "[锁定] 需要： 技能牌",
+          "[释放] #r失去 ",
+          "[锁定] 需要： 能力牌",
+          "[猛击] #r失去 ",
+          "[锁定] 需要： 攻击牌",
+          "[离开]",
+          "[落地] "
         ]
       },
       "ForgottenAltar": {
@@ -647,6 +804,33 @@
           "选择一张牌移除。"
         ]
       },
+      "GremlinWheelGame": {
+        "OPTIONS": [
+          "[玩小游戏]",
+          "[奖品！] 耶！！！",
+          "[奖品！] #g获得遗物。",
+          "[奖品！] #g回复所有生命。",
+          "[奖品？] #r诅咒——腐朽。",
+          "[奖品！] #g从你的牌组中移除一张牌。",
+          "[奖品？] #r失去 #r",
+          " #r生命。",
+          "[离开]",
+          "选择一张牌移除。"
+        ]
+      },
+      "KnowingSkull": {
+        "OPTIONS": [
+          "[继续]",
+          " #r生命。",
+          "[信息？] #g告知 #gBoss #g身份。 #r失去 #r",
+          "[成功？] #g获得一张无色牌。 #r失去 #r",
+          "[来点喝的？] #g获得一瓶药水。 #r失去 #r",
+          "[财富？] #g获得 #g",
+          " #g金币。 #r失去 #r",
+          "[我要怎么离开？] #r失去 #r",
+          "[离开]"
+        ]
+      },
       "Lab": {
         "OPTIONS": [
           "[搜索] #g找到一些药水！"
@@ -670,6 +854,14 @@
           "[战斗！]",
           "[继续]",
           "[离开]"
+        ]
+      },
+      "MatchAndKeep": {
+        "OPTIONS": [
+          "[继续]",
+          "[离开]",
+          "[玩小游戏]",
+          "剩余次数： #y"
         ]
       },
       "Mausoleum": {
@@ -723,6 +915,22 @@
           "[继续]"
         ]
       },
+      "Nloth": {
+        "OPTIONS": [
+          "[交出： ",
+          "] #r失去这件遗物。 #g获得一件特别的遗物。",
+          "[离开]"
+        ]
+      },
+      "NoteForYourself": {
+        "OPTIONS": [
+          "[继续]",
+          "[取之与之] #g获得 ",
+          " #g然后存放一张牌。",
+          "[无视]",
+          "[离开]"
+        ]
+      },
       "Purifier": {
         "OPTIONS": [
           "[祈祷] #g从你的牌组中移除一张牌。",
@@ -743,6 +951,16 @@
         "OPTIONS": [
           "[进入传送门] 立即传送到Boss房间。",
           "[离开]"
+        ]
+      },
+      "SensoryStone": {
+        "OPTIONS": [
+          "[回忆] #g在你的牌组中加入 #g1 #g张无色牌。",
+          "[回忆] #g在你的牌组中加入 #g2 #g张无色牌。 #r失去 #r",
+          "[回忆] #g在你的牌组中加入 #g3 #g张无色牌。 #r失去 #r",
+          " #r点生命。",
+          "[离开]",
+          "[交互]"
         ]
       },
       "ShiningLight": {
@@ -767,6 +985,18 @@
           " #g金币。 #r被诅咒——疑虑。",
           "[反对]",
           "[继续]",
+          "[离开]"
+        ]
+      },
+      "TheJoust": {
+        "OPTIONS": [
+          "[继续]",
+          "[凶手] #y赌 #y",
+          "  #y金币 —— #g70%: #g赢得 #g",
+          " #g金币。",
+          "[主人] #y赌 #y",
+          "  #y金币 —— #g30%: #g赢得 #g",
+          "[观战]",
           "[离开]"
         ]
       },
@@ -811,6 +1041,20 @@
           "[失去 ",
           "] #g移除所有 打击 #g牌。 #g获得5张 噬咬 #g牌。",
           "[离开]"
+        ]
+      },
+      "WeMeetAgain": {
+        "OPTIONS": [
+          "[给他药水] #r失去 ",
+          "[锁定] 需要：药水。",
+          "[给他金币] #r失去 #r",
+          "[锁定] 需要：至少50金币。",
+          "[给他卡牌] #r失去 ",
+          "[锁定] 需要：卡牌。",
+          "。 #g获得一件遗物。",
+          "[攻击]",
+          "[离开]",
+          " #r金币"
         ]
       },
       "WindingHalls": {

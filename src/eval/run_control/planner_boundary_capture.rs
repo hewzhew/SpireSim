@@ -930,7 +930,16 @@ fn planner_event_option_public_semantics_v1(
 ) -> crate::ai::planner_core::PlannerEventOptionPublicSemanticsV1 {
     use crate::state::events::EventEffect;
 
+    let offered_upgrades = |card| match option.ui.public_detail {
+        Some(crate::state::events::EventOptionPublicDetail::OfferedCard {
+            card: offered,
+            upgrades,
+        }) if offered == card => run_state.preview_obtain_card_upgrades(card, upgrades),
+        _ => run_state.preview_obtain_card_upgrades(card, 0),
+    };
+
     let mut public = crate::ai::planner_core::PlannerEventOptionPublicSemanticsV1 {
+        public_detail: option.ui.public_detail,
         public_label: Some(option.ui.text.clone()),
         structured_semantics: Some(
             crate::ai::planner_core::PlannerEventOptionStructuredSemanticsV1 {
@@ -938,7 +947,24 @@ fn planner_event_option_public_semantics_v1(
                     .semantics
                     .effects
                     .iter()
-                    .map(|effect| planner_event_public_effect_v1(run_state, effect))
+                    .map(|effect| {
+                        let mut projected = planner_event_public_effect_v1(run_state, effect);
+                        use crate::ai::planner_core::{
+                            PlannerEventCardPoolV1 as Pool, PlannerEventPublicEffectV1 as Public,
+                        };
+                        if let Public::ObtainCard {
+                            pool: Pool::Specific { card, upgrades },
+                            ..
+                        }
+                        | Public::ObtainColorlessCard {
+                            pool: Pool::Specific { card, upgrades },
+                            ..
+                        } = &mut projected
+                        {
+                            *upgrades = offered_upgrades(*card);
+                        }
+                        projected
+                    })
                     .collect(),
                 transition: planner_event_transition_v1(option.semantics.transition),
             },
@@ -1008,7 +1034,7 @@ fn planner_event_option_public_semantics_v1(
                 if let crate::state::events::EventCardKind::Specific(card) = kind {
                     public.specific_cards_gained.push(PlannerOfferedCard {
                         card: *card,
-                        upgrades: run_state.preview_obtain_card_upgrades(*card, 0),
+                        upgrades: offered_upgrades(*card),
                     });
                 }
                 if !matches!(kind, crate::state::events::EventCardKind::Specific(_)) {

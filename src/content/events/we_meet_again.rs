@@ -79,7 +79,12 @@ pub fn get_options(run_state: &RunState, event_state: &EventState) -> Vec<EventO
                         EventChoiceMeta::new(format!(
                             "[Give Potion] Give {}. Obtain a Relic.",
                             potion_label(potion)
-                        )),
+                        ))
+                        .with_public_detail(
+                            crate::state::events::EventOptionPublicDetail::RequestedPotion {
+                                potion: potion.id,
+                            },
+                        ),
                         EventOptionSemantics {
                             action: EventActionKind::Trade,
                             effects: vec![EventEffect::ObtainRelic {

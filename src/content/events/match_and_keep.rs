@@ -181,7 +181,11 @@ pub fn get_options(_run_state: &RunState, event: &EventState) -> Vec<EventOption
             .into_iter()
             .map(|pos| {
                 EventOption::new(
-                    EventChoiceMeta::new(format!("[Flip card {}]", pos)),
+                    EventChoiceMeta::new(format!("[Flip card {}]", pos)).with_public_detail(
+                        crate::state::events::EventOptionPublicDetail::MatchPosition {
+                            position: pos,
+                        },
+                    ),
                     EventOptionSemantics {
                         action: EventActionKind::Special,
                         effects: vec![EventEffect::RandomOutcome {

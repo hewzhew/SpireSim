@@ -505,6 +505,9 @@ pub struct PlannerEventOptionStructuredSemanticsV1 {
 #[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct PlannerEventOptionPublicSemanticsV1 {
+    /// Typed facts visible in the button, including already settled results.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub public_detail: Option<crate::state::events::EventOptionPublicDetail>,
     /// Exact public button text observed when this candidate was captured.
     /// It is display evidence only: execution and candidate resolution must
     /// continue to use typed event/screen/option identity.

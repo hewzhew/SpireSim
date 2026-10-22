@@ -7,6 +7,7 @@ pub use identity::{
 };
 
 use crate::content::cards::CardId;
+use crate::content::potions::PotionId;
 use crate::content::relics::RelicId;
 use serde::{Deserialize, Serialize};
 
@@ -126,12 +127,48 @@ impl EventState {
     }
 }
 
-/// Represents a single UI button option in an event. E.g "Take 12 Damage, Obtain Golden Idol"
+/// Public facts already shown by this button, separate from effects that have
+/// yet to execute. In particular, settled rewards are not future gains.
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(tag = "kind", rename_all = "snake_case")]
+pub enum EventOptionPublicDetail {
+    OfferedCard {
+        card: CardId,
+        upgrades: u8,
+    },
+    RequestedPotion {
+        potion: PotionId,
+    },
+    MatchPosition {
+        position: usize,
+    },
+    WheelReward {
+        reward: WheelPublicReward,
+    },
+    JoustResult {
+        owner_wins: bool,
+        gold_received: i32,
+    },
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(tag = "kind", rename_all = "snake_case")]
+pub enum WheelPublicReward {
+    GoldReceived { amount: i32 },
+    RandomRelic,
+    FullHeal,
+    Curse { card: CardId },
+    RemoveCard,
+    LoseHp { amount: i32 },
+}
+
+/// One visible event button and its public display facts.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct EventChoiceMeta {
     pub text: String,
     pub disabled: bool,
     pub disabled_reason: Option<String>,
+    pub public_detail: Option<EventOptionPublicDetail>,
 }
 
 impl EventChoiceMeta {
@@ -140,6 +177,7 @@ impl EventChoiceMeta {
             text: text.into(),
             disabled: false,
             disabled_reason: None,
+            public_detail: None,
         }
     }
 
@@ -148,7 +186,13 @@ impl EventChoiceMeta {
             text: text.into(),
             disabled: true,
             disabled_reason: Some(reason.into()),
+            public_detail: None,
         }
+    }
+
+    pub fn with_public_detail(mut self, detail: EventOptionPublicDetail) -> Self {
+        self.public_detail = Some(detail);
+        self
     }
 }
 

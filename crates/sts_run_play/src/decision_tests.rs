@@ -1610,7 +1610,7 @@ fn falling_reading_uses_the_selected_upgraded_card_and_removes_that_copy() {
             .decision_reading_v1(&details, None, Locale::En)
             .unwrap();
         assert!(
-            reading.view.contains("[Power] Remove Dark Embrace+."),
+            reading.view.contains("[Channel] Lose Dark Embrace+"),
             "{}",
             reading.view
         );

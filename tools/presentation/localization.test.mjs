@@ -152,13 +152,13 @@ test('consumed original event scenes and button fragments retain source provenan
   assert.equal(original.schema, 'sts-original-event-text-v1');
   for (const [entry, sha] of Object.entries(original.entries_sha256)) assert.equal(names.entries_sha256[entry], sha);
   for (const locale of ['en', 'zh-CN']) {
-    assert.equal(Object.keys(original.events[locale]).length, 43);
+    assert.equal(Object.keys(original.events[locale]).length, 53);
     assert.equal(original.events[locale].FaceTrader.DESCRIPTIONS.length, 5);
     assert.ok(original.events[locale].FaceTrader.DESCRIPTIONS[0].includes('NL'));
     assert.equal(original.events[locale].FaceTrader.OPTIONS.length, 6);
     assert.equal(original.events[locale].Lab.OPTIONS.length, 1);
     assert.equal(original.events[locale].BigFish.DESCRIPTIONS, undefined);
-    assert.equal(Object.values(original.events[locale]).reduce((sum,event) => sum + event.OPTIONS.length,0), 223);
+    assert.equal(Object.values(original.events[locale]).reduce((sum,event) => sum + event.OPTIONS.length,0), 305);
     assert.equal(original.events[locale].Addict.OPTIONS[6], '');
     assert.equal(original.events[locale].Ghosts.OPTIONS[4], '');
     assert.equal(original.events[locale].Neow.REWARD_TEXT.length, 32);

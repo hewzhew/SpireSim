@@ -99,6 +99,10 @@ enum Part {
     ColosseumRule,
     ReceivedCard,
     LostRelic,
+    RemovedCard,
+    OfferedCardName,
+    RequestedPotion,
+    PublicResult,
 }
 
 /// Neow's button ordinal identifies a rolled offer, not a fixed reward. Match
@@ -206,6 +210,57 @@ pub(crate) fn option_label(
         None
     };
     let recipe: &[Part] = match (event, screen, option) {
+        (EventId::Designer, 0, 0) => &[Text(0)],
+        (EventId::Designer, 1, 0) if public.cards_upgraded == 1 => &[Text(1), Value(Amount::LoseGold), Text(6), Text(9)],
+        (EventId::Designer, 1, 0) if public.cards_upgraded == 2 => &[Text(1), Value(Amount::LoseGold), Text(6), Text(7), Part::Literal("2"), Text(8)],
+        (EventId::Designer, 1, 1) if public.cards_removed == 1 => &[Text(2), Value(Amount::LoseGold), Text(6), Text(10)],
+        (EventId::Designer, 1, 1) if public.cards_transformed == 2 => &[Text(2), Value(Amount::LoseGold), Text(6), Text(11), Part::Literal("2"), Text(12)],
+        (EventId::Designer, 1, 2) if public.cards_removed == 1 && public.cards_upgraded == 1 => &[Text(3), Value(Amount::LoseGold), Text(6), Text(13)],
+        (EventId::Designer, 1, 3) => &[Text(4), Value(Amount::LoseHp), Text(5)],
+        (EventId::Designer, 2, 0) => &[Text(14)],
+        (EventId::Falling, 0, 0) => &[Text(0)],
+        (EventId::Falling, 1, 0) if semantics.effects.is_empty() => &[Text(8), Message("event.fallingNothing")],
+        (EventId::Falling, 1, 0) => &[Text(1), Part::RemovedCard],
+        (EventId::Falling, 1, 1) => &[Text(3), Part::RemovedCard],
+        (EventId::Falling, 1, 2) => &[Text(5), Part::RemovedCard],
+        (EventId::Falling, 2, 0) => &[Text(7)],
+        (EventId::GremlinWheelGame, 0, 0) => &[Text(0)],
+        (EventId::GremlinWheelGame, 1, 0) => &[Part::PublicResult],
+        (EventId::GremlinWheelGame, 2, 0) => &[Text(8)],
+        (EventId::GremlinWheelGame, 3, 0) => &[Message("event.wheelSpin")],
+        (EventId::KnowingSkull, 0, 0) => &[Text(0)],
+        (EventId::KnowingSkull, 1, 0) => &[Text(4), Value(Amount::LoseHp), Text(1)],
+        (EventId::KnowingSkull, 1, 1) => &[Text(5), Value(Amount::GainGold), Text(6), Value(Amount::LoseHp), Text(1)],
+        (EventId::KnowingSkull, 1, 2) => &[Text(3), Value(Amount::LoseHp), Text(1)],
+        (EventId::KnowingSkull, 1, 3) => &[Text(7), Value(Amount::LoseHp), Text(1)],
+        (EventId::KnowingSkull, 2, 0) => &[Text(8)],
+        (EventId::MatchAndKeep, 0, 0) => &[Text(2)],
+        (EventId::MatchAndKeep, 1, 0) => &[Message("event.matchStart")],
+        (EventId::MatchAndKeep, 2, _) => &[Part::PublicResult],
+        (EventId::MatchAndKeep, 3, 0) => &[Text(1)],
+        (EventId::Nloth, 0, 0 | 1) => &[Text(0), Part::LostRelic, Text(1)],
+        (EventId::Nloth, 0, 2) | (EventId::Nloth, 1, 0) => &[Text(2)],
+        (EventId::NoteForYourself, 0, 0) => &[Text(0)],
+        (EventId::NoteForYourself, 1, 0) => &[Text(1), Part::OfferedCardName, Text(2)],
+        (EventId::NoteForYourself, 1, 1) => &[Text(3)],
+        (EventId::NoteForYourself, 2, 0) => &[Text(4)],
+        (EventId::SensoryStone, 0, 0) => &[Text(5)],
+        (EventId::SensoryStone, 1, 0) if public.cards_offered == 3 => &[Text(0)],
+        (EventId::SensoryStone, 1, 1) if public.cards_offered == 6 => &[Text(1), Value(Amount::LoseHp), Text(3)],
+        (EventId::SensoryStone, 1, 2) if public.cards_offered == 9 => &[Text(2), Value(Amount::LoseHp), Text(3)],
+        (EventId::SensoryStone, 2 | 3, 0) => &[Text(4)],
+        (EventId::TheJoust, 0, 0) => &[Text(0)],
+        (EventId::TheJoust, 1, 0) if Amount::Chance.read(&semantics.effects) == Some(30) => &[Text(1), Value(Amount::LoseGold), Text(2), Value(Amount::GainGoldMaximum), Text(3)],
+        (EventId::TheJoust, 1, 1) if Amount::Chance.read(&semantics.effects) == Some(30) => &[Text(4), Value(Amount::LoseGold), Text(5), Value(Amount::GainGoldMaximum), Text(3)],
+        (EventId::TheJoust, 2, 0) => &[Text(6)],
+        (EventId::TheJoust, 3, 0) => &[Message("event.joustResolve")],
+        (EventId::TheJoust, 4, 0) => &[Part::PublicResult, Part::Literal(" "), Text(7)],
+        (EventId::TheJoust, 5, 0) => &[Text(7)],
+        (EventId::WeMeetAgain, 0, 0) => &[Text(0), Part::RequestedPotion, Text(6)],
+        (EventId::WeMeetAgain, 0, 1) => &[Text(2), Value(Amount::LoseGold), Text(9), Text(6)],
+        (EventId::WeMeetAgain, 0, 2) => &[Text(4), Part::RemovedCard, Text(6)],
+        (EventId::WeMeetAgain, 0, 3) => &[Text(7)],
+        (EventId::WeMeetAgain, 1, 0) => &[Text(8)],
         (EventId::GoldenIdol, 0, 0) => &[Text(0)],
         (EventId::GoldenIdol, 0, 1) | (EventId::GoldenIdol, 2, 0) => &[Text(1)],
         (EventId::GoldenIdol, 1, 0) => &[Text(2)],
@@ -475,9 +530,115 @@ pub(crate) fn option_label(
                 }
                 output.push_str(locale.entity("relic", relic.stable_id()));
             }
+            Part::RemovedCard => {
+                let [card] = public.specific_cards_removed.as_slice() else {
+                    return Ok(None);
+                };
+                output.push_str(&locale.card_name(card.card.stable_id(), card.upgrades));
+            }
+            Part::OfferedCardName => {
+                let Some(
+                    sts_oracle_learning::state::events::EventOptionPublicDetail::OfferedCard {
+                        card,
+                        upgrades,
+                    },
+                ) = public.public_detail
+                else {
+                    return Ok(None);
+                };
+                output.push_str(&locale.card_name(card.stable_id(), upgrades));
+            }
+            Part::RequestedPotion => {
+                let Some(
+                    sts_oracle_learning::state::events::EventOptionPublicDetail::RequestedPotion {
+                        potion,
+                    },
+                ) = public.public_detail
+                else {
+                    return Ok(None);
+                };
+                output.push_str(locale.entity("potion", potion.stable_id()));
+            }
+            Part::PublicResult => {
+                let Some(value) = public_result_label(event, screen, public.public_detail, locale)?
+                else {
+                    return Ok(None);
+                };
+                output.push_str(&value);
+            }
         }
     }
     Ok(Some(clean_text(&output)))
+}
+
+fn public_result_label(
+    event: EventId,
+    screen: usize,
+    detail: Option<sts_oracle_learning::state::events::EventOptionPublicDetail>,
+    locale: Locale,
+) -> Result<Option<String>, String> {
+    use sts_oracle_learning::state::events::{
+        EventOptionPublicDetail as Detail, WheelPublicReward as Wheel,
+    };
+    let text = |key, parameters: &[(&str, &str)]| locale.text("decision", key, parameters);
+    let original = |index| {
+        locale
+            .original_event_option(event.stable_id(), index)
+            .ok_or_else(|| format!("missing original event option: {locale}/{event:?}/{index}"))
+    };
+    Ok(Some(match (event, screen, detail) {
+        (EventId::MatchAndKeep, 2, Some(Detail::MatchPosition { position })) => {
+            text("event.matchFlip", &[("position", &position.to_string())])?
+        }
+        (EventId::GremlinWheelGame, 1, Some(Detail::WheelReward { reward })) => match reward {
+            Wheel::GoldReceived { amount } => format!(
+                "{} {}",
+                original(1)?,
+                text(
+                    "event.wheelGoldReceived",
+                    &[("amount", &amount.to_string())]
+                )?
+            ),
+            Wheel::RandomRelic => original(2)?.to_owned(),
+            Wheel::FullHeal => original(3)?.to_owned(),
+            Wheel::Curse {
+                card: CardId::Decay,
+            } => original(4)?.to_owned(),
+            Wheel::RemoveCard => original(5)?.to_owned(),
+            Wheel::LoseHp { amount } => format!("{}{}{}", original(6)?, amount, original(7)?),
+            _ => return Ok(None),
+        },
+        (
+            EventId::TheJoust,
+            4,
+            Some(Detail::JoustResult {
+                owner_wins,
+                gold_received,
+            }),
+        ) => {
+            let winner = text(
+                if owner_wins {
+                    "event.joustOwner"
+                } else {
+                    "event.joustMurderer"
+                },
+                &[],
+            )?;
+            let outcome = text(
+                if gold_received > 0 {
+                    "event.joustWon"
+                } else {
+                    "event.joustLost"
+                },
+                &[("amount", &gold_received.to_string())],
+            )?;
+            text(
+                "event.joustResult",
+                &[("winner", &winner), ("outcome", &outcome)],
+            )?
+        }
+        _ => return Ok(None),
+    }))
 }
 
 pub(crate) fn current_scene(

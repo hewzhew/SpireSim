@@ -2983,7 +2983,18 @@
       "leave": "[离开]",
       "continueToBoss": "[继续] 进入 Boss 战斗。",
       "clericEmptyPurify": "[净化] 没有可移除的牌。",
-      "offeredCard": "{{name}}（{{rarity}} {{type}}）"
+      "offeredCard": "{{name}}（{{rarity}} {{type}}）",
+      "fallingNothing": "无事发生。",
+      "wheelSpin": "[转动] 转动转盘！",
+      "wheelGoldReceived": "你已获得 {{amount}} 金币！",
+      "matchStart": "[开始配对]",
+      "matchFlip": "[翻开卡牌 {{position}}]",
+      "joustResolve": "[继续] 结算竞技结果。",
+      "joustOwner": "主人",
+      "joustMurderer": "凶手",
+      "joustWon": "你赢得了 {{amount}} 金币！",
+      "joustLost": "你输掉了赌注。",
+      "joustResult": "{{winner}}获胜！{{outcome}}"
     },
     "otherCommands": "其他命令见 options：{{commands}}",
     "commandKind": {

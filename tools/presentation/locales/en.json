@@ -2983,7 +2983,18 @@
       "leave": "[Leave]",
       "continueToBoss": "[Continue] Enter the Boss battle.",
       "clericEmptyPurify": "[Purify] No removable cards.",
-      "offeredCard": "{{name}} ({{rarity}} {{type}})"
+      "offeredCard": "{{name}} ({{rarity}} {{type}})",
+      "fallingNothing": "Nothing happens.",
+      "wheelSpin": "[Spin] Spin the wheel!",
+      "wheelGoldReceived": "You gained {{amount}} Gold!",
+      "matchStart": "[Start matching]",
+      "matchFlip": "[Flip card {{position}}]",
+      "joustResolve": "[Continue] Resolve the joust.",
+      "joustOwner": "Owner",
+      "joustMurderer": "Murderer",
+      "joustWon": "You won {{amount}} Gold!",
+      "joustLost": "You lost your bet.",
+      "joustResult": "{{winner}} wins! {{outcome}}"
     },
     "otherCommands": "Other commands in options: {{commands}}",
     "commandKind": {

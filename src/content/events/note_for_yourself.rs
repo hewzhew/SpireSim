@@ -39,7 +39,13 @@ pub fn get_options(run_state: &RunState, event_state: &EventState) -> Vec<EventO
                     EventChoiceMeta::new(format!(
                         "[Take Card] Obtain {}{}. Remove a card.",
                         def.name, upgrade_suffix
-                    )),
+                    ))
+                    .with_public_detail(
+                        crate::state::events::EventOptionPublicDetail::OfferedCard {
+                            card: run_state.note_for_yourself_card,
+                            upgrades: run_state.note_for_yourself_upgrades,
+                        },
+                    ),
                     EventOptionSemantics {
                         action: EventActionKind::DeckOperation,
                         effects: vec![
