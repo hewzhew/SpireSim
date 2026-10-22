@@ -1,4 +1,5 @@
 use std::fmt::Write;
+use sts_presentation::Locale;
 
 use serde::{Deserialize, Serialize};
 use sts_agent::agent::information::action::{
@@ -90,7 +91,7 @@ pub fn summarize_combat_draft_selection_source_v1(
     let reasons = view
         .families
         .iter()
-        .map(|f| reason_label(&f.reason))
+        .map(|f| reason_label(&f.reason, Locale::En))
         .collect::<Vec<_>>()
         .join(", ");
     let prefix = if source.action_count() == 0 {
@@ -175,7 +176,7 @@ pub fn render_combat_draft_selection_v1(view: &CombatDraftSelectionViewV1) -> St
         writeln!(
             text,
             "Family {family_index} | {} | choose {}..{} in order",
-            reason_label(&family.reason),
+            reason_label(&family.reason, Locale::En),
             family.declared_min,
             family.effective_max
         )
@@ -218,41 +219,55 @@ pub fn render_combat_draft_selection_v1(view: &CombatDraftSelectionViewV1) -> St
     text
 }
 
-pub fn reason_label(reason: &CombatSelectionReasonV2) -> String {
+pub fn reason_label(reason: &CombatSelectionReasonV2, locale: Locale) -> String {
+    let text = |key, parameters: &[(&str, &str)]| {
+        locale
+            .text("combat", key, parameters)
+            .expect("combat selection message")
+    };
     match reason {
         CombatSelectionReasonV2::Hand(reason) => match reason {
             HandSelectReason::Exhaust | HandSelectReason::PotionExhaust { .. } => {
-                "Exhaust from hand".to_owned()
+                text("selection.exhaust", &[])
             }
-            HandSelectReason::Discard => "Discard from hand".to_owned(),
-            HandSelectReason::Retain => "Retain".to_owned(),
-            HandSelectReason::PutOnDrawPile => "Put on draw pile".to_owned(),
-            HandSelectReason::PutToBottomOfDraw => "Put at bottom of draw pile".to_owned(),
-            HandSelectReason::Setup => "Setup".to_owned(),
-            HandSelectReason::Copy { amount } => {
-                format!("Copy: add {} copies", amount.saturating_sub(1))
-            }
-            HandSelectReason::Nightmare { amount } => {
-                format!("Nightmare: {amount} copies next turn")
-            }
-            HandSelectReason::Upgrade => "Upgrade".to_owned(),
-            HandSelectReason::GamblingChip => "Replace hand cards".to_owned(),
-            HandSelectReason::Recycle => "Recycle".to_owned(),
+            HandSelectReason::Discard => text("selection.discard", &[]),
+            HandSelectReason::Retain => text("selection.retain", &[]),
+            HandSelectReason::PutOnDrawPile => text("selection.toDraw", &[]),
+            HandSelectReason::PutToBottomOfDraw => text("selection.toBottom", &[]),
+            HandSelectReason::Setup => text("selection.setup", &[]),
+            HandSelectReason::Copy { amount } => text(
+                "selection.copy",
+                &[("amount", &amount.saturating_sub(1).to_string())],
+            ),
+            HandSelectReason::Nightmare { amount } => text(
+                "selection.nightmare",
+                &[
+                    ("amount", &amount.to_string()),
+                    ("name", locale.entity("card", "Nightmare")),
+                ],
+            ),
+            HandSelectReason::Upgrade => text("selection.upgrade", &[]),
+            HandSelectReason::GamblingChip => text("selection.replace", &[]),
+            HandSelectReason::Recycle => text("selection.recycle", &[]),
         },
         CombatSelectionReasonV2::Grid(reason) => match reason {
-            GridSelectReason::MoveToDrawPile => "Put on draw pile".to_owned(),
-            GridSelectReason::Exhume { .. } => "Exhume".to_owned(),
-            GridSelectReason::DrawPileToHand => "Draw pile to hand".to_owned(),
-            GridSelectReason::SkillFromDeckToHand => "Skill from draw pile".to_owned(),
-            GridSelectReason::AttackFromDeckToHand => "Attack from draw pile".to_owned(),
-            GridSelectReason::DiscardToHand => "Discard to hand, free this turn".to_owned(),
-            GridSelectReason::DiscardToHandNoCostChange => "Discard to hand".to_owned(),
-            GridSelectReason::DiscardToHandRetain => "Discard to hand and retain".to_owned(),
-            GridSelectReason::Omniscience { play_amount } => {
-                format!("Omniscience: play {play_amount} times")
-            }
+            GridSelectReason::MoveToDrawPile => text("selection.toDraw", &[]),
+            GridSelectReason::Exhume { .. } => text("selection.exhume", &[]),
+            GridSelectReason::DrawPileToHand => text("selection.drawToHand", &[]),
+            GridSelectReason::SkillFromDeckToHand => text("selection.skillToHand", &[]),
+            GridSelectReason::AttackFromDeckToHand => text("selection.attackToHand", &[]),
+            GridSelectReason::DiscardToHand => text("selection.discardToHandFree", &[]),
+            GridSelectReason::DiscardToHandNoCostChange => text("selection.discardToHand", &[]),
+            GridSelectReason::DiscardToHandRetain => text("selection.discardToHandRetain", &[]),
+            GridSelectReason::Omniscience { play_amount } => text(
+                "selection.omniscience",
+                &[
+                    ("amount", &play_amount.to_string()),
+                    ("name", locale.entity("card", "Omniscience")),
+                ],
+            ),
         },
-        CombatSelectionReasonV2::ScryDiscard => "Scry: discard".to_owned(),
+        CombatSelectionReasonV2::ScryDiscard => text("selection.scry", &[]),
     }
 }
 
@@ -268,4 +283,38 @@ pub(crate) fn card_name(card: Option<CardId>, upgrades: Option<u8>) -> String {
         }
     }
     name
+}
+
+#[cfg(test)]
+mod locale_tests {
+    use super::*;
+
+    #[test]
+    fn selection_reasons_use_original_names_and_preserve_copy_counts() {
+        assert_eq!(
+            reason_label(
+                &CombatSelectionReasonV2::Hand(HandSelectReason::Nightmare { amount: 3 }),
+                Locale::ZhCn
+            ),
+            "夜魇：下回合获得 3 张副本"
+        );
+        assert_eq!(
+            reason_label(
+                &CombatSelectionReasonV2::Grid(GridSelectReason::Omniscience { play_amount: 2 }),
+                Locale::ZhCn
+            ),
+            "通晓万物：打出 2 次"
+        );
+        assert_eq!(
+            reason_label(
+                &CombatSelectionReasonV2::Hand(HandSelectReason::Copy { amount: 3 }),
+                Locale::ZhCn
+            ),
+            "复制：加入 2 张副本"
+        );
+        assert_eq!(
+            reason_label(&CombatSelectionReasonV2::ScryDiscard, Locale::ZhCn),
+            "预见：丢弃"
+        );
+    }
 }

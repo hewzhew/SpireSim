@@ -106,15 +106,22 @@ pub(crate) fn write_preparation_window(
 /// Rules accompany the facts that require them. This projection reads only the
 /// supplied public state and difficulty-only content; it never resolves a move,
 /// advances a simulation, accesses hidden pile order, or recommends an action.
-pub(crate) fn write_combat_rules(out: &mut String, state: &PublicCombatStateV1) {
-    writeln!(out, "\nRules for this reading:").unwrap();
+pub(crate) fn write_combat_rules(out: &mut String, state: &PublicCombatStateV1, locale: Locale) {
+    writeln!(
+        out,
+        "\n{}",
+        locale
+            .entry("combat", "rulesHeading")
+            .expect("combat rule heading")
+    )
+    .unwrap();
     writeln!(out, "Hand numbers above are current modified values. Printed rules below describe base/upgraded effects; use the upgrade on each displayed card. A Power card in Hand is not an active power until deployed.").unwrap();
     writeln!(out, "{EXHAUST_SCOPE}").unwrap();
     writeln!(out, "{BLOCK_LIFETIME}").unwrap();
     let mut seen_cards = HashSet::new();
     for card in &state.cards.hand.cards {
         if seen_cards.insert((card.card_id, card.upgrades)) {
-            write_card_rule(out, card.card_id, card.upgrades);
+            write_card_rule(out, card.card_id, card.upgrades, Locale::En);
         }
     }
     let mut seen_powers = HashSet::new();
@@ -187,85 +194,156 @@ pub(crate) fn write_combat_rules(out: &mut String, state: &PublicCombatStateV1) 
 
 /// A short offer face; shared definitions still supply effects and upgrade facts.
 /// Do not infer a complete effect from damage/block/draw alone.
-pub(crate) fn write_card_offer(out: &mut String, card: cards::CardId, upgrades: u8) {
+pub(crate) fn write_card_offer(
+    out: &mut String,
+    card: cards::CardId,
+    upgrades: u8,
+    locale: Locale,
+) {
     let definition = cards::get_card_definition(card);
-    let cost = cards::upgraded_base_cost_override_for(card, upgrades).unwrap_or(definition.cost);
-    let cost = match cost {
-        -2 => "unplayable".into(),
-        -1 => "X".into(),
-        n => format!("{n}c"),
+    let message = |key, parameters: &[(&str, &str)]| {
+        locale
+            .text("mechanics", key, parameters)
+            .expect("card offer message")
     };
+    let cost =
+        match cards::upgraded_base_cost_override_for(card, upgrades).unwrap_or(definition.cost) {
+            -2 => message("card.unplayable", &[]),
+            -1 => "X".into(),
+            cost => message("card.paidCost", &[("cost", &cost.to_string())]),
+        };
     let mut blueprint = sts_oracle_learning::runtime::combat::CardBlueprint::fresh(card);
     blueprint.upgrades = upgrades;
     let numbers = cards::mechanics::card_blueprint_persistent_base_numbers_v1(&blueprint);
-    let mut face = vec![cost, format!("{:?}", definition.card_type)];
+    let mut face = vec![
+        cost,
+        card_type_name(definition.card_type, locale).to_owned(),
+    ];
     if numbers.damage > 0 {
-        face.push(format!("{} base damage/hit", numbers.damage));
+        face.push(message(
+            "card.offerDamage",
+            &[("amount", &numbers.damage.to_string())],
+        ));
     }
     if numbers.block > 0 {
-        face.push(format!("{} base Block", numbers.block));
+        face.push(message(
+            "card.offerBlock",
+            &[("amount", &numbers.block.to_string())],
+        ));
     }
     let magic = definition.base_magic + i32::from(upgrades > 0) * definition.upgrade_magic;
     if let Some(draw) = cards::mechanics::unconditional_card_draw_request_v1(card, magic) {
-        face.push(format!("draw {draw}"));
+        face.push(message("card.offerDraw", &[("amount", &draw.to_string())]));
     }
     if cards::mechanics::card_exhausts_when_played(card, upgrades) {
-        face.push("Exhaust".into());
+        face.push(message("card.exhaustKeyword", &[]));
     }
     if cards::mechanics::card_is_ethereal(card, upgrades) {
-        face.push("Ethereal".into());
+        face.push(message("card.etherealKeyword", &[]));
     }
-    writeln!(out, "  {}", face.join(" · ")).unwrap();
-    writeln!(
-        out,
-        "  {}",
-        cards::mechanics::explanation(card)
-            .unwrap_or("Effect unknown; info card for available facts.")
-    )
-    .unwrap();
-}
-
-pub(crate) fn write_printed_card_rule(out: &mut String, card: cards::CardId, upgrades: u8) {
-    writeln!(
-        out,
-        "  Card {} | {} | printed, {}",
-        crate::render::format_card(card, upgrades),
-        card_attributes(card, upgrades, 0, Locale::En),
-        if upgrades == 0 {
-            "unupgraded"
-        } else {
-            "upgraded"
+    writeln!(out, "  {}", face.join(" | ")).unwrap();
+    if let Some(original) = cards::mechanics::original_printed_card_text(card, upgrades, locale)
+        .expect("validated original card definition")
+    {
+        for line in original.lines() {
+            writeln!(out, "  {line}").unwrap();
         }
-    )
-    .unwrap();
-    writeln!(
-        out,
-        "    Printed rule (base/upgraded): {}",
-        cards::mechanics::explanation(card)
-            .unwrap_or("Effect explanation unavailable; this does not mean unsupported gameplay.")
-    )
-    .unwrap();
-    write_card_fixed_requests(out, card, upgrades, Locale::En);
+    }
+    match cards::mechanics::explanation(card) {
+        Some(effect) => {
+            writeln!(out, "{}", message("card.supplement", &[("effect", effect)])).unwrap()
+        }
+        None => writeln!(out, "  {}", message("card.ruleUnavailable", &[])).unwrap(),
+    }
 }
 
-pub(crate) fn write_card_rule(out: &mut String, card: cards::CardId, upgrades: u8) {
-    write_printed_card_rule(out, card, upgrades);
+pub(crate) fn write_printed_card_rule(
+    out: &mut String,
+    card: cards::CardId,
+    upgrades: u8,
+    locale: Locale,
+) {
+    let message = |key, parameters: &[(&str, &str)]| {
+        locale
+            .text("mechanics", key, parameters)
+            .expect("printed card rule message")
+    };
+    writeln!(
+        out,
+        "{}",
+        message(
+            "card.printedHeading",
+            &[
+                ("name", &locale.card_name(card.stable_id(), upgrades)),
+                ("attributes", &card_attributes(card, upgrades, 0, locale)),
+                (
+                    "upgrade",
+                    &message(
+                        if upgrades == 0 {
+                            "card.unupgraded"
+                        } else {
+                            "card.upgraded"
+                        },
+                        &[]
+                    )
+                )
+            ]
+        )
+    )
+    .unwrap();
+    if let Some(original) = cards::mechanics::original_printed_card_text(card, upgrades, locale)
+        .expect("validated original card definition")
+    {
+        for line in original.lines() {
+            writeln!(out, "    {line}").unwrap();
+        }
+    }
+    let effect = cards::mechanics::explanation(card)
+        .map(str::to_owned)
+        .unwrap_or_else(|| message("card.ruleUnavailable", &[]));
+    writeln!(
+        out,
+        "{}",
+        message("card.printedRule", &[("effect", &effect)])
+    )
+    .unwrap();
+    write_card_fixed_requests(out, card, upgrades, locale);
+}
+
+pub(crate) fn write_card_rule(out: &mut String, card: cards::CardId, upgrades: u8, locale: Locale) {
+    write_printed_card_rule(out, card, upgrades, locale);
+    let message = |key, parameters: &[(&str, &str)]| {
+        locale
+            .text("mechanics", key, parameters)
+            .expect("card lifecycle message")
+    };
     let definition = cards::get_card_definition(card);
     let play = if definition.cost == -2 {
-        "printed unplayable; a combat effect must provide playability"
+        "card.playUnplayable"
     } else if definition.card_type == cards::CardType::Power {
-        "deploy the Power and remove the played card from ordinary draw/discard cycling"
+        "card.playPower"
     } else if cards::mechanics::card_exhausts_when_played(card, upgrades) {
-        "enter Exhaust after resolving its effects"
+        "card.playExhaust"
     } else {
-        "enter Discard after resolving its effects"
+        "card.playDiscard"
     };
     let unused = if cards::mechanics::card_is_ethereal(card, upgrades) {
-        "if still in Hand without Retain, enter Exhaust at turn end via Ethereal"
+        "card.unusedEthereal"
     } else {
-        "follow ordinary turn-end discard and Retain rules"
+        "card.unusedDiscard"
     };
-    writeln!(out, "    At this upgrade, printed lifecycle: when played, {play}; when unplayed, {unused}. Combat powers, relics and instance overrides apply their actual rules.").unwrap();
+    writeln!(
+        out,
+        "{}",
+        message(
+            "card.lifecycle",
+            &[
+                ("play", &message(play, &[])),
+                ("unused", &message(unused, &[]))
+            ]
+        )
+    )
+    .unwrap();
 }
 
 pub(crate) fn write_card_fixed_requests(
@@ -658,7 +736,7 @@ fn render_query(
             writeln!(
                 out,
                 "Current visible intent: {}",
-                crate::decision::combat::intent_label(&monster.intent)
+                crate::decision::combat::intent_label(&monster.intent, Locale::En)
             )
             .unwrap();
         }
@@ -836,6 +914,19 @@ fn write_relic(
     }
 }
 
+fn card_type_name(kind: cards::CardType, locale: Locale) -> &'static str {
+    let key = match kind {
+        cards::CardType::Attack => "attack",
+        cards::CardType::Skill => "skill",
+        cards::CardType::Power => "power",
+        cards::CardType::Status => "status",
+        cards::CardType::Curse => "curse",
+    };
+    locale
+        .entry("game", &format!("cardType.{key}"))
+        .expect("card type name")
+}
+
 /// Printed card facts shared by inventory and strategic choices. Costs include
 /// the actual upgrade and permanent modifier, never hypothetical combat powers.
 pub(crate) fn card_attributes(
@@ -874,25 +965,12 @@ pub(crate) fn card_attributes(
             .collect::<Vec<_>>()
             .join(", ")
     };
-    let kind = match definition.card_type {
-        cards::CardType::Attack => "attack",
-        cards::CardType::Skill => "skill",
-        cards::CardType::Power => "power",
-        cards::CardType::Status => "status",
-        cards::CardType::Curse => "curse",
-    };
+    let kind = card_type_name(definition.card_type, locale);
     locale
         .text(
             "mechanics",
             "card.inventoryAttributes",
-            &[
-                (
-                    "type",
-                    locale.entry("game", &format!("cardType.{kind}")).unwrap(),
-                ),
-                ("cost", &cost),
-                ("tags", &tags),
-            ],
+            &[("type", kind), ("cost", &cost), ("tags", &tags)],
         )
         .expect("card attribute message")
 }
@@ -911,13 +989,7 @@ fn write_card(
             .expect("card query message")
     };
     let name = locale.card_name(card.stable_id(), upgrades);
-    let kind = match definition.card_type {
-        cards::CardType::Attack => "attack",
-        cards::CardType::Skill => "skill",
-        cards::CardType::Power => "power",
-        cards::CardType::Status => "status",
-        cards::CardType::Curse => "curse",
-    };
+    let kind = card_type_name(definition.card_type, locale);
     let upgrade = message(
         if upgrades == 0 {
             "card.unupgraded"
@@ -934,12 +1006,7 @@ fn write_card(
             &[
                 ("name", &name),
                 ("id", card.stable_id()),
-                (
-                    "type",
-                    locale
-                        .entry("game", &format!("cardType.{kind}"))
-                        .expect("card type name")
-                ),
+                ("type", kind),
                 ("upgrade", &upgrade)
             ]
         )
@@ -1352,7 +1419,7 @@ fn write_enemy(out: &mut String, enemy: monsters::EnemyId, ascension: u8) {
             write_power(out, power);
         }
         for (card, upgrades) in referenced_cards {
-            write_card_rule(out, card, upgrades);
+            write_card_rule(out, card, upgrades, Locale::En);
         }
     }
 }
@@ -1539,7 +1606,7 @@ mod tests {
             ),
         ] {
             let mut out = String::new();
-            write_card_rule(&mut out, card, upgrades);
+            write_card_rule(&mut out, card, upgrades, Locale::En);
             assert!(out.contains(expected), "{out}");
             assert!(
                 out.contains(if upgrades == 0 {
@@ -1562,7 +1629,7 @@ mod tests {
         ] {
             for (upgrades, draw) in [(0, base), (1, upgraded)] {
                 let mut out = String::new();
-                write_card_rule(&mut out, card, upgrades);
+                write_card_rule(&mut out, card, upgrades, Locale::En);
                 assert!(
                     out.contains(&format!(
                         "Printed draw request at this upgrade: {draw} cards."
@@ -1572,10 +1639,10 @@ mod tests {
             }
         }
         let mut conditional = String::new();
-        write_card_rule(&mut conditional, cards::CardId::Dropkick, 1);
+        write_card_rule(&mut conditional, cards::CardId::Dropkick, 1, Locale::En);
         assert!(!conditional.contains("Printed draw request"));
         let mut triggered = String::new();
-        write_card_rule(&mut triggered, cards::CardId::Evolve, 0);
+        write_card_rule(&mut triggered, cards::CardId::Evolve, 0, Locale::En);
         assert!(!triggered.contains("Printed draw request"));
     }
 
@@ -1588,7 +1655,7 @@ mod tests {
         ] {
             for (upgrades, block) in [(0, base), (1, upgraded)] {
                 let mut out = String::new();
-                write_card_rule(&mut out, card, upgrades);
+                write_card_rule(&mut out, card, upgrades, Locale::En);
                 assert!(
                     out.contains(&format!(
                         "Printed Block request at this upgrade: {block} Block"
@@ -1603,7 +1670,7 @@ mod tests {
             cards::CardId::BodySlam,
         ] {
             let mut out = String::new();
-            write_card_rule(&mut out, card, 1);
+            write_card_rule(&mut out, card, 1, Locale::En);
             assert!(!out.contains("Printed Block request"), "{out}");
         }
     }
@@ -1612,7 +1679,7 @@ mod tests {
     fn printed_lifecycle_separates_play_exhaust_ethereal_and_power_deployment() {
         let read = |card, upgrades| {
             let mut out = String::new();
-            write_card_rule(&mut out, card, upgrades);
+            write_card_rule(&mut out, card, upgrades, Locale::En);
             out
         };
         let armor = read(cards::CardId::GhostlyArmor, 0);
@@ -2444,14 +2511,14 @@ mod tests {
         }
         let public = public_combat_state_v1(&state);
         let mut reading = String::new();
-        super::write_combat_rules(&mut reading, &public);
+        super::write_combat_rules(&mut reading, &public, Locale::En);
         assert!(
             reading.contains("Relic Red Skull (low-HP Strength bonus active)"),
             "{reading}"
         );
         assert!(reading.contains("Relic Lantern (opening Energy bonus spent this combat)"));
         assert!(reading.contains("Relic Lizard Tail (used up)"));
-        let compact = crate::decision::combat::state_reading(&public);
+        let compact = crate::decision::combat::state_reading(&public, Locale::En);
         assert!(
             compact.contains("Red Skull (low-HP Strength bonus active)"),
             "{compact}"
@@ -2726,7 +2793,7 @@ mod tests {
             assert!(!query.contains("unavailable"), "{query}");
             for upgrade in [0, 1] {
                 let mut reading = String::new();
-                write_card_rule(&mut reading, id, upgrade);
+                write_card_rule(&mut reading, id, upgrade, Locale::En);
                 assert!(!reading.contains("unavailable"), "{reading}");
                 let mut card =
                     sts_oracle_learning::runtime::combat::CombatCard::for_scenario(id, 2);

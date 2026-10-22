@@ -3,6 +3,66 @@ use crate::decision_tests::{controller_with_session, fixture, TestDirectory};
 use sts_presentation::Locale;
 
 #[test]
+fn combat_locales_share_actual_state_commands_and_sources_across_pending_choices() {
+    for kind in [
+        "combat_multiturn",
+        "combat_discovery",
+        "combat_exhaust",
+        "combat_discard",
+    ] {
+        let directory = TestDirectory::new();
+        let mut game = controller_with_session(&directory.0, kind, &fixture(kind));
+        let before = game.head().clone();
+        let details = [DecisionDetailV1::Brief, DecisionDetailV1::State];
+        let en = game
+            .decision_reading_v1(&details, None, Locale::En)
+            .unwrap();
+        let zh = game
+            .decision_reading_v1(&details, None, Locale::ZhCn)
+            .unwrap();
+        let full = game.decision_reading_v1(&[], None, Locale::ZhCn).unwrap();
+        let public = en.state.as_ref().unwrap();
+        let preview = read_preview_decision_v1(public, None, Locale::ZhCn).unwrap();
+        assert_eq!(en.state, zh.state);
+        assert_eq!(en.source, zh.source);
+        assert_ne!(en.summary, zh.summary);
+        assert!(zh.summary.contains("手牌："), "{kind}: {}", zh.view);
+        assert_eq!(zh.summary, full.summary);
+        assert_eq!(zh.summary, preview.summary);
+        assert!(full.view.contains("完整机制补充（英文）"));
+        let commands = |reading: &RunPlayDecisionReadingV1| {
+            reading
+                .options
+                .iter()
+                .map(|row| {
+                    crate::selector::semantic_action_for_choice_v1(public, &row.choice).unwrap()
+                })
+                .collect::<Vec<_>>()
+        };
+        assert_eq!(commands(&en), commands(&zh));
+        let selections = |reading: &RunPlayDecisionReadingV1| {
+            reading
+                .selections
+                .iter()
+                .map(|row| {
+                    (
+                        row.choice.clone(),
+                        row.min,
+                        row.max,
+                        row.members
+                            .iter()
+                            .map(|member| member.ordinal)
+                            .collect::<Vec<_>>(),
+                    )
+                })
+                .collect::<Vec<_>>()
+        };
+        assert_eq!(selections(&en), selections(&zh));
+        assert_eq!(*game.head(), before);
+    }
+}
+
+#[test]
 fn context_acknowledgements_are_language_scoped_without_changing_choices_or_state() {
     let dir = TestDirectory::new();
     let mut game = controller_with_session(&dir.0, "locale-context", &fixture("reward"));

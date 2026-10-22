@@ -26,6 +26,7 @@ def sources():
         characters["Neow Event"] = {"NAMES": [f"{language}:Neow"]}
         result[f"localization/{language}/characters.json"] = characters
         result[f"localization/{language}/powers.json"] = {key: {"NAME": f"{language}:{key}"} for key in owner.POWERS.values()}
+        result[f"localization/{language}/stances.json"] = {key: {"NAME": f"{language}:{key}"} for key in owner.STANCES.values()}
     return result
 
 
@@ -44,11 +45,20 @@ def test_exact_source_keys_preserve_identity_and_skip_deprecated_names(tmp_path,
     assert names["en"]["potion"]["WeakenPotion"] == "eng:Weak Potion"
     assert names["zh-CN"]["relic"]["HappyFlower"] == "zhs:Happy Flower"
     assert names["en"]["power"]["Weak"] == "eng:Weakened"
+    assert names["en"]["power"]["Regen"] == "eng:Regenerate"
+    assert names["en"]["power"]["Regeneration"] == "eng:Regeneration"
+    assert names["en"]["power"]["DexterityDown"] == "eng:DexLoss"
+    assert names["en"]["power"]["RetainCards"] == "eng:Retain Cards"
+    assert "GenericStrengthUp" not in names["en"]["power"]
+    assert "GuardianThreshold" not in names["en"]["power"]
+    assert manifest["name_counts"]["en"]["power"] == 134
+    assert "src/content/powers/mod.rs" in manifest["identity_inputs_sha256"]
     assert bindings["zh-CN"]["potion.Elixir"]["key"] == "ElixirPotion"
     assert bindings["zh-CN"]["potion.Elixir"]["entry"] == "localization/zhs/potions.json"
     assert "Impulse" not in names["en"]["card"]
     assert manifest["name_counts"]["en"]["card"] == 370
-    assert len(manifest["entries_sha256"]) == 12
+    assert len(manifest["entries_sha256"]) == 14
+    assert names["zh-CN"]["stance"]["Wrath"] == "zhs:Wrath"
     assert names["en"]["encounter"]["TheHeart"] == names["en"]["enemy"]["CorruptHeart"]
     assert names["zh-CN"]["encounter"]["DonuAndDeca"] == "zhs:Donu与zhs:Deca"
 
@@ -98,6 +108,18 @@ def test_a_new_source_for_an_omitted_card_requires_review(tmp_path, sources):
     sources["localization/eng/cards.json"]["Impulse"] = {"NAME": "new-release-name"}
     with pytest.raises(ValueError, match="now supplies the omitted"):
         owner.names_from_archive(archive(tmp_path, sources))
+
+
+def test_dynamic_and_auxiliary_power_names_require_review_when_the_original_supplies_a_fixed_name(tmp_path, sources):
+    for key in ["Generic Strength Up Power", "GuardianThreshold"]:
+        original = sources["localization/eng/powers.json"].get(key)
+        sources["localization/eng/powers.json"][key] = {"NAME": "new fixed original name"}
+        with pytest.raises(ValueError, match="now supplies a fixed name"):
+            owner.names_from_archive(archive(tmp_path, sources))
+        if original is None:
+            del sources["localization/eng/powers.json"][key]
+        else:
+            sources["localization/eng/powers.json"][key] = original
 
 
 def test_write_and_check_preserve_authored_messages_and_detect_drift(tmp_path, sources):

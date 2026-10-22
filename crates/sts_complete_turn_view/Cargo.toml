@@ -10,6 +10,7 @@ autotests = false
 path = "src/lib.rs"
 
 [dependencies]
+sts_presentation = { path = "../../tools/presentation" }
 serde = { version = "1.0", features = ["derive"] }
 sts_agent = { path = "../sts_agent" }
 sts_combat_strategy = { path = "../sts_combat_strategy" }

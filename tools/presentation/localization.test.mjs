@@ -24,7 +24,7 @@ test('locale selection maps the host zh and browser tags without claiming Tradit
 test('generated name sections match their recorded original-resource import', async () => {
   const source = JSON.parse(await readFile(new URL('./original-names.json', import.meta.url), 'utf8'));
   assert.equal(source.schema, 'sts-original-localization-names-v1');
-  assert.equal(Object.keys(source.entries_sha256).length, 12);
+  assert.equal(Object.keys(source.entries_sha256).length, 14);
   for (const locale of ['en', 'zh-CN']) {
     const names = {};
     for (const [kind, count] of Object.entries(source.name_counts[locale])) {
@@ -97,6 +97,7 @@ test('entity keys match the existing simulator vocabularies', async () => {
     enemy: '../../src/content/monsters/mod.rs',
     relic: '../../src/content/relics/identity_v1.json',
     power: '../../src/content/powers/mod.rs',
+    stance: '../../src/runtime/combat/orbs.rs',
     potion: '../../src/content/potions/mod.rs',
     potionRule: '../../src/content/potions/mod.rs',
     event: '../../src/state/events/mod.rs',

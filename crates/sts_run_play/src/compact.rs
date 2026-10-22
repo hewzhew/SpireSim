@@ -1371,7 +1371,7 @@ fn render_public_decision_status_v1(
                 observation.turn.energy,
                 observation.player.energy_master,
                 observation.turn.counters.cards_played_this_turn,
-                render_powers(&observation.player.powers)
+                render_powers(&observation.player.powers, Locale::En)
             )
             .expect("string write");
             writeln!(
@@ -1393,7 +1393,7 @@ fn render_public_decision_status_v1(
                         render_monster_block_v1(monster.block, &monster.powers),
                         monster.intent.intent,
                         monster.intent.preview_damage_per_hit,
-                        render_powers(&monster.powers)
+                        render_powers(&monster.powers, Locale::En)
                     ))
                     .collect::<Vec<_>>()
                     .join("; ")

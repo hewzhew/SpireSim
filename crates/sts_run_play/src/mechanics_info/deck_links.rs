@@ -2,6 +2,7 @@
 //! Full item rules remain alongside it; this neither scores the deck nor
 //! treats an unprojected effect as absent. No state execution or RNG access.
 use std::fmt::Write;
+use sts_presentation::Locale;
 
 use sts_oracle_learning::content::cards::{self, mechanics as m, CardId, CardType};
 
@@ -22,7 +23,7 @@ pub(crate) fn write_owned_card_links(
         let source = format!(
             "{count}x {} | {}",
             crate::render::format_card(id, upgrades),
-            super::card_attributes(id, upgrades, modifier, sts_presentation::Locale::En)
+            super::card_attributes(id, upgrades, modifier, Locale::En)
         );
         let rule = m::explanation(id).unwrap_or("See info card for the effect rule.");
         let row = |effect: String| format!("{source}: {effect}");

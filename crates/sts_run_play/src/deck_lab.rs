@@ -2,6 +2,7 @@
 //! Current resources are copied; diagnostic RNG never reads the real future.
 use std::fmt::Write;
 use std::time::{Duration, Instant};
+use sts_presentation::Locale;
 
 use crate::combat_trace::{
     combat_turn_start_v1, RunPlayCombatEndTurnReviewV1, RunPlayCombatMonsterSummaryV1,
@@ -620,7 +621,7 @@ pub fn render(report: &Report, details: bool) -> String {
                 } else {
                     format!(
                         " | Powers: {}",
-                        crate::decision::combat::power_labels(&row.start.player_powers)
+                        crate::decision::combat::power_labels(&row.start.player_powers, Locale::En)
                     )
                 };
                 let actions = row.action_labels.join(" · ");
@@ -700,6 +701,7 @@ fn opening_hand_labels(start: &RunPlayCombatTurnStartV1) -> String {
                 card.card_id,
                 card.upgrades,
                 card.effective_cost,
+                Locale::En,
             )
         })
         .collect::<Vec<_>>()
@@ -1618,7 +1620,8 @@ mod tests {
                     text.contains(&crate::decision::combat::hand_card_label(
                         card.card_id,
                         card.upgrades,
-                        card.effective_cost
+                        card.effective_cost,
+                        Locale::En
                     )),
                     "{text}"
                 );

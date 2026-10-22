@@ -241,8 +241,9 @@ export async function cancel(ctx) {
   // Map overlay back into the room: the reading's cancel option, so
   // looking at the map stays reversible the way the game's own map is.
   let reading = await game.decision({ details: ['options'] });
-  const cancelIndex = (reading.options ?? [])
-    .findIndex(option => /^cancel/i.test(option.label ?? ''));
+  const cancelIndex = (reading.raw?.reading?.options ?? [])
+    .findIndex(option => ['strategic', 'combat_atomic'].includes(option.candidate?.domain)
+      && option.candidate.action?.kind === 'cancel');
   if (cancelIndex === -1) {
     throw new Error(`no cancel option on the current reading (options: ${(reading.options ?? []).map(o => o.label).join(' | ')})`);
   }

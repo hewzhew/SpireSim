@@ -471,7 +471,7 @@ fn brief_reading_preserves_choices_resources_and_pending_card_rules() {
         }
         if kind == "reward" {
             assert!(brief.view.contains("Shrug It Off"));
-            assert!(brief.view.contains("1c · Skill · 8 base Block · draw 1"));
+            assert!(brief.view.contains("1c | Skill | 8 base Block | draw 1"));
             assert!(!brief.view.contains("Printed rule (base/upgraded):"));
             assert!(!brief
                 .view
@@ -1555,8 +1555,8 @@ fn falling_reading_uses_the_selected_upgraded_card_and_removes_that_copy() {
             reading.view
         );
         if brief {
-            assert!(reading.view.contains("1c · Power"), "{}", reading.view);
-            assert!(!reading.view.contains("2c · Power"), "{}", reading.view);
+            assert!(reading.view.contains("1c | Power"), "{}", reading.view);
+            assert!(!reading.view.contains("2c | Power"), "{}", reading.view);
         } else {
             assert!(
                 reading.view.contains("Card Dark Embrace+ | Power | 1c"),
@@ -3763,7 +3763,7 @@ fn escape_reading_reports_settlement_instead_of_a_playable_hand() {
     let state = sts_oracle_learning::agent::information::state::public_combat_state_v1(combat);
     assert!(!state.cards.hand.cards.is_empty());
 
-    let view = crate::decision::combat::state_reading(&state);
+    let view = crate::decision::combat::state_reading(&state, Locale::En);
     assert!(
         view.contains("Escape settlement pending | use act end"),
         "{view}"
@@ -3806,7 +3806,7 @@ fn compact_hand_uses_public_target_damage_and_keeps_copies_and_variable_hits_dis
         card
     })
     .collect();
-    let view = crate::decision::combat::state_reading(&state);
+    let view = crate::decision::combat::state_reading(&state, Locale::En);
     assert!(view.contains("Damage: per-target hit after Strength/Weak/Vulnerable, before block."));
     assert!(view.contains("Cleave[1c M2:12d M6:8d all]"), "{view}");
     assert!(view.contains("Twin Strike[1c M2:12dx2 M6:8dx2]"));
@@ -3815,10 +3815,34 @@ fn compact_hand_uses_public_target_damage_and_keeps_copies_and_variable_hits_dis
     assert!(view.contains("Whirlwind[Xc M2:12d/hit M6:8d/hit all]"));
     assert!(view.contains("Dazed[unplayable]"));
     assert!(!view.contains("999"));
+    let zh = crate::decision::combat::state_reading(&state, Locale::ZhCn);
+    let name = |id: CardId| Locale::ZhCn.entity("card", id.stable_id());
+    assert!(
+        zh.contains(&format!(
+            "{}[1费 M2:12伤害 M6:8伤害 全体]",
+            name(CardId::Cleave)
+        )),
+        "{zh}"
+    );
+    assert!(zh.contains(&format!(
+        "{}[1费 M2:12伤害×2 M6:8伤害×2]",
+        name(CardId::TwinStrike)
+    )));
+    assert!(zh.contains(&format!(
+        "{}[2费 M2:每段12伤害 M6:每段8伤害]",
+        name(CardId::FiendFire)
+    )));
+    assert!(zh.contains("防御[3费 5格挡], 防御+[1费 8格挡]"));
+    assert!(zh.contains(&format!(
+        "{}[X费 M2:每段12伤害 M6:每段8伤害 全体]",
+        name(CardId::Whirlwind)
+    )));
+    assert!(!zh.contains("999"));
     for card in &mut state.cards.hand.cards {
         card.damage_by_monster_order = vec![999, 7, 7];
     }
-    assert!(crate::decision::combat::state_reading(&state).contains("Fiend Fire[2c 7d/hit]"));
+    assert!(crate::decision::combat::state_reading(&state, Locale::En)
+        .contains("Fiend Fire[2c 7d/hit]"));
 }
 
 #[test]
@@ -3882,7 +3906,7 @@ fn combat_rules_bind_active_powers_and_hand_without_exposing_hidden_state() {
         },
     )];
     let before = state.clone();
-    let view = crate::decision::combat::state_reading(&state);
+    let view = crate::decision::combat::state_reading(&state, Locale::En);
     assert_eq!(state, before);
     assert_eq!(view.matches("  Card Sentinel | Skill").count(), 1);
     assert!(view.contains("If this card is Exhausted, gain 2 Energy (3 if upgraded)"));
@@ -3898,7 +3922,7 @@ fn combat_rules_bind_active_powers_and_hand_without_exposing_hidden_state() {
         let mut power = state.monsters[0].powers[0].clone();
         power.amount = amount;
         assert_eq!(
-            crate::render::render_powers(&[power]),
+            crate::render::render_powers(&[power], Locale::En),
             format!("Invincible (damage left {amount}/200)"),
         );
     }

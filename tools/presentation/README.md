@@ -1,6 +1,6 @@
 # 展示语言与共用名称
 
-这个模块提供中英文游戏名称、原版卡牌文本和消息格式化。它不读取游戏存档、执行动作或修改模型请求。`replay/` 拥有离线演示的模板、样式和渲染代码；实际模型记录、素材整理和构建结果保存在 artifact。dsh 地图与工作台使用宿主语言服务，领域名称消费共用词典；Rust 卡牌与药水查询也从这里取名称、牌面与规则说明。
+这个模块提供中英文游戏名称、原版卡牌文本和消息格式化。它不读取游戏存档、执行动作或修改模型请求。`replay/` 拥有离线演示的模板、样式和渲染代码；实际模型记录、素材整理和构建结果保存在 artifact。dsh 地图与工作台使用宿主语言服务，领域名称消费共用词典；Rust 卡牌、药水查询和战斗读数也从这里取名称、牌面与消息。
 
 ## 项目中的职责
 
@@ -19,7 +19,7 @@
 
 ## 展示语言与模型语言
 
-展示语言决定用户看到的名称和界面。模型语言决定后续请求中的工具读数、规则说明和相关提示。二者分别由对应边界拥有：中文界面可以查看英文模型对局，界面切换只重绘，不改写已运行会话的输入或历史。工作台的 `agentLocale` 默认 `en`，支持 `zh-CN`，原生聊天在绑定中保存该选择，重连时保持。当前接通药水机制查询、卡牌定义查询，以及 `inventory` / `inventory effects` 的名称、原版牌面、属性、永久改值、遗物计数和触发状态、药水规则。卡牌和遗物的完整机制详解仍保留英文，中文库存明确标注；其他读数按实际 owner 迁移。Python 的文字语言参数还未接入。
+展示语言决定用户看到的名称和界面。模型语言决定后续请求中的工具读数、规则说明和相关提示。二者分别由对应边界拥有：中文界面可以查看英文模型对局，界面切换只重绘，不改写已运行会话的输入或历史。工作台的 `agentLocale` 默认 `en`，支持 `zh-CN`，原生聊天在绑定中保存该选择，重连时保持。当前接通药水机制查询、卡牌定义查询、永久库存，以及战斗 `read/options` 的手牌、当前数值、敌人意图、状态与选牌。卡牌和遗物的完整机制详解仍保留英文，中文读数明确标注；战略正文按实际 owner 继续迁移。Python 的文字语言参数还未接入。
 
 dsh 地图使用宿主的语言偏好、订阅和 slot 翻译入口，离线演示使用自己的语言选择。宿主内置 `zh` 在资源边界映射到 `zh-CN`。宿主的 `{name}` 模板与 i18next 的 `{{name}}` 及复数规则不同：地图的界面资源使用宿主格式，领域资源只抽取无模板的名称，效果模板保留在对应格式化入口。
 
@@ -35,7 +35,7 @@ dsh 地图使用宿主的语言偏好、订阅和 slot 翻译入口，离线演�
 
 工作台将本次实际展示的最后一份局面作为 `currentReading` 返回，原生和脚本工具通过官方日志 metadata 保存，模型消息仍只包含原来渲染的文字。日志摘要与脚本玩家的压力压缩使用这份记录，不从中英文标题猜边界；失败或尚未返回的调用不会使旧局面成为压缩后的实际进度。主动上下文刷新记录正文的字符区间，由输入诊断直接读取。
 
-战略观察的 `preparation_reading` 由 Rust 从同一份公开决策生成，`public_snapshot_id` 绑定当前帧。选项文字按完整命令绑定；库存卡牌按稳定 ID 和升级等级绑定，遗物按稳定 ID 绑定；商店商品还包含类型、槽位、价格和可用命令。卡牌规则的 `available` 表示源端是否提供了机制说明。脚本准备、选牌和购物比较消费这些块，不按英文标题、显示名或文本顺序拆分，不再为取得规则额外请求 `read, inventory effects`。库存全文与分块共用原有渲染 owner；文字保持完整，不由 Node 裁剪规则。准备读数目前仍是英文，后续翻译沿这些 Rust renderer 接入；`read/options` 正文和脚本策略消息尚未接入语言选择。
+战略观察的 `preparation_reading` 由 Rust 从同一份公开决策生成，`public_snapshot_id` 绑定当前帧。选项文字按完整命令绑定；库存卡牌按稳定 ID 和升级等级绑定，遗物按稳定 ID 绑定；商店商品还包含类型、槽位、价格和可用命令。卡牌规则的 `available` 表示源端是否提供了机制说明。脚本准备、选牌和购物比较消费这些块，不按英文标题、显示名或文本顺序拆分，不再为取得规则额外请求 `read, inventory effects`。库存全文与分块共用原有渲染 owner；文字保持完整，不由 Node 裁剪规则。准备投影的库存与卡牌规则已随连接语言呈现，其余战略正文和脚本策略消息沿实际 owner 继续迁移。
 
 ## 运行
 
@@ -67,11 +67,11 @@ view.text('game:effect.draw', { count: 2 }); // Draw 2 cards.
 
 ## 资源职责
 
-共用内容位于 `locales/en.json` 和 `zh-CN.json`：`game` 拥有名称、术语、遗物触发状态和规则，`mechanics` 拥有机制查询和卡牌属性消息，`inventory` 拥有永久库存消息，`replay` 拥有离线演示的导航、场景和原始记录入口文案。dsh 地图和工作台自己的界面消息位于其 `locale/` 资源中，不在其中复制游戏名称。
+共用内容位于 `locales/en.json` 和 `zh-CN.json`：`game` 拥有名称、术语、状态计数、遗物触发状态和规则，`mechanics` 拥有机制查询和卡牌规则消息，`inventory` 拥有永久库存消息，`combat` 拥有战斗与选牌读数，`decision` 拥有共用选择提示，`replay` 拥有离线演示消息。dsh 地图和工作台自己的界面消息位于其 `locale/` 资源中，不在其中复制游戏名称。
 
-`game.card`、`relic`、`potion`、`enemy`、`character`、`event`、`power`、`encounter` 是原版资源导入的名称区段，由 [import_original.py](import_original.py) 更新，不手工翻译。其中卡牌、遗物、药水和敌人按当前模拟器词表导入；角色覆盖四名可玩角色，事件目前取 Neow，状态目前取易伤、虚弱、脆弱，遭遇取地图使用的具名遭遇。多敌人遭遇 `DonuAndDeca` 用原版的两个敌人名与本项目的连接词组合。房间类型、界面消息和补充规则说明由项目维护。
+`game.card`、`relic`、`potion`、`enemy`、`character`、`event`、`power`、`stance`、`encounter` 是原版资源导入的名称区段，由 [import_original.py](import_original.py) 更新，不手工翻译。卡牌、遗物、药水、敌人和状态按当前模拟器稳定身份核对；角色覆盖四名可玩角色，事件目前取 Neow，遭遇取地图使用的具名遭遇。状态的本地化键差异显式记录，例如 `Regen` 对应怪物 `Regenerate`，`Regeneration` 对应会递减的再生，`DexterityDown` 对应 `DexLoss`；它们不按译名或相似类名合并。多敌人遭遇 `DonuAndDeca` 用原版的两个敌人名与本项目的连接词组合。房间类型、界面消息和补充规则说明由项目维护。
 
-原版资源位于安装目录的 `desktop-1.0.jar`：`localization/eng/` 为英文，`localization/zhs/` 为简体中文，`localization/zht/` 为繁体中文；本模块当前导入前两种。目录内的 `cards.json`、`relics.json`、`potions.json`、`monsters.json`、`powers.json`、`characters.json`、`events.json` 等按游戏内容分类。导入只读取 ZIP 中的 JSON，不启动游戏或 Java。
+原版资源位于安装目录的 `desktop-1.0.jar`：`localization/eng/` 为英文，`localization/zhs/` 为简体中文，`localization/zht/` 为繁体中文；本模块当前导入前两种。目录内的 `cards.json`、`relics.json`、`potions.json`、`monsters.json`、`powers.json`、`stances.json`、`characters.json`、`events.json` 等按游戏内容分类。导入只读取 ZIP 中的 JSON，不启动游戏或 Java。
 
 从仓库根目录核对原版名称；加 `--write` 更新名称区段与来源摘要：
 
@@ -80,13 +80,15 @@ view.text('game:effect.draw', { count: 2 }); // Draw 2 cards.
 .\scripts\py.ps1 tools/presentation/import_original.py --jar 'C:/path/to/SlayTheSpire/desktop-1.0.jar' --write
 ```
 
-卡牌、遗物使用现有身份 owner 提供的原版 ID；本地化键与协议 ID 不同的项在导入器中显式列出，不用译名、英文显示名或模糊匹配反查。例如稳定 ID `Elixir` 对应原版当前药水键 `ElixirPotion`，原版同名 `Elixir` 条目已经废弃。来源 [original-names.json](original-names.json) 记录语言、资源文件摘要、生成名称摘要与明确遗漏；逐项来源可以用 `--report <新 artifact JSON 路径>` 保存。`Impulse` 在当前安装版的卡牌语言资源中没有条目，保持稳定 ID 回退。普通安装、构建和运行只消费已生成的 JSON，不依赖本机游戏；npm 和 Cargo 包保留来源摘要。
+卡牌、遗物使用现有身份 owner 提供的原版 ID；本地化键与协议 ID 不同的项在导入器中显式列出，不用译名、英文显示名或模糊匹配反查。例如稳定 ID `Elixir` 对应原版当前药水键 `ElixirPotion`，原版同名 `Elixir` 条目已经废弃。来源 [original-names.json](original-names.json) 记录语言、资源文件摘要、生成名称摘要与明确遗漏；逐项来源可以用 `--report <新 artifact JSON 路径>` 保存。`Impulse` 没有对应语言条目，`GuardianThreshold` 是模拟器辅助状态，`GenericStrengthUp` 的名称由遭遇在构造时传入，原版中立姿态的名称为空；这些情况明确记录并保留身份回退或现有领域标签。普通安装、构建和运行只消费已生成的 JSON，不依赖本机游戏；npm 和 Cargo 包保留来源摘要。
 
 原版牌面与工具补充说明承担不同用途。卡牌 `DESCRIPTION` 中的 `!D!`、`!B!`、`!M!` 由游戏提供数值，`NL` 和 `#y` 等控制换行与颜色；药水和遗物的 `DESCRIPTIONS` 常是由 Java 按顺序插入数值的片段。当前 `game.potionRule` 是项目整理的完整机制解释，包括触发时点、目标、限制和原版短描述未展开的交互；它与原版名称分别维护，导入器保留它以及所有工具、界面消息。
 
 [original-card-text.json](original-card-text.json) 保存同一次导入的卡牌 `DESCRIPTION`、`UPGRADE_DESCRIPTION` 与 `EXTENDED_DESCRIPTION` 原文和来源摘要，通过 `@sts-simulator/presentation/original-card-text` 导出，并嵌入 Rust crate。字段名不决定其用途：全身撞击的 `UPGRADE_DESCRIPTION` 是战斗伤害附加行，终结技用它显示不可打出的提示。`cards::mechanics::original_printed_card_text` 按原版实际升级方法选择定义牌面，使用同一份永久基础数值 owner 处理伤害、格挡和多次升级；`!M!` 使用当前升级态的定义数值。它不查询隐藏状态或计算当前战斗伤害。
 
-共享格式化入口只替换已提供的数值、处理换行与关键字标记，将能量图标显示为 `[Energy]` 或 `[能量]`，保留原图标数量和 X 表达式。未知变量或缺失的已选模板返回错误。原版未收录的卡牌返回 `None`，由查询保留稳定 ID 和已有机制资料。`info card <ID>[+N]` 使用定义牌面，按工具语言显示名称、类型、属性与目标，并保留完整的英文机制补充。`inventory effects` 使用同一 owner 的 `original_card_blueprint_text`，传入永久实例的升级、附加值及伤害/格挡改值；战斗中读取 master-deck snapshot，不以手牌的临时改值替代。基础抽牌与格挡请求另行标明其定义范围。`read/options`、准备文字块和战斗手牌文本仍沿各自 owner 继续接入。
+共享格式化入口只替换已提供的数值、处理换行与关键字标记，将能量图标显示为 `[Energy]` 或 `[能量]`，保留原图标数量和 X 表达式。未知变量或缺失的已选模板返回错误。原版未收录的卡牌返回 `None`，由查询保留稳定 ID 和已有机制资料。`info card <ID>[+N]` 使用定义牌面，按工具语言显示名称、类型、属性与目标，并保留完整的英文机制补充；选牌的简版与完整规则也共用该定义 owner。`inventory effects` 使用 `original_card_blueprint_text`，传入永久实例的升级、附加值及伤害/格挡改值；战斗中读取 master-deck snapshot，不以手牌的临时改值替代。基础请求另行标明定义范围。灼热攻击的名称保留 `+1` 等实际升级次数。
+
+战斗手牌的费用、逐目标伤害、格挡和敌人意图直接来自同一份 `PublicCombatStateV1`，不会为翻译重新应用修正。未知伤害、隐藏意图、复活状态和逃跑结算保留各自含义。状态的回合持续时间、存在标记、负力量及承伤上限沿规则 owner 呈现；语言不改变计数。选牌原因由 `sts_complete_turn_view` 的同一个 typed reason renderer 提供，token、顺序、选择范围和取消动作不从显示文字推断。完整战斗机制补充暂时保留英文，中文全文明确标注。
 
 库存全文和结构化卡牌/遗物块从同一次渲染生成。卡牌按稳定 ID、升级和全部永久实例字段分组，不按名称合并；多个稳定 ID 共享同一显示名时附 ID 以便辨认。瓶装标记只经遗物 owner 的 typed lineage 绑定。遗物触发状态由规则 owner 提供枚举，再从共用消息取词；语言选择不反查英文状态文字。CLI 的 `inventory --locale en|zh-CN`、工作台库存命令和准备投影共用该 renderer；准备投影的库存块随连接语言呈现，其余文字继续沿对应 owner 迁移。
 

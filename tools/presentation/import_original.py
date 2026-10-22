@@ -17,7 +17,7 @@ REPOSITORY = Path(__file__).resolve().parents[2]
 if str(REPOSITORY) not in sys.path:
     sys.path.insert(0, str(REPOSITORY))
 
-from tools.wiki.simulator_catalog import build_simulator_catalog
+from tools.wiki.simulator_catalog import build_simulator_catalog, _stable_identity_owner
 
 LANGUAGES = {"en": "eng", "zh-CN": "zhs"}
 RESOURCES = {"card": "cards", "relic": "relics", "potion": "potions", "enemy": "monsters"}
@@ -43,9 +43,152 @@ KEYS = {
         "SpireGrowth": "Serpent", "SnakeDagger": "Dagger",
     },
 }
-OMITTED = {"card.Impulse": "No corresponding card localization entry in the installed release; retain stable-ID fallback."}
+OMITTED = {
+    "card.Impulse": "No corresponding card localization entry in the installed release; retain stable-ID fallback.",
+    "power.GuardianThreshold": "Simulator-owned Guardian threshold state; no original power localization identity.",
+    "power.GenericStrengthUp": "Original Generic Strength Up Power has no fixed NAME; its constructor receives the encounter-specific name.",
+    "stance.Neutral": "Original Neutral stance NAME is empty; retain stable-ID fallback.",
+}
 CHARACTERS = {"ironclad": "Ironclad", "silent": "Silent", "defect": "Defect", "watcher": "Watcher"}
-POWERS = {"Vulnerable": "Vulnerable", "Weak": "Weakened", "Frail": "Frail"}
+STANCES = {"Calm": "Calm", "Wrath": "Wrath", "Divinity": "Divinity"}
+# Explicit original power localization keys, audited against original class IDs.
+# Regen is monster Regenerate, while Regeneration is the decaying RegenPower.
+POWERS = {
+    "AccuracyPower": "Accuracy",
+    "AfterImage": "After Image",
+    "Amplify": "Amplify",
+    "Anger": "Anger",
+    "Angry": "Angry",
+    "Artifact": "Artifact",
+    "BackAttack": "BackAttack",
+    "Barricade": "Barricade",
+    "BattleHymnPower": "BattleHymn",
+    "BeatOfDeath": "BeatOfDeath",
+    "Berserk": "Berserk",
+    "Bias": "Bias",
+    "BlockReturnPower": "BlockReturnPower",
+    "Blur": "Blur",
+    "Brutality": "Brutality",
+    "Buffer": "Buffer",
+    "Burst": "Burst",
+    "CannotChangeStance": "CannotChangeStancePower",
+    "Choked": "Choked",
+    "CollectPower": "Collect",
+    "Combust": "Combust",
+    "Confusion": "Confusion",
+    "Constricted": "Constricted",
+    "CorpseExplosion": "CorpseExplosionPower",
+    "Corruption": "Corruption",
+    "CreativeAI": "Creative AI",
+    "Curiosity": "Curiosity",
+    "CurlUp": "Curl Up",
+    "DarkEmbrace": "Dark Embrace",
+    "DemonForm": "Demon Form",
+    "DevaForm": "DevaForm",
+    "DevotionPower": "DevotionPower",
+    "Dexterity": "Dexterity",
+    "DexterityDown": "DexLoss",
+    "DoubleDamage": "Double Damage",
+    "DoubleTap": "Double Tap",
+    "Draw": "Draw",
+    "DrawCardNextTurn": "Draw Card",
+    "DrawReduction": "Draw Reduction",
+    "DuplicationPower": "DuplicationPower",
+    "EchoForm": "Echo Form",
+    "Electro": "Electro",
+    "EndTurnDeathPower": "EndTurnDeath",
+    "Energized": "Energized",
+    "EnergizedBlue": "EnergizedBlue",
+    "EnergyDownPower": "EnergyDownPower",
+    "Entangle": "Entangled",
+    "Envenom": "Envenom",
+    "Equilibrium": "Equilibrium",
+    "EstablishmentPower": "EstablishmentPower",
+    "Evolve": "Evolve",
+    "Explosive": "Explosive",
+    "Fading": "Fading",
+    "FeelNoPain": "Feel No Pain",
+    "FireBreathing": "Fire Breathing",
+    "FlameBarrier": "Flame Barrier",
+    "Flight": "Flight",
+    "Focus": "Focus",
+    "ForesightPower": "WireheadingPower",
+    "Frail": "Frail",
+    "FreeAttackPower": "FreeAttackPower",
+    "Heatsink": "Heatsink",
+    "Hello": "Hello",
+    "Hex": "Hex",
+    "InfiniteBladesPower": "Infinite Blades",
+    "Intangible": "Intangible",
+    "IntangiblePlayer": "IntangiblePlayer",
+    "Invincible": "Invincible",
+    "Juggernaut": "Juggernaut",
+    "LikeWaterPower": "LikeWaterPower",
+    "LockOn": "Lockon",
+    "Loop": "Loop",
+    "LoseStrength": "Flex",
+    "MagnetismPower": "Magnetism",
+    "Malleable": "Malleable",
+    "Mantra": "Mantra",
+    "MarkPower": "PathToVictoryPower",
+    "MasterRealityPower": "MasterRealityPower",
+    "MayhemPower": "Mayhem",
+    "MentalFortressPower": "Controlled",
+    "Metallicize": "Metallicize",
+    "Minion": "Minion",
+    "ModeShift": "Mode Shift",
+    "NextTurnBlock": "Next Turn Block",
+    "Nightmare": "Night Terror",
+    "NirvanaPower": "Nirvana",
+    "NoBlock": "NoBlockPower",
+    "NoDraw": "No Draw",
+    "NoSkills": "NoSkills",
+    "NoxiousFumes": "Noxious Fumes",
+    "OmegaPower": "OmegaPower",
+    "PainfulStabs": "Painful Stabs",
+    "PanachePower": "Panache",
+    "PenNibPower": "Pen Nib",
+    "Phantasmal": "Phantasmal",
+    "PlatedArmor": "Plated Armor",
+    "Poison": "Poison",
+    "Rage": "Rage",
+    "Reactive": "Compulsive",
+    "Rebound": "Rebound",
+    "Regen": "Regenerate",
+    "Regeneration": "Regeneration",
+    "Regrow": "Life Link",
+    "Repair": "Repair",
+    "RetainCards": "Retain Cards",
+    "Ritual": "Ritual",
+    "Rupture": "Rupture",
+    "RushdownPower": "Adaptation",
+    "SadisticPower": "Sadistic",
+    "Shackled": "Shackled",
+    "SharpHide": "Sharp Hide",
+    "Shifting": "Shifting",
+    "Slow": "Slow",
+    "Split": "Split",
+    "SporeCloud": "Spore Cloud",
+    "Stasis": "Stasis",
+    "StaticDischarge": "StaticDischarge",
+    "Storm": "Storm",
+    "Strength": "Strength",
+    "Study": "Study",
+    "Surrounded": "Surrounded",
+    "TheBombPower": "TheBomb",
+    "Thievery": "Thievery",
+    "Thorns": "Thorns",
+    "ThousandCuts": "Thousand Cuts",
+    "TimeWarp": "Time Warp",
+    "ToolsOfTheTrade": "Tools Of The Trade",
+    "Unawakened": "Unawakened",
+    "Vigor": "Vigor",
+    "Vulnerable": "Vulnerable",
+    "WaveOfTheHandPower": "WaveOfTheHandPower",
+    "Weak": "Weakened",
+    "WraithForm": "Wraith Form v2",
+    "WrathNextTurn": "WrathNextTurnPower"
+}
 # Presentation aliases for the map's named encounters. A compound encounter
 # has no original NAME of its own; its separator is our presentation message.
 ENCOUNTER_ENEMIES = {"JawWorm": ["JawWorm"], "SlimeBoss": ["SlimeBoss"], "Hexaghost": ["Hexaghost"],
@@ -64,6 +207,19 @@ def digest(value: bytes) -> str:
 
 def names_from_archive(jar: Path, repository: Path = REPOSITORY) -> tuple[dict, dict, dict]:
     entities, identity_sources = build_simulator_catalog(repository)
+    power_path = repository / "src/content/powers/mod.rs"
+    power_ids = _stable_identity_owner(power_path.read_text(encoding="utf-8"), "PowerId")
+    if not power_ids:
+        raise ValueError("Power identities must come from the stable PowerId owner")
+    expected_powers = set(power_ids.values()) - {key.removeprefix("power.") for key in OMITTED if key.startswith("power.")}
+    if set(POWERS) != expected_powers:
+        raise ValueError("Original power localization bindings do not cover the current stable PowerId identities")
+    identity_sources = {**identity_sources, "src/content/powers/mod.rs": digest(power_path.read_bytes())}
+    stance_path = repository / "src/runtime/combat/orbs.rs"
+    stance_ids = _stable_identity_owner(stance_path.read_text(encoding="utf-8"), "StanceId")
+    if not stance_ids or set(stance_ids.values()) != set(STANCES) | {"Neutral"}:
+        raise ValueError("Original stance bindings do not cover the current stable StanceId identities")
+    identity_sources["src/runtime/combat/orbs.rs"] = digest(stance_path.read_bytes())
     result, entries, bindings = {}, {}, {}
     with zipfile.ZipFile(jar) as archive:
         def source(language: str, resource: str) -> dict:
@@ -83,7 +239,7 @@ def names_from_archive(jar: Path, repository: Path = REPOSITORY) -> tuple[dict, 
                     value = value[index]
                 if not isinstance(value, str) or not value.strip():
                     raise ValueError(f"Empty original name: {locale}/{kind}/{stable_id}/{key}")
-                resource = RESOURCES.get(kind) or {"character": "characters", "event": "characters", "power": "powers"}[kind]
+                resource = RESOURCES.get(kind) or {"character": "characters", "event": "characters", "power": "powers", "stance": "stances"}[kind]
                 bindings[locale][f"{kind}.{stable_id}"] = {"entry": f"localization/{language}/{resource}.json",
                                                           "key": key, "field": field, "index": index}
                 return value
@@ -105,7 +261,14 @@ def names_from_archive(jar: Path, repository: Path = REPOSITORY) -> tuple[dict, 
             names["character"] = {stable: take("character", stable, key, characters, "NAMES", 0) for stable, key in CHARACTERS.items()}
             names["event"] = {"Neow": take("event", "Neow", "Neow Event", characters, "NAMES", 0)}
             powers = source(language, "powers")
+            for stable, key in [("GuardianThreshold", "GuardianThreshold"), ("GenericStrengthUp", "Generic Strength Up Power")]:
+                if powers.get(key, {}).get("NAME", "").strip():
+                    raise ValueError(f"Original resource now supplies a fixed name for the omitted power.{stable}")
             names["power"] = {stable: take("power", stable, key, powers) for stable, key in POWERS.items()}
+            stances = source(language, "stances")
+            if stances.get("Neutral", {}).get("NAME", "").strip():
+                raise ValueError("Original resource now supplies a name for the omitted stance.Neutral")
+            names["stance"] = {stable: take("stance", stable, key, stances) for stable, key in STANCES.items()}
             names["encounter"] = {}
             for encounter, group in ENCOUNTER_ENEMIES.items():
                 if len(group) == 1:

@@ -512,7 +512,10 @@ fn render_action(action: &CompleteTurnSelectedActionV1, brief: bool) -> Result<S
             if brief {
                 return Ok(format!(
                     "{} [{}]",
-                    crate::selection_intent::reason_label(&family.reason),
+                    crate::selection_intent::reason_label(
+                        &family.reason,
+                        sts_presentation::Locale::En
+                    ),
                     selected.join(", ")
                 ));
             }

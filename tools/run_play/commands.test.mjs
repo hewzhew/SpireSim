@@ -3,10 +3,28 @@ import assert from 'node:assert/strict';
 import { researchOrCommitOrReview, planId } from './commands/search.mjs';
 import { actOrPreview, board } from './commands/combat.mjs';
 import { choose } from './commands/choose.mjs';
-import { go, info, loot, mapView } from './commands/travel.mjs';
+import { go, info, loot, mapView, cancel } from './commands/travel.mjs';
 import { join } from 'node:path';
 import { optionSemantics, readingOptionCommands, expandedCombatCommands, distinctCombatCommands, resolveOptionName, summarizeDecisionJson } from './contract.mjs';
 import { printReading, previewInventoryChanges } from './render.mjs';
+
+test('cancel uses the bound typed action despite translated and misleading labels', async () => {
+  for (const domain of ['strategic', 'combat_atomic']) {
+    let picked = false, rendered;
+    const successor = { view: '实际后继\n' };
+    const reading = { options: [
+      { label: 'Cancel', async choose() { assert.fail('display text must not choose a decoy'); } },
+      { label: '取消', async choose() { picked = true; return successor; } },
+    ], raw: { reading: { options: [
+      { candidate: { domain: 'strategic', action: { kind: 'rest' } } },
+      { candidate: { domain, action: { kind: 'cancel' } } },
+    ] } } };
+    await cancel({ game: { async decision(options) { assert.deepEqual(options, { details: ['options'] }); return reading; } },
+      printCurrentReading(value) { rendered = value; } });
+    assert.ok(picked);
+    assert.equal(rendered, successor);
+  }
+});
 
 function lootFixture(rewards, { full = false, capacity = 1, sozu = false, cardOpen = false } = {}) {
   const pending = rewards.slice(), chosen = [];

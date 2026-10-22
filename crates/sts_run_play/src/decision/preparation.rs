@@ -41,13 +41,13 @@ pub struct PreparationReadingV1 {
     pub routes: String,
 }
 
-fn card_rules(action: &TaskStrategicActionV1) -> Vec<CardRuleReadingV1> {
+fn card_rules(action: &TaskStrategicActionV1, locale: Locale) -> Vec<CardRuleReadingV1> {
     crate::agent_protocol::acquired_card_mechanics_for_action_v1(action)
         .iter()
         .map(|facts| {
             let (card, upgrades) = (facts.current.card, facts.current.upgrades);
             let mut view = String::new();
-            crate::mechanics_info::write_printed_card_rule(&mut view, card, upgrades);
+            crate::mechanics_info::write_printed_card_rule(&mut view, card, upgrades, locale);
             CardRuleReadingV1 {
                 card,
                 upgrades,
@@ -81,7 +81,13 @@ pub(crate) fn reading(
         observation.run_goal == sts_oracle_learning::ai::planner_core::PlannerRunGoal::HeartVictory,
     );
     let mut selections = String::new();
-    super::render_selections(&mut selections, decision, &rendered.selections, false)?;
+    super::render_selections(
+        &mut selections,
+        decision,
+        &rendered.selections,
+        false,
+        locale,
+    )?;
     let upgrades = super::smith::comparisons(observation, &rendered.options)?;
     let mut candidates = Vec::new();
     for (ordinal, option) in rendered.options.iter().enumerate() {
@@ -103,7 +109,7 @@ pub(crate) fn reading(
             command,
             label,
             view,
-            card_rules: card_rules(action),
+            card_rules: card_rules(action, locale),
         });
     }
     let mut stock = Vec::new();
@@ -122,7 +128,7 @@ pub(crate) fn reading(
             let label = format!("{name} {price}g{}", super::purchase_suffix(status));
             let mut view = format!("  {label}\n");
             if let TaskStrategicActionV1::BuyCard { card, upgrades, .. } = &action {
-                crate::mechanics_info::write_printed_card_rule(&mut view, *card, *upgrades);
+                crate::mechanics_info::write_printed_card_rule(&mut view, *card, *upgrades, locale);
             } else {
                 super::write_choice_mechanics(&mut view, &action, false);
             }
@@ -130,7 +136,7 @@ pub(crate) fn reading(
                 command,
                 label,
                 view,
-                card_rules: card_rules(&action),
+                card_rules: card_rules(&action, locale),
                 action,
             });
         }

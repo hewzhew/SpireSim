@@ -259,16 +259,18 @@ fn read_public_decision_v1(
             observation,
         } => {
             result.control = DecisionControlV1::Combat;
-            result.summary = combat::summary(run_context, observation);
+            result.summary = combat::summary(run_context, observation, locale);
             result.view = combat::reading(
                 run_context,
                 observation,
                 details.contains(&DecisionDetailV1::Brief),
+                locale,
             );
             combat::pending_choices(
                 &decision,
                 &mut result,
                 details.contains(&DecisionDetailV1::Brief),
+                locale,
             )?;
             if result.options.is_empty() && result.selections.is_empty() {
                 result.source = None;
@@ -591,7 +593,7 @@ fn read_public_decision_v1(
             observation
                 .relics
                 .iter()
-                .map(|r| crate::compact::relic_label_v1(r.relic, r.counter, r.used_up, Locale::En))
+                .map(|r| crate::compact::relic_label_v1(r.relic, r.counter, r.used_up, locale))
                 .collect::<Vec<_>>()
                 .join(", ")
         )
@@ -691,7 +693,7 @@ fn read_public_decision_v1(
             }
         }
     }
-    render_selections(out, decision, &result.selections, bound)?;
+    render_selections(out, decision, &result.selections, bound, locale)?;
     let upgrades = smith::comparisons(observation, &result.options)?;
     let route_choices: Vec<_> = result
         .options
@@ -761,7 +763,7 @@ fn read_public_decision_v1(
                     .unwrap();
                     writeln!(out, "{}", crate::mechanics_info::EXHAUST_SCOPE).unwrap();
                 }
-                crate::mechanics_info::write_card_rule(out, card.card, card.upgrades);
+                crate::mechanics_info::write_card_rule(out, card.card, card.upgrades, locale);
             }
         }
     }
@@ -947,7 +949,13 @@ fn render_selections(
     decision: &TaskPublicDecisionV1,
     selections: &[DecisionSelectionV1],
     bound: bool,
+    locale: Locale,
 ) -> Result<(), String> {
+    let text = |key, parameters: &[(&str, &str)]| {
+        locale
+            .text("decision", key, parameters)
+            .expect("selection message")
+    };
     for (index, selection) in selections.iter().enumerate() {
         let count = if selection.min == selection.max {
             selection.min.to_string()
@@ -955,26 +963,42 @@ fn render_selections(
             format!("{}..{}", selection.min, selection.max)
         };
         let heading = if selections.len() == 1 {
-            "Selection".to_string()
+            text("selection.heading", &[])
         } else {
-            format!("Selection {}", index + 1)
+            text("selection.numbered", &[("index", &(index + 1).to_string())])
         };
-        writeln!(out, "{heading} | {} | Choose {count}", selection.label).unwrap();
+        writeln!(
+            out,
+            "{}",
+            text(
+                "selection.prompt",
+                &[
+                    ("heading", &heading),
+                    ("reason", &selection.label),
+                    ("count", &count)
+                ]
+            )
+        )
+        .unwrap();
         if selection.min != 1 || selection.max != 1 {
             writeln!(
                 out,
-                "  Input: {}select:<card tokens joined by commas without spaces>",
-                if bound { "./p act " } else { "" }
+                "{}",
+                text(
+                    "selection.input",
+                    &[("prefix", if bound { "./p act " } else { "" })]
+                )
             )
             .unwrap();
             if bound && selection.max > 1 {
-                writeln!(out, "  Select distinct listed card tokens in this one selection; #0 and #1 identify different copies, not the same #0 twice.").unwrap();
+                writeln!(out, "{}", text("selection.distinct", &[])).unwrap();
             }
             if selection.min == 0 {
                 writeln!(
                     out,
-                    "  {}select:none  |  choose none",
-                    if bound { "./p act " } else { "" }
+                    "  {}select:none  |  {}",
+                    if bound { "./p act " } else { "" },
+                    text("selection.none", &[])
                 )
                 .unwrap();
             }
@@ -1231,7 +1255,7 @@ fn write_choice_mechanics(out: &mut String, action: &TaskStrategicActionV1, brie
         if let TaskStrategicActionV1::TakeCard { card, upgrades, .. }
         | TaskStrategicActionV1::BuyCard { card, upgrades, .. } = action
         {
-            crate::mechanics_info::write_card_offer(out, *card, *upgrades);
+            crate::mechanics_info::write_card_offer(out, *card, *upgrades, Locale::En);
             return;
         }
     }
@@ -1357,9 +1381,9 @@ fn write_choice_mechanics(out: &mut String, action: &TaskStrategicActionV1, brie
         for (card, upgrades) in cards {
             if seen_cards.insert((card, upgrades)) {
                 if brief {
-                    crate::mechanics_info::write_card_offer(out, card, upgrades);
+                    crate::mechanics_info::write_card_offer(out, card, upgrades, Locale::En);
                 } else {
-                    crate::mechanics_info::write_card_rule(out, card, upgrades);
+                    crate::mechanics_info::write_card_rule(out, card, upgrades, Locale::En);
                 }
             }
         }

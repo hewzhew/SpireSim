@@ -1,5 +1,6 @@
 //! Source-bound selection readings. Generation and adoption stay in the draft owner.
 use std::fmt::Write as _;
+use sts_presentation::Locale;
 
 use serde::Serialize;
 use sts_complete_turn_view::{
@@ -86,7 +87,7 @@ pub(super) fn focus(
             )
             .unwrap();
         }
-        view.push_str(&combat::state_reading(&context.state));
+        view.push_str(&combat::state_reading(&context.state, Locale::En));
     }
     let families = selection
         .families
@@ -94,10 +95,10 @@ pub(super) fn focus(
         .enumerate()
         .map(|(family, value)| SelectionFamilyV1 {
             family,
-            label: combat_selection_reason_label_v1(&value.reason),
+            label: combat_selection_reason_label_v1(&value.reason, Locale::En),
             min: value.declared_min,
             max: value.effective_max,
-            members: combat::selection_members(&value.domain),
+            members: combat::selection_members(&value.domain, Locale::En),
         })
         .collect::<Vec<_>>();
     for family in &families {

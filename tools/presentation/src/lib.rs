@@ -68,7 +68,7 @@ impl Locale {
         let name = self.entity("card", id);
         match upgrades {
             0 => name.to_owned(),
-            1 => format!("{name}+"),
+            1 if id != "SearingBlow" => format!("{name}+"),
             _ => format!("{name}+{upgrades}"),
         }
     }
@@ -110,6 +110,8 @@ mod tests {
 
     #[test]
     fn original_names_retain_stable_ids_when_display_names_are_shared_or_changed() {
+        assert_eq!(Locale::En.card_name("SearingBlow", 1), "Searing Blow+1");
+        assert_eq!(Locale::ZhCn.card_name("SearingBlow", 1), "灼热攻击+1");
         for id in ["Strike", "StrikeG", "StrikeB", "StrikeP"] {
             assert_eq!(Locale::ZhCn.entity("card", id), "打击");
             assert_eq!(Locale::En.entity("card", id), "Strike");

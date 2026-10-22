@@ -1,5 +1,6 @@
 //! Compact projections of existing search evidence. No ranking or execution.
 use std::fmt::Write as _;
+use sts_presentation::Locale;
 
 use sha2::{Digest, Sha256};
 
@@ -474,7 +475,7 @@ fn render_search_root(out: &mut String, root: &PublicCombatStateV1) {
             .hand
             .cards
             .iter()
-            .map(|c| hand_card_label(c.card_id, c.upgrades, c.effective_cost))
+            .map(|c| hand_card_label(c.card_id, c.upgrades, c.effective_cost, Locale::En))
             .collect::<Vec<_>>()
             .join(", ")
     )
@@ -485,7 +486,7 @@ fn render_search_root(out: &mut String, root: &PublicCombatStateV1) {
         if root.player.powers.is_empty() {
             "none".into()
         } else {
-            power_labels(&root.player.powers)
+            power_labels(&root.player.powers, Locale::En)
         }
     )
     .unwrap();
@@ -581,12 +582,8 @@ fn render_persistent_counters_at_finish(out: &mut String, relics: &[RelicState])
         .iter()
         .filter(|relic| relic.counter >= 0 && !relic_counter_is_combat_local_v1(relic.id))
         .map(|relic| {
-            let label = crate::compact::relic_label_v1(
-                relic.id,
-                relic.counter,
-                relic.used_up,
-                sts_presentation::Locale::En,
-            );
+            let label =
+                crate::compact::relic_label_v1(relic.id, relic.counter, relic.used_up, Locale::En);
             if relic.id == sts_oracle_learning::content::relics::RelicId::IncenseBurner {
                 if let Some(turn) =
                     sts_oracle_learning::content::relics::incense_burner::next_combat_trigger_turn(
@@ -1231,7 +1228,10 @@ pub(crate) fn review(
                 let powers = if r.start.player_powers.is_empty() {
                     String::new()
                 } else {
-                    format!(" | Powers: {}", power_labels(&r.start.player_powers))
+                    format!(
+                        " | Powers: {}",
+                        power_labels(&r.start.player_powers, Locale::En)
+                    )
                 };
                 writeln!(
                     out,
@@ -1341,13 +1341,18 @@ fn render_turn_context(out: &mut String, start: &crate::combat_trace::RunPlayCom
         start
             .hand
             .iter()
-            .map(|c| hand_card_label(c.card_id, c.upgrades, c.effective_cost))
+            .map(|c| hand_card_label(c.card_id, c.upgrades, c.effective_cost, Locale::En))
             .collect::<Vec<_>>()
             .join(", ")
     )
     .unwrap();
     if !start.player_powers.is_empty() {
-        writeln!(out, "  Powers: {}", power_labels(&start.player_powers)).unwrap();
+        writeln!(
+            out,
+            "  Powers: {}",
+            power_labels(&start.player_powers, Locale::En)
+        )
+        .unwrap();
     }
     for monster in &start.monsters {
         let CombatLearningEnemyIdentityV1::Known { enemy_id } = monster.enemy;
@@ -1369,12 +1374,17 @@ fn render_turn_context(out: &mut String, start: &crate::combat_trace::RunPlayCom
             if monster.half_dead {
                 "Reviving".into()
             } else {
-                intent_label(&monster.intent)
+                intent_label(&monster.intent, Locale::En)
             }
         )
         .unwrap();
         if !monster.powers.is_empty() {
-            writeln!(out, "    Powers: {}", power_labels(&monster.powers)).unwrap();
+            writeln!(
+                out,
+                "    Powers: {}",
+                power_labels(&monster.powers, Locale::En)
+            )
+            .unwrap();
         }
     }
 }

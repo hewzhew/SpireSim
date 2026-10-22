@@ -1,5 +1,6 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
+use sts_presentation::Locale;
 
 use sts_oracle_learning::agent::information::action::{
     PublicCombatAtomicActionV1, PublicCombatIndexedChoiceCandidateV1,
@@ -1085,7 +1086,7 @@ fn render_decision_v1(
                 format_identity(observation.player.stance),
                 observation.turn.counters.cards_played_this_turn,
                 observation.turn.counters.attacks_played_this_turn,
-                render_powers(&observation.player.powers)
+                render_powers(&observation.player.powers, Locale::En)
             )
             .expect("string write");
             writeln!(
@@ -1203,7 +1204,7 @@ fn render_decision_v1(
                         monster.intent.hidden_reason,
                         monster.executed_moves.evidence,
                         monster.executed_moves.move_ids,
-                        render_powers(&monster.powers),
+                        render_powers(&monster.powers, Locale::En),
                         monster.public_counters
                     ))
                     .collect::<Vec<_>>()
@@ -1655,34 +1656,52 @@ fn format_pile_card(card: &CombatLearningCardV1) -> String {
     label
 }
 
-pub(crate) fn render_powers(powers: &[CombatLearningPowerV1]) -> String {
+pub(crate) fn render_powers(
+    powers: &[CombatLearningPowerV1],
+    locale: sts_presentation::Locale,
+) -> String {
     powers
         .iter()
         .map(|power| {
-            let mut label =
-                if power.power == sts_oracle_learning::content::powers::PowerId::Invincible {
-                    format!(
-                        "{} (damage left {}/{})",
-                        format_identity(power.power),
-                        power.amount,
-                        power.extra_data
-                    )
-                } else if sts_oracle_learning::content::powers::mechanics::get(power.power)
-                    .is_some_and(|m| m.round_duration)
-                {
-                    let unit = if power.amount == 1 { "round" } else { "rounds" };
-                    format!("{} ({} {unit})", format_identity(power.power), power.amount)
+            let name = locale
+                .entry("game", &format!("power.{}", power.power.stable_id()))
+                .unwrap_or_else(|| gameplay_display_label_v1(power.power));
+            let key = if power.power == sts_oracle_learning::content::powers::PowerId::Invincible {
+                "powerState.invincible"
+            } else if sts_oracle_learning::content::powers::mechanics::get(power.power)
+                .is_some_and(|m| m.round_duration)
+            {
+                if power.amount == 1 {
+                    "powerState.duration_one"
                 } else {
-                    format!("{} ({})", format_identity(power.power), power.amount)
-                };
+                    "powerState.duration_other"
+                }
+            } else {
+                "powerState.amount"
+            };
+            let mut label = locale
+                .text(
+                    "game",
+                    key,
+                    &[
+                        ("name", name),
+                        ("amount", &power.amount.to_string()),
+                        ("limit", &power.extra_data.to_string()),
+                    ],
+                )
+                .expect("power state message");
             if power.extra_data != 0
                 && power.power != sts_oracle_learning::content::powers::PowerId::Invincible
             {
                 write!(label, "/{}", power.extra_data).expect("string write");
             }
             if let Some(card) = &power.payload_card {
-                write!(label, "<{}>", format_card(card.card_id, card.upgrades))
-                    .expect("string write");
+                write!(
+                    label,
+                    "<{}>",
+                    locale.card_name(card.card_id.stable_id(), card.upgrades)
+                )
+                .expect("string write");
             }
             label
         })

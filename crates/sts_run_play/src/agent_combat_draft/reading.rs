@@ -1,6 +1,7 @@
 //! Read-only projections of the resident turn draft. Handles come from the
 //! environment; presentation never chooses or replays a candidate index.
 use std::fmt::Write as _;
+use sts_presentation::Locale;
 
 use serde::Serialize;
 use sts_combat_planner::{CombatDraftOptionCoverage, CompleteTurnOptionBoundary};
@@ -41,7 +42,10 @@ pub(super) fn status(env: &CombatDraftEnvV1) -> Result<DraftReadingV1, String> {
     }
     let state = env.observe().map_err(|e| e.to_string())?;
     let mut view = String::from("Draft | ");
-    view.push_str(&crate::decision::combat::state_reading(&state.root));
+    view.push_str(&crate::decision::combat::state_reading(
+        &state.root,
+        Locale::En,
+    ));
     let coverage = match state.coverage {
         CombatDraftOptionCoverage::Complete => "complete".to_owned(),
         CombatDraftOptionCoverage::Open {
@@ -113,7 +117,10 @@ pub(super) fn inspect(env: &CombatDraftEnvV1, option_ref: &str) -> Result<String
         .unwrap();
     }
     view.push_str("Successor | ");
-    view.push_str(&crate::decision::combat::state_reading(&detail.successor));
+    view.push_str(&crate::decision::combat::state_reading(
+        &detail.successor,
+        Locale::En,
+    ));
     Ok(view)
 }
 
