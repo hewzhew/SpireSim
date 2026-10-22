@@ -52,21 +52,23 @@ export const PLAYER_GUIDE = playerGuide();
 export async function apply(ctx, config) {
   const presentation = createPresentation({ locale: config.agentLocale ?? 'en' });
   const text = (key, parameters) => presentation.text(`scripted:${key}`, parameters);
+  const runtimeText = (key, parameters = {}) => presentation.text(`scripted:runtime.${key}`,
+    Object.fromEntries(Object.entries(parameters).map(([name, value]) => [name, String(value)])));
   const preparation = preparationInstructions(presentation.locale);
   const cardInstructions = cardChoiceInstructions(presentation.locale);
   const shop = shopInstructions(presentation.locale);
   const scope = scopeOf(ctx);
-  if (!scope) throw new Error('sts-player must be mounted inside a dedicated agent/preset scope');
+  if (!scope) throw new Error(runtimeText('scopeRequired'));
   if (typeof ctx.compaction.resetDecisionContext !== 'function') {
-    throw new Error('sts-player requires its GameContextCompaction backend for decision context replacement');
+    throw new Error(runtimeText('compactionRequired'));
   }
   for (const key of ['repository', 'session']) {
-    if (!isAbsolute(config[key])) throw new Error(`${key} must be an absolute path`);
+    if (!isAbsolute(config[key])) throw new Error(runtimeText('absolutePath', { key: key }));
   }
-  if (config.binary && !isAbsolute(config.binary)) throw new Error('binary must be an absolute path');
+  if (config.binary && !isAbsolute(config.binary)) throw new Error(runtimeText('absoluteBinary'));
   const taskScope = config.taskScope ?? 'run';
-  if (!['run', 'preparation'].includes(taskScope)) throw new Error('taskScope must be run or preparation');
-  if (config.supervised && taskScope !== 'run') throw new Error('Coached play uses the ordinary run scope.');
+  if (!['run', 'preparation'].includes(taskScope)) throw new Error(runtimeText('invalidScope'));
+  if (config.supervised && taskScope !== 'run') throw new Error(runtimeText('coachedScope'));
   const taskTools = taskScope === 'preparation' ? new Set(['sts', 'sts_feedback']) : allowed;
   const { openWorkbench } = await import(pathToFileURL(join(config.repository, 'tools/run_play/workbench.mjs')));
   const { freshRecordDirectory, commandTokens, commandGroups } = await import(pathToFileURL(join(config.repository, 'tools/run_play/session.mjs')));
@@ -81,7 +83,7 @@ export async function apply(ctx, config) {
   const preparationChoiceGroup = choice => {
     const tokens = commandTokens(choice), groups = commandGroups(tokens[0], tokens.slice(1));
     if (groups.length !== 1 || ['classify', 'choose', 'read', 'options'].includes(groups[0][0])) {
-      throw new Error('choice supplies one complete current preparation command.');
+      throw new Error(runtimeText('oneChoiceCommand'));
     }
     return groups[0][0] === 'act' ? ['act', normalizeActionTokens(groups[0][1])] : groups[0];
   };
@@ -105,7 +107,7 @@ export async function apply(ctx, config) {
     if (!shopBudget || !sameGameContextSource(shopBudget.source, reading)) {
       shopBudget = await preparationShopBudget(reading, actions => game.preview(actions, { signal }), strategicOptionCommand, presentation.locale);
       if (shopBudget && !sameGameContextSource(shopBudget.source, await game.observe({ signal }))) {
-        throw new Error('Shop position changed while organizing its budget; recover the current reading.');
+        throw new Error(runtimeText('shopChanged'));
       }
     }
     reading.shopBudget = shopBudget;
@@ -148,8 +150,8 @@ export async function apply(ctx, config) {
   }
   const recording = () => mkdir(records, { recursive: true });
   function authorize(exec) {
-    if (disposed) throw new Error('game plugin is disposed');
-    if (!exec.agent) throw new Error('game tool requires an initiating agent');
+    if (disposed) throw new Error(runtimeText('disposed'));
+    if (!exec.agent) throw new Error(runtimeText('initiatingAgentRequired'));
     if (!owner) {
       owner = exec.agent;
       if (taskScope === 'preparation') adoptedDecision ??= restoredPreparationDecision(owner.session);
@@ -158,7 +160,7 @@ export async function apply(ctx, config) {
       // them through resetBranch; preparation keeps its existing reset policy.
       if (taskScope === 'preparation' && config.resetContextOnAttach !== false) requestBranchReset(owner);
     }
-    if (owner !== exec.agent) throw new Error('this game session is already bound to another agent');
+    if (owner !== exec.agent) throw new Error(runtimeText('alreadyBound'));
     exec.signal.throwIfAborted();
   }
   async function openPlayer() {
@@ -243,7 +245,7 @@ export async function apply(ctx, config) {
         if (taskScope === 'preparation') {
           const tokens = commandTokens(command), groups = commandGroups(tokens[0], tokens.slice(1));
           if (groups.length > 1 && groups.some(group => ['classify', 'choose'].includes(group[0]))) {
-            throw new Error('Submit classify with basis and choice in one call.');
+            throw new Error(runtimeText('singleClassificationCall'));
           }
           const texts = [];
           // Check each command at its actual successor. A leave followed by
@@ -255,7 +257,7 @@ export async function apply(ctx, config) {
             let adoptionChoice = choice;
             let choiceComparison = submittedComparison;
             if (preparationReviewCandidate && !['read', 'options'].includes(group[0])) {
-              throw new Error(`Record the missing fact for ${preparationReviewCandidate} through sts_feedback for maintainer review.`);
+              throw new Error(runtimeText('reviewMissingFact', { preparationReviewCandidate: preparationReviewCandidate }));
             }
             const reading = await prepareReading(await game.observe({ signal: exec.signal }), game, exec.signal);
             updateTaskProgress(reading);
@@ -266,7 +268,7 @@ export async function apply(ctx, config) {
                   cardChoiceFrame = preparationCardChoice(reading, strategicOptionCommand, presentation.locale);
                   return { text: renderPreparationCardChoice(cardChoiceFrame, presentation.locale) };
                 }
-                if (group[0] !== 'choose') throw new Error('Current card choice: submit command choose with one supplied choice.');
+                if (group[0] !== 'choose') throw new Error(runtimeText('cardChoiceRequired'));
                 await recording();
                 const { adopted, successor } = await adoptPreparationCardChoice(game, frame, reading, {
                   choice, owner: 'flash-card-choice', signal: exec.signal, locale: presentation.locale,
@@ -285,7 +287,7 @@ export async function apply(ctx, config) {
                 return { text: `${supply.reading}\n${context}` };
               }
               if (group[0] === 'choose') {
-                if (!classification) throw new Error('Current stage: submit the requested classification rows and choice with command classify.');
+                if (!classification) throw new Error(runtimeText('classificationRequired'));
               } else assertPreparationCommand(group, taskProgress, reading, strategicOptionCommand, presentation.locale);
               if (group[0] === 'classify') {
                 if (!classification) {
@@ -310,7 +312,7 @@ export async function apply(ctx, config) {
                     requestBranchReset(exec.agent);
                     if (preparationFailures >= 3) {
                       exec.concludeTurn();
-                      return { text: `${receipt}\nPreparation stopped after three submissions without an accepted row. Current saved position requires maintainer review.\n${progressText()}` };
+                      return { text: runtimeText('classificationStopped', { receipt: receipt, progress: progressText() }) };
                     }
                     return { text: `${receipt}\n\n${progressText()}` };
                   }
@@ -366,7 +368,7 @@ export async function apply(ctx, config) {
                   comparison: adoptionBasis, submittedChoice: choice, adoptedChoice: adoptionChoice, ...comparison,
                 }) + '\n');
                 if (!sameGameContextSource(reading, await game.observe({ signal: exec.signal }))) {
-                  throw new Error('Game position changed before adopting the recorded classification; recover the current reading.');
+                  throw new Error(runtimeText('adoptionChanged'));
                 }
               }
               const result = await game.execute(adoptedCommand, { signal: exec.signal });
@@ -398,7 +400,7 @@ export async function apply(ctx, config) {
         const beforeQuery = queryCommand ? await game.observe({ signal: exec.signal }) : undefined;
         const result = await game.execute(command, { signal: exec.signal });
         if (beforeQuery && !sameGameContextSource(beforeQuery, await game.observe({ signal: exec.signal }))) {
-          throw new Error('Game position changed while reading the requested information; recover the current state.');
+          throw new Error(runtimeText('queryChanged'));
         }
         if (result.branchChanged) resetBranch(exec.agent);
         return { text: result.text, ...(result.currentReading ? { currentReading: result.currentReading } : {}),
@@ -420,7 +422,7 @@ export async function apply(ctx, config) {
           exec.concludeTurn();
           // dsh's error materialization omits concludesTurn. A successful
           // stop receipt preserves the failure text and official turn end.
-          return { text: `Error: ${error.message}\nPreparation stopped after three command errors. Current saved position requires maintainer review.\n${progressText()}` };
+          return { text: runtimeText('commandErrorsStopped', { error: error.message, progress: progressText() }) };
         }
         throw error;
       }
@@ -466,7 +468,7 @@ export async function apply(ctx, config) {
     const combat = observed?.domain === 'combat';
     const strategic = observed?.domain === 'strategic';
     if (position?.kind !== 'decision' || (!combat && !strategic)) {
-      throw new Error('bound rules require a current typed game observation');
+      throw new Error(runtimeText('typedObservationRequired'));
     }
     const state = observed.observation;
     if (taskScope === 'preparation' && (preparationCardChoice(reading, strategicOptionCommand, presentation.locale)
@@ -523,17 +525,17 @@ export async function apply(ctx, config) {
           try {
             const refreshed = await game.execute(query.command, { signal: context.signal });
             const answer = refreshed.text.trim();
-            const text = answer && fresh.text.includes(answer) ? 'Included in the current reading above.'
-              : answer && queries.some(row => row.text === answer) ? 'Included in another refreshed query above.' : refreshed.text;
+            const text = answer && fresh.text.includes(answer) ? runtimeText('includedInReading')
+              : answer && queries.some(row => row.text === answer) ? runtimeText('includedInQuery') : refreshed.text;
             queries.push({ command: query.command, text });
             queryRefs.push(query.seq);
           } catch (error) {
             context.signal.throwIfAborted();
-            queries.push({ command: query.command, text: `Earlier query could not be refreshed: ${error.message}\nIts old answer was not retained.` });
+            queries.push({ command: query.command, text: runtimeText('queryRefreshFailed', { message: error.message }) });
           }
         }
         if (fresh && !sameGameContextSource(reading, await game.observe({ signal: context.signal }))) {
-          throw new Error('Game position changed while rebuilding decision context; reconnect to read the actual state.');
+          throw new Error(runtimeText('contextChanged'));
         }
         const supply = taskScope === 'preparation' && reading.position.kind !== 'terminal'
           ? preparationReadingSupply(reading, strategicOptionCommand, presentation.locale) : { reading: fresh.text };

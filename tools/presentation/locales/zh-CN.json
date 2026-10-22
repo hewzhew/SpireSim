@@ -4117,6 +4117,32 @@
       "selectionDependent": "取决于选择",
       "etherealLabel": "虚无",
       "exhaustsLabel": "消耗"
+    },
+    "runtime": {
+      "scopeRequired": "sts-player 必须挂载在独立的 Agent 或预设作用域中",
+      "compactionRequired": "sts-player 需要 GameContextCompaction 后端来替换决策上下文",
+      "absolutePath": "{{key}} 必须是绝对路径",
+      "absoluteBinary": "binary 必须是绝对路径",
+      "invalidScope": "taskScope 必须是 run 或 preparation",
+      "coachedScope": "监督跑局使用普通 run 作用域。",
+      "oneChoiceCommand": "choice 提供一个当前完整准备命令。",
+      "shopChanged": "整理商店预算时位置发生变化；请重新取得当前读数。",
+      "disposed": "游戏插件已释放",
+      "initiatingAgentRequired": "游戏工具需要发起调用的 Agent",
+      "alreadyBound": "此游戏会话已绑定另一个 Agent",
+      "singleClassificationCall": "在一次调用中以 classify 提交 basis 和 choice。",
+      "reviewMissingFact": "通过 sts_feedback 记录 {{preparationReviewCandidate}} 缺少的事实，供维护者复核。",
+      "cardChoiceRequired": "当前为选牌：以 command choose 提交一个所供 choice。",
+      "classificationRequired": "当前阶段：以 command classify 提交所需分类行与 choice。",
+      "classificationStopped": "{{receipt}}\n连续三次提交没有接受任何新行，准备已停止。当前存档需要维护者复核。\n{{progress}}",
+      "adoptionChanged": "采用已记录分类前游戏位置发生变化；请重新取得当前读数。",
+      "queryChanged": "查询所需信息时游戏位置发生变化；请重新取得实际状态。",
+      "commandErrorsStopped": "Error: {{error}}\n连续三次命令错误后准备已停止。当前存档需要维护者复核。\n{{progress}}",
+      "typedObservationRequired": "绑定规则需要当前 typed 游戏观察",
+      "includedInReading": "已包含在上方当前读数中。",
+      "includedInQuery": "已包含在上方另一项已刷新查询中。",
+      "queryRefreshFailed": "此前查询无法刷新：{{message}}\n未保留旧答案。",
+      "contextChanged": "重建决策上下文时游戏位置发生变化；请重连以读取实际状态。"
     }
   }
 }

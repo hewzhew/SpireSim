@@ -4117,6 +4117,32 @@
       "selectionDependent": "selection-dependent",
       "etherealLabel": "Ethereal",
       "exhaustsLabel": "Exhausts"
+    },
+    "runtime": {
+      "scopeRequired": "sts-player must be mounted inside a dedicated agent/preset scope",
+      "compactionRequired": "sts-player requires its GameContextCompaction backend for decision context replacement",
+      "absolutePath": "{{key}} must be an absolute path",
+      "absoluteBinary": "binary must be an absolute path",
+      "invalidScope": "taskScope must be run or preparation",
+      "coachedScope": "Coached play uses the ordinary run scope.",
+      "oneChoiceCommand": "choice supplies one complete current preparation command.",
+      "shopChanged": "Shop position changed while organizing its budget; recover the current reading.",
+      "disposed": "game plugin is disposed",
+      "initiatingAgentRequired": "game tool requires an initiating agent",
+      "alreadyBound": "this game session is already bound to another agent",
+      "singleClassificationCall": "Submit classify with basis and choice in one call.",
+      "reviewMissingFact": "Record the missing fact for {{preparationReviewCandidate}} through sts_feedback for maintainer review.",
+      "cardChoiceRequired": "Current card choice: submit command choose with one supplied choice.",
+      "classificationRequired": "Current stage: submit the requested classification rows and choice with command classify.",
+      "classificationStopped": "{{receipt}}\nPreparation stopped after three submissions without an accepted row. Current saved position requires maintainer review.\n{{progress}}",
+      "adoptionChanged": "Game position changed before adopting the recorded classification; recover the current reading.",
+      "queryChanged": "Game position changed while reading the requested information; recover the current state.",
+      "commandErrorsStopped": "Error: {{error}}\nPreparation stopped after three command errors. Current saved position requires maintainer review.\n{{progress}}",
+      "typedObservationRequired": "bound rules require a current typed game observation",
+      "includedInReading": "Included in the current reading above.",
+      "includedInQuery": "Included in another refreshed query above.",
+      "queryRefreshFailed": "Earlier query could not be refreshed: {{message}}\nIts old answer was not retained.",
+      "contextChanged": "Game position changed while rebuilding decision context; reconnect to read the actual state."
     }
   }
 }

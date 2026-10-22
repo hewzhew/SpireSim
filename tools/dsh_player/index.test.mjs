@@ -2127,14 +2127,41 @@ test('classification is read-only, single-call, immutable for its source and tra
 
 
 test('repeated command errors end the official preparation task before further guessing', async t => {
-  const f=await fixture(t,'Current rules');
-  await f.setPosition(scopedPosition('shop',1));
-  const handle=await f.create({taskScope:'preparation'});t.after(()=>handle.dispose());
-  for(let n=0;n<3;n++) {
-    const result=await rawGameExec(f.ctx,handle.agent,'invented-command','');
-    assert.equal(Boolean(result.isError), n < 2);
-    assert.equal(result.concludesTurn,n===2 ? true : undefined);
-    if (n === 2) assert.match(resultText(result), /Preparation stopped after three command errors/);
+  for (const agentLocale of ['en', 'zh-CN']) {
+    const f = await fixture(t, 'Current rules');
+    await f.setPosition(scopedPosition('shop', 1));
+    const handle = await f.create({ taskScope: 'preparation', agentLocale });
+    t.after(() => handle.dispose());
+    for (let n = 0; n < 3; n++) {
+      const result = await rawGameExec(f.ctx, handle.agent, 'invented-command', '');
+      assert.equal(Boolean(result.isError), n < 2);
+      assert.equal(result.concludesTurn, n === 2 ? true : undefined);
+      if (n === 2) {
+        assert.match(resultText(result), /^Error: /);
+        assert.match(resultText(result), agentLocale === 'en' ? /Preparation stopped after three command errors/ : /连续三次命令错误后准备已停止/);
+      }
+    }
+    assert.ok(!(await f.calls()).includes('invented-command'));
   }
-  assert.ok(!(await f.calls()).includes('invented-command'));
+});
+
+test('both languages stop after three classification submissions without an accepted row', async t => {
+  for (const agentLocale of ['en', 'zh-CN']) {
+    const f = await fixture(t, 'Current rules');
+    await f.setPosition(scopedPosition('shop', 1));
+    const handle = await f.create({ taskScope: 'preparation', agentLocale });
+    t.after(() => handle.dispose());
+    for (let n = 0; n < 3; n++) {
+      const result = await rawGameExec(f.ctx, handle.agent, 'classify', 'invented | high | direct | @effect');
+      assert.equal(Boolean(result.isError), false, resultText(result));
+      assert.equal(result.concludesTurn, n === 2 ? true : undefined);
+      if (n === 2) assert.match(resultText(result), agentLocale === 'en' ? /three submissions without an accepted row/ : /连续三次提交没有接受任何新行/);
+    }
+    assert.ok(!(await f.calls()).some(call => /^(buy:|leave$)/.test(typeof call === 'string' ? call : '')));
+  }
+});
+
+test('scripted configuration errors use the scoped language before opening a game', async t => {
+  const f = await fixture(t, 'Current rules');
+  await assert.rejects(f.create({ taskScope: 'invented', agentLocale: 'zh-CN' }), /taskScope 必须是 run 或 preparation/);
 });
