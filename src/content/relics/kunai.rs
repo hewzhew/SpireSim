@@ -2,7 +2,9 @@ use crate::runtime::action::{Action, ActionInfo, AddTo};
 use smallvec::SmallVec;
 
 /// Kunai: Every time you play 3 Attacks in a single turn, gain 1 Dexterity.
-pub const MECHANICS: &str = "Every 3 Attack cards played in a single turn, gain 1 Dexterity for the rest of combat. Counts cards, not damage hits or targets. The attack counter resets each turn; gained Dexterity does not. Multiple groups of 3 can trigger in one turn. Dexterity increases card-generated Block, not potion Block or retaliation damage.";
+pub const MECHANICS: super::mechanics::RelicMechanics = super::mechanics::RelicMechanics {
+    text_id: crate::content::relics::RelicId::Kunai,
+};
 
 pub fn at_turn_start(relic_state: &mut crate::content::relics::RelicState) {
     relic_state.counter = 0;

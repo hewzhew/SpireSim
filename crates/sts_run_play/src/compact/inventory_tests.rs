@@ -117,6 +117,9 @@ fn inventory_locales_preserve_identity_variants_and_original_permanent_faces() {
         }
         for block in &reading.relics {
             assert!(reading.view.contains(&block.view));
+            if let Some(rule) = relics::mechanics::get(block.relic) {
+                assert!(block.view.contains(&rule.explanation(locale)));
+            }
         }
         assert!(reading.view.ends_with(&reading.resources));
     }
@@ -127,7 +130,8 @@ fn inventory_locales_preserve_identity_variants_and_original_permanent_faces() {
     assert!(en.view.contains("Deal 27 damage"));
     assert!(zh.view.contains("灼热攻击+3"));
     assert!(zh.view.contains("瓶装火焰"));
-    assert!(zh.view.contains("机制补充（英文）"));
+    assert!(zh.view.contains("机制补充："));
+    assert!(!zh.view.contains("（英文）"));
     assert!(zh.view.contains("机制关联（对应上方同一牌组"));
     assert!(zh.view.contains("1 费"));
     assert!(zh.view.contains("基础格挡请求"));

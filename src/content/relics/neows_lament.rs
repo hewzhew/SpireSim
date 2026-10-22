@@ -3,7 +3,9 @@ use crate::runtime::action::ActionInfo;
 use crate::runtime::combat::CombatState;
 use smallvec::SmallVec;
 
-pub const MECHANICS: &str = "At the start of each of your next 3 combats, set every enemy present at that time to 1 current HP. Normal, elite and boss combats all count. The counter records remaining future activations and decreases immediately at combat start: a displayed 2 during the first combat means this combat was affected and 2 future combats remain. After the third activation the relic is used up, while that combat's initial enemies still have 1 HP. Enemies summoned later are not affected by this start-of-combat effect.";
+pub const MECHANICS: super::mechanics::RelicMechanics = super::mechanics::RelicMechanics {
+    text_id: crate::content::relics::RelicId::NeowsLament,
+};
 
 /// NeowsLament: Enemies in your first 3 combats have 1 HP.
 /// Uses relic counter: starts at 3, decremented each combat until 0.

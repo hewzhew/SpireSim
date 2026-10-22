@@ -1,4 +1,6 @@
-pub const MECHANICS: &str = "At the start of your turn, lose 15 Block instead of all Block, keeping any positive remainder. Enemy attacks and other Block expenditures still consume it. If Barricade is active, it preserves all remaining Block and Calipers does not remove 15.";
+pub const MECHANICS: super::mechanics::RelicMechanics = super::mechanics::RelicMechanics {
+    text_id: crate::content::relics::RelicId::Calipers,
+};
 
 pub fn on_calculate_block_retained(block: i32) -> i32 {
     (block - 15).max(0)

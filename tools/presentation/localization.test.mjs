@@ -87,6 +87,22 @@ test('all reviewed card rules share stable identities and resolve official cross
   }
 });
 
+test('all reviewed relic definitions use official cross references in both languages', () => {
+  for (const locale of ['en', 'zh-CN']) {
+    const display = createPresentation({ locale });
+    assert.equal(Object.keys(catalogs[locale].game.relicRule).length, 150);
+    for (const id of Object.keys(catalogs[locale].game.relicRule)) {
+      assert.equal(typeof catalogs[locale].game.relic[id], 'string', id);
+      const text = display.definitionText(`game:relicRule.${id}`);
+      assert.ok(text && !text.includes('{{'), `${locale}:${id}`);
+      if (locale === 'zh-CN') assert.match(text, /[\u4e00-\u9fff]/);
+    }
+    const flower = display.definitionText('game:relicRule.MagicFlower');
+    assert.ok(flower.includes(display.entity('card', 'Reaper')));
+    assert.ok(flower.includes(display.entity('relic', 'EternalFeather')));
+  }
+});
+
 test('generated name sections match their recorded original-resource import', async () => {
   const source = JSON.parse(await readFile(new URL('./original-names.json', import.meta.url), 'utf8'));
   assert.equal(source.schema, 'sts-original-localization-names-v1');

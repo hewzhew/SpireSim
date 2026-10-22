@@ -481,7 +481,7 @@ pub(crate) fn inventory_reading_decision_v1(
                 output,
                 "    {}",
                 match cards::mechanics::get(id).map(|rule| rule.explanation(locale)) {
-                    Some(effect) => message("cardSupplement", &[("effect", &effect)]),
+                    Some(effect) => message("supplement", &[("effect", &effect)]),
                     None => message("unknown", &[]),
                 }
             )
@@ -525,8 +525,8 @@ pub(crate) fn inventory_reading_decision_v1(
             writeln!(
                 output,
                 "    {}",
-                match relics::mechanics::explanation(id) {
-                    Some(effect) => message("relicSupplement", &[("effect", effect)]),
+                match relics::mechanics::get(id).map(|rule| rule.explanation(locale)) {
+                    Some(effect) => message("supplement", &[("effect", &effect)]),
                     None => message("unknown", &[]),
                 }
             )
@@ -853,8 +853,9 @@ fn render_shop_status_v1(
             command.as_deref(),
             gameplay_display_label_v1(offer.relic),
             offer.price,
-            relics::mechanics::explanation(offer.relic)
-                .unwrap_or("Effect description unavailable."),
+            &relics::mechanics::get(offer.relic)
+                .map(|rule| rule.explanation(Locale::En))
+                .unwrap_or_else(|| "Effect description unavailable.".to_owned()),
             &offer.purchase_status,
         );
     }

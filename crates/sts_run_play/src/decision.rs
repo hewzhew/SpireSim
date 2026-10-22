@@ -1717,10 +1717,23 @@ fn write_choice_mechanics(
             if seen_relics.insert(relic) {
                 writeln!(
                     out,
-                    "  {}", text(locale, "mechanics.eventRelicEnglish", &[
-                        ("name", locale.entity("relic", relic.stable_id())),
-                        ("effect", relics::mechanics::explanation(relic).unwrap_or("Effect explanation unavailable; query info relic or report the gap.")),
-                    ])
+                    "  {}",
+                    text(
+                        locale,
+                        "mechanics.eventRelic",
+                        &[
+                            ("name", locale.entity("relic", relic.stable_id())),
+                            (
+                                "effect",
+                                &relics::mechanics::get(relic)
+                                    .map(|rule| rule.explanation(locale))
+                                    .unwrap_or_else(|| locale
+                                        .entry("inventory", "unknown")
+                                        .unwrap()
+                                        .to_owned())
+                            ),
+                        ]
+                    )
                 )
                 .unwrap();
             }
@@ -1734,8 +1747,8 @@ fn write_choice_mechanics(
             reward: PlannerRewardDescriptor::Relic { relic },
             ..
         } => (
-            "mechanics.relicEnglish",
-            relics::mechanics::explanation(*relic),
+            "mechanics.relic",
+            relics::mechanics::get(*relic).map(|rule| rule.explanation(locale)),
         ),
         TaskStrategicActionV1::BuyPotion { potion, .. }
         | TaskStrategicActionV1::ClaimReward {
@@ -1743,7 +1756,9 @@ fn write_choice_mechanics(
             ..
         } => (
             "mechanics.potion",
-            locale.entry("game", &format!("potionRule.{}", potion.stable_id())),
+            locale
+                .entry("game", &format!("potionRule.{}", potion.stable_id()))
+                .map(str::to_owned),
         ),
         _ => return,
     };
@@ -1755,9 +1770,10 @@ fn write_choice_mechanics(
             category,
             &[(
                 "effect",
-                explanation.unwrap_or_else(|| locale
+                &explanation.unwrap_or_else(|| locale
                     .entry("inventory", "unknown")
-                    .expect("missing rule message"))
+                    .expect("missing rule message")
+                    .to_owned())
             )]
         )
     )

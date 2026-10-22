@@ -2028,7 +2028,8 @@ pub struct AgentCardRewardResourceEvidenceV1 {
     pub semantic_action: String,
     pub hp_gain: i32,
     pub max_hp_gain: i32,
-    pub native_rule: &'static str,
+    /// Display text only; the semantic action and deltas above own the evidence.
+    pub native_rule: String,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize)]
@@ -3568,6 +3569,7 @@ fn project_agent_card_acquisition_evidence_v1(
 
 fn project_agent_card_reward_resources_v1(
     controller: &mut RunPlayControllerV1,
+    locale: Locale,
 ) -> Result<Vec<AgentCardRewardResourceEvidenceV1>, String> {
     let Some(inventory) = controller.head().current_decision.as_ref() else {
         return Ok(Vec::new());
@@ -3615,7 +3617,8 @@ fn project_agent_card_reward_resources_v1(
                 semantic_action,
                 hp_gain: observation.run.current_hp - before.current_hp,
                 max_hp_gain: observation.run.max_hp - before.max_hp,
-                native_rule: sts_oracle_learning::content::relics::singing_bowl::MECHANICS,
+                native_rule: sts_oracle_learning::content::relics::singing_bowl::MECHANICS
+                    .explanation(locale),
             })
         })
         .collect()
@@ -3892,7 +3895,7 @@ fn current_agent_observation_v1(
                     ..
                 }) => Some(AgentDecisionEvidenceV1::CardAcquisitionOptions {
                     candidates,
-                    resource_options: project_agent_card_reward_resources_v1(controller)?,
+                    resource_options: project_agent_card_reward_resources_v1(controller, locale)?,
                     route_semantics_manifest,
                     route_entries: project_agent_route_entries_v1(controller)?,
                 }),
@@ -8499,29 +8502,36 @@ mod tests {
             }
             let mut controller = controller_with_session(&dir.0, name, &session);
             let before = controller.head().clone();
-            let capabilities = AgentCapabilitiesV1::new(
-                AgentPermissionEnvelopeV1::a20_first_unrestricted_v1(None),
-            );
-            let observed =
-                current_agent_observation_v1(&mut controller, capabilities, Locale::En).unwrap();
-            let Some(AgentDecisionEvidenceV1::CardAcquisitionOptions {
-                resource_options,
-                candidates,
-                ..
-            }) = observed.decision_evidence
-            else {
-                panic!("expected reward evidence");
-            };
-            assert_eq!(candidates.len(), 3);
-            assert_eq!(resource_options.len(), 1);
-            assert_eq!(resource_options[0].semantic_action, "singing-bowl#0");
-            assert_eq!(resource_options[0].max_hp_gain, 2);
-            assert_eq!(resource_options[0].hp_gain, if blocked { 0 } else { 2 });
-            assert_eq!(
-                controller.head(),
-                &before,
-                "observation must retain the source"
-            );
+            for locale in [Locale::En, Locale::ZhCn] {
+                let capabilities = AgentCapabilitiesV1::new(
+                    AgentPermissionEnvelopeV1::a20_first_unrestricted_v1(None),
+                );
+                let observed =
+                    current_agent_observation_v1(&mut controller, capabilities, locale).unwrap();
+                let Some(AgentDecisionEvidenceV1::CardAcquisitionOptions {
+                    resource_options,
+                    candidates,
+                    ..
+                }) = observed.decision_evidence
+                else {
+                    panic!("expected reward evidence");
+                };
+                assert_eq!(candidates.len(), 3);
+                assert_eq!(resource_options.len(), 1);
+                assert_eq!(resource_options[0].semantic_action, "singing-bowl#0");
+                assert_eq!(resource_options[0].max_hp_gain, 2);
+                assert_eq!(
+                    resource_options[0].native_rule,
+                    sts_oracle_learning::content::relics::singing_bowl::MECHANICS
+                        .explanation(locale)
+                );
+                assert_eq!(resource_options[0].hp_gain, if blocked { 0 } else { 2 });
+                assert_eq!(
+                    controller.head(),
+                    &before,
+                    "observation must retain the source"
+                );
+            }
         }
     }
 

@@ -286,8 +286,12 @@ pub(crate) fn write_combat_rules(out: &mut String, state: &PublicCombatStateV1, 
                     ),
                     (
                         "effect",
-                        relics::mechanics::explanation(relic.id)
-                            .unwrap_or(locale.entry("mechanics", "combat.unknownEffect").unwrap())
+                        &relics::mechanics::get(relic.id)
+                            .map(|rule| rule.explanation(locale))
+                            .unwrap_or_else(|| locale
+                                .entry("mechanics", "combat.unknownEffect")
+                                .unwrap()
+                                .to_owned())
                     )
                 ]
             )
@@ -949,7 +953,7 @@ fn render_query(
         let name = query[6..].trim();
         let relic = resolve::<relics::RelicId>(name)
             .ok_or_else(|| message("query.unknownRelic", &[("name", name)]))?;
-        write_relic(&mut out, relic, current_observation);
+        write_relic(&mut out, relic, current_observation, locale);
         return Ok(out);
     }
     if lower.starts_with("potion ") {
@@ -1071,7 +1075,7 @@ fn render_query(
         return Ok(out);
     }
     if let Some(relic) = resolve::<relics::RelicId>(query) {
-        write_relic(&mut out, relic, current_observation);
+        write_relic(&mut out, relic, current_observation, locale);
         return Ok(out);
     }
     if let Some(potion) = resolve::<potions::PotionId>(query) {
@@ -1173,12 +1177,36 @@ fn write_relic(
     out: &mut String,
     relic: relics::RelicId,
     current_observation: Option<&TaskPublicObservationV1>,
+    locale: Locale,
 ) {
+    let message = |key: &str, parameters: &[(&str, &str)]| {
+        locale
+            .text("mechanics", &format!("relic.{key}"), parameters)
+            .expect("relic query message")
+    };
+    use relics::RelicTier;
+    let tier = match relics::get_relic_tier(relic) {
+        RelicTier::Starter => "starter",
+        RelicTier::Common => "common",
+        RelicTier::Uncommon => "uncommon",
+        RelicTier::Rare => "rare",
+        RelicTier::Boss => "boss",
+        RelicTier::Shop => "shop",
+        RelicTier::Event => "event",
+        RelicTier::Special => "special",
+        RelicTier::Deprecated => "deprecated",
+    };
     writeln!(
         out,
-        "Relic definition: {} | {:?}",
-        label(relic),
-        relics::get_relic_tier(relic)
+        "{}",
+        message(
+            "header",
+            &[
+                ("name", locale.entity("relic", relic.stable_id())),
+                ("id", relic.stable_id()),
+                ("tier", &message(&format!("tier.{tier}"), &[]))
+            ]
+        )
     )
     .unwrap();
     if let Some(observation) = current_observation {
@@ -1196,21 +1224,37 @@ fn write_relic(
                 .map(|r| (r.counter, r.used_up)),
         };
         if let Some((counter, used_up)) = held {
-            write!(out, "  Currently held: yes").unwrap();
-            if counter >= 0 {
-                write!(out, " | Counter: {counter}").unwrap();
-            }
-            if let Some(status) = relics::mechanics::trigger_state_description(relic, used_up) {
-                write!(out, " | {status}").unwrap();
-            }
-            writeln!(out).unwrap();
+            let status = relics::mechanics::trigger_state_v1(relic, used_up)
+                .map(|state| state.description(locale));
+            let (key, parameters) = match (counter >= 0, status) {
+                (true, Some(status)) => (
+                    "heldCounterState",
+                    vec![
+                        ("counter", counter.to_string()),
+                        ("state", status.to_owned()),
+                    ],
+                ),
+                (true, None) => ("heldCounter", vec![("counter", counter.to_string())]),
+                (false, Some(status)) => ("heldState", vec![("state", status.to_owned())]),
+                (false, None) => ("held", vec![]),
+            };
+            let parameters: Vec<_> = parameters
+                .iter()
+                .map(|(key, value)| (*key, value.as_str()))
+                .collect();
+            writeln!(out, "{}", message(key, &parameters)).unwrap();
         } else {
-            writeln!(out, "  Currently held: no").unwrap();
+            writeln!(out, "{}", message("notHeld", &[])).unwrap();
         }
     }
-    match relics::mechanics::explanation(relic) {
-        Some(effect) => writeln!(out, "  Effect: {effect}").unwrap(),
-        None => writeln!(out, "  Unknown: effect explanation not yet covered.").unwrap(),
+    match relics::mechanics::get(relic) {
+        Some(rule) => writeln!(
+            out,
+            "{}",
+            message("effect", &[("effect", &rule.explanation(locale))])
+        )
+        .unwrap(),
+        None => writeln!(out, "{}", message("unknown", &[])).unwrap(),
     }
 }
 
@@ -2455,10 +2499,44 @@ mod tests {
                 held.contains("Currently held: yes | Counter: 0 | draw trigger spent this combat"),
                 "{held}"
             );
+            let zh = super::render_query(
+                None,
+                Some(20),
+                Some(&observation),
+                "relic Centennial Puzzle",
+                Locale::ZhCn,
+            )
+            .unwrap();
+            assert!(zh.contains("当前持有：是 | 计数：0"), "{zh}");
+            assert!(zh.contains(
+                relics::mechanics::trigger_state_v1(RelicId::CentennialPuzzle, true)
+                    .unwrap()
+                    .description(Locale::ZhCn)
+            ));
         }
         assert!(!render_query(None, None, "relic Centennial Puzzle")
             .unwrap()
             .contains("Currently held:"));
+    }
+
+    #[test]
+    fn every_reviewed_relic_query_localizes_full_rules_and_keeps_copyable_identity() {
+        use sts_oracle_learning::content::identity::StableGameplayId;
+        for &id in relics::RelicId::STABLE_IDS {
+            let relic = relics::RelicId::from_stable_id(id).unwrap();
+            let Some(rule) = relics::mechanics::get(relic) else {
+                continue;
+            };
+            for locale in [Locale::En, Locale::ZhCn] {
+                let view =
+                    super::render_query(None, Some(20), None, &format!("relic {id}"), locale)
+                        .unwrap();
+                assert!(view.contains(id), "{locale}/{id}: {view}");
+                assert!(view.contains(locale.entity("relic", id)), "{locale}/{id}");
+                assert!(view.contains(&rule.explanation(locale)), "{locale}/{id}");
+                assert!(!view.contains("（英文）"));
+            }
+        }
     }
 
     #[test]

@@ -4,7 +4,9 @@ use crate::runtime::combat::CombatState;
 use crate::EntityId;
 use smallvec::SmallVec;
 
-pub const MECHANICS: &str = "Whenever you successfully apply Vulnerable to an enemy, also apply 1 Weak to that enemy. If Artifact blocks the Vulnerable application, Champion Belt does not trigger. The added Weak is a separate debuff and can itself be blocked by another Artifact charge.";
+pub const MECHANICS: super::mechanics::RelicMechanics = super::mechanics::RelicMechanics {
+    text_id: crate::content::relics::RelicId::ChampionBelt,
+};
 
 pub struct ChampionBelt;
 

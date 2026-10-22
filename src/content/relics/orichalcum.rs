@@ -2,7 +2,9 @@ use crate::runtime::action::{Action, ActionInfo, AddTo};
 use crate::runtime::combat::CombatState;
 use smallvec::SmallVec;
 
-pub const MECHANICS: &str = "At the end of your turn, check your current Block before end-of-turn Power gains such as Metallicize. If it is 0, gain 6 Block. Metallicize then adds its own Block, so the two effects stack when this check starts at 0 Block. Having any Block at the check prevents only Orichalcum's gain.";
+pub const MECHANICS: super::mechanics::RelicMechanics = super::mechanics::RelicMechanics {
+    text_id: crate::content::relics::RelicId::Orichalcum,
+};
 
 /// Orichalcum: If you end your turn without Block, gain 6 Block.
 pub fn at_end_of_turn(state: &CombatState) -> SmallVec<[ActionInfo; 4]> {

@@ -4,7 +4,9 @@ use smallvec::SmallVec;
 /// Lantern: Gain 1 Energy on the first turn of each combat.
 /// The compact `used_up` flag stores `!Lantern.firstTurn`, never the original
 /// `AbstractRelic.usedUp`. Public projections must keep those meanings separate.
-pub const MECHANICS: &str = "Gain 1 additional Energy on the first turn of every combat. Later turns do not receive this bonus. Its first-turn flag resets before each combat; a currently spent flag does not mean the relic is permanently consumed.";
+pub const MECHANICS: super::mechanics::RelicMechanics = super::mechanics::RelicMechanics {
+    text_id: crate::content::relics::RelicId::Lantern,
+};
 
 pub fn at_pre_battle(
     relic_state: &mut crate::content::relics::RelicState,

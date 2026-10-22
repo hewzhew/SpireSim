@@ -3,164 +3,423 @@ use super::RelicId;
 use crate::content::powers::PowerId;
 use serde::{Deserialize, Serialize};
 
-/// Short, reviewed effect summaries for relic inspection. Missing entries are
-/// deliberately reported as unknown by the caller.
-pub fn explanation(relic: RelicId) -> Option<&'static str> {
-    match relic {
-        RelicId::Astrolabe => Some("Choose 3 cards to transform; the replacements are upgraded."),
-        RelicId::Pantograph => Some("At the start of each boss combat, heal 25 HP."),
-        RelicId::IncenseBurner => Some(super::incense_burner::MECHANICS),
-        RelicId::ChampionBelt => Some(super::champion_belt::MECHANICS),
-        RelicId::EternalFeather => Some(super::eternal_feather::MECHANICS),
-        RelicId::AncientTeaSet => Some("After entering a campfire, gain 2 extra Energy on the first turn of the next combat. Entering the campfire is sufficient; choosing Rest is not required. This is not extra Energy every turn."),
-        RelicId::Lantern => Some(super::lantern::MECHANICS),
-        RelicId::Anchor => Some("At the start of each combat, gain 10 Block. This protects the opening turn; it is not recurring Block every turn."),
-        RelicId::ArtOfWar => Some(super::art_of_war::MECHANICS),
-        RelicId::Brimstone => Some(super::brimstone::MECHANICS),
-        RelicId::Pocketwatch => Some(super::pocketwatch::MECHANICS),
-        RelicId::LizardTail => Some("Once per run, when lethal HP loss would defeat you, heal for 50% of Max HP, rounded down with a minimum healing request of 1. Healing modifiers and restrictions apply; Mark of the Bloom prevents revival. After triggering, the relic is used up for the rest of the run."),
-        RelicId::GremlinHorn => Some("When an enemy dies while another living enemy remains, gain 1 Energy, then draw 1 card. Draw prevention and hand capacity still apply. This can trigger for multiple kills; escaped enemies do not count."),
-        RelicId::HandDrill => Some("When damage breaks an enemy's positive Block down to 0, apply 2 Vulnerable to that enemy after the hit. Artifact can block this debuff. The new Vulnerable does not amplify the block-breaking hit itself."),
-        RelicId::StrikeDummy => Some(super::strike_dummy::MECHANICS),
-        RelicId::Necronomicon => Some("Each turn, replay your first qualifying Attack for free against the same target: its current cost for the turn must be at least 2 and it must not be a free-to-play card, or an X-cost Attack must spend at least 2 Energy. The replay applies the card's effects again. On pickup, add Necronomicurse to the permanent deck; this Curse regenerates when normally removed while Necronomicon is held."),
-        RelicId::Enchiridion => Some("At the start of each combat, add a temporary random Power card from your class to your hand. It costs 0 that turn. Its Power effect applies only after you play it; the generated card is not added to your permanent deck."),
-        RelicId::NilrysCodex => Some("At the end of each player turn, choose one of 3 randomly offered class cards to insert as a temporary copy at a random position in your draw pile, or skip. It supplies a future draw option rather than drawing the card immediately, and does not change your permanent deck."),
-        RelicId::Torii => Some("When a normal enemy hit would deal 2-5 unblocked damage to you, reduce that damage to 1. Checks each hit after Block, so a larger hit can qualify after partial Block or Weak reduces it. HP-loss and Thorns damage do not qualify."),
-        RelicId::TungstenRod => Some(super::tungsten_rod::MECHANICS),
-        RelicId::UnceasingTop => Some("During your turn, when the hand is empty after queued actions finish, draw 1 card. Can trigger again if you empty the hand again. Requires cards available to draw or reshuffle, and drawing to be allowed; No Draw prevents it. It supplies no Energy for the drawn card. Unplayable or unaffordable cards left in hand prevent the empty-hand trigger."),
-        RelicId::RegalPillow => Some("Whenever you Rest at a campfire, heal 15 additional HP, up to Max HP and subject to healing restrictions. It does not heal when choosing Smith or another campfire action."),
-        RelicId::ChemicalX => Some("Your X-cost card effects use X + 2 while spending the ordinary X Energy. This increases the effect amount; it does not grant 2 Energy or affect fixed-cost cards."),
-        RelicId::Sling => Some("At the start of elite combats only, gain 2 Strength. Does not grant Strength in normal or boss combats, including the Heart."),
-        RelicId::BloodyIdol => Some("Whenever you successfully gain a positive amount of Gold, heal 5 HP, up to Max HP and subject to healing restrictions. Combat gold triggers this when claimed; merely winning does not trigger it."),
-        RelicId::MummifiedHand => Some("Whenever you play a Power, one randomly chosen eligible card remaining in your hand costs 0 for this turn. The card must have a positive printed cost and a positive current cost; X-cost, unplayable and already-free cards are not eligible. Does not draw cards or make the played Power free."),
-        RelicId::Waffle => Some("On pickup, gain 7 Max HP and heal to Max HP, subject to healing restrictions. Has no recurring combat effect."),
-        RelicId::SingingBowl => Some(super::singing_bowl::MECHANICS),
-        RelicId::FrozenEgg => Some("Whenever you add a Power card to your deck, upgrade it."),
-        RelicId::MoltenEgg => Some("Whenever you add an Attack card to your deck, upgrade it. Existing deck cards are not upgraded on pickup."),
-        RelicId::ToxicEgg => Some("Whenever you add a Skill card to your deck, upgrade it. Existing deck cards are not upgraded on pickup."),
-        RelicId::Courier => Some(super::courier::MECHANICS),
-        // Prices are owned by state::shop::shop_screen and engine::shop_handler.
-        RelicId::MembershipCard => Some("Shop card, relic and potion prices are 50% lower, stacking with The Courier's item discount. Card removal is also discounted, with overrides such as Smiling Mask; use the displayed removal price. Buying Membership Card immediately discounts the remaining inventory in this shop. Inspect the updated prices after purchase."),
-        RelicId::MagicFlower => Some(super::magic_flower::MECHANICS),
-        // Played-card destination is resolved in cards::play_queue::handle_use_card_done.
-        RelicId::StrangeSpoon => Some("Whenever a played non-Power card would Exhaust after use, it has a 50% chance to be discarded instead. Cards saved this way do not trigger on-Exhaust effects such as Dark Embrace, Feel No Pain or Sentinel. Does not save other cards Exhausted by a card effect, or cards that Exhaust because of Ethereal at turn end. With Corruption, saved Skills remain reusable at 0 cost while Corruption is active, but provide no on-Exhaust payoff on that saved play."),
-        RelicId::PreservedInsect => Some("At the start of elite combats, reduce each enemy's current HP to at most 75% of its Max HP, rounded down. Does not reduce Max HP or affect normal and boss combats."),
-        RelicId::BottledFlame => Some("On pickup: choose an eligible Attack card in your deck. The selected copy keeps its upgrade and is placed at the top of the draw pile for the normal opening draw each combat. It occupies one opening-hand slot; its Energy cost must still be paid when played."),
-        RelicId::BottledLightning => Some("On pickup: choose an eligible Skill card in your deck. The selected copy keeps its upgrade and is placed at the top of the draw pile for the normal opening draw each combat. It occupies one opening-hand slot; its Energy cost must still be paid when played."),
-        RelicId::BottledTornado => Some("On pickup: choose an eligible Power card in your deck. The selected copy keeps its upgrade and is placed at the top of the draw pile for the normal opening draw each combat. It occupies one opening-hand slot; its Energy cost must still be paid when played."),
-        RelicId::WarpedTongs => Some("After your start-of-turn draw, upgrade a random upgradable card in your hand for this combat. Permanent deck upgrades are not changed."),
-        RelicId::OrangePellets => Some("Play an Attack, Skill and Power in one turn to remove your debuffs. Can trigger again after another trio."),
-        RelicId::Ectoplasm => Some("Gain 1 Energy each turn. Future Gold gain is prevented. Already-owned Gold remains available for purchases and removal."),
-        RelicId::TinyHouse => Some("On pickup: gain 5 Max HP, 50 Gold, a potion and a card reward; upgrade one random upgradable card."),
-        RelicId::RunicCube => Some("Whenever you lose HP, draw 1 card per HP-loss event. Enemy hits that reach HP and self-inflicted HP loss both trigger it. Each event with positive actual HP loss draws once; fully blocked or prevented HP loss supplies zero draws."),
-        RelicId::RunicDome => Some("Gain 1 Energy each turn. Enemy intents are hidden."),
-        RelicId::VelvetChoker => Some("Gain 1 Energy each turn. You may play at most 6 cards per turn."),
-        RelicId::CursedKey => Some("Gain 1 Energy each turn in all combats. Opening a non-boss chest adds a random Curse immediately, even if you skip its rewards. You can leave a chest unopened: this gives no chest rewards and adds no Curse. Boss relic chests do not add a Curse."),
-        RelicId::BlackStar => Some("Elite combat rewards include one additional relic."),
-        RelicId::BustedCrown => Some("Gain 1 Energy each turn. Card rewards offer 2 fewer cards; this does not reduce shop or Discovery choices."),
-        RelicId::QuestionCard => Some("Card rewards generated after obtaining this relic offer 1 additional card, including colorless card rewards. Already-generated reward offers keep their existing cards. Shop inventory and combat Discovery choices keep their own choice counts."),
-        RelicId::CallingBell => Some("On pickup: add the unremovable Curse of the Bell and receive one random Common, Uncommon and Rare relic."),
-        RelicId::CoffeeDripper => Some("Gain 1 Energy each turn. Cannot choose Rest at campfires; other healing still works."),
-        RelicId::EmptyCage => Some("On pickup: choose 2 removable cards to remove from your deck. If at most 2 are removable, remove them automatically."),
-        RelicId::FusionHammer => Some("Gain 1 Energy each turn. Cannot choose Smith at campfires; upgrades from cards, events and other sources still work."),
-        RelicId::PandorasBox => Some("On pickup: replace every starter Strike and Defend, including upgraded copies, with random cards from your character's Common, Uncommon and Rare pools. Replacements are not chosen by the player; Egg relics can upgrade them."),
-        RelicId::PhilosopherStone => Some("Gain 1 Energy each turn. All enemies start combat with 1 additional Strength."),
-        RelicId::RunicPyramid => Some("Do not perform the ordinary end-of-turn hand discard. This does not grant Retain: Ethereal cards still exhaust, and other discard effects still work. The hand limit still applies."),
-        RelicId::SacredBark => Some("Double potion potency. Fixed effects without a scalable potency, such as choosing among 3 discovered cards, are not doubled."),
-        RelicId::SlaversCollar => Some("Gain 1 additional Energy each turn during elite and boss combats. Ordinary combats do not receive this energy."),
-        RelicId::SneckoEye => Some("Draw 2 additional cards each turn. Start combat with Confusion: each draw can randomize a card's nonnegative combat cost to 0-3. Negative costs (including X-cost and negative unplayable costs) are excluded."),
-        RelicId::Sozu => Some("Gain 1 Energy each turn. Cannot obtain new potions; potions already held can still be used."),
-        RelicId::BlackBlood => Some("Replaces Burning Blood. At the end of each victorious combat, heal 12 HP instead of Burning Blood's 6."),
-        RelicId::MarkOfPain => Some("Gain 1 Energy each turn. At combat start, shuffle 2 Wounds into your draw pile."),
-        RelicId::BurningBlood => Some("At the end of each victorious combat, heal 6 HP."),
-        RelicId::Pear => Some("On pickup: gain 10 Max HP and heal 10 HP, subject to healing restrictions."),
-        RelicId::HappyFlower => Some("Every 3 player turns, gain 1 Energy. The turn counter carries between combats."),
-        RelicId::Sundial => Some("Every 3 draw-pile shuffles, gain 2 Energy. The shuffle counter carries between combats."),
-        RelicId::Abacus => Some(super::abacus::MECHANICS),
-        RelicId::Calipers => Some(super::calipers::MECHANICS),
-        RelicId::CaptainsWheel => Some("At the start of turn 3 of each combat, gain 18 Block."),
-        RelicId::DollysMirror => Some("On pickup: choose a card in your deck and add a duplicate with the same upgrade level."),
-        RelicId::Shuriken => Some("Every 3 Attack cards played in a single turn, gain 1 Strength for the rest of combat. The attack counter resets each turn; multiple groups of 3 can trigger."),
-        RelicId::Kunai => Some(super::kunai::MECHANICS),
-        RelicId::OddMushroom => Some(super::odd_mushroom::MECHANICS),
-        RelicId::MutagenicStrength => Some("At combat start, gain 3 Strength and an equal Lose Strength debuff that removes 3 Strength at the end of your first turn. Artifact can block the removal debuff."),
-        RelicId::Orichalcum => Some(super::orichalcum::MECHANICS),
-        RelicId::Vajra => Some("At the start of each combat, gain 1 Strength for the rest of that combat."),
-        RelicId::JuzuBracelet => Some("A normal Monster room rolled for a question-mark map node becomes an Event instead. Does not prevent fixed combats within events or fights at Monster, Elite and Boss map nodes."),
-        RelicId::BronzeScales => Some("At the start of each combat, gain 3 Thorns. Whenever an enemy attacks you, deal 3 damage back per hit, even when its damage is blocked."),
-        RelicId::PenNib => Some("Every tenth Attack card you play deals double damage, including each hit and enemy target of that card. Counts Attack cards, not individual hits. The counter carries between combats; at counter 9 the next Attack is doubled."),
-        RelicId::Nunchaku => Some("Every tenth Attack card played grants 1 Energy and resets the counter to 0. Counts Attack cards, not individual hits. The counter carries between turns and combats; at counter 9 the next Attack grants the Energy."),
-        RelicId::CeramicFish => Some("Whenever a card is added to your master deck, gain 9 Gold. Cards generated only for the current combat do not qualify."),
-        RelicId::PaperFrog => Some("Your attacks against Vulnerable enemies deal 75% additional damage instead of the normal 50%."),
-        RelicId::Toolbox => Some("At the start of each combat, choose one of three offered Colorless cards and add a temporary copy to your hand. It keeps its normal Energy cost and is not added to your master deck."),
-        RelicId::RedMask => Some("At the start of each combat, apply 1 Weak to every enemy. An enemy's Artifact can block this application and consume one Artifact charge instead."),
-        RelicId::ToyOrnithopter => Some("Whenever you use a potion, heal 5 HP, up to Max HP and subject to healing restrictions. Discarding a potion does not trigger this healing."),
-        RelicId::PeacePipe => Some("At a campfire, you may choose Toke to remove one eligible card from your master deck for 0 Gold instead of another campfire action. Its cost is that campfire action opportunity; shop removal keeps its separate Gold price and purchase count. Unremovable and bottled cards are not eligible."),
-        RelicId::PotionBelt => Some("On pickup, add 2 permanent potion slots. It does not supply potions or change their effects."),
-        RelicId::Boot => Some("When your Attack deals 1-4 unblocked damage to an enemy, increase that damage to 5. Applies per hit and target; fully blocked hits still deal 0."),
-        RelicId::CentennialPuzzle => Some("The first time you lose HP in each combat, draw 3 cards at that time. Fully blocked attacks do not trigger it. Resets for the next combat."),
-        RelicId::MeatOnTheBone => Some("At the end of a victorious combat, if your positive current HP is at or below half Max HP (rounded down), heal 12 HP, subject to healing restrictions and the Max HP cap."),
-        RelicId::Akabeko => Some("At the start of each combat, gain 8 Vigor: the first Attack card you play gains 8 damage on every hit and target before damage modifiers, then consumes Vigor. Skills and Powers do not consume it."),
-        RelicId::OddlySmoothStone => Some("At the start of each combat, gain 1 Dexterity for that combat. Dexterity increases card-generated Block before other Block modifiers."),
-        RelicId::Turnip => Some(super::turnip::MECHANICS),
-        RelicId::Ginger => Some(super::ginger::MECHANICS),
-        RelicId::LetterOpener => Some(super::letter_opener::MECHANICS),
-        RelicId::SelfFormingClay => Some(super::self_forming_clay::MECHANICS),
-        RelicId::Matryoshka => Some(super::matryoshka::MECHANICS),
-        RelicId::WarPaint => Some(super::war_paint::MECHANICS),
-        RelicId::SmilingMask => Some("Shop card removal costs 50 Gold, regardless of previous removal count or shop price discounts. Each shop still permits only one removal. Buying this relic immediately updates the current shop's removal price."),
-        RelicId::DreamCatcher => Some("After choosing Rest at a campfire, receive a normal card reward, which may be skipped. Merely entering the campfire or choosing Smith, Recall or another action does not produce this reward."),
-        RelicId::BloodVial => Some("At the start of each combat, heal 2 HP, up to Max HP and subject to healing modifiers and restrictions. This is healing, not additional Max HP."),
-        RelicId::MawBank => Some("Whenever you advance to a new floor, gain 12 Gold while this relic is active. Spending Gold at a shop permanently deactivates it, including purchases and card removal. Entering a shop or spending Gold in an event does not deactivate it."),
-        RelicId::BagOfMarbles => Some("At the start of each combat, apply 1 Vulnerable to every enemy. Artifact can block each enemy's application and consume one charge instead. This is an opening-turn debuff, not permanent Vulnerable."),
-        RelicId::PrismaticShard => Some("Normal combat card rewards can offer cards from every character and Colorless cards while preserving the rolled rarity. It does not enlarge the choice count or change ordinary shop card pools. A character other than the Defect also gains one Orb slot."),
-        RelicId::FossilizedHelix => Some("At the start of each combat, gain 1 Buffer. Buffer prevents the next damage or HP-loss event that would otherwise reduce HP, then consumes one charge. Fully blocked hits leave Buffer intact; separate hits can consume it and then deal damage."),
-        RelicId::NeowsLament => Some(super::neows_lament::MECHANICS),
-        RelicId::Omamori => Some(super::omamori::MECHANICS),
-        RelicId::Shovel => Some(super::shovel::MECHANICS),
-        RelicId::BagOfPreparation => Some("At the start of each combat, draw 2 additional cards. This adds opening-hand access once per combat; later turns use the ordinary draw count."),
-        RelicId::BirdFacedUrn => Some("Whenever you play a Power card, heal 2 HP, up to Max HP and subject to healing modifiers and restrictions."),
-        RelicId::BlueCandle => Some("Curse cards can be played. Playing a Curse loses 1 HP and Exhausts that card for this combat. Its permanent deck copy remains. The HP loss can trigger Rupture and follows HP-loss modifiers."),
-        RelicId::Cauldron => Some("On pickup, open rewards containing 5 random potions. Choose which to collect within your available potion slots; ordinary acquisition restrictions apply."),
-        RelicId::CharonsAshes => Some("Whenever a card Exhausts, deal 3 non-Attack damage to all enemies. Triggers on actual Exhaust, including cards Exhausted by other effects. Strength and Attack damage modifiers do not amplify this damage."),
-        RelicId::ClockworkSouvenir => Some("At the start of each combat, gain 1 Artifact. It blocks the next debuff application and consumes its charge; it does not reduce attack damage."),
-        RelicId::CultistMask => Some("Cosmetic relic with the CAW CAW greeting; has no resource or combat effect."),
-        RelicId::DarkstonePeriapt => Some("Whenever a Curse is added to your permanent deck, gain 6 Max HP and heal 6 HP, subject to healing restrictions. A Curse prevented by Omamori is not obtained and does not trigger this effect."),
-        RelicId::DeadBranch => Some("Whenever a card Exhausts while combat continues, add a temporary random card from your character's combat card pool to your hand. The generated card has its ordinary cost and is not added to your permanent deck. Hand capacity and active card-generation modifiers apply."),
-        RelicId::DuVuDoll => Some("At the start of each combat, gain 1 Strength for each Curse in your permanent deck, including Ascender's Bane. The displayed counter tracks that Curse count. Curses remain in the deck and can still occupy draws."),
-        RelicId::FaceOfCleric => Some("After each victorious combat, gain 1 Max HP and heal 1 HP, subject to healing modifiers and restrictions."),
-        RelicId::FrozenEye => Some("Allows inspecting the draw pile in its actual order. Viewing it does not draw, reorder or reveal the result of a future shuffle."),
-        RelicId::GamblingChip => Some("After the opening draw of each combat, choose any number of cards from your hand to discard, then draw the same number. You may keep the entire hand. This happens once per combat and does not grant Energy."),
-        RelicId::Girya => Some("At a campfire, choose Lift instead of another campfire action to increase this relic's counter by 1, up to 3. Start each combat with Strength equal to the counter. Merely entering a campfire does not increase it."),
-        RelicId::GoldenIdol => Some("Combat Gold rewards receive a 25% bonus, rounded to the nearest integer. The bonus is received when claiming the reward; this does not multiply every source of Gold."),
-        RelicId::GremlinMask => Some("At the start of each combat, apply 1 Weak to yourself. Artifact or Weak immunity can prevent the application."),
-        RelicId::HornCleat => Some("At the start of turn 2 of each combat, gain 14 Block."),
-        RelicId::IceCream => Some("Unspent Energy carries from one player turn to the next within the same combat, in addition to the next turn's normal Energy. This preserves unused Energy rather than creating more each turn."),
-        RelicId::InkBottle => Some("Every tenth card played draws 1 card and resets the counter to 0. Counts played cards of every type; the counter carries between turns and combats. Draw prevention and hand capacity still apply."),
-        RelicId::MarkOfTheBloom => Some("All healing is prevented for the rest of the run, including Rest, combat healing, act-transition healing and Lizard Tail revival. Max HP can still increase, but the associated healing is prevented."),
-        RelicId::MealTicket => Some("Whenever you enter a shop room, heal 15 HP, up to Max HP and subject to healing restrictions. Purchasing is not required; buying this relic after entering does not repeat the entry heal."),
-        RelicId::MedicalKit => Some("Status cards can be played and Exhaust after use. Otherwise unplayable Statuses can be played without Energy; playable Statuses such as Slimed retain their normal cost. Exhaust triggers still apply. This enables Statuses, not Curses."),
-        RelicId::MercuryHourglass => Some("At the start of each player turn, deal 3 non-Attack damage to all enemies. Strength and Attack damage modifiers do not amplify this damage."),
-        RelicId::NlothsGift => Some("Triples the rare-card threshold when generating normal combat card rewards. The existing rarity randomizer still applies; this is not a fixed tripled probability for every card source. Boss card rewards already use Rare cards."),
-        RelicId::NlothsMask => Some("The next normal chest you open loses one relic reward, along with its linked Sapphire key if present. Opening the chest spends this effect for the run. Other chest rewards remain."),
-        RelicId::OldCoin => Some("On pickup, gain 300 Gold, subject to Gold-gain restrictions. Has no recurring combat effect."),
-        RelicId::OrnamentalFan => Some("Every 3 Attack cards played in a single turn, gain 4 Block. Counts cards rather than hits or targets. The attack counter resets each turn and can trigger for multiple groups of 3; Dexterity does not modify this relic-generated Block."),
-        RelicId::Orrery => Some("On pickup, open 5 normal card reward choices in ordinary contexts, each of which may be skipped. Existing card-reward count modifiers apply. On a treasure reward screen, add 4 card reward choices. Cards enter your deck only when selected."),
-        RelicId::PrayerWheel => Some("Normal Monster room victories produce an additional card reward choice, which can be skipped independently. Elite, Boss and event combats do not receive this extra reward."),
-        RelicId::RedSkull => Some(super::red_skull::MECHANICS),
-        RelicId::SpiritPoop => Some("Souvenir from the Bonfire Spirits event; has no resource or combat effect."),
-        RelicId::SsserpentHead => Some("Whenever you enter an Event room, gain 50 Gold, subject to Gold-gain restrictions. A question-mark node that resolves to combat, a shop or a chest is not an Event room."),
-        RelicId::StoneCalendar => Some("At the end of your seventh turn in each combat, deal 52 non-Attack damage to all enemies. This triggers once per combat; Strength and Attack damage modifiers do not amplify it."),
-        RelicId::Strawberry => Some("On pickup, gain 7 Max HP and heal 7 HP, subject to healing restrictions."),
-        RelicId::Mango => Some("On pickup, gain 14 Max HP and heal 14 HP, subject to healing restrictions."),
-        RelicId::ThreadAndNeedle => Some("At the start of each combat, gain 4 Plated Armor. At the end of each player turn, gain Block equal to its remaining amount; each enemy Attack hit that causes HP loss removes 1 Plated Armor. Fully blocked hits preserve it."),
-        RelicId::TinyChest => Some("Every fourth question-mark room entered becomes a Treasure room, and the counter resets to 0. The counter carries between Acts. Ordinary fixed Treasure nodes do not advance this counter."),
-        RelicId::Whetstone => Some("On pickup, permanently upgrade up to 2 randomly selected upgradable Attack cards already in your deck. With fewer than 2 eligible cards, upgrade all eligible copies. Distinct copies are selected; Skills and Powers are not eligible."),
-        RelicId::WhiteBeastStatue => Some("Combat potion drops have a 100% chance, subject to the reward-screen size limit: a potion is not added when 4 or more reward entries already exist. Collecting it still requires a free slot or replacing a held potion, and Sozu still prevents obtaining it."),
-        RelicId::WingBoots => Some("Provides 3 flights for the run. Each flight can select a visible map node on the next reachable row without following the current node's outgoing connection. Ordinary connected travel spends no charge; a flight does not skip rows."),
-        RelicId::Circlet | RelicId::RedCirclet => Some("Fallback relic with no resource or combat effect."),
-        _ => None,
+/// Complete reviewed rules bind text at the execution owner. Presentation
+/// language never changes effect values, counters or acquisition identity.
+#[derive(Clone, Copy, Debug)]
+pub struct RelicMechanics {
+    pub text_id: RelicId,
+}
+
+impl RelicMechanics {
+    pub fn explanation(self, locale: sts_presentation::Locale) -> String {
+        locale
+            .definition_text("game", &format!("relicRule.{}", self.text_id.stable_id()))
+            .expect("complete relic mechanism text")
     }
+}
+
+pub fn get(relic: RelicId) -> Option<RelicMechanics> {
+    Some(match relic {
+        RelicId::Astrolabe => RelicMechanics {
+            text_id: RelicId::Astrolabe,
+        },
+        RelicId::Pantograph => RelicMechanics {
+            text_id: RelicId::Pantograph,
+        },
+        RelicId::IncenseBurner => super::incense_burner::MECHANICS,
+        RelicId::ChampionBelt => super::champion_belt::MECHANICS,
+        RelicId::EternalFeather => super::eternal_feather::MECHANICS,
+        RelicId::AncientTeaSet => RelicMechanics {
+            text_id: RelicId::AncientTeaSet,
+        },
+        RelicId::Lantern => super::lantern::MECHANICS,
+        RelicId::Anchor => RelicMechanics {
+            text_id: RelicId::Anchor,
+        },
+        RelicId::ArtOfWar => super::art_of_war::MECHANICS,
+        RelicId::Brimstone => super::brimstone::MECHANICS,
+        RelicId::Pocketwatch => super::pocketwatch::MECHANICS,
+        RelicId::LizardTail => RelicMechanics {
+            text_id: RelicId::LizardTail,
+        },
+        RelicId::GremlinHorn => RelicMechanics {
+            text_id: RelicId::GremlinHorn,
+        },
+        RelicId::HandDrill => RelicMechanics {
+            text_id: RelicId::HandDrill,
+        },
+        RelicId::StrikeDummy => super::strike_dummy::MECHANICS,
+        RelicId::Necronomicon => RelicMechanics {
+            text_id: RelicId::Necronomicon,
+        },
+        RelicId::Enchiridion => RelicMechanics {
+            text_id: RelicId::Enchiridion,
+        },
+        RelicId::NilrysCodex => RelicMechanics {
+            text_id: RelicId::NilrysCodex,
+        },
+        RelicId::Torii => RelicMechanics {
+            text_id: RelicId::Torii,
+        },
+        RelicId::TungstenRod => super::tungsten_rod::MECHANICS,
+        RelicId::UnceasingTop => RelicMechanics {
+            text_id: RelicId::UnceasingTop,
+        },
+        RelicId::RegalPillow => RelicMechanics {
+            text_id: RelicId::RegalPillow,
+        },
+        RelicId::ChemicalX => RelicMechanics {
+            text_id: RelicId::ChemicalX,
+        },
+        RelicId::Sling => RelicMechanics {
+            text_id: RelicId::Sling,
+        },
+        RelicId::BloodyIdol => RelicMechanics {
+            text_id: RelicId::BloodyIdol,
+        },
+        RelicId::MummifiedHand => RelicMechanics {
+            text_id: RelicId::MummifiedHand,
+        },
+        RelicId::Waffle => RelicMechanics {
+            text_id: RelicId::Waffle,
+        },
+        RelicId::SingingBowl => super::singing_bowl::MECHANICS,
+        RelicId::FrozenEgg => RelicMechanics {
+            text_id: RelicId::FrozenEgg,
+        },
+        RelicId::MoltenEgg => RelicMechanics {
+            text_id: RelicId::MoltenEgg,
+        },
+        RelicId::ToxicEgg => RelicMechanics {
+            text_id: RelicId::ToxicEgg,
+        },
+        RelicId::Courier => super::courier::MECHANICS,
+        // Prices are owned by state::shop::shop_screen and engine::shop_handler.
+        RelicId::MembershipCard => RelicMechanics {
+            text_id: RelicId::MembershipCard,
+        },
+        RelicId::MagicFlower => super::magic_flower::MECHANICS,
+        // Played-card destination is resolved in cards::play_queue::handle_use_card_done.
+        RelicId::StrangeSpoon => RelicMechanics {
+            text_id: RelicId::StrangeSpoon,
+        },
+        RelicId::PreservedInsect => RelicMechanics {
+            text_id: RelicId::PreservedInsect,
+        },
+        RelicId::BottledFlame => RelicMechanics {
+            text_id: RelicId::BottledFlame,
+        },
+        RelicId::BottledLightning => RelicMechanics {
+            text_id: RelicId::BottledLightning,
+        },
+        RelicId::BottledTornado => RelicMechanics {
+            text_id: RelicId::BottledTornado,
+        },
+        RelicId::WarpedTongs => RelicMechanics {
+            text_id: RelicId::WarpedTongs,
+        },
+        RelicId::OrangePellets => RelicMechanics {
+            text_id: RelicId::OrangePellets,
+        },
+        RelicId::Ectoplasm => RelicMechanics {
+            text_id: RelicId::Ectoplasm,
+        },
+        RelicId::TinyHouse => RelicMechanics {
+            text_id: RelicId::TinyHouse,
+        },
+        RelicId::RunicCube => RelicMechanics {
+            text_id: RelicId::RunicCube,
+        },
+        RelicId::RunicDome => RelicMechanics {
+            text_id: RelicId::RunicDome,
+        },
+        RelicId::VelvetChoker => RelicMechanics {
+            text_id: RelicId::VelvetChoker,
+        },
+        RelicId::CursedKey => RelicMechanics {
+            text_id: RelicId::CursedKey,
+        },
+        RelicId::BlackStar => RelicMechanics {
+            text_id: RelicId::BlackStar,
+        },
+        RelicId::BustedCrown => RelicMechanics {
+            text_id: RelicId::BustedCrown,
+        },
+        RelicId::QuestionCard => RelicMechanics {
+            text_id: RelicId::QuestionCard,
+        },
+        RelicId::CallingBell => RelicMechanics {
+            text_id: RelicId::CallingBell,
+        },
+        RelicId::CoffeeDripper => RelicMechanics {
+            text_id: RelicId::CoffeeDripper,
+        },
+        RelicId::EmptyCage => RelicMechanics {
+            text_id: RelicId::EmptyCage,
+        },
+        RelicId::FusionHammer => RelicMechanics {
+            text_id: RelicId::FusionHammer,
+        },
+        RelicId::PandorasBox => RelicMechanics {
+            text_id: RelicId::PandorasBox,
+        },
+        RelicId::PhilosopherStone => RelicMechanics {
+            text_id: RelicId::PhilosopherStone,
+        },
+        RelicId::RunicPyramid => RelicMechanics {
+            text_id: RelicId::RunicPyramid,
+        },
+        RelicId::SacredBark => RelicMechanics {
+            text_id: RelicId::SacredBark,
+        },
+        RelicId::SlaversCollar => RelicMechanics {
+            text_id: RelicId::SlaversCollar,
+        },
+        RelicId::SneckoEye => RelicMechanics {
+            text_id: RelicId::SneckoEye,
+        },
+        RelicId::Sozu => RelicMechanics {
+            text_id: RelicId::Sozu,
+        },
+        RelicId::BlackBlood => RelicMechanics {
+            text_id: RelicId::BlackBlood,
+        },
+        RelicId::MarkOfPain => RelicMechanics {
+            text_id: RelicId::MarkOfPain,
+        },
+        RelicId::BurningBlood => RelicMechanics {
+            text_id: RelicId::BurningBlood,
+        },
+        RelicId::Pear => RelicMechanics {
+            text_id: RelicId::Pear,
+        },
+        RelicId::HappyFlower => RelicMechanics {
+            text_id: RelicId::HappyFlower,
+        },
+        RelicId::Sundial => RelicMechanics {
+            text_id: RelicId::Sundial,
+        },
+        RelicId::Abacus => super::abacus::MECHANICS,
+        RelicId::Calipers => super::calipers::MECHANICS,
+        RelicId::CaptainsWheel => RelicMechanics {
+            text_id: RelicId::CaptainsWheel,
+        },
+        RelicId::DollysMirror => RelicMechanics {
+            text_id: RelicId::DollysMirror,
+        },
+        RelicId::Shuriken => RelicMechanics {
+            text_id: RelicId::Shuriken,
+        },
+        RelicId::Kunai => super::kunai::MECHANICS,
+        RelicId::OddMushroom => super::odd_mushroom::MECHANICS,
+        RelicId::MutagenicStrength => RelicMechanics {
+            text_id: RelicId::MutagenicStrength,
+        },
+        RelicId::Orichalcum => super::orichalcum::MECHANICS,
+        RelicId::Vajra => RelicMechanics {
+            text_id: RelicId::Vajra,
+        },
+        RelicId::JuzuBracelet => RelicMechanics {
+            text_id: RelicId::JuzuBracelet,
+        },
+        RelicId::BronzeScales => RelicMechanics {
+            text_id: RelicId::BronzeScales,
+        },
+        RelicId::PenNib => RelicMechanics {
+            text_id: RelicId::PenNib,
+        },
+        RelicId::Nunchaku => RelicMechanics {
+            text_id: RelicId::Nunchaku,
+        },
+        RelicId::CeramicFish => RelicMechanics {
+            text_id: RelicId::CeramicFish,
+        },
+        RelicId::PaperFrog => RelicMechanics {
+            text_id: RelicId::PaperFrog,
+        },
+        RelicId::Toolbox => RelicMechanics {
+            text_id: RelicId::Toolbox,
+        },
+        RelicId::RedMask => RelicMechanics {
+            text_id: RelicId::RedMask,
+        },
+        RelicId::ToyOrnithopter => RelicMechanics {
+            text_id: RelicId::ToyOrnithopter,
+        },
+        RelicId::PeacePipe => RelicMechanics {
+            text_id: RelicId::PeacePipe,
+        },
+        RelicId::PotionBelt => RelicMechanics {
+            text_id: RelicId::PotionBelt,
+        },
+        RelicId::Boot => RelicMechanics {
+            text_id: RelicId::Boot,
+        },
+        RelicId::CentennialPuzzle => RelicMechanics {
+            text_id: RelicId::CentennialPuzzle,
+        },
+        RelicId::MeatOnTheBone => RelicMechanics {
+            text_id: RelicId::MeatOnTheBone,
+        },
+        RelicId::Akabeko => RelicMechanics {
+            text_id: RelicId::Akabeko,
+        },
+        RelicId::OddlySmoothStone => RelicMechanics {
+            text_id: RelicId::OddlySmoothStone,
+        },
+        RelicId::Turnip => super::turnip::MECHANICS,
+        RelicId::Ginger => super::ginger::MECHANICS,
+        RelicId::LetterOpener => super::letter_opener::MECHANICS,
+        RelicId::SelfFormingClay => super::self_forming_clay::MECHANICS,
+        RelicId::Matryoshka => super::matryoshka::MECHANICS,
+        RelicId::WarPaint => super::war_paint::MECHANICS,
+        RelicId::SmilingMask => RelicMechanics {
+            text_id: RelicId::SmilingMask,
+        },
+        RelicId::DreamCatcher => RelicMechanics {
+            text_id: RelicId::DreamCatcher,
+        },
+        RelicId::BloodVial => RelicMechanics {
+            text_id: RelicId::BloodVial,
+        },
+        RelicId::MawBank => RelicMechanics {
+            text_id: RelicId::MawBank,
+        },
+        RelicId::BagOfMarbles => RelicMechanics {
+            text_id: RelicId::BagOfMarbles,
+        },
+        RelicId::PrismaticShard => RelicMechanics {
+            text_id: RelicId::PrismaticShard,
+        },
+        RelicId::FossilizedHelix => RelicMechanics {
+            text_id: RelicId::FossilizedHelix,
+        },
+        RelicId::NeowsLament => super::neows_lament::MECHANICS,
+        RelicId::Omamori => super::omamori::MECHANICS,
+        RelicId::Shovel => super::shovel::MECHANICS,
+        RelicId::BagOfPreparation => RelicMechanics {
+            text_id: RelicId::BagOfPreparation,
+        },
+        RelicId::BirdFacedUrn => RelicMechanics {
+            text_id: RelicId::BirdFacedUrn,
+        },
+        RelicId::BlueCandle => RelicMechanics {
+            text_id: RelicId::BlueCandle,
+        },
+        RelicId::Cauldron => RelicMechanics {
+            text_id: RelicId::Cauldron,
+        },
+        RelicId::CharonsAshes => RelicMechanics {
+            text_id: RelicId::CharonsAshes,
+        },
+        RelicId::ClockworkSouvenir => RelicMechanics {
+            text_id: RelicId::ClockworkSouvenir,
+        },
+        RelicId::CultistMask => RelicMechanics {
+            text_id: RelicId::CultistMask,
+        },
+        RelicId::DarkstonePeriapt => RelicMechanics {
+            text_id: RelicId::DarkstonePeriapt,
+        },
+        RelicId::DeadBranch => RelicMechanics {
+            text_id: RelicId::DeadBranch,
+        },
+        RelicId::DuVuDoll => RelicMechanics {
+            text_id: RelicId::DuVuDoll,
+        },
+        RelicId::FaceOfCleric => RelicMechanics {
+            text_id: RelicId::FaceOfCleric,
+        },
+        RelicId::FrozenEye => RelicMechanics {
+            text_id: RelicId::FrozenEye,
+        },
+        RelicId::GamblingChip => RelicMechanics {
+            text_id: RelicId::GamblingChip,
+        },
+        RelicId::Girya => RelicMechanics {
+            text_id: RelicId::Girya,
+        },
+        RelicId::GoldenIdol => RelicMechanics {
+            text_id: RelicId::GoldenIdol,
+        },
+        RelicId::GremlinMask => RelicMechanics {
+            text_id: RelicId::GremlinMask,
+        },
+        RelicId::HornCleat => RelicMechanics {
+            text_id: RelicId::HornCleat,
+        },
+        RelicId::IceCream => RelicMechanics {
+            text_id: RelicId::IceCream,
+        },
+        RelicId::InkBottle => RelicMechanics {
+            text_id: RelicId::InkBottle,
+        },
+        RelicId::MarkOfTheBloom => RelicMechanics {
+            text_id: RelicId::MarkOfTheBloom,
+        },
+        RelicId::MealTicket => RelicMechanics {
+            text_id: RelicId::MealTicket,
+        },
+        RelicId::MedicalKit => RelicMechanics {
+            text_id: RelicId::MedicalKit,
+        },
+        RelicId::MercuryHourglass => RelicMechanics {
+            text_id: RelicId::MercuryHourglass,
+        },
+        RelicId::NlothsGift => RelicMechanics {
+            text_id: RelicId::NlothsGift,
+        },
+        RelicId::NlothsMask => RelicMechanics {
+            text_id: RelicId::NlothsMask,
+        },
+        RelicId::OldCoin => RelicMechanics {
+            text_id: RelicId::OldCoin,
+        },
+        RelicId::OrnamentalFan => RelicMechanics {
+            text_id: RelicId::OrnamentalFan,
+        },
+        RelicId::Orrery => RelicMechanics {
+            text_id: RelicId::Orrery,
+        },
+        RelicId::PrayerWheel => RelicMechanics {
+            text_id: RelicId::PrayerWheel,
+        },
+        RelicId::RedSkull => super::red_skull::MECHANICS,
+        RelicId::SpiritPoop => RelicMechanics {
+            text_id: RelicId::SpiritPoop,
+        },
+        RelicId::SsserpentHead => RelicMechanics {
+            text_id: RelicId::SsserpentHead,
+        },
+        RelicId::StoneCalendar => RelicMechanics {
+            text_id: RelicId::StoneCalendar,
+        },
+        RelicId::Strawberry => RelicMechanics {
+            text_id: RelicId::Strawberry,
+        },
+        RelicId::Mango => RelicMechanics {
+            text_id: RelicId::Mango,
+        },
+        RelicId::ThreadAndNeedle => RelicMechanics {
+            text_id: RelicId::ThreadAndNeedle,
+        },
+        RelicId::TinyChest => RelicMechanics {
+            text_id: RelicId::TinyChest,
+        },
+        RelicId::Whetstone => RelicMechanics {
+            text_id: RelicId::Whetstone,
+        },
+        RelicId::WhiteBeastStatue => RelicMechanics {
+            text_id: RelicId::WhiteBeastStatue,
+        },
+        RelicId::WingBoots => RelicMechanics {
+            text_id: RelicId::WingBoots,
+        },
+        RelicId::Circlet | RelicId::RedCirclet => RelicMechanics {
+            text_id: RelicId::Circlet,
+        },
+        _ => return None,
+    })
 }
 
 /// The compact flag also stores several temporary trigger states. Keep its
@@ -420,14 +679,50 @@ mod tests {
         ] {
             for relic in build_relic_pool(tier, "Ironclad") {
                 assert!(
-                    explanation(relic).is_some_and(|rule| !rule.is_empty()),
+                    get(relic).is_some_and(|rule| !rule
+                        .explanation(sts_presentation::Locale::En)
+                        .is_empty()),
                     "{relic:?}"
                 );
             }
         }
         for relic in [RelicId::Circlet, RelicId::RedCirclet] {
-            assert!(explanation(relic).is_some(), "{relic:?}");
+            assert!(get(relic).is_some(), "{relic:?}");
         }
+    }
+
+    #[test]
+    fn reviewed_relic_rules_render_both_languages_with_explicit_shared_circlet_identity() {
+        use crate::content::identity::StableGameplayId;
+        use sts_presentation::Locale;
+        let mut count = 0;
+        let mut rules = std::collections::HashSet::new();
+        for &id in RelicId::STABLE_IDS {
+            let relic = RelicId::from_stable_id(id).unwrap();
+            let Some(rule) = get(relic) else { continue };
+            count += 1;
+            rules.insert(rule.text_id);
+            assert_eq!(
+                rule.text_id,
+                if relic == RelicId::RedCirclet {
+                    RelicId::Circlet
+                } else {
+                    relic
+                }
+            );
+            for locale in [Locale::En, Locale::ZhCn] {
+                let text = rule.explanation(locale);
+                assert!(!text.is_empty() && !text.contains("{{"), "{id}: {text}");
+                if locale == Locale::ZhCn {
+                    assert!(
+                        text.chars().any(|c| ('\u{4e00}'..='\u{9fff}').contains(&c)),
+                        "{id}"
+                    );
+                }
+            }
+        }
+        assert_eq!(count, 151);
+        assert_eq!(rules.len(), 150);
     }
 
     #[test]

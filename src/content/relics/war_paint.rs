@@ -2,7 +2,9 @@ use crate::state::core::EngineState;
 use crate::state::run::RunState;
 use crate::state::selection::DomainEventSource;
 
-pub const MECHANICS: &str = "On pickup, permanently upgrade up to 2 randomly chosen upgradable Skill cards already in your master deck. Choose distinct copies; with fewer than 2 eligible cards, upgrade all eligible copies. It does not upgrade Attacks or Powers and has no recurring combat effect.";
+pub const MECHANICS: super::mechanics::RelicMechanics = super::mechanics::RelicMechanics {
+    text_id: crate::content::relics::RelicId::WarPaint,
+};
 
 pub fn on_equip(run_state: &mut RunState) -> Option<EngineState> {
     use crate::content::cards::{get_card_definition, CardId, CardType};

@@ -1,7 +1,9 @@
 use crate::runtime::action::{Action, ActionInfo, AddTo, NO_SOURCE};
 use smallvec::SmallVec;
 
-pub const MECHANICS: &str = "Every third Skill played in the same turn queues 5 damage to ALL enemies and resets the Skill counter to 0. The counter also resets at the start of each turn. Attacks and Powers do not increment it. This is relic damage, not another card play, so it does not trigger Beat of Death again.";
+pub const MECHANICS: super::mechanics::RelicMechanics = super::mechanics::RelicMechanics {
+    text_id: crate::content::relics::RelicId::LetterOpener,
+};
 
 /// LetterOpener: Every time you play 3 Skills in a single turn, deal 5 damage to ALL enemies.
 /// Java: onUseCard() → ++counter; if counter % 3 == 0: counter=0, addToBot(DamageAllEnemiesAction(5, THORNS))

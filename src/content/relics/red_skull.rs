@@ -2,7 +2,9 @@ use crate::runtime::action::{Action, ActionInfo, AddTo};
 use crate::runtime::combat::CombatState;
 use smallvec::SmallVec;
 
-pub const MECHANICS: &str = "While current HP is at or below half Max HP (rounded down), have 3 additional Strength. The bonus is applied at combat start if already below the threshold, added when HP crosses down to the threshold, and removed when healing crosses above it. Other Strength remains. The bonus can activate again in the same combat; its active flag describes the current bonus.";
+pub const MECHANICS: super::mechanics::RelicMechanics = super::mechanics::RelicMechanics {
+    text_id: crate::content::relics::RelicId::RedSkull,
+};
 
 /// RedSkull: While your HP is at or below 50%, you have 3 additional Strength.
 /// Java: atBattleStart() queues a custom action that checks HP when that action resolves.

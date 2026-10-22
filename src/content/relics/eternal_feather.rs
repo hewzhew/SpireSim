@@ -5,7 +5,9 @@
 /// This is entirely handled by the out-of-combat room-entry transition.
 pub const DECK_CARDS_PER_HEAL_TRIGGER: usize = 5;
 pub const HP_PER_HEAL_TRIGGER: i32 = 3;
-pub const MECHANICS: &str = "Whenever you enter a Rest Site, heal 3 HP for every complete group of 5 cards in your master deck, up to Max HP. This happens on entry even if you then choose Smith or Recall instead of Rest.";
+pub const MECHANICS: super::mechanics::RelicMechanics = super::mechanics::RelicMechanics {
+    text_id: crate::content::relics::RelicId::EternalFeather,
+};
 
 pub fn rest_site_entry_heal(deck_size: usize) -> i32 {
     (deck_size / DECK_CARDS_PER_HEAL_TRIGGER) as i32 * HP_PER_HEAL_TRIGGER

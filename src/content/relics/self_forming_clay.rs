@@ -2,7 +2,9 @@ use crate::runtime::action::{Action, ActionInfo, AddTo};
 use smallvec::SmallVec;
 
 pub const BLOCK_PER_HP_LOSS: i32 = 3;
-pub const MECHANICS: &str = "Whenever you lose a positive amount of HP in combat, add 3 Next Turn Block per HP-loss event, regardless of the amount lost. Gain the accumulated Block at the start of your next turn, then remove Next Turn Block. Separate damaging hits and self HP loss can each trigger it; fully blocked hits do not. This delayed Block does not protect against the triggering loss or the remaining hits of that enemy turn.";
+pub const MECHANICS: super::mechanics::RelicMechanics = super::mechanics::RelicMechanics {
+    text_id: crate::content::relics::RelicId::SelfFormingClay,
+};
 
 /// Self-Forming Clay: Whenever you lose HP, gain 3 Block next turn.
 pub fn on_lose_hp(damage_amount: i32) -> SmallVec<[ActionInfo; 4]> {

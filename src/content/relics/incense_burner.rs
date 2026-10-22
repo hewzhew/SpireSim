@@ -1,7 +1,9 @@
 use crate::runtime::action::{Action, ActionInfo, AddTo};
 use smallvec::SmallVec;
 
-pub const MECHANICS: &str = "On pickup, the turn counter starts at 0. At the start of each player turn, increment it by 1; at 6, reset it to 0 and gain 1 Intangible. The counter persists between combats, so the next fight's protection timing depends on the previous fight's ending counter. The displayed counter counts elapsed turn starts since the last trigger.";
+pub const MECHANICS: super::mechanics::RelicMechanics = super::mechanics::RelicMechanics {
+    text_id: crate::content::relics::RelicId::IncenseBurner,
+};
 
 /// One-based turn in the next combat for a normal persistent counter.
 pub const fn next_combat_trigger_turn(counter: i32) -> Option<u32> {

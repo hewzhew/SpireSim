@@ -2,7 +2,9 @@ use crate::runtime::action::{Action, ActionInfo, AddTo};
 use crate::runtime::combat::CombatState;
 use smallvec::SmallVec;
 
-pub const MECHANICS: &str = "At the start of every player turn, including the first, gain 2 Strength and give each enemy 1 Strength. These gains persist for the combat and repeat each turn. Strength modifies each attack hit, so enemy multi-hit attacks also gain damage per hit.";
+pub const MECHANICS: super::mechanics::RelicMechanics = super::mechanics::RelicMechanics {
+    text_id: crate::content::relics::RelicId::Brimstone,
+};
 
 pub struct Brimstone;
 

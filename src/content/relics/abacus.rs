@@ -2,7 +2,9 @@ use crate::runtime::action::{Action, ActionInfo, AddTo};
 use smallvec::SmallVec;
 
 pub struct Abacus;
-pub const MECHANICS: &str = "Whenever your discard pile is shuffled into your draw pile, gain 6 Block. Can trigger multiple times in a turn. This relic does not itself cause a shuffle; reaching an empty draw pile while drawing can cause one.";
+pub const MECHANICS: super::mechanics::RelicMechanics = super::mechanics::RelicMechanics {
+    text_id: crate::content::relics::RelicId::Abacus,
+};
 
 impl Abacus {
     pub fn on_shuffle() -> SmallVec<[ActionInfo; 4]> {

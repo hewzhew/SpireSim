@@ -2,7 +2,9 @@ use crate::runtime::action::{Action, ActionInfo, AddTo};
 use crate::runtime::combat::CombatState;
 use smallvec::SmallVec;
 
-pub const MECHANICS: &str = "If you played no Attack cards during a player turn, gain 1 additional Energy at the start of your next player turn. This gives no first-turn bonus. Any played Attack counts, including 0-cost Attacks; damage from Skills, Powers or potions does not cancel the bonus. The condition is checked anew each turn.";
+pub const MECHANICS: super::mechanics::RelicMechanics = super::mechanics::RelicMechanics {
+    text_id: crate::content::relics::RelicId::ArtOfWar,
+};
 
 pub fn at_pre_battle(
     relic_state: &mut crate::content::relics::RelicState,

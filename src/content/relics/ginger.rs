@@ -2,7 +2,9 @@ use crate::content::powers::PowerId;
 
 pub const PREVENTED_POWER_ID: PowerId = PowerId::Weak;
 
-pub const MECHANICS: &str = "Prevent new Weak applications to the player. This happens before Artifact, so blocked Weak does not consume Artifact. Does not remove existing Weak or prevent Frail or Vulnerable.";
+pub const MECHANICS: super::mechanics::RelicMechanics = super::mechanics::RelicMechanics {
+    text_id: crate::content::relics::RelicId::Ginger,
+};
 
 /// Java ApplyPowerAction blocks player-targeted Weakened before Artifact.
 pub fn on_receive_power_modify(power_id: PowerId, amount: i32) -> i32 {

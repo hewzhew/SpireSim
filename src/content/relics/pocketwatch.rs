@@ -2,7 +2,9 @@ use crate::content::relics::RelicState;
 use crate::runtime::action::{Action, ActionInfo, AddTo};
 use smallvec::SmallVec;
 
-pub const MECHANICS: &str = "If you played 3 or fewer cards during a player turn, draw 3 additional cards at the start of the next player turn, after the normal draw. Gives no first-turn bonus. Counts cards played, not attack hits; the counter resets each turn. Draw prevention and the 10-card hand limit still apply.";
+pub const MECHANICS: super::mechanics::RelicMechanics = super::mechanics::RelicMechanics {
+    text_id: crate::content::relics::RelicId::Pocketwatch,
+};
 
 fn first_turn_flag(relic_state: &RelicState) -> bool {
     relic_state.amount != 0
