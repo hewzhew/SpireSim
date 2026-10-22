@@ -209,6 +209,19 @@ if (process.argv.slice(2).join(' ') === '--check') {
                 || !cardAdvice[0].preference.includes(locale === 'en' ? 'cautious default' : '谨慎默认')) {
               throw new Error(`Installed strategy lost static language or card identity: ${locale}`);
             }
+            const ownedCard = { card: 'Strike', count: 1, upgrades: 0, misc_value: 0, cost_modifier: 0, base_damage_override: null, base_block_override: null };
+            const constructionObservation = { position: { public_snapshot_id: 'offline-construction',
+              observation: { domain: 'strategic', observation: { context: { kind: 'campfire' }, run: { act: 2 }, base_energy_per_turn: 3,
+                cards: [ownedCard], relics: [], potions: [] } }, actions: [] },
+              deck_evidence: { schema: 'sts-agent-deck-evidence-v1', public_snapshot_id: 'offline-construction', cards: [{
+                card: ownedCard, mechanics: { card: 'Strike', upgrades: 0, card_type: 'Attack', cost: 1, draw_cards: 0, exhausts: false, ethereal: false },
+                persistent_cost: 1, persistent_damage: 6, persistent_block: 0,
+              }] } };
+            const construction = preparationExpertGuidance(constructionObservation, undefined, locale).construction;
+            if (construction.preparationAct !== 2 || construction.priorities[0].id !== 'development-window'
+                || !construction.priorities[0].preference.startsWith(locale === 'en' ? 'Develop early access' : '为已有功能发展')) {
+              throw new Error(`Installed strategy lost construction language or current Act: ${locale}`);
+            }
             const preparation = preparationInstructions(locale), card = cardChoiceInstructions(locale), shop = shopInstructions(locale);
             if (!preparationStageGuide('pending', undefined, {}, undefined, locale).includes(locale === 'en' ? 'Current task: rate' : '当前任务：评估')
                 || !preparation.text('eventCombatEntry').includes(locale === 'en' ? 'received after victory' : '在获胜后取得')
@@ -223,7 +236,7 @@ if (process.argv.slice(2).join(' ') === '--check') {
                 || !renderShopBudget({ gold: 40, starts: [] }, undefined, locale).includes(locale === 'en' ? 'Shop budget: Gold 40' : '商店预算：金币 40')) {
               throw new Error(`Installed preparation guide lost language or protocol: ${locale}`);
             }
-            report.installed_scripted_checks.push({ package: manifest.name, locale, imported_entries: true, preserved_guide_commands_and_operator: true, runtime_control_messages: true, launcher_operator_locale_independent: true, supervision_record_content_preserved: true, inspection_typed_scope_messages: true, static_strategy_language_and_card_identity: true, preparation_guides_and_schemas: true, deck_mechanism_messages: true, card_choice_messages: true, shop_messages: true, preparation_card_conditions: true, preparation_resource_conditions: true, preparation_classification_messages: true });
+            report.installed_scripted_checks.push({ package: manifest.name, locale, imported_entries: true, preserved_guide_commands_and_operator: true, runtime_control_messages: true, launcher_operator_locale_independent: true, supervision_record_content_preserved: true, inspection_typed_scope_messages: true, static_strategy_language_and_card_identity: true, construction_strategy_language_and_act_identity: true, preparation_guides_and_schemas: true, deck_mechanism_messages: true, card_choice_messages: true, shop_messages: true, preparation_card_conditions: true, preparation_resource_conditions: true, preparation_classification_messages: true });
           }
         }
       }

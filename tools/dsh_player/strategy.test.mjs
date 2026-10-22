@@ -164,6 +164,7 @@ test('Boss comparison attaches permanent play limits and starter replacement to 
   const saved = structuredClone(observation);
   const guidance = preparationExpertGuidance(observation);
   assert.ok(ids(guidance).includes('card-play-cap-window'));
+  assertConstructionLanguageContract(observation);
   const replacement = guidance.construction.priorities.find(row => row.id === 'starter-replacement-window');
   assert.match(replacement.ownedFacts.join(' '), /replace 7 of 10 cards: 3x Strike\+, 4x Defend/);
   assert.doesNotMatch(replacement.ownedFacts.join(' '), /PerfectedStrike/);
@@ -221,6 +222,31 @@ function planRoot(rows, site = 'card_reward', offered = ['BattleTrance', 'Headbu
   return observation;
 }
 const ids = guidance => guidance.construction.priorities.map(row => row.id);
+
+function assertConstructionLanguageContract(observation, normalize) {
+  const saved = structuredClone(observation);
+  const english = preparationExpertGuidance(observation, normalize).construction;
+  const chinese = preparationExpertGuidance(observation, normalize, 'zh-CN').construction;
+  const decisions = construction => ({ ...construction,
+    priorities: construction.priorities.map(({ ownedFacts, preference, ...row }) => row) });
+  assert.deepEqual(decisions(chinese), decisions(english));
+  for (const [index, priority] of english.priorities.entries()) {
+    assert.equal(chinese.priorities[index].ownedFacts.length, priority.ownedFacts.length, priority.id);
+    assert.notEqual(chinese.priorities[index].preference, priority.preference, priority.id);
+    assert.ok(!chinese.priorities[index].preference.includes('{{'), priority.id);
+  }
+  assert.deepEqual(preparationExpertGuidance(observation, normalize).construction, english);
+  assert.deepEqual(observation, saved);
+}
+
+test('development windows use the same current Act and priority identities in both languages', () => {
+  for (const act of [1, 2, 3, 4]) {
+    const observation = planRoot([fact('Strike', 'Attack', 1)], 'card_reward', []);
+    observation.position.observation.observation.run.act = act;
+    assertConstructionLanguageContract(observation);
+    assert.deepEqual(ids(preparationExpertGuidance(observation)), ['development-window']);
+  }
+});
 
 test('established Strength shopping supplies a basic removal target and preserves uncovered inventory conditions', () => {
   const build = () => {
@@ -446,6 +472,7 @@ test('Boss Energy guidance binds an actual payment threshold, retained Gold and 
   observation.decision_evidence = { candidates: [{ semantic_action: 'boss-relic:Ectoplasm#0',
     definition: { relic: 'Ectoplasm', energy_per_turn_delta: 1, gold_gain_rule: 'prevent_gold_gain' } }] };
   const priority = preparationExpertGuidance(observation).construction.priorities.find(row => row.id === 'recurring-payment-window');
+  assertConstructionLanguageContract(observation);
   assert.ok(priority);
   assert.match(priority.ownedFacts.join('\n'), /base Energy 3->4.*Uppercut \(2\) with Uppercut \(2\)/);
   assert.match(priority.ownedFacts.join('\n'), /Current Gold 388.*PeacePipe/);
@@ -465,6 +492,7 @@ test('owned growth and Exhaust access organize both shop and draft decisions bef
   for (const site of ['shop', 'card_reward', 'map', 'campfire']) {
     const observation = planRoot(cards, site, site === 'map' || site === 'campfire' ? [] : undefined);
     const guidance = preparationExpertGuidance(observation);
+    assertConstructionLanguageContract(observation);
     assert.ok(ids(guidance).includes('deliver-owned-growth'), site);
     assert.ok(ids(guidance).includes('start-owned-exhaust-access'), site);
     const text = renderExpertGuidance(guidance);
@@ -482,6 +510,7 @@ test('owned conditional and immediate enduring Strength organize development wit
     const current = planRoot([source, fact('Reaper', 'Attack', 2)], 'card_reward', ['Rampage', 'BattleTrance']);
     const guidance = preparationExpertGuidance(current);
     const priority = guidance.construction.priorities.find(row => row.id === 'deliver-owned-growth');
+    assertConstructionLanguageContract(current);
     assert.ok(priority);
     assert.match(priority.ownedFacts.join('\n'), new RegExp(`${card}: 1 Energy; Strength request 3 at ${delivery}`));
     assert.match(preparationClassificationContext(current), /another source's earlier access and additional useful gain/);
@@ -505,6 +534,7 @@ test('first offered recurring Strength connects owned multi-hit output to payabl
   } }] }] };
   const guidance = preparationExpertGuidance(observation);
   const priority = guidance.construction.priorities.find(row => row.id === 'first-strength-growth');
+  assertConstructionLanguageContract(observation);
   assert.match(priority.ownedFacts.join('\n'), /deploy for 3 of 4 Energy, leaving 1/);
   assert.match(priority.ownedFacts.join('\n'), /1x Pummel, 1x Whirlwind/);
   assert.match(priority.ownedFacts.join('\n'), /protection.*2x Disarm, 1x Blind/);
@@ -524,6 +554,7 @@ test('owned payment needs access and its triggers; new draw updates that priorit
     fact('ShrugItOff', 'Skill', 1, { draw_cards: 1 })];
   const observation = planRoot(cards), saved = structuredClone(observation);
   const before = preparationExpertGuidance(observation);
+  assertConstructionLanguageContract(observation);
   assert.ok(ids(before).includes('access-for-owned-payment'));
   assert.ok(ids(before).includes('skill-lifecycle'));
   assert.match(renderExpertGuidance(before), /3x Sentinel/);
@@ -533,6 +564,7 @@ test('owned payment needs access and its triggers; new draw updates that priorit
   observation.position.observation.observation.cards.push(drawn.card);
   observation.deck_evidence.cards.push(drawn);
   const after = preparationExpertGuidance(observation).construction.priorities.find(row => row.id === 'access-for-owned-payment');
+  assertConstructionLanguageContract(observation);
   assert.ok(after);
   assert.match(after.preference, /additional access using the owned draw quantities/);
   assert.match(after.ownedFacts.join(' '), /1 of 6 original cards/);
@@ -551,6 +583,7 @@ test('a first Strength amplifier supplies its owned source, conversion and one-u
   const saved = structuredClone(observation);
   const guidance = preparationExpertGuidance(observation);
   const priority = guidance.construction.priorities.find(row => row.id === 'first-strength-amplifier');
+  assertConstructionLanguageContract(observation);
   assert.match(priority.ownedFacts.join('\n'), /DemonForm.*Strength request 2 at each_player_turn_start_post_draw/);
   assert.match(priority.ownedFacts.join('\n'), /Pummel.*5 Strength applications per play; Exhaust after play/);
   assert.match(priority.ownedFacts.join('\n'), /Owned on-play access: 1x BattleTrance/);
@@ -604,6 +637,7 @@ test('the upcoming Act and current Status burden reach classification and refres
     { status_injections: [{ card: 'Wound', count: 2, destination: 'hand', persistence: 'persistent' }] })], 'card_reward', ['Evolve']);
   observation.position.observation.observation.run = { act: 1, pending_act_entry: 2 };
   const guidance = preparationExpertGuidance(observation);
+  assertConstructionLanguageContract(observation);
   assert.equal(guidance.construction.preparationAct, 2);
   assert.ok(ids(guidance).includes('generated-status-support'));
   assert.match(renderExpertGuidance(guidance), /2 Wound into hand/);
@@ -631,6 +665,7 @@ test('recent HP cost favors reachable first-Elite preparation even with independ
   const normalize = command => command.replace('route:', 'go ').replace('.', ',');
   const guidance = preparationExpertGuidance(observation, normalize);
   const priority = guidance.construction.priorities.find(row => row.id === 'preserve-first-elite-preparation');
+  assertConstructionLanguageContract(observation, normalize);
   assert.ok(priority);
   assert.ok(priority.ownedFacts.some(text => text.includes('go 5,2')));
   assert.ok(!priority.ownedFacts.some(text => text.includes('go 3,2')));
@@ -663,6 +698,7 @@ test('owned Block retention binds actual supply, multiplication and conversion i
     const observation = planRoot(rows, site, ['Entrench', 'BodySlam']);
     const guidance = preparationExpertGuidance(observation);
     const priority = guidance.construction.priorities.find(row => row.id === 'develop-owned-block-reserve');
+    assertConstructionLanguageContract(observation);
     assert.ok(priority);
     assert.match(priority.ownedFacts.join('\n'), /Barricade: deploy for 2 Energy/);
     assert.match(priority.ownedFacts.join('\n'), /PowerThrough \(1 Energy, 23 Block\)/);

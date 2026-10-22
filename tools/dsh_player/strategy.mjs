@@ -211,8 +211,8 @@ export function preparationBossRelicOffers(observation, normalize = command => c
   });
 }
 
-function constructionPriorities(observation, normalize) {
-  const profile = preparationDeckComparison(observation, normalize);
+function constructionPriorities(observation, normalize, locale = 'en') {
+  const profile = preparationDeckComparison(observation, normalize, locale);
   if (!profile) return;
   const state = observation.position.observation.observation;
   const cards = observation.deck_evidence.cards;
@@ -226,8 +226,8 @@ function constructionPriorities(observation, normalize) {
     priorities.push({ id, sources, ownedFacts, preference, supportFamilies,
       ...(comparisonBaseline ? { comparisonBaseline } : {}) });
   add('development-window', ['panacea', 'cx'], [], act === 1
-    ? 'Develop useful payable early damage and protection. Also invest in a first useful access, growth or HP-resource function when current HP, potions and connected preparation opportunities can carry its setup. Compare the immediate contribution and the later function together.'
-    : 'Develop early access, payment and setup protection for the owned functions, together with output and protection for longer fights. Use the connected route to choose timely upgrades, purchases, recovery and development opportunities.',
+    ? strategyText(locale, 'developmentActOne')
+    : strategyText(locale, 'developmentLaterActs'),
   ['transition', 'access', 'payment', 'protection', 'scaling', 'hp-resource']);
 
   const baseEnergy = state.base_energy_per_turn;
@@ -244,34 +244,34 @@ function constructionPriorities(observation, normalize) {
     const pairs = costly.flatMap((left, i) => costly.slice(i).flatMap(right => {
       const total = left.persistent_cost + right.persistent_cost;
       if ((left === right && left.card.count < 2) || total <= baseEnergy || total > after) return [];
-      return [`${left.mechanics.name ?? left.card.card} (${left.persistent_cost}) with ${right.mechanics.name ?? right.card.card} (${right.persistent_cost})`];
+      return [strategyText(locale, 'payablePair', { left: left.mechanics.name ?? left.card.card, leftCost: left.persistent_cost, right: right.mechanics.name ?? right.card.card, rightCost: right.persistent_cost })];
     }));
-    return pairs.length ? [`${candidate.definition.relic}: base Energy ${baseEnergy}->${after}; paid-pair examples when accessed together: ${pairs.slice(0, 3).join('; ')}`] : [];
+    return pairs.length ? [strategyText(locale, 'openedPaymentPairs', { relic: candidate.definition.relic, before: baseEnergy, after: after, pairs: pairs.slice(0, 3).join('; ') })] : [];
   }) : [];
   if (opened.length) add('recurring-payment-window', ['panacea', 'cx'],
     [...labels(costly), ...opened,
-      `Current Gold ${state.run?.gold}; owned free campfire removal: ${(state.relics ?? []).some(row => row.relic === 'PeacePipe') ? 'PeacePipe (uses the campfire action)' : 'none'}`],
-    'Extra Energy is a useful recurring payment improvement when these plays are accessed together. Rate the whole relic using its payment gain, attached restriction and offered alternatives. A permanent card-play cap limits accessed useful plays throughout later fights and future access development. Replacing weak starter draws changes the deck used in every subsequent combat. Compare both recurring changes with one-time HP, Gold, card, potion or random-upgrade bundles. For a Gold-blocking Energy relic, retained current Gold still pays for purchases; an owned free-removal relic uses its separate campfire action. Compare the remaining budget and lost future income with the repeated combat payment gain.',
+      strategyText(locale, 'currentGoldRemoval', { gold: state.run?.gold, removal: (state.relics ?? []).some(row => row.relic === 'PeacePipe') ? strategyText(locale, 'peacePipeCampfire') : strategyText(locale, 'none') })],
+    strategyText(locale, 'recurringPaymentPlan'),
     ['payment', 'access', 'protection']);
 
   const capped = relicOffers.filter(row => positive(row.definition.card_play_limit_per_turn));
   if (capped.length) add('card-play-cap-window', [], [
-    ...capped.map(row => `${row.command}: ${row.definition.energy_per_turn_delta ?? 0} additional Energy; at most ${row.definition.card_play_limit_per_turn} card plays per turn`),
-    `Owned zero-cost plays: ${labels(cards.filter(row => row.persistent_cost === 0)).join(', ') || 'none'}`,
-    `Owned on-play draw: ${profile.onPlayDraw.map(row => row.card).join(', ') || 'none'}`,
-    `Owned deployed draw: ${[...profile.laterTurnDraw, ...profile.exhaustDraw].map(row => row.card).join(', ') || 'none'}; conditional draw uses its supplied triggers`,
+    ...capped.map(row => strategyText(locale, 'offeredPlayCap', { command: row.command, energy: row.definition.energy_per_turn_delta ?? 0, limit: row.definition.card_play_limit_per_turn })),
+    strategyText(locale, 'ownedZeroCost', { cards: labels(cards.filter(row => row.persistent_cost === 0)).join(', ') || strategyText(locale, 'none') }),
+    strategyText(locale, 'ownedOnPlayDraw', { cards: profile.onPlayDraw.map(row => row.card).join(', ') || strategyText(locale, 'none') }),
+    strategyText(locale, 'ownedDeployedDraw', { cards: [...profile.laterTurnDraw, ...profile.exhaustDraw].map(row => row.card).join(', ') || strategyText(locale, 'none') }),
   ],
-  'Use a cautious default for a permanent play cap when developing access and useful cheap plays. Draw Skills, zero-cost defense, setup Powers and attacks all spend the same play allowance. Several expensive cards can use the extra Energy early; later hands may need draw and cheap protection before damage. Compare the restricted total useful plays with the other relics and the access development still needed. Strong output and protection delivered in few actual plays can favor the capped Energy relic.',
+  strategyText(locale, 'permanentPlayCapPlan'),
   ['payment', 'access', 'protection']);
 
   const replacements = relicOffers.filter(row => row.definition.starter_card_replacement?.replacements_per_card === 1
     && row.starterCardsReplaced?.some(card => card.count > 0));
   if (replacements.length) add('starter-replacement-window', [], replacements.map(row => {
     const targets = row.starterCardsReplaced;
-    return `${row.command}: replace ${targets.reduce((n, card) => n + card.count, 0)} of ${profile.size} cards: `
+    return strategyText(locale, 'starterReplacement', { command: row.command, replaced: targets.reduce((n, card) => n + card.count, 0), deckSize: profile.size })
       + targets.map(card => `${card.count}x ${card.card}${card.upgrades > 0 ? '+' : ''}`).join(', ');
   }),
-  'Give high priority to replacing several weak starter draws when entering later Acts. The acquisition happens once and the changed deck is used in every later combat. Compare the declared class-card pool and the existing functions retained with taking another restricted Energy resource. A deck still developing access can favor these replacements over a permanent play cap. Replacements keep the same deck size and exchange starter damage and Block for a random mix of functions. The number of starters, useful starter upgrades, reliance on their Block and the strongest offered alternative determine this tradeoff.',
+  strategyText(locale, 'starterReplacementPlan'),
   ['access', 'payment', 'protection']);
 
   const enduringStrength = cards.filter(row => enduringStrengthGain(row.mechanics));
@@ -291,17 +291,17 @@ function constructionPriorities(observation, normalize) {
       const remaining = baseEnergy - definition.cost;
       const protection = cards.filter(row => row.persistent_cost >= 0 && row.persistent_cost <= remaining
         && (row.persistent_block > 0 || positive(row.mechanics.weak) || positive(row.mechanics.enemy_strength_down)));
-      return [`${normalize(candidate.semantic_action, observation)}: first offered recurring Strength source; `
-        + `deploy for ${definition.cost} of ${baseEnergy} Energy, leaving ${remaining}; subsequent own turn-start Strength request ${definition.strength_gain}`,
-        `Owned multi-hit converters: ${labels(converters).join(', ')}`,
-        `Owned protection payable alongside deployment when accessed together: ${labels(protection).join(', ') || 'none listed'}`];
+      return [strategyText(locale, 'firstRecurringStrength', { command: normalize(candidate.semantic_action, observation) })
+        + strategyText(locale, 'strengthDeployment', { cost: definition.cost, energy: baseEnergy, remaining: remaining, strength: definition.strength_gain }),
+        strategyText(locale, 'ownedMultiHitConverters', { cards: labels(converters).join(', ') }),
+        strategyText(locale, 'protectionAlongsideDeployment', { cards: labels(protection).join(', ') || strategyText(locale, 'noneListed') })];
     }) : [];
   if (offeredGrowth.length) add('first-strength-growth', ['cx', 'panacea'], offeredGrowth,
-    'Default to taking a first payable recurring Strength source for longer fights when owned multi-hit attacks already convert it into output. Its growing output is a new deck function. Plan to reach and deploy it, using the listed affordable protection when accessed together, then access and pay for the attacks on subsequent turns. Compare this long-fight development with preserving a draw slot, including deployment timing, other viable engines and matchup pressure. Each hit uses the supplied damage and relic rules.',
+    strategyText(locale, 'firstStrengthGrowthPlan'),
     ['scaling', 'strength', 'access', 'payment', 'protection']);
   if (enduringStrength.length) add('deliver-owned-growth', ['cx', 'equation'],
-    enduringStrength.map(row => `${labels([row])[0]}: ${row.persistent_cost} Energy; Strength request ${row.mechanics.strength_gain} at ${row.mechanics.strength_gain_delivery}`),
-    'Owned enduring Strength supplies an attack-output direction after the source resolves under its stated conditions. A repeatable Skill needs redraw, payment and its target condition for each further gain; a deployed recurring Power uses its stated turn-start gains. Compare another source\'s earlier access and additional useful gain with access, payment and protection for the already-owned source and attacks. An expensive delayed deployment adds its own setup burden. A new attack earns priority through a useful current damage improvement or conversion of the owned Strength.',
+    enduringStrength.map(row => strategyText(locale, 'ownedStrengthRequest', { card: labels([row])[0], cost: row.persistent_cost, strength: row.mechanics.strength_gain, timing: row.mechanics.strength_gain_delivery })),
+    strategyText(locale, 'deliverOwnedGrowthPlan'),
     ['access', 'payment', 'protection', 'strength']);
 
   const retention = cards.filter(row => row.card.card === 'Barricade');
@@ -309,13 +309,13 @@ function constructionPriorities(observation, normalize) {
   const blockAttacks = cards.filter(row => row.mechanics.damage?.delivery?.kind === 'attack'
     && row.mechanics.damage.delivery.amount?.kind === 'player_block');
   if (retention.length) add('develop-owned-block-reserve', [], [
-    ...retention.map(row => `${labels([row])[0]}: deploy for ${row.persistent_cost} Energy to retain Block`),
-    `Owned fixed on-play Block requests: ${profile.fixedPlayedBlock.map(row => `${row.card} (${row.cost} Energy, ${row.block} Block)`).join(', ') || 'none listed; other protection follows its supplied triggers'}`,
-    ...multiplication.map(row => `${labels([row])[0]}: ${row.persistent_cost} Energy for current-Block multiplication; ${row.mechanics.exhausts ? 'Exhaust after play' : 'ordinary redraw after play'} before other deployed effects`),
-    ...blockAttacks.map(row => `${labels([row])[0]}: ${row.persistent_cost} Energy; current Block supplies base Attack damage`),
-    `Owned on-play access: ${profile.onPlayDraw.map(row => row.card).join(', ') || 'none listed'}`,
+    ...retention.map(row => strategyText(locale, 'ownedBlockRetention', { card: labels([row])[0], cost: row.persistent_cost })),
+    strategyText(locale, 'ownedFixedBlock', { cards: profile.fixedPlayedBlock.map(row => strategyText(locale, 'fixedBlockCard', { card: row.card, cost: row.cost, block: row.block })).join(', ') || strategyText(locale, 'otherProtectionTriggers') }),
+    ...multiplication.map(row => strategyText(locale, 'ownedBlockMultiplier', { card: labels([row])[0], cost: row.persistent_cost, lifecycle: row.mechanics.exhausts ? strategyText(locale, 'exhaustAfterPlay') : strategyText(locale, 'ordinaryRedrawAfterPlay') })),
+    ...blockAttacks.map(row => strategyText(locale, 'ownedBlockAttack', { card: labels([row])[0], cost: row.persistent_cost })),
+    strategyText(locale, 'ownedOnPlayAccess', { cards: profile.onPlayDraw.map(row => row.card).join(', ') || strategyText(locale, 'noneListed') }),
   ],
-  'Evaluate the owned Block functions in stages. Same-turn protection uses the Block generated by payable cards reached that turn. Cross-turn retention first requires deployment, then Block remaining after enemy actions. Each multiplication requires reaching and paying the multiplier with useful Block present; another multiplication also requires its redraw or recovery. A current-Block attack converts the Block present at attack resolution into output. Compare the added usable output with access to the owned protection and attacks, including protection during deployment. Exhaust-triggered Block uses its deployed payoff and actual fuel.',
+  strategyText(locale, 'ownedBlockStagesPlan'),
   ['protection', 'scaling', 'access', 'payment', 'exhaust']);
 
   const offeredAmplifier = !owns('LimitBreak') && enduringStrength.length && converters.length
@@ -324,26 +324,26 @@ function constructionPriorities(observation, normalize) {
       if (candidate.card !== 'LimitBreak'
           || !Number.isSafeInteger(definition.cost) || definition.cost < 0 || definition.cost > baseEnergy) return [];
       const exhaust = definition.exhausts || owns('Corruption');
-      return [`${normalize(candidate.semantic_action, observation)}: first offered Strength amplifier; printed cost ${definition.cost}; `
-        + (exhaust ? 'one doubling remains useful; its supplied Exhaust/recovery rules govern subsequent uses'
-          : 'ordinary redraws allow further paid doubling; each use needs positive Strength and later access')];
+      return [strategyText(locale, 'firstStrengthAmplifier', { command: normalize(candidate.semantic_action, observation), cost: definition.cost })
+        + (exhaust ? strategyText(locale, 'singleDoublingLifecycle')
+          : strategyText(locale, 'repeatedDoublingLifecycle'))];
     }) : [];
   if (offeredAmplifier.length) add('first-strength-amplifier', [], [
     ...offeredAmplifier,
-    ...enduringStrength.map(row => `${labels([row])[0]}: ${row.persistent_cost} Energy; Strength request ${row.mechanics.strength_gain} at ${row.mechanics.strength_gain_delivery}`),
-    ...converters.map(row => `${labels([row])[0]}: ${row.persistent_cost === -1 ? 'X' : row.persistent_cost} Energy; `
-      + (row.mechanics.damage.delivery.hits.kind === 'per_effective_x' ? 'one Strength application per effective X hit'
-        : `${row.mechanics.damage.delivery.hits.count} Strength applications per play`)
-      + (row.mechanics.exhausts ? '; Exhaust after play' : '')),
-    `Owned on-play access: ${profile.onPlayDraw.map(row => row.card).join(', ') || 'none listed'}`,
+    ...enduringStrength.map(row => strategyText(locale, 'ownedStrengthRequest', { card: labels([row])[0], cost: row.persistent_cost, strength: row.mechanics.strength_gain, timing: row.mechanics.strength_gain_delivery })),
+    ...converters.map(row => strategyText(locale, 'ownedCardEnergy', { card: labels([row])[0], cost: row.persistent_cost === -1 ? 'X' : row.persistent_cost })
+      + (row.mechanics.damage.delivery.hits.kind === 'per_effective_x' ? strategyText(locale, 'strengthPerEffectiveX')
+        : strategyText(locale, 'strengthApplicationsPerPlay', { hits: row.mechanics.damage.delivery.hits.count }))
+      + (row.mechanics.exhausts ? strategyText(locale, 'exhaustSuffix') : '')),
+    strategyText(locale, 'ownedOnPlayAccess', { cards: profile.onPlayDraw.map(row => row.card).join(', ') || strategyText(locale, 'noneListed') }),
   ],
-  'Default to taking the first payable amplifier when these owned sources and multi-hit attacks can deliver useful longer-fight output. At positive Strength S, one doubling adds S Strength; a later H-hit attack gains S times H requested damage before target and relic modifiers. The added Strength remains available to subsequent attacks under the supplied Strength rules, including after the amplifier Exhausts. For a recurring source, deployment comes first, followed by actual turn-start gains, doubling and attacks. Compare how soon this sequence can pay off, its access and protection with preserving the draw slot or another improvement. Treat amplification of the existing source separately from adding another delayed growth source.',
+  strategyText(locale, 'firstStrengthAmplifierPlan'),
   ['scaling', 'strength', 'access', 'payment', 'protection']);
 
   const fuel = cards.filter(row => row.mechanics.exhausts_other_cards || row.mechanics.exhausts || row.mechanics.ethereal);
   if (profile.exhaustDraw.length && fuel.length) add('start-owned-exhaust-access', ['je', 'cx'],
-    [...profile.exhaustDraw.map(row => `${row.card}: deploy for ${row.cost} Energy, draw request ${row.requested}/Exhaust`), ...labels(fuel)],
-    'The owned Exhaust draw engine supplies access after deployment and a fuel event. Prioritize reaching and safely deploying it, then paying for useful cards it reaches. Another Exhaust card adds its printed function and a later trigger; normal on-play draw and useful setup protection can help the engine start.',
+    [...profile.exhaustDraw.map(row => strategyText(locale, 'ownedExhaustDrawDeployment', { card: row.card, cost: row.cost, draw: row.requested })), ...labels(fuel)],
+    strategyText(locale, 'ownedExhaustAccessPlan'),
     ['access', 'payment', 'protection', 'exhaust']);
 
   const extraDraw = profile.onPlayDraw.some(expandsHandAccess);
@@ -351,27 +351,27 @@ function constructionPriorities(observation, normalize) {
     ? profile.candidates.filter(row => row.kind === 'addition' && expandsHandAccess(row.onPlayDraw)
       && row.cost >= 0 && row.cost <= baseEnergy) : [];
   if (offeredAccess.length) add('independent-access-window', ['cx', 'equation'], [
-    `Owned functions to reach: ${labels([...enduringStrength, ...retention]).join(', ')}`,
-    `Reviewed on-play access: ${profile.onPlayDraw.map(row => `${row.card}: ${row.cost} Energy, draw ${row.requested}, Hand contribution ${row.handChange ?? 'selection-dependent'}`).join('; ') || 'none listed'}`,
-    renderOnPlayDrawCoverage(profile),
-    ...offeredAccess.map(row => `${row.command}: ${row.cost} Energy, on-play draw ${row.onPlayDraw.requested}, Hand contribution ${row.onPlayDraw.handChange ?? 'selection-dependent'} before other effects and capacity; ${row.exhausts ? 'Exhaust after play' : 'ordinary redraw permits later use'}`),
+    strategyText(locale, 'ownedFunctionsToReach', { cards: labels([...enduringStrength, ...retention]).join(', ') }),
+    strategyText(locale, 'reviewedOnPlayAccess', { cards: profile.onPlayDraw.map(row => strategyText(locale, 'ownedDrawHandContribution', { card: row.card, cost: row.cost, draw: row.requested, handChange: row.handChange ?? strategyText(locale, 'selectionDependent') })).join('; ') || strategyText(locale, 'noneListed') }),
+    renderOnPlayDrawCoverage(profile, locale),
+    ...offeredAccess.map(row => strategyText(locale, 'offeredDrawHandContribution', { command: row.command, cost: row.cost, draw: row.onPlayDraw.requested, handChange: row.onPlayDraw.handChange ?? strategyText(locale, 'selectionDependent'), lifecycle: row.exhausts ? strategyText(locale, 'exhaustAfterPlay') : strategyText(locale, 'ordinaryRedrawLaterUse') })),
   ],
   (extraDraw
-    ? 'Compare the additional access using the owned draw quantities, copy frequency, lifecycle and payment. Extra draw can improve early setup or later circulation; strong existing access and its costs can favor another useful function. '
-    : 'Favor a first workable independent draw or Hand-turnover addition that reaches the owned growth, deployment and protective actions. ')
-    + 'Compare the useful actions reached by extra draw with the useful output added by another attack, multiplier or conversion. One-card self-replacement and on-play multi-draw provide different access: extra useful cards can share the turn, while an Exhaust selection trades a chosen card for newly drawn cards and changes later circulation. Draw from a deployed Power uses its separate deployment and trigger sequence. Compare the offered card\'s Gold, Energy, HP and selection costs with immediate protection and recovery needed on the connected route.',
+    ? strategyText(locale, 'additionalAccessPlan')
+    : strategyText(locale, 'firstIndependentAccessPlan'))
+    + strategyText(locale, 'accessOpportunityPlan'),
   ['access'], { commands: offeredAccess.map(row => row.command), comparisonIds: ['@access'] });
   const energyFuel = cards.filter(row => positive(row.mechanics.energy_gain_on_exhaust));
   const payment = [...profile.onPlayEnergy.map(row => row.card), ...labels(energyFuel),
     ...(owns('Corruption') ? labels(cards.filter(row => row.card.card === 'Corruption')) : [])];
   if (payment.length) add('access-for-owned-payment', ['cx', 'equation'],
-    [...payment, `Reviewed on-play draw: ${profile.onPlayDraw.map(row => row.card).join(', ') || 'none'}`, renderOnPlayDrawCoverage(profile)],
+    [...payment, strategyText(locale, 'reviewedOnPlayDraw', { cards: profile.onPlayDraw.map(row => row.card).join(', ') || strategyText(locale, 'none') }), renderOnPlayDrawCoverage(profile, locale)],
     (extraDraw
-      ? 'Compare additional access using the owned draw quantities, copy access and payment, together with useful cards reached. '
-      : 'Default to a useful independent access addition before another Energy-only component. ')
-      + 'Existing payment resources need useful cards in Hand to spend their Energy. '
-      + (energyFuel.length ? 'The listed on-Exhaust Energy sources need a route exhausting that source card itself. ' : '')
-      + 'Later-turn or Exhaust-triggered draw follows its deployment and trigger order; setup draw can help reach those engines. Compare protection alongside access when the next fight pressures deployment.',
+      ? strategyText(locale, 'additionalAccessPaymentPlan')
+      : strategyText(locale, 'accessBeforeMoreEnergyPlan'))
+      + strategyText(locale, 'ownedPaymentNeedsCards')
+      + (energyFuel.length ? strategyText(locale, 'exhaustEnergyNeedsSource') : '')
+      + strategyText(locale, 'laterDrawSetupPlan'),
     ['access', 'protection']);
 
   const recentLoss = state.public_history?.recent_combat_hp_loss;
@@ -383,25 +383,25 @@ function constructionPriorities(observation, normalize) {
   if (positive(recentLoss) && Number.isSafeInteger(state.run?.current_hp)
       && Number.isSafeInteger(state.run?.max_hp) && state.run.current_hp < state.run.max_hp && routes.length) {
     add('preserve-first-elite-preparation', ['panacea', 'jorbs'],
-      [`Current HP ${state.run.current_hp}/${state.run.max_hp}; last adopted combat net HP loss ${recentLoss}`,
-        `Reviewed on-play draw: ${profile.onPlayDraw.map(row => row.card).join(', ') || 'none'}`,
-        ...routes.map(row => `${normalize(row.semantic_action, observation)} retains a connected preparation option before its first Elite: `
-          + [row.path.first_elite.can_bail_to_rest_before ? 'campfire' : '',
-            row.path.first_elite.can_bail_to_shop_before ? 'shop' : ''].filter(Boolean).join(', '))],
-      'With HP already spent and a reachable preparation window, default to retaining useful recovery, an upgrade or shopping before the first Elite. Owned draw improves access; the next Elite still needs payable early output and protection under its supplied mechanics. More ordinary fights offer card choices and Gold after victory; carrying that development route uses current HP, protection and usable potions. Compare the preparation on one connected path with the fights before it.',
+      [strategyText(locale, 'recentCombatLoss', { hp: state.run.current_hp, maxHp: state.run.max_hp, loss: recentLoss }),
+        strategyText(locale, 'reviewedOnPlayDraw', { cards: profile.onPlayDraw.map(row => row.card).join(', ') || strategyText(locale, 'none') }),
+        ...routes.map(row => strategyText(locale, 'retainedElitePreparation', { command: normalize(row.semantic_action, observation) })
+          + [row.path.first_elite.can_bail_to_rest_before ? strategyText(locale, 'campfire') : '',
+            row.path.first_elite.can_bail_to_shop_before ? strategyText(locale, 'shop') : ''].filter(Boolean).join(', '))],
+      strategyText(locale, 'preserveElitePreparationPlan'),
       []);
   }
 
   if (owns('Corruption')) add('skill-lifecycle', ['cx', 'panacea'],
     [...labels(cards.filter(row => row.card.card === 'Corruption')), ...labels(energyFuel)],
-    'Plan the Skill-payment engine as a sequence: reach and deploy Corruption, access useful Skills, and use their Exhaust events with owned payoffs. '
-      + (energyFuel.length ? `The listed on-Exhaust Energy sources pay when that source card itself is exhausted. ` : '')
-      + 'Support draw and protection during setup, and the damage/protection functions that remain after useful Skills are spent.',
+    strategyText(locale, 'skillPaymentSequence')
+      + (energyFuel.length ? strategyText(locale, 'exhaustEnergyPaysFromSource') : '')
+      + strategyText(locale, 'supportSkillSetup'),
     ['access', 'protection', 'exhaust', 'strength']);
 
   if (profile.statusGeneration.length) add('generated-status-support', ['cx'],
-    profile.statusGeneration.map(row => `${row.card}: ${row.injections.map(effect => `${effect.count} ${effect.card} into ${effect.destination}`).join(', ')}`),
-    'Pair the owned Status-generating plays with timely cleanup or Status-supported draw. Compare the actual owned clearing and draw triggers when adding another generator, and favor useful access/cleanup support when the generated cards burden later hands.',
+    profile.statusGeneration.map(row => `${row.card}: ${row.injections.map(effect => strategyText(locale, 'statusInjection', { count: effect.count, card: effect.card, destination: effect.destination })).join(', ')}`),
+    strategyText(locale, 'generatedStatusSupportPlan'),
     ['access', 'exhaust', 'protection', 'matchup']);
 
   return { basis: 'current_public_inventory_and_maintainer_strategy', publicSnapshotId: observation.position.public_snapshot_id,
@@ -458,7 +458,7 @@ export function preparationExpertGuidance(observation, normalize = command => co
   }
   const candidates = preparationCardExpertGuidance(observation, normalize, locale);
   if (!selected.length && !candidates.length) return undefined;
-  const construction = constructionPriorities(observation, normalize);
+  const construction = constructionPriorities(observation, normalize, locale);
   for (const candidate of candidates) candidate.priorityIds = (construction?.priorities ?? [])
     .filter(row => row.supportFamilies.some(id => candidate.familyIds?.includes(id))).map(row => row.id);
   return { schema: 'sts-preparation-expert-guidance-v1', origin: 'maintainer_synthesis_of_tracked_expert_notes',
