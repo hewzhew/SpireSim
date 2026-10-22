@@ -4,9 +4,7 @@ use crate::EntityId;
 
 pub const MECHANICS: super::super::mechanics::PowerMechanics =
     super::super::mechanics::PowerMechanics {
-        amount_unit: "remaining round-end ticks of card Block prevention",
-        effect: "Sets calculated Block from cards to 0. Block gained by powers and relics, such as Feel No Pain and Metallicize, still applies. Existing Block is not removed by application. Artifact can block this debuff.",
-        timing: "Decreases by 1 at each round end, including the round it was applied. Panic Button applies 2, affecting further card Block this turn and next turn.",
+        text_id: crate::content::powers::PowerId::NoBlock,
         round_duration: true,
     };
 

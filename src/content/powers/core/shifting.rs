@@ -3,12 +3,11 @@ use crate::runtime::action::Action;
 use crate::runtime::combat::CombatState;
 use crate::EntityId;
 
-pub const MECHANICS: super::super::mechanics::PowerMechanics = super::super::mechanics::PowerMechanics {
-    amount_unit: "presence flag, not a numeric stack count",
-    effect: "Whenever normal or Thorns damage causes positive HP loss to the owner, apply that much negative Strength and an equal Shackled effect. Fully blocked hits and direct HP-loss effects do not trigger it. This reduces current attack damage, potentially to 0. Artifact can block the negative Strength application and prevents the matching Shackled application.",
-    timing: "Strength reduction lasts through the owner's attack. Shackled restores the reduced Strength at the owner's turn end and removes itself; Shifting remains present.",
-    round_duration: false,
-};
+pub const MECHANICS: super::super::mechanics::PowerMechanics =
+    super::super::mechanics::PowerMechanics {
+        text_id: crate::content::powers::PowerId::Shifting,
+        round_duration: false,
+    };
 
 pub fn on_attacked(
     state: &CombatState,

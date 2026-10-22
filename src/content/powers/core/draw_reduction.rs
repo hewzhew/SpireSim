@@ -1,9 +1,8 @@
-pub const MECHANICS: super::super::mechanics::PowerMechanics = super::super::mechanics::PowerMechanics {
-    amount_unit: "cards subtracted from the normal start-of-turn draw",
-    effect: "Reduce the owner's normal turn-start draw by amount. Does not reduce card-effect draws such as Pommel Strike or Shrug It Off.",
-    timing: "At end of round, reduce amount by 1; skip the first decrement while newly applied, so the next normal draw is reduced.",
-    round_duration: false,
-};
+pub const MECHANICS: super::super::mechanics::PowerMechanics =
+    super::super::mechanics::PowerMechanics {
+        text_id: crate::content::powers::PowerId::DrawReduction,
+        round_duration: false,
+    };
 
 use crate::runtime::action::Action;
 use crate::runtime::combat::PowerId;

@@ -1,9 +1,8 @@
-pub const MECHANICS: super::super::mechanics::PowerMechanics = super::super::mechanics::PowerMechanics {
-    amount_unit: "Strength restored at the owner's turn end",
-    effect: "At the end of the owner's turn, apply amount Strength to the owner only if amount is positive, then remove Shackled. Non-positive amounts restore no Strength; Shackled is still removed. The Strength reduction is a separate effect, not performed by Shackled itself.",
-    timing: "Removed at the owner's turn end, not an end-of-round duration counter.",
-    round_duration: false,
-};
+pub const MECHANICS: super::super::mechanics::PowerMechanics =
+    super::super::mechanics::PowerMechanics {
+        text_id: crate::content::powers::PowerId::Shackled,
+        round_duration: false,
+    };
 
 use crate::runtime::action::Action;
 use crate::runtime::combat::PowerId;

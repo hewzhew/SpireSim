@@ -21,6 +21,46 @@ test('locale selection maps the host zh and browser tags without claiming Tradit
   assert.equal(preferredLocale(['en-GB', 'zh-CN']), 'en');
 });
 
+test('definition text resolves exact entity references without interpreting substituted names', async () => {
+  const resources = structuredClone(catalogs);
+  resources.en.game.card.HeavyBlade = '{{literal}} $t(replay:nav.previous)';
+  const display = await createPresentation({locale:'en',resources});
+  assert.ok(display.definitionText('game:powerRule.Strength.effect').includes('{{literal}} $t(replay:nav.previous)'));
+  await display.setLocale('zh-CN');
+  assert.ok(display.definitionText('game:powerRule.Strength.effect').includes('重刃'));
+  assert.throws(() => display.definitionText('powerRule.Strength.effect'), /namespaced key/);
+  assert.throws(() => display.definitionText('game:effect.damage'), /Invalid definition reference/);
+  assert.throws(() => display.definitionText('game:powerRule.Unknown.effect'), /Unknown presentation message/);
+  for (const [template, error] of [
+    ['{{entity_card_UnknownCard}}', /Unknown definition entity/],
+    ['{{entity_effect_damage}}', /Invalid definition reference/],
+    ['{{entity_card_Strike', /Invalid definition template/],
+    ['{{entity card Strike}}', /Invalid definition reference/],
+  ]) {
+    const bad = structuredClone(catalogs);
+    bad.en.game.powerRule.Strength.effect = template;
+    const view = await createPresentation({locale:'en',resources:bad});
+    assert.throws(() => view.definitionText('game:powerRule.Strength.effect'), error);
+  }
+  const broken = structuredClone(catalogs);
+  for (const locale of ['en','zh-CN']) broken[locale].game.powerRule.Strength.effect = '{{entity_card_UnknownCard}}';
+  assert.throws(() => validateCatalogs(broken), /Unknown definition entity/);
+});
+
+test('every shipped power definition has complete bilingual fields and resolves all references', async () => {
+  for (const locale of ['en','zh-CN']) {
+    const display = await createPresentation({locale});
+    for (const [id,rule] of Object.entries(catalogs[locale].game.powerRule)) {
+      assert.deepEqual(Object.keys(rule).sort(), ['amountUnit','effect','timing']);
+      for (const field of Object.keys(rule)) {
+        const text = display.definitionText(`game:powerRule.${id}.${field}`);
+        assert.ok(text.length && !text.includes('{{'), `${locale}:${id}:${field}`);
+        if (locale === 'zh-CN') assert.match(text, /[\u4e00-\u9fff]/);
+      }
+    }
+  }
+});
+
 test('generated name sections match their recorded original-resource import', async () => {
   const source = JSON.parse(await readFile(new URL('./original-names.json', import.meta.url), 'utf8'));
   assert.equal(source.schema, 'sts-original-localization-names-v1');

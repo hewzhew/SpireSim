@@ -1,9 +1,8 @@
-pub const MECHANICS: super::super::mechanics::PowerMechanics = super::super::mechanics::PowerMechanics {
-    amount_unit: "Block gained per Attack card played",
-    effect: "When the player plays an Attack card, the owner gains Block equal to amount (at least 0). Triggers once per card, not once per hit; Skills and Powers do not trigger it.",
-    timing: "Active while present; removed at the end of the player turn. Amount is not a duration.",
-    round_duration: false,
-};
+pub const MECHANICS: super::super::mechanics::PowerMechanics =
+    super::super::mechanics::PowerMechanics {
+        text_id: crate::content::powers::PowerId::Rage,
+        round_duration: false,
+    };
 
 use crate::runtime::action::Action;
 use crate::runtime::combat::CombatCard;

@@ -1,16 +1,14 @@
-pub const MECHANICS: super::super::mechanics::PowerMechanics = super::super::mechanics::PowerMechanics {
-    amount_unit: "presence flag, not a numeric stack count",
-    effect: "Targeting an enemy with a card turns the player toward it. An enemy behind the player deals 50% more attack damage. Untargeted cards do not turn the player. Actual damage uses facing and position; Back Attack is the visible marker. Ends when the surrounding pair is broken.",
-    timing: "Facing changes at targeted card play; remains while surrounded.",
-    round_duration: false,
-};
+pub const MECHANICS: super::super::mechanics::PowerMechanics =
+    super::super::mechanics::PowerMechanics {
+        text_id: crate::content::powers::PowerId::Surrounded,
+        round_duration: false,
+    };
 
-pub const BACK_ATTACK_MECHANICS: super::super::mechanics::PowerMechanics = super::super::mechanics::PowerMechanics {
-    amount_unit: "presence flag, not a numeric stack count",
-    effect: "Marks an enemy behind the Surrounded player. Its attacks deal 50% more damage. Targeted cards can change facing; actual damage follows facing, and this display marker refreshes when the card queue settles.",
-    timing: "Derived from player facing while Surrounded, not a stack-based damage modifier.",
-    round_duration: false,
-};
+pub const BACK_ATTACK_MECHANICS: super::super::mechanics::PowerMechanics =
+    super::super::mechanics::PowerMechanics {
+        text_id: crate::content::powers::PowerId::BackAttack,
+        round_duration: false,
+    };
 
 use crate::content::powers::{store, PowerId};
 use crate::runtime::combat::{CombatState, Power, PowerPayload};

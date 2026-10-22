@@ -1,9 +1,8 @@
-pub const MECHANICS: super::super::mechanics::PowerMechanics = super::super::mechanics::PowerMechanics {
-    amount_unit: "remaining rounds",
-    effect: "Reduces Block gained from cards by 25%, rounded down. More stacks extend duration, not the reduction.",
-    timing: "Decreases by 1 at end of round, unless the newly-applied flag skips that tick.",
-    round_duration: true,
-};
+pub const MECHANICS: super::super::mechanics::PowerMechanics =
+    super::super::mechanics::PowerMechanics {
+        text_id: crate::content::powers::PowerId::Frail,
+        round_duration: true,
+    };
 
 use crate::runtime::action::Action;
 use crate::runtime::combat::PowerId;

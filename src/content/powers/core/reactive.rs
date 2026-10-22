@@ -2,12 +2,11 @@ use crate::runtime::action::{Action, DamageType, NO_SOURCE};
 use crate::runtime::combat::CombatState;
 use crate::EntityId;
 
-pub const MECHANICS: super::super::mechanics::PowerMechanics = super::super::mechanics::PowerMechanics {
-    amount_unit: "presence flag (-1 is the runtime sentinel)",
-    effect: "Each normal hit with a real source that causes positive HP loss while the owner survives queues a new monster move roll. Fully blocked and lethal hits, Thorns and HP-loss effects do not trigger it. Multi-hit attacks can cause multiple rolls.",
-    timing: "After qualifying damage; persists until removed. The resulting visible intention replaces the earlier intention, so inspect it again after attacking.",
-    round_duration: false,
-};
+pub const MECHANICS: super::super::mechanics::PowerMechanics =
+    super::super::mechanics::PowerMechanics {
+        text_id: crate::content::powers::PowerId::Reactive,
+        round_duration: false,
+    };
 
 pub fn on_attacked(
     state: &CombatState,

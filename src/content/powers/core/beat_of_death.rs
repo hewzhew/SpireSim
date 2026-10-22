@@ -1,9 +1,8 @@
-pub const MECHANICS: super::super::mechanics::PowerMechanics = super::super::mechanics::PowerMechanics {
-    amount_unit: "damage to the player per counted card",
-    effect: "Every counted card deals this much THORNS damage to the player. Block can absorb it; Strength, Weak and Vulnerable do not modify it. Torii's normal-hit reduction does not apply to this THORNS damage. It resolves after the card's own effects but before that card's final exhaust triggers Feel No Pain. Extra actions a card queues can have their own exhaust triggers; inspect the settled result for timing-sensitive sequences.",
-    timing: "After-use trigger, not the start of card play; persists until removed.",
-    round_duration: false,
-};
+pub const MECHANICS: super::super::mechanics::PowerMechanics =
+    super::super::mechanics::PowerMechanics {
+        text_id: crate::content::powers::PowerId::BeatOfDeath,
+        round_duration: false,
+    };
 
 use crate::runtime::action::{Action, DamageInfo, DamageType};
 use crate::EntityId;

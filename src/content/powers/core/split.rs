@@ -4,12 +4,11 @@ use crate::runtime::combat::CombatState;
 use crate::EntityId;
 use smallvec::{smallvec, SmallVec};
 
-pub const MECHANICS: super::super::mechanics::PowerMechanics = super::super::mechanics::PowerMechanics {
-    amount_unit: "presence (not a stack count)",
-    effect: "For a living Large Slime or Slime Boss, reaching half Max HP or below replaces the current intent with Split. Each child's current and Max HP equal the parent's remaining HP at split execution. More damage before splitting reduces the children; killing the parent prevents splitting.",
-    timing: "Checked after damage; Split executes on the enemy turn. Medium and Small Slimes do not split.",
-    round_duration: false,
-};
+pub const MECHANICS: super::super::mechanics::PowerMechanics =
+    super::super::mechanics::PowerMechanics {
+        text_id: crate::content::powers::PowerId::Split,
+        round_duration: false,
+    };
 
 pub fn on_hp_lost(state: &CombatState, owner: EntityId, _amount: i32) -> SmallVec<[Action; 2]> {
     let mut actions = smallvec![];

@@ -1,9 +1,8 @@
-pub const MECHANICS: super::super::mechanics::PowerMechanics = super::super::mechanics::PowerMechanics {
-    amount_unit: "attack damage bonus per hit",
-    effect: "Amount is signed: +2 adds 2 attack damage per hit, -2 subtracts 2, before multipliers. Strength reduction works from 0 Strength into negative Strength. Heavy Blade scales this signed bonus with its card multiplier.",
-    timing: "Persists until another effect changes or removes it.",
-    round_duration: false,
-};
+pub const MECHANICS: super::super::mechanics::PowerMechanics =
+    super::super::mechanics::PowerMechanics {
+        text_id: crate::content::powers::PowerId::Strength,
+        round_duration: false,
+    };
 
 use crate::content::cards::CardId;
 

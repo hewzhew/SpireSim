@@ -1,9 +1,8 @@
-pub const MECHANICS: super::super::mechanics::PowerMechanics = super::super::mechanics::PowerMechanics {
-    amount_unit: "card counter toward 12, retained across turns",
-    effect: "Each counted player card increments the counter. The 12th forces the player's turn to end, resets the counter to 0, and gives all living enemies 2 permanent Strength. Ending a normal turn does not reset it. Potions are not card plays.",
-    timing: "Card-play trigger and forced-end sequence; persists across turns.",
-    round_duration: false,
-};
+pub const MECHANICS: super::super::mechanics::PowerMechanics =
+    super::super::mechanics::PowerMechanics {
+        text_id: crate::content::powers::PowerId::TimeWarp,
+        round_duration: false,
+    };
 
 use crate::content::powers::PowerId;
 use crate::runtime::action::Action;

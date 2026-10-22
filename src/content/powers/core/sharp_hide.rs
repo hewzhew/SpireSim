@@ -1,9 +1,8 @@
-pub const MECHANICS: super::super::mechanics::PowerMechanics = super::super::mechanics::PowerMechanics {
-    amount_unit: "Thorns damage per Attack card played",
-    effect: "When the player plays an Attack card, the owner deals amount Thorns damage to the player. Triggers once per card, not once per hit; Skills and Powers do not trigger it. Player Block can absorb this damage.",
-    timing: "Triggers only while present; no automatic round decay. Guardian removes it when leaving Defensive Mode.",
-    round_duration: false,
-};
+pub const MECHANICS: super::super::mechanics::PowerMechanics =
+    super::super::mechanics::PowerMechanics {
+        text_id: crate::content::powers::PowerId::SharpHide,
+        round_duration: false,
+    };
 
 use crate::content::cards::CardType;
 use crate::runtime::action::{Action, DamageInfo, DamageType};

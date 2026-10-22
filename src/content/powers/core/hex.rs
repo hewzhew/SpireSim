@@ -2,12 +2,11 @@ use crate::runtime::action::Action;
 use crate::runtime::combat::{CombatCard, CombatState};
 use crate::EntityId;
 
-pub const MECHANICS: super::super::mechanics::PowerMechanics = super::super::mechanics::PowerMechanics {
-    amount_unit: "Dazed cards added per non-Attack card played",
-    effect: "When the owner plays a non-Attack card, including a Skill or Power, add amount unupgraded Dazed to random positions in the owner's draw pile. Dazed is unplayable and Ethereal. Attacks do not trigger this effect.",
-    timing: "Card play; persists until removed. Does not decrement each round. Artifact can block its application and debuff removal can remove it.",
-    round_duration: false,
-};
+pub const MECHANICS: super::super::mechanics::PowerMechanics =
+    super::super::mechanics::PowerMechanics {
+        text_id: crate::content::powers::PowerId::Hex,
+        round_duration: false,
+    };
 
 pub fn on_card_played(
     _state: &CombatState,

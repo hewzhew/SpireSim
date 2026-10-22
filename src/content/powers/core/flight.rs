@@ -4,12 +4,11 @@ use crate::runtime::combat::CombatState;
 use crate::semantics::combat::{MonsterTurnPlan, MoveStep};
 use crate::EntityId;
 
-pub const MECHANICS: super::super::mechanics::PowerMechanics = super::super::mechanics::PowerMechanics {
-    amount_unit: "remaining qualifying hits before grounding",
-    effect: "While present, halves normal damage before Block, rounded down. Each normal hit that causes positive HP loss to a surviving owner and has a source removes 1 Flight; multiple hits from one card count separately. Fully blocked hits, Thorns and HP-loss effects do not remove Flight; Thorns and HP-loss effects also bypass its damage reduction. At zero Flight, a Byrd loses flying status and immediately replaces its current intent with Stunned.",
-    timing: "At the owner's turn start, remaining Flight restores to its stored initial amount if it was not completely removed. Grounded Byrds regain Flight only when executing Go Airborne.",
-    round_duration: false,
-};
+pub const MECHANICS: super::super::mechanics::PowerMechanics =
+    super::super::mechanics::PowerMechanics {
+        text_id: crate::content::powers::PowerId::Flight,
+        round_duration: false,
+    };
 
 pub fn on_calculate_damage_from_player(mut damage: f32, amount: i32) -> f32 {
     if amount > 0 {

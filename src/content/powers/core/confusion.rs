@@ -8,9 +8,7 @@ pub const MAX_RANDOMIZED_CARD_COST: u8 = 3;
 
 pub const MECHANICS: crate::content::powers::mechanics::PowerMechanics =
     crate::content::powers::mechanics::PowerMechanics {
-        amount_unit: "presence marker (sentinel -1)",
-        effect: "Whenever a card with a nonnegative combat cost is drawn, randomize that instance's combat cost to 0, 1, 2 or 3. X-cost and unplayable cards are excluded. This can make cheap cards more expensive or expensive cards cheaper. Each new draw can randomize the cost again; use the displayed hand cost.",
-        timing: "Persists for the rest of combat; the amount is not a duration or a multiplier.",
+        text_id: crate::content::powers::PowerId::Confusion,
         round_duration: false,
     };
 

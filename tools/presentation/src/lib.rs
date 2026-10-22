@@ -86,6 +86,51 @@ impl Locale {
         self.original_event_text("Neow", "UNIQUE_REWARDS", index)
     }
 
+    /// Static rule text may explicitly reference another entity by stable ID.
+    /// These slots carry names only; no rule values or game state are inferred.
+    pub fn definition_text(self, namespace: &str, key: &str) -> Result<String, String> {
+        let template = self
+            .entry(namespace, key)
+            .ok_or_else(|| format!("unknown presentation message: {namespace}:{key}"))?;
+        self.definition_template(template)
+    }
+
+    fn definition_template(self, template: &str) -> Result<String, String> {
+        let mut result = String::new();
+        let mut remaining = template;
+        while let Some(start) = remaining.find("{{") {
+            result.push_str(&remaining[..start]);
+            let tail = &remaining[start + 2..];
+            let end = tail.find("}}").ok_or("invalid definition template")?;
+            let name = tail[..end].trim();
+            let (kind, id) = name
+                .strip_prefix("entity_")
+                .and_then(|value| value.split_once('_'))
+                .filter(|(kind, _)| {
+                    matches!(
+                        *kind,
+                        "card"
+                            | "relic"
+                            | "potion"
+                            | "enemy"
+                            | "power"
+                            | "stance"
+                            | "event"
+                            | "character"
+                            | "encounter"
+                    )
+                })
+                .ok_or_else(|| format!("invalid definition reference: {name}"))?;
+            let label = self
+                .entry("game", &format!("{kind}.{id}"))
+                .ok_or_else(|| format!("unknown definition entity: {kind}:{id}"))?;
+            result.push_str(label);
+            remaining = &tail[end + 2..];
+        }
+        result.push_str(remaining);
+        Ok(result)
+    }
+
     /// Native scalar text only. Plural selection remains with each renderer;
     /// this does not interpret i18next options or reparse substituted values.
     pub fn entry(self, namespace: &str, key: &str) -> Option<&'static str> {
@@ -146,6 +191,42 @@ impl Locale {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn definition_references_resolve_exact_entities_and_reject_unbound_parameters() {
+        for (locale, expected) in [(Locale::En, "Heavy Blade"), (Locale::ZhCn, "重刃")] {
+            assert!(locale
+                .definition_text("game", "powerRule.Strength.effect")
+                .unwrap()
+                .contains(expected));
+            assert_eq!(
+                locale
+                    .definition_template("{{entity_card_Strike}} {{entity_card_StrikeG}}")
+                    .unwrap(),
+                format!(
+                    "{} {}",
+                    locale.entity("card", "Strike"),
+                    locale.entity("card", "StrikeG")
+                )
+            );
+            assert!(locale
+                .definition_template("{{entity_card_UnknownCard}}")
+                .unwrap_err()
+                .contains("unknown definition entity"));
+            for template in [
+                "{{amount}}",
+                "{{entity_effect_damage}}",
+                "{{entity_card_Strike",
+                "{{entity card Strike}}",
+            ] {
+                assert!(locale.definition_template(template).is_err(), "{template}");
+            }
+            assert!(locale.definition_text("game", "effect.damage").is_err());
+            assert!(locale
+                .definition_text("game", "powerRule.Unknown.effect")
+                .is_err());
+        }
+    }
 
     #[test]
     fn original_names_retain_stable_ids_when_display_names_are_shared_or_changed() {

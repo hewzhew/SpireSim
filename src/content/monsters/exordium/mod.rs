@@ -60,7 +60,7 @@ fn louse_mechanics(
         moves,
         special_moves: vec![
             ("Bite", format!("attack player once; base damage is sampled once at spawn from {min}..{max} inclusive and stays fixed for this monster, before Strength and other damage modifiers. Use the current visible intent for the actual modified damage.")),
-            ("Starting Curl Up", format!("sampled once from {curl_min}..{curl_max} inclusive. {}", crate::content::powers::mechanics::get(crate::content::powers::PowerId::CurlUp).unwrap().effect)),
+            ("Starting Curl Up", format!("sampled once from {curl_min}..{curl_max} inclusive. {}", crate::content::powers::mechanics::get(crate::content::powers::PowerId::CurlUp).unwrap().effect(sts_presentation::Locale::En))),
         ],
         notes: if asc >= 17 {
             "Randomly rolls Bite or its non-attack move, subject to history: cannot Bite three times consecutively; the non-attack move cannot repeat immediately."

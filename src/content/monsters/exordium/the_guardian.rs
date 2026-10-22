@@ -383,12 +383,11 @@ fn plan_for(move_id: u8, asc: u8, mode_shift_amount: i32) -> MonsterTurnPlan {
     }
 }
 
-pub const MODE_SHIFT_MECHANICS: crate::content::powers::mechanics::PowerMechanics = crate::content::powers::mechanics::PowerMechanics {
-    amount_unit: "remaining HP damage to trigger Defensive Mode",
-    effect: "Actual HP loss reduces the remaining amount; damage absorbed by Block does not. Reaching the threshold replaces the current intent with Close Up, removes Mode Shift and grants Defensive Block. The next threshold increases each time; see the Guardian definition for difficulty-specific amounts.",
-    timing: "Active in Offensive Mode; restored with the new threshold after Twin Slam. No round decay.",
-    round_duration: false,
-};
+pub const MODE_SHIFT_MECHANICS: crate::content::powers::mechanics::PowerMechanics =
+    crate::content::powers::mechanics::PowerMechanics {
+        text_id: crate::content::powers::PowerId::ModeShift,
+        round_duration: false,
+    };
 
 pub fn mechanics(asc: u8) -> super::super::mechanics::MonsterMechanics {
     super::super::mechanics::MonsterMechanics {
@@ -403,7 +402,7 @@ pub fn mechanics(asc: u8) -> super::super::mechanics::MonsterMechanics {
         special_moves: vec![
             ("Mode Shift", format!("starts at {} HP damage; actual HP loss reduces the remaining counter, Blocked damage does not. At the threshold, replaces its current intent with Close Up and gains {DEFENSIVE_BLOCK} Block. Each trigger raises the next threshold by {THRESHOLD_INCREASE}.", initial_threshold(asc))),
             ("Twin Slam", format!("return to Offensive Mode; attack player for {TWIN_SLAM_DAMAGE} base damage/hit (hits: {TWIN_SLAM_HITS}); then remove Sharp Hide, restore Mode Shift to the increased threshold, and lose remaining own Block. Plans Whirlwind next.")),
-            ("Sharp Hide", crate::content::powers::mechanics::get(PowerId::SharpHide).unwrap().effect.into()),
+            ("Sharp Hide", crate::content::powers::mechanics::get(PowerId::SharpHide).unwrap().effect(sts_presentation::Locale::En)),
         ],
         notes: "Starts in Offensive Mode: Charge Up, Fierce Bash, Vent Steam, Whirlwind, then repeat. A Mode Shift interrupts that cycle with Defensive Mode: Close Up, Roll Attack, Twin Slam, then Offensive Whirlwind. Close Up grants Sharp Hide; it stays active until Twin Slam finishes. Current Mode Shift amount and visible intent are authoritative for this turn.",
     }

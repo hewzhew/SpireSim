@@ -3,12 +3,11 @@ use crate::runtime::action::Action;
 use crate::runtime::combat::CombatState;
 use crate::EntityId;
 
-pub const MECHANICS: super::super::mechanics::PowerMechanics = super::super::mechanics::PowerMechanics {
-    amount_unit: "Block gained by the next qualifying hit; stored base is the reset amount",
-    effect: "Each nonlethal normal hit that causes positive HP loss queues Block equal to the current amount, then immediately increases the amount by 1. Fully blocked hits, lethal hits, Thorns and HP-loss effects do not trigger it. Counts hits, not cards; queued Block resolves at its existing queue position.",
-    timing: "After the monster's turn ends, the amount resets to its stored base. Does not lose duration each round.",
-    round_duration: false,
-};
+pub const MECHANICS: super::super::mechanics::PowerMechanics =
+    super::super::mechanics::PowerMechanics {
+        text_id: crate::content::powers::PowerId::Malleable,
+        round_duration: false,
+    };
 
 /// Java MalleablePower.onAttacked():
 ///   if (damageAmount < owner.currentHealth && damageAmount > 0 && info.type == NORMAL) {

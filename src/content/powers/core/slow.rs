@@ -3,12 +3,11 @@ use crate::runtime::action::Action;
 use crate::runtime::combat::{CombatCard, CombatState};
 use crate::EntityId;
 
-pub const MECHANICS: super::super::mechanics::PowerMechanics = super::super::mechanics::PowerMechanics {
-    amount_unit: "card-play counter for the current round",
-    effect: "Player Attack card damage against this owner is multiplied by 1 + 0.1 times amount. Skills and Powers also increase the counter when played, so earlier setup cards can amplify later Attacks.",
-    timing: "Each player card play adds 1. At the end of the round, reset the amount to 0 and keep the power present. A turn-start reading of 0 is the reset counter; it can grow again during that turn.",
-    round_duration: false,
-};
+pub const MECHANICS: super::super::mechanics::PowerMechanics =
+    super::super::mechanics::PowerMechanics {
+        text_id: crate::content::powers::PowerId::Slow,
+        round_duration: false,
+    };
 
 pub fn on_calculate_damage_from_player(
     _state: &CombatState,

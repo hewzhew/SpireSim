@@ -4,9 +4,7 @@ use crate::EntityId;
 
 pub const MECHANICS: super::super::mechanics::PowerMechanics =
     super::super::mechanics::PowerMechanics {
-        amount_unit: "active restriction",
-        effect: "Prevents playing Attack cards while active. Skills and Powers remain playable.",
-        timing: "Removed at the end of the affected player's turn.",
+        text_id: crate::content::powers::PowerId::Entangle,
         round_duration: false,
     };
 

@@ -1,9 +1,8 @@
-pub const MECHANICS: super::super::mechanics::PowerMechanics = super::super::mechanics::PowerMechanics {
-    amount_unit: "Strength gained per Skill played",
-    effect: "When the player plays a Skill, the owner gains amount Strength. Gremlin Nob uses this power for Enrage; Attacks and Powers do not trigger it.",
-    timing: "Triggers while this power is present; its amount is not a duration.",
-    round_duration: false,
-};
+pub const MECHANICS: super::super::mechanics::PowerMechanics =
+    super::super::mechanics::PowerMechanics {
+        text_id: crate::content::powers::PowerId::Anger,
+        round_duration: false,
+    };
 
 use crate::runtime::action::Action;
 use crate::runtime::combat::{CombatCard, CombatState, PowerId};

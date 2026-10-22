@@ -1,9 +1,8 @@
-pub const MECHANICS: super::super::mechanics::PowerMechanics = super::super::mechanics::PowerMechanics {
-    amount_unit: "Block gained at turn end",
-    effect: "Gain amount Block at turn end. Each incoming normal hit that actually loses HP from another entity removes 1 Plated Armor. Fully blocked hits, THORNS and HP-loss damage do not remove a stack. Removing the last stack stuns Shelled Parasite.",
-    timing: "Turn-end Block and on-HP-loss reduction; not a duration countdown.",
-    round_duration: false,
-};
+pub const MECHANICS: super::super::mechanics::PowerMechanics =
+    super::super::mechanics::PowerMechanics {
+        text_id: crate::content::powers::PowerId::PlatedArmor,
+        round_duration: false,
+    };
 
 use crate::content::powers::PowerId;
 use crate::runtime::action::Action;

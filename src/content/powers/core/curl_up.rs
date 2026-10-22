@@ -1,9 +1,8 @@
-pub const MECHANICS: super::super::mechanics::PowerMechanics = super::super::mechanics::PowerMechanics {
-    amount_unit: "Block gained once",
-    effect: "On the first qualifying damage hit, gains amount Block after damage and removes Curl Up. Requires positive damage, a living owner and a damage source.",
-    timing: "Triggers once, not on every hit. A lethal hit does not gain Block.",
-    round_duration: false,
-};
+pub const MECHANICS: super::super::mechanics::PowerMechanics =
+    super::super::mechanics::PowerMechanics {
+        text_id: crate::content::powers::PowerId::CurlUp,
+        round_duration: false,
+    };
 
 use crate::runtime::action::{Action, NO_SOURCE};
 use crate::runtime::combat::{CombatState, PowerId};

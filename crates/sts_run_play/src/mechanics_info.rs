@@ -1414,9 +1414,9 @@ fn write_power(out: &mut String, power: powers::PowerId, locale: Locale) {
                     locale,
                     "powerSupplement",
                     &[
-                        ("unit", fact.amount_unit),
-                        ("effect", fact.effect),
-                        ("timing", fact.timing)
+                        ("unit", &fact.amount_unit(locale)),
+                        ("effect", &fact.effect(locale)),
+                        ("timing", &fact.timing(locale))
                     ]
                 )
             )
@@ -1571,8 +1571,8 @@ fn write_encounter_preparation_links(
                     lines.push(format!(
                         "{source} / starting {} {amount}: {} {}",
                         label(power),
-                        rule.effect,
-                        rule.timing
+                        rule.effect(Locale::En),
+                        rule.timing(Locale::En)
                     ));
                 }
             }
@@ -1879,7 +1879,11 @@ mod tests {
         assert!(act2.contains("possible moves and starting effects"));
         assert!(act2.contains("Taskmaster / Scouring Whip: add 3 Wound to discard pile"));
         assert!(act2.contains("Book of Stabbing / starting Painful Stabs -1"));
-        assert!(act2.contains(powers::core::painful_stabs::MECHANICS.effect));
+        assert!(act2.contains(
+            powers::core::painful_stabs::MECHANICS
+                .effect(Locale::En)
+                .as_str()
+        ));
         assert!(act2.contains("a later reshuffle and draw"));
         let mut low = String::new();
         write_encounter_preparation_links(
@@ -3764,6 +3768,87 @@ mod tests {
             Locale::En,
         );
         assert!(out.contains("decrement is skipped"));
+    }
+
+    #[test]
+    fn bilingual_power_queries_keep_complete_rules_and_observed_amount_semantics() {
+        for id in powers::PowerId::STABLE_IDS {
+            let power = powers::PowerId::from_stable_id(id).unwrap();
+            let Some(fact) = powers::mechanics::get(power) else {
+                continue;
+            };
+            for locale in [Locale::En, Locale::ZhCn] {
+                let reading =
+                    super::render_query(None, Some(20), None, &format!("power {id}"), locale)
+                        .unwrap();
+                for text in [
+                    fact.amount_unit(locale),
+                    fact.effect(locale),
+                    fact.timing(locale),
+                ] {
+                    assert!(reading.contains(&text), "{id}/{locale}: {reading}");
+                }
+                assert!(!reading.contains("（英文）") && !reading.contains("{{"));
+            }
+        }
+        let mut state = sts_oracle_learning::test_support::blank_test_combat();
+        let mut monster =
+            sts_oracle_learning::test_support::test_monster(monsters::EnemyId::CorruptHeart);
+        monster.slot = 0;
+        state.entities.monsters.push(monster);
+        let mut public =
+            sts_oracle_learning::agent::information::state::public_combat_state_v1(&state);
+        public.player.powers = [
+            (powers::PowerId::Strength, -2, 0),
+            (powers::PowerId::Vulnerable, 2, 0),
+            (powers::PowerId::Confusion, -1, 0),
+            (powers::PowerId::Combust, 7, 2),
+        ]
+        .into_iter()
+        .map(|(power, amount, extra_data)| CombatLearningPowerV1 {
+            power,
+            amount,
+            extra_data,
+            just_applied: true,
+            payload_card: None,
+            source_creature: None,
+        })
+        .collect();
+        public.monsters[0].powers = vec![CombatLearningPowerV1 {
+            power: powers::PowerId::Invincible,
+            amount: 17,
+            extra_data: 200,
+            just_applied: false,
+            payload_card: None,
+            source_creature: None,
+        }];
+        let before = serde_json::to_value(&public).unwrap();
+        for locale in [Locale::En, Locale::ZhCn] {
+            let current =
+                super::render_query(Some(&public), Some(20), None, "powers", locale).unwrap();
+            let expected = match locale {
+                Locale::En => [
+                    "current amount -2",
+                    "remaining duration 2",
+                    "present (not a numeric stack count)",
+                    "damage to each enemy 7; self HP loss 2",
+                    "remaining damage allowance 17; reset cap 200",
+                    "decrement is skipped",
+                ],
+                Locale::ZhCn => [
+                    "当前数值 -2",
+                    "剩余持续时间 2",
+                    "已生效，不是数值层数",
+                    "对每个敌人造成 7 点伤害，自身失去 2 点生命",
+                    "本回合剩余承伤额度 17；持有者回合开始时重置为 200",
+                    "跳过下一次回合结束时的持续时间递减",
+                ],
+            };
+            for text in expected {
+                assert!(current.contains(text), "{locale}: {current}");
+            }
+        }
+        assert_eq!(serde_json::to_value(&public).unwrap(), before);
     }
 
     #[test]

@@ -32,12 +32,11 @@ pub fn nip_damage_range(asc: u8) -> (i32, i32) {
     }
 }
 
-pub const LIFE_LINK_MECHANICS: crate::content::powers::mechanics::PowerMechanics = crate::content::powers::mechanics::PowerMechanics {
-    amount_unit: "presence flag, not a numeric stack count",
-    effect: "Darklings enter half-death at 0 HP while another Darkling is still alive. Their powers are cleared, their current move becomes the idle Count, and they cannot be targeted. After Count, Reincarnate restores floor(Max HP / 2) HP, revives the monster and reinstalls Life Link. Bringing all Darklings to 0 HP before any revives kills the group permanently.",
-    timing: "Half-death and group defeat are owned by Darkling's death handler; revival occurs on its Reincarnate move. This is not an end-of-turn regeneration amount.",
-    round_duration: false,
-};
+pub const LIFE_LINK_MECHANICS: crate::content::powers::mechanics::PowerMechanics =
+    crate::content::powers::mechanics::PowerMechanics {
+        text_id: crate::content::powers::PowerId::Regrow,
+        round_duration: false,
+    };
 
 pub fn mechanics(asc: u8) -> crate::content::monsters::mechanics::MonsterMechanics {
     let (min, max) = nip_damage_range(asc);

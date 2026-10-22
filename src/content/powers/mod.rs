@@ -313,9 +313,7 @@ pub fn is_debuff(id: PowerId, amount: i32) -> bool {
 
 /// Artifact explanation beside the authoritative debuff classification.
 pub const ARTIFACT_MECHANICS: mechanics::PowerMechanics = mechanics::PowerMechanics {
-    amount_unit: "remaining debuff applications blocked",
-    effect: "Blocks one debuff application per charge, regardless of its stack amount, then consumes one charge. Damage and adding Status cards are not debuff applications. Separate debuffs from one card are checked in execution order.",
-    timing: "At the debuff application, not at the end of the turn. The Artifact power is removed when its last charge is consumed; ordinary debuff duration reduction does not consume charges.",
+    text_id: crate::content::powers::PowerId::Artifact,
     round_duration: false,
 };
 

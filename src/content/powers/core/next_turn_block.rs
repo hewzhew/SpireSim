@@ -3,9 +3,7 @@ use smallvec::SmallVec;
 
 pub const MECHANICS: crate::content::powers::mechanics::PowerMechanics =
     crate::content::powers::mechanics::PowerMechanics {
-        amount_unit: "accumulated Block to gain at the owner's next turn start",
-        effect: "At the owner's next turn start, gain Block equal to amount, then remove this power. Multiple applications add to the same pending amount. The delayed Block does not protect during the turn when this power is applied.",
-        timing: "Owner turn-start power hook, after normal Block clearing; consumed in one trigger.",
+        text_id: crate::content::powers::PowerId::NextTurnBlock,
         round_duration: false,
     };
 

@@ -3,12 +3,11 @@ use crate::runtime::action::{Action, DamageType, NO_SOURCE};
 use crate::runtime::combat::CombatState;
 use smallvec::SmallVec;
 
-pub const MECHANICS: super::super::mechanics::PowerMechanics = super::super::mechanics::PowerMechanics {
-    amount_unit: "damage to each enemy; separate self HP loss is stored alongside it",
-    effect: "At player turn end, first lose the stored self HP loss, then deal amount non-Attack damage to each enemy. Block does not prevent the self HP loss. Each additional deployment adds its damage and 1 to self HP loss; this loss can trigger Rupture.",
-    timing: "Player turn end; persists for the rest of combat. Damage and self HP loss stack independently.",
-    round_duration: false,
-};
+pub const MECHANICS: super::super::mechanics::PowerMechanics =
+    super::super::mechanics::PowerMechanics {
+        text_id: crate::content::powers::PowerId::Combust,
+        round_duration: false,
+    };
 
 /// Java: CombustPower.atEndOfTurn(isPlayer)
 ///

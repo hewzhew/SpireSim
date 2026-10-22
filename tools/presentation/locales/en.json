@@ -1025,6 +1025,393 @@
       "duration_one": "{{name}} ({{amount}} round)",
       "duration_other": "{{name}} ({{amount}} rounds)",
       "invincible": "{{name}} (damage left {{amount}}/{{limit}})"
+    },
+    "powerRule": {
+      "Buffer": {
+        "amountUnit": "remaining damage or HP-loss events to prevent",
+        "effect": "Prevent the next positive damage or HP-loss event, then consume one charge. Fully blocked damage does not consume Buffer. Unblocked Beat of Death can consume it; each hit of a multi-hit attack is a separate event. Direct HP loss also consumes a charge, even though Block cannot absorb that HP loss.",
+        "timing": "After Block for blockable damage, before positive HP loss; persists until its charges are consumed or it is removed."
+      },
+      "Barricade": {
+        "amountUnit": "presence; numeric amount is not a stack count",
+        "effect": "Keeps the owner's remaining Block at the normal turn-start clearing point. Incoming damage still spends Block; the effect creates no Block itself.",
+        "timing": "Owner turn start; persists for combat until removed."
+      },
+      "Berserk": {
+        "amountUnit": "additional Energy per player turn",
+        "effect": "Gain amount additional Energy at each player turn start. The card's self-Vulnerable is a separate debuff with its own duration.",
+        "timing": "Player turn start, from the next turn after deployment; persists for combat."
+      },
+      "Energized": {
+        "amountUnit": "additional Energy at the next player recharge",
+        "effect": "Gain amount additional Energy at the next player energy recharge, then remove this power. Repeated applications of the same color add together; green and blue Energized remain separate powers and both trigger.",
+        "timing": "Next player energy recharge, before ordinary start-of-turn draws; does not grant Energy when applied."
+      },
+      "Brutality": {
+        "amountUnit": "additional cards drawn and HP lost per turn",
+        "effect": "After the normal draw, draw amount additional cards, then lose amount HP. Draw prevention and hand capacity apply to the draw; Block does not prevent the HP loss.",
+        "timing": "Player turn start after normal draw, from the next turn after deployment; persists for combat."
+      },
+      "DemonForm": {
+        "amountUnit": "Strength gained per player turn",
+        "effect": "Gain amount Strength after each normal start-of-turn draw. Existing Strength remains, so gains accumulate across turns.",
+        "timing": "Player turn start after normal draw, from the next turn after deployment; persists for combat."
+      },
+      "DoubleTap": {
+        "amountUnit": "remaining Attack cards to replay",
+        "effect": "Each next Attack card is played a second time for free against the same target, after its original effects. Consume one charge per original Attack card; Skills and Powers keep the charges.",
+        "timing": "On card play; unused charges expire at player turn end."
+      },
+      "Evolve": {
+        "amountUnit": "additional cards drawn per Status drawn",
+        "effect": "Drawing a Status requests amount additional draws. Curses do not trigger it. Draw prevention and hand capacity apply, and newly drawn Statuses can trigger further draws.",
+        "timing": "On Status draw while active; persists for combat."
+      },
+      "FireBreathing": {
+        "amountUnit": "damage to each enemy per Status or Curse drawn",
+        "effect": "When a Status or Curse is drawn, deal amount THORNS damage to all enemies. Strength, Weak and Vulnerable do not modify this damage; enemy Block and damage caps apply.",
+        "timing": "On Status or Curse draw while active; persists for combat."
+      },
+      "Juggernaut": {
+        "amountUnit": "damage per positive Block gain event",
+        "effect": "Whenever the player gains positive Block, deal amount THORNS damage to a random living enemy. Separate Block gains can trigger separately. This deals damage rather than granting more Block.",
+        "timing": "On positive Block gain while active; persists for combat."
+      },
+      "Rupture": {
+        "amountUnit": "Strength gained per qualifying self-inflicted HP-loss event",
+        "effect": "Gain amount Strength when HP is actually lost from a qualifying self-inflicted card effect, such as {{entity_card_Offering}} or {{entity_card_Brutality}}. Fully prevented HP loss supplies no gain.",
+        "timing": "On qualifying self-inflicted HP loss while active; persists for combat."
+      },
+      "MagnetismPower": {
+        "amountUnit": "random Colorless cards generated per player turn",
+        "effect": "Add amount random temporary Colorless cards to Hand at each turn start. They keep their ordinary costs; hand capacity applies.",
+        "timing": "Player turn start from the next turn after deployment; persists for combat."
+      },
+      "MayhemPower": {
+        "amountUnit": "top draw-pile cards automatically played per player turn",
+        "effect": "After normal turn draw, automatically play amount cards from the top of the remaining draw pile for free, choosing a random enemy when a target is required. Each played card keeps its own Exhaust rule.",
+        "timing": "Player turn start after normal draw, from the next turn after deployment; persists for combat."
+      },
+      "PanachePower": {
+        "amountUnit": "cards still to play before the next damage trigger this turn",
+        "effect": "Every fifth card played this turn deals the stored THORNS damage to all enemies, then resets the counter to 5. The card supplies 10 damage (14 if upgraded); repeated deployment adds stored damage.",
+        "timing": "On card play; the counter resets to 5 at player turn start, and the damage effect persists for combat."
+      },
+      "SadisticPower": {
+        "amountUnit": "damage per qualifying debuff application",
+        "effect": "When the owner applies a debuff to another entity without Artifact, deal amount THORNS damage to that target. Artifact-blocked applications supply no damage.",
+        "timing": "On debuff application while active; persists for combat."
+      },
+      "Poison": {
+        "amountUnit": "HP lost at the next owner turn start",
+        "effect": "At the owner's turn start, lose HP equal to amount, then reduce Poison by 1. Block does not prevent this loss. Artifact can block a new Poison application.",
+        "timing": "Owner turn start; decreases per trigger until removed."
+      },
+      "Focus": {
+        "amountUnit": "modifier to Lightning, Frost and Dark Orb amounts",
+        "effect": "Adds amount to affected Orb damage or Block values, with a minimum of 0. Affects Lightning damage, Frost Block and Dark passive charge gain; Plasma Energy and the Dark Orb's already stored charge are unchanged.",
+        "timing": "When affected Orb values are evaluated; persists until changed or removed."
+      },
+      "Regeneration": {
+        "amountUnit": "HP healed at the next owner turn end",
+        "effect": "Heal amount HP up to Max HP and subject to healing modifiers, then reduce the amount by 1. With 5 stacks and no modifiers, successive healing requests are 5, 4, 3, 2 and 1.",
+        "timing": "Owner turn end, including the turn applied; decreases per trigger until removed."
+      },
+      "DuplicationPower": {
+        "amountUnit": "remaining original cards to replay",
+        "effect": "Each next original card is played a second time for free against the same target after its first effects, consuming one charge. Works on Attacks, Skills and Powers. Replays themselves consume no additional charge.",
+        "timing": "On card play; one unused charge is lost at each round end."
+      },
+      "Vigor": {
+        "amountUnit": "bonus damage per hit of the next Attack card",
+        "effect": "Adds amount to every normal damage hit and target of the next Attack card, before damage modifiers. Multiple hits consume one Vigor effect, not one stack per hit.",
+        "timing": "Consumed when an Attack card is played. Skills and Powers do not consume it."
+      },
+      "TheBombPower": {
+        "amountUnit": "remaining owner turn-end ticks until the explosion",
+        "effect": "Decrements by 1 at each owner's turn end. At amount 1, removes this countdown and deals its stored damage to all enemies as THORNS damage. The Bomb stores 40 damage, or 50 when upgraded; Strength, Weak and Vulnerable do not modify it. Enemy Block and damage caps still apply.",
+        "timing": "Owner turn end, including the turn it was applied. Starts at 3, so the explosion occurs on the third turn end."
+      },
+      "Regen": {
+        "amountUnit": "HP healed at each owner's turn end",
+        "effect": "Heal the owner by amount at its turn end, up to Max HP. Does not decrement. {{entity_enemy_AwakenedOne}} retains it after Rebirth. This is the monster's Regenerate, distinct from the player's decreasing Regeneration effect.",
+        "timing": "Owner turn end; persists until removed."
+      },
+      "Artifact": {
+        "amountUnit": "remaining debuff applications blocked",
+        "effect": "Blocks one debuff application per charge, regardless of its stack amount, then consumes one charge. Damage and adding Status cards are not debuff applications. Separate debuffs from one card are checked in execution order.",
+        "timing": "At the debuff application, not at the end of the turn. The Artifact power is removed when its last charge is consumed; ordinary debuff duration reduction does not consume charges."
+      },
+      "Anger": {
+        "amountUnit": "Strength gained per Skill played",
+        "effect": "When the player plays a Skill, the owner gains amount Strength. {{entity_enemy_GremlinNob}} uses this power for Enrage; Attacks and Powers do not trigger it.",
+        "timing": "Triggers while this power is present; its amount is not a duration."
+      },
+      "Angry": {
+        "amountUnit": "Strength gained per qualifying damage hit",
+        "effect": "Gains amount Strength on positive sourced damage, excluding HP-loss and thorns damage. This is different from {{entity_enemy_GremlinNob}}'s Skill-triggered Anger.",
+        "timing": "Each qualifying damage hit can trigger it; zero damage does not."
+      },
+      "BeatOfDeath": {
+        "amountUnit": "damage to the player per counted card",
+        "effect": "Every counted card deals this much THORNS damage to the player. Block can absorb it; Strength, Weak and Vulnerable do not modify it. {{entity_relic_Torii}}'s normal-hit reduction does not apply to this THORNS damage. It resolves after the card's own effects but before that card's final exhaust triggers {{entity_card_FeelNoPain}}. Extra actions a card queues can have their own exhaust triggers; inspect the settled result for timing-sensitive sequences.",
+        "timing": "After-use trigger, not the start of card play; persists until removed."
+      },
+      "Confusion": {
+        "amountUnit": "presence marker (sentinel -1)",
+        "effect": "Whenever a card with a nonnegative combat cost is drawn, randomize that instance's combat cost to 0, 1, 2 or 3. X-cost and unplayable cards are excluded. This can make cheap cards more expensive or expensive cards cheaper. Each new draw can randomize the cost again; use the displayed hand cost.",
+        "timing": "Persists for the rest of combat; the amount is not a duration or a multiplier."
+      },
+      "Constricted": {
+        "amountUnit": "Thorns damage dealt to the owner each turn end",
+        "effect": "At the owner's turn end, the original creature source deals amount Thorns damage to the owner. Block can absorb it; Strength, Weak and Vulnerable do not change it. Repeated applications add amount while keeping the first source. Artifact can block application and debuff removal can remove it.",
+        "timing": "Owner turn end, including the turn of application. Persists until removed; does not decrement each round."
+      },
+      "Curiosity": {
+        "amountUnit": "permanent Strength gained per player Power card",
+        "effect": "Whenever the player plays a Power card, grant the owner this much Strength. Attacks and Skills do not trigger it. {{entity_enemy_AwakenedOne}} removes Curiosity at first-phase lethal damage.",
+        "timing": "Card-play trigger; persists until removed, not a turn countdown."
+      },
+      "CurlUp": {
+        "amountUnit": "Block gained once",
+        "effect": "On the first qualifying damage hit, gains amount Block after damage and removes Curl Up. Requires positive damage, a living owner and a damage source.",
+        "timing": "Triggers once, not on every hit. A lethal hit does not gain Block."
+      },
+      "Dexterity": {
+        "amountUnit": "card Block bonus",
+        "effect": "Adds amount to Block gained from cards before other Block modifiers. Does not add Block by itself.",
+        "timing": "Persists until another effect changes or removes it."
+      },
+      "DexterityDown": {
+        "amountUnit": "Dexterity to subtract at owner's turn end",
+        "effect": "Subtract the stored amount from the owner's then-current Dexterity, then remove this power. Already gained Block stays. This is a fixed subtraction, not a reset; Artifact can block application of this debuff.",
+        "timing": "Owner's turn end, once; {{entity_potion_SpeedPotion}}'s temporary Dexterity expires this way."
+      },
+      "DrawReduction": {
+        "amountUnit": "cards subtracted from the normal start-of-turn draw",
+        "effect": "Reduce the owner's normal turn-start draw by amount. Does not reduce card-effect draws such as {{entity_card_PommelStrike}} or {{entity_card_ShrugItOff}}.",
+        "timing": "At end of round, reduce amount by 1; skip the first decrement while newly applied, so the next normal draw is reduced."
+      },
+      "Entangle": {
+        "amountUnit": "active restriction",
+        "effect": "Prevents playing Attack cards while active. Skills and Powers remain playable.",
+        "timing": "Removed at the end of the affected player's turn."
+      },
+      "Explosive": {
+        "amountUnit": "own turns remaining until explosion",
+        "effect": "At 1, kill the owner and then deal 30 Thorns damage to the player. Player Block absorbs this damage; Strength, Weak and Vulnerable do not modify it. At higher amounts, decrease by 1. Killing the owner earlier prevents its countdown from running.",
+        "timing": "Runs during the owner's turn, queued after its move actions and before the next monster's move actions, not at end of round."
+      },
+      "Fading": {
+        "amountUnit": "own turns remaining before disappearance",
+        "effect": "After the owner's queued move, decrease by 1; at 1 or less, kill the owner instead. Its current attack still executes before disappearance. You can win by surviving until this countdown completes.",
+        "timing": "Runs during the owner's turn after its move actions, before the next monster's move actions. Does not tick at end of round."
+      },
+      "Flight": {
+        "amountUnit": "remaining qualifying hits before grounding",
+        "effect": "While present, halves normal damage before Block, rounded down. Each normal hit that causes positive HP loss to a surviving owner and has a source removes 1 Flight; multiple hits from one card count separately. Fully blocked hits, Thorns and HP-loss effects do not remove Flight; Thorns and HP-loss effects also bypass its damage reduction. At zero Flight, a {{entity_enemy_Byrd}} loses flying status and immediately replaces its current intent with Stunned.",
+        "timing": "At the owner's turn start, remaining Flight restores to its stored initial amount if it was not completely removed. Grounded {{entity_enemy_Byrd}}s regain Flight only when executing Go Airborne."
+      },
+      "Frail": {
+        "amountUnit": "remaining rounds",
+        "effect": "Reduces Block gained from cards by 25%, rounded down. More stacks extend duration, not the reduction.",
+        "timing": "Decreases by 1 at end of round, unless the newly-applied flag skips that tick."
+      },
+      "GenericStrengthUp": {
+        "amountUnit": "permanent Strength gained each round",
+        "effect": "At the end of each round, gain Strength equal to amount if amount is positive. The effect itself persists and does not decrement. It does not grant Strength immediately when applied.",
+        "timing": "End-of-round power hook, after the monsters have executed their moves; the gained Strength affects later attacks."
+      },
+      "Hex": {
+        "amountUnit": "Dazed cards added per non-Attack card played",
+        "effect": "When the owner plays a non-Attack card, including a Skill or Power, add amount unupgraded Dazed to random positions in the owner's draw pile. Dazed is unplayable and Ethereal. Attacks do not trigger this effect.",
+        "timing": "Card play; persists until removed. Does not decrement each round. Artifact can block its application and debuff removal can remove it."
+      },
+      "Intangible": {
+        "amountUnit": "remaining owner turns of monster Intangible",
+        "effect": "While positive, cap each final damage or direct HP-loss instance above 1 to 1. Multi-hit attacks still apply a separate capped instance for each hit. This is the monster version; the player's version has stable ID IntangiblePlayer.",
+        "timing": "Decreases by 1 at the owner's turn end, unless just applied skips that tick."
+      },
+      "IntangiblePlayer": {
+        "amountUnit": "remaining rounds of player Intangible",
+        "effect": "While positive, cap each final damage or direct HP-loss instance above 1 to 1. Multi-hit attacks still apply a separate capped instance for each hit. Normal damage can then be absorbed by Block; Intangible itself does not create Block.",
+        "timing": "Decreases by 1 at end of round, after the enemy turn. One stack gained during your turn protects through that enemy turn; additional stacks extend duration."
+      },
+      "Invincible": {
+        "amountUnit": "remaining HP damage allowance before the owner's next turn start",
+        "effect": "Caps cumulative HP damage, including HP loss. Damage consumes the remaining allowance; at zero, further damage is prevented. The stored reset cap restores the allowance at the owner's turn start, before start-of-turn damage such as Poison. The enemy definition supplies the initial allowance for the encounter's Ascension; the combat reading supplies the current remaining allowance.",
+        "timing": "Resets at the owner's turn start, not after every hit or at player turn end."
+      },
+      "LoseStrength": {
+        "amountUnit": "Strength to subtract at owner's turn end",
+        "effect": "Subtract the stored amount from the owner's then-current Strength, then remove this power. This is a fixed subtraction, not a reset of Strength; other Strength gains remain except for that subtraction. Artifact can block application of this debuff.",
+        "timing": "Owner's turn end, once; not a recurring loss each round."
+      },
+      "Malleable": {
+        "amountUnit": "Block gained by the next qualifying hit; stored base is the reset amount",
+        "effect": "Each nonlethal normal hit that causes positive HP loss queues Block equal to the current amount, then immediately increases the amount by 1. Fully blocked hits, lethal hits, Thorns and HP-loss effects do not trigger it. Counts hits, not cards; queued Block resolves at its existing queue position.",
+        "timing": "After the monster's turn ends, the amount resets to its stored base. Does not lose duration each round."
+      },
+      "Minion": {
+        "amountUnit": "presence flag",
+        "effect": "Marks the owner as a minion and excludes it from unique kill-reward triggers. Its enemy behavior determines leader-death escape; in the {{entity_enemy_GremlinLeader}} encounter, other non-dying allies escape when the leader dies.",
+        "timing": "Persistent marker; encounter behavior handles escape."
+      },
+      "NextTurnBlock": {
+        "amountUnit": "accumulated Block to gain at the owner's next turn start",
+        "effect": "At the owner's next turn start, gain Block equal to amount, then remove this power. Multiple applications add to the same pending amount. The delayed Block does not protect during the turn when this power is applied.",
+        "timing": "Owner turn-start power hook, after normal Block clearing; consumed in one trigger."
+      },
+      "NoBlock": {
+        "amountUnit": "remaining round-end ticks of card Block prevention",
+        "effect": "Sets calculated Block from cards to 0. Block gained by powers and relics, such as {{entity_card_FeelNoPain}} and {{entity_card_Metallicize}}, still applies. Existing Block is not removed by application. Artifact can block this debuff.",
+        "timing": "Decreases by 1 at each round end, including the round it was applied. {{entity_card_PanicButton}} applies 2, affecting further card Block this turn and next turn."
+      },
+      "NoDraw": {
+        "amountUnit": "presence; not a numeric stack count",
+        "effect": "Prevents further card draw while active, including card and power triggers such as {{entity_card_DarkEmbrace}} and {{entity_card_Evolve}}. It does not prevent adding generated cards to Hand or moving cards into Hand without drawing.",
+        "timing": "Removed at the owner's turn end. {{entity_card_BattleTrance}} draws its cards before applying this power."
+      },
+      "PainfulStabs": {
+        "amountUnit": "presence flag, not a numeric stack count",
+        "effect": "Whenever the owner inflicts positive HP damage other than THORNS damage, add 1 Wound to the player's discard pile. Fully blocked hits add none; multiple damaging hits each add a Wound.",
+        "timing": "On-inflict-damage trigger; persists until removed."
+      },
+      "PlatedArmor": {
+        "amountUnit": "Block gained at turn end",
+        "effect": "Gain amount Block at turn end. Each incoming normal hit that actually loses HP from another entity removes 1 Plated Armor. Fully blocked hits, THORNS and HP-loss damage do not remove a stack. Removing the last stack stuns {{entity_enemy_ShelledParasite}}.",
+        "timing": "Turn-end Block and on-HP-loss reduction; not a duration countdown."
+      },
+      "Rage": {
+        "amountUnit": "Block gained per Attack card played",
+        "effect": "When the player plays an Attack card, the owner gains Block equal to amount (at least 0). Triggers once per card, not once per hit; Skills and Powers do not trigger it.",
+        "timing": "Active while present; removed at the end of the player turn. Amount is not a duration."
+      },
+      "Reactive": {
+        "amountUnit": "presence flag (-1 is the runtime sentinel)",
+        "effect": "Each normal hit with a real source that causes positive HP loss while the owner survives queues a new monster move roll. Fully blocked and lethal hits, Thorns and HP-loss effects do not trigger it. Multi-hit attacks can cause multiple rolls.",
+        "timing": "After qualifying damage; persists until removed. The resulting visible intention replaces the earlier intention, so inspect it again after attacking."
+      },
+      "Ritual": {
+        "amountUnit": "Strength gained per trigger",
+        "effect": "Repeatedly grants amount Strength; the displayed amount is growth per trigger, not current Strength.",
+        "timing": "Player-controlled Ritual triggers at end of player turn. Monster Ritual triggers at end of round and skips its initial trigger."
+      },
+      "Shackled": {
+        "amountUnit": "Strength restored at the owner's turn end",
+        "effect": "At the end of the owner's turn, apply amount Strength to the owner only if amount is positive, then remove Shackled. Non-positive amounts restore no Strength; Shackled is still removed. The Strength reduction is a separate effect, not performed by Shackled itself.",
+        "timing": "Removed at the owner's turn end, not an end-of-round duration counter."
+      },
+      "SharpHide": {
+        "amountUnit": "Thorns damage per Attack card played",
+        "effect": "When the player plays an Attack card, the owner deals amount Thorns damage to the player. Triggers once per card, not once per hit; Skills and Powers do not trigger it. Player Block can absorb this damage.",
+        "timing": "Triggers only while present; no automatic round decay. Guardian removes it when leaving Defensive Mode."
+      },
+      "Shifting": {
+        "amountUnit": "presence flag, not a numeric stack count",
+        "effect": "Whenever normal or Thorns damage causes positive HP loss to the owner, apply that much negative Strength and an equal Shackled effect. Fully blocked hits and direct HP-loss effects do not trigger it. This reduces current attack damage, potentially to 0. Artifact can block the negative Strength application and prevents the matching Shackled application.",
+        "timing": "Strength reduction lasts through the owner's attack. Shackled restores the reduced Strength at the owner's turn end and removes itself; Shifting remains present."
+      },
+      "Slow": {
+        "amountUnit": "card-play counter for the current round",
+        "effect": "Player Attack card damage against this owner is multiplied by 1 + 0.1 times amount. Skills and Powers also increase the counter when played, so earlier setup cards can amplify later Attacks.",
+        "timing": "Each player card play adds 1. At the end of the round, reset the amount to 0 and keep the power present. A turn-start reading of 0 is the reset counter; it can grow again during that turn."
+      },
+      "Split": {
+        "amountUnit": "presence (not a stack count)",
+        "effect": "For a living Large Slime or {{entity_enemy_SlimeBoss}}, reaching half Max HP or below replaces the current intent with Split. Each child's current and Max HP equal the parent's remaining HP at split execution. More damage before splitting reduces the children; killing the parent prevents splitting.",
+        "timing": "Checked after damage; Split executes on the enemy turn. Medium and Small Slimes do not split."
+      },
+      "SporeCloud": {
+        "amountUnit": "Vulnerable stacks applied on death",
+        "effect": "On death, applies amount Vulnerable to the player. This increases incoming attack damage; it does not apply Weak or reduce the player's attacks.",
+        "timing": "Death trigger is skipped when the battle is already ending. The amount here is the application size, not the player's remaining Vulnerable duration."
+      },
+      "Strength": {
+        "amountUnit": "attack damage bonus per hit",
+        "effect": "Amount is signed: +2 adds 2 attack damage per hit, -2 subtracts 2, before multipliers. Strength reduction works from 0 Strength into negative Strength. {{entity_card_HeavyBlade}} scales this signed bonus with its card multiplier.",
+        "timing": "Persists until another effect changes or removes it."
+      },
+      "Surrounded": {
+        "amountUnit": "presence flag, not a numeric stack count",
+        "effect": "Targeting an enemy with a card turns the player toward it. An enemy behind the player deals 50% more attack damage. Untargeted cards do not turn the player. Actual damage uses facing and position; Back Attack is the visible marker. Ends when the surrounding pair is broken.",
+        "timing": "Facing changes at targeted card play; remains while surrounded."
+      },
+      "BackAttack": {
+        "amountUnit": "presence flag, not a numeric stack count",
+        "effect": "Marks an enemy behind the Surrounded player. Its attacks deal 50% more damage. Targeted cards can change facing; actual damage follows facing, and this display marker refreshes when the card queue settles.",
+        "timing": "Derived from player facing while Surrounded, not a stack-based damage modifier."
+      },
+      "Thievery": {
+        "amountUnit": "Gold stolen per stealing move, capped by available Gold",
+        "effect": "The thief's stealing moves take Gold before attack damage; Block does not prevent theft. Killing the thief recovers its stolen Gold in rewards; escape does not.",
+        "timing": "Stealing moves only; not an automatic effect on every hit or turn. No round decay."
+      },
+      "Thorns": {
+        "amountUnit": "retaliation damage per incoming hit",
+        "effect": "When attacked by another entity with normal damage, deal this much THORNS damage to the attacker, even when Block absorbs the hit. Multi-hit attacks trigger once per hit. THORNS and HP-loss damage do not trigger retaliation; Strength, Weak and Vulnerable do not modify retaliation damage.",
+        "timing": "On-attacked trigger; persists until removed."
+      },
+      "TimeWarp": {
+        "amountUnit": "card counter toward 12, retained across turns",
+        "effect": "Each counted player card increments the counter. The 12th forces the player's turn to end, resets the counter to 0, and gives all living enemies 2 permanent Strength. Ending a normal turn does not reset it. Potions are not card plays.",
+        "timing": "Card-play trigger and forced-end sequence; persists across turns."
+      },
+      "Unawakened": {
+        "amountUnit": "presence flag, not a numeric stack count",
+        "effect": "{{entity_enemy_AwakenedOne}}'s first phase. First lethal damage starts Rebirth instead of final death: remove debuffs, Curiosity, Unawakened and Shackled; preserve positive Strength and Regenerate. Rebirth restores full HP without attacking; Dark Echo follows. The transition belongs to the monster's damage handler.",
+        "timing": "Removed immediately at first-phase lethal damage."
+      },
+      "Vulnerable": {
+        "amountUnit": "remaining rounds",
+        "effect": "Increases attack damage received, normally by 50%. More stacks extend duration, not the multiplier. {{entity_relic_PaperFrog}} and {{entity_relic_OddMushroom}} can change the multiplier.",
+        "timing": "Decreases by 1 at end of round, unless the newly-applied flag skips that tick. The displayed amount is remaining duration, not the original application."
+      },
+      "Weak": {
+        "amountUnit": "remaining rounds",
+        "effect": "Reduces attack damage dealt, normally by 25%. Paper Crane makes enemy Weak stronger. More stacks extend duration, not the multiplier.",
+        "timing": "Decreases by 1 at end of round, unless the newly-applied flag skips that tick."
+      },
+      "Combust": {
+        "amountUnit": "damage to each enemy; separate self HP loss is stored alongside it",
+        "effect": "At player turn end, first lose the stored self HP loss, then deal amount non-Attack damage to each enemy. Block does not prevent the self HP loss. Each additional deployment adds its damage and 1 to self HP loss; this loss can trigger Rupture.",
+        "timing": "Player turn end; persists for the rest of combat. Damage and self HP loss stack independently."
+      },
+      "Corruption": {
+        "amountUnit": "presence; not a numeric stack count",
+        "effect": "While active, Skills cost 0 and Exhaust when played, including Skills that normally do not Exhaust. It does not draw cards or give Energy. Attacks and Powers keep their own costs and destinations. Owning the Corruption card is not the same as having this active power.",
+        "timing": "Takes effect when deployed and persists for the rest of combat. Additional Corruption applications do not multiply this effect."
+      },
+      "DarkEmbrace": {
+        "amountUnit": "cards drawn per card Exhausted",
+        "effect": "While active, whenever any card is Exhausted, draw amount cards. Multiple deployed copies add their amounts: amount 2 draws 2 per Exhaust. Does not give Energy. No Draw prevents the draw; no further draw is queued once combat has ended.",
+        "timing": "On Exhaust, after deployment; persists for the rest of combat. Merely owning or holding the card does not activate this trigger."
+      },
+      "FeelNoPain": {
+        "amountUnit": "Block gained per card Exhausted",
+        "effect": "While active, whenever any card is Exhausted, gain amount Block. Multiple deployed copies add their amounts. This trigger does not draw cards or give Energy; Dexterity and Frail do not modify this power's Block.",
+        "timing": "On Exhaust, after deployment; persists for the rest of combat. The Block itself follows ordinary Block lifetime rules."
+      },
+      "FlameBarrier": {
+        "amountUnit": "retaliation damage per incoming hit",
+        "effect": "When another entity attacks the owner with normal damage, deal amount THORNS damage to the attacker, even when Block absorbs the hit. Multi-hit attacks trigger once per hit. Self damage, THORNS and HP-loss damage do not trigger it. Strength, Weak and Vulnerable do not modify retaliation damage.",
+        "timing": "On-attacked trigger; removed at the start of the owner's next turn. Multiple applications add their amounts until that removal."
+      },
+      "Metallicize": {
+        "amountUnit": "Block gained at each owner's turn end",
+        "effect": "Gain amount Block at the end of the owner's turn. Does not decay each round; {{entity_enemy_Lagavulin}} removes its sleeping {{entity_card_Metallicize}} when it wakes.",
+        "timing": "Owner turn end, not on card play or damage. For the player, end-of-turn relic checks such as {{entity_relic_Orichalcum}} happen before this Block gain; this gain then precedes queued end-of-turn Status and Curse effects."
+      },
+      "Regrow": {
+        "amountUnit": "presence flag, not a numeric stack count",
+        "effect": "{{entity_enemy_Darkling}}s enter half-death at 0 HP while another {{entity_enemy_Darkling}} is still alive. Their powers are cleared, their current move becomes the idle Count, and they cannot be targeted. After Count, Reincarnate restores floor(Max HP / 2) HP, revives the monster and reinstalls Life Link. Bringing all {{entity_enemy_Darkling}}s to 0 HP before any revives kills the group permanently.",
+        "timing": "Half-death and group defeat are owned by {{entity_enemy_Darkling}}'s death handler; revival occurs on its Reincarnate move. This is not an end-of-turn regeneration amount."
+      },
+      "ModeShift": {
+        "amountUnit": "remaining HP damage to trigger Defensive Mode",
+        "effect": "Actual HP loss reduces the remaining amount; damage absorbed by Block does not. Reaching the threshold replaces the current intent with Close Up, removes Mode Shift and grants Defensive Block. The next threshold increases each time; see the Guardian definition for difficulty-specific amounts.",
+        "timing": "Active in Offensive Mode; restored with the new threshold after Twin Slam. No round decay."
+      }
     }
   },
   "mechanics": {

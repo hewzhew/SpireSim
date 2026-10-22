@@ -1,9 +1,8 @@
-pub const MECHANICS: super::super::mechanics::PowerMechanics = super::super::mechanics::PowerMechanics {
-    amount_unit: "retaliation damage per incoming hit",
-    effect: "When attacked by another entity with normal damage, deal this much THORNS damage to the attacker, even when Block absorbs the hit. Multi-hit attacks trigger once per hit. THORNS and HP-loss damage do not trigger retaliation; Strength, Weak and Vulnerable do not modify retaliation damage.",
-    timing: "On-attacked trigger; persists until removed.",
-    round_duration: false,
-};
+pub const MECHANICS: super::super::mechanics::PowerMechanics =
+    super::super::mechanics::PowerMechanics {
+        text_id: crate::content::powers::PowerId::Thorns,
+        round_duration: false,
+    };
 
 use crate::runtime::action::{Action, DamageInfo, DamageType, NO_SOURCE};
 use crate::runtime::combat::CombatState;

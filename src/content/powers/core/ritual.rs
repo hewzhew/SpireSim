@@ -1,9 +1,8 @@
-pub const MECHANICS: super::super::mechanics::PowerMechanics = super::super::mechanics::PowerMechanics {
-    amount_unit: "Strength gained per trigger",
-    effect: "Repeatedly grants amount Strength; the displayed amount is growth per trigger, not current Strength.",
-    timing: "Player-controlled Ritual triggers at end of player turn. Monster Ritual triggers at end of round and skips its initial trigger.",
-    round_duration: false,
-};
+pub const MECHANICS: super::super::mechanics::PowerMechanics =
+    super::super::mechanics::PowerMechanics {
+        text_id: crate::content::powers::PowerId::Ritual,
+        round_duration: false,
+    };
 
 use crate::runtime::action::Action;
 use crate::runtime::combat::PowerId;

@@ -1,9 +1,8 @@
-pub const MECHANICS: super::super::mechanics::PowerMechanics = super::super::mechanics::PowerMechanics {
-    amount_unit: "Vulnerable stacks applied on death",
-    effect: "On death, applies amount Vulnerable to the player. This increases incoming attack damage; it does not apply Weak or reduce the player's attacks.",
-    timing: "Death trigger is skipped when the battle is already ending. The amount here is the application size, not the player's remaining Vulnerable duration.",
-    round_duration: false,
-};
+pub const MECHANICS: super::super::mechanics::PowerMechanics =
+    super::super::mechanics::PowerMechanics {
+        text_id: crate::content::powers::PowerId::SporeCloud,
+        round_duration: false,
+    };
 
 use crate::runtime::action::Action;
 use crate::runtime::combat::{CombatState, PowerId};

@@ -2,12 +2,11 @@ use crate::runtime::action::{Action, DamageInfo, DamageType};
 use crate::runtime::combat::{Power, PowerPayload};
 use crate::EntityId;
 
-pub const MECHANICS: super::super::mechanics::PowerMechanics = super::super::mechanics::PowerMechanics {
-    amount_unit: "Thorns damage dealt to the owner each turn end",
-    effect: "At the owner's turn end, the original creature source deals amount Thorns damage to the owner. Block can absorb it; Strength, Weak and Vulnerable do not change it. Repeated applications add amount while keeping the first source. Artifact can block application and debuff removal can remove it.",
-    timing: "Owner turn end, including the turn of application. Persists until removed; does not decrement each round.",
-    round_duration: false,
-};
+pub const MECHANICS: super::super::mechanics::PowerMechanics =
+    super::super::mechanics::PowerMechanics {
+        text_id: crate::content::powers::PowerId::Constricted,
+        round_duration: false,
+    };
 
 pub fn at_end_of_turn(owner: EntityId, power: &Power) -> smallvec::SmallVec<[Action; 2]> {
     let mut actions = smallvec::smallvec![];

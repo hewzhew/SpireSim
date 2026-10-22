@@ -1,9 +1,8 @@
-pub const MECHANICS: super::super::mechanics::PowerMechanics = super::super::mechanics::PowerMechanics {
-    amount_unit: "Strength gained per qualifying damage hit",
-    effect: "Gains amount Strength on positive sourced damage, excluding HP-loss and thorns damage. This is different from Gremlin Nob's Skill-triggered Anger.",
-    timing: "Each qualifying damage hit can trigger it; zero damage does not.",
-    round_duration: false,
-};
+pub const MECHANICS: super::super::mechanics::PowerMechanics =
+    super::super::mechanics::PowerMechanics {
+        text_id: crate::content::powers::PowerId::Angry,
+        round_duration: false,
+    };
 
 use crate::runtime::action::Action;
 use crate::runtime::combat::{CombatState, PowerId};

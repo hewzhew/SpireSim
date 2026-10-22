@@ -1,9 +1,8 @@
-pub const MECHANICS: super::super::mechanics::PowerMechanics = super::super::mechanics::PowerMechanics {
-    amount_unit: "permanent Strength gained per player Power card",
-    effect: "Whenever the player plays a Power card, grant the owner this much Strength. Attacks and Skills do not trigger it. Awakened One removes Curiosity at first-phase lethal damage.",
-    timing: "Card-play trigger; persists until removed, not a turn countdown.",
-    round_duration: false,
-};
+pub const MECHANICS: super::super::mechanics::PowerMechanics =
+    super::super::mechanics::PowerMechanics {
+        text_id: crate::content::powers::PowerId::Curiosity,
+        round_duration: false,
+    };
 
 use crate::content::powers::PowerId;
 use crate::runtime::action::Action;

@@ -7,10 +7,31 @@ pub use profile::*;
 
 #[derive(Clone, Copy, Debug)]
 pub struct PowerMechanics {
-    pub amount_unit: &'static str,
-    pub effect: &'static str,
-    pub timing: &'static str,
+    pub text_id: PowerId,
     pub round_duration: bool,
+}
+
+impl PowerMechanics {
+    fn text(self, locale: sts_presentation::Locale, field: &str) -> String {
+        locale
+            .definition_text(
+                "game",
+                &format!("powerRule.{}.{field}", self.text_id.stable_id()),
+            )
+            .expect("complete power mechanism text")
+    }
+
+    pub fn amount_unit(self, locale: sts_presentation::Locale) -> String {
+        self.text(locale, "amountUnit")
+    }
+
+    pub fn effect(self, locale: sts_presentation::Locale) -> String {
+        self.text(locale, "effect")
+    }
+
+    pub fn timing(self, locale: sts_presentation::Locale) -> String {
+        self.text(locale, "timing")
+    }
 }
 
 pub fn get(power: PowerId) -> Option<PowerMechanics> {
@@ -18,117 +39,79 @@ pub fn get(power: PowerId) -> Option<PowerMechanics> {
         PowerId::Strength => core::strength::MECHANICS,
         PowerId::Dexterity => core::dexterity::MECHANICS,
         PowerId::Buffer => PowerMechanics {
-            amount_unit: "remaining damage or HP-loss events to prevent",
-            effect: "Prevent the next positive damage or HP-loss event, then consume one charge. Fully blocked damage does not consume Buffer. Unblocked Beat of Death can consume it; each hit of a multi-hit attack is a separate event. Direct HP loss also consumes a charge, even though Block cannot absorb that HP loss.",
-            timing: "After Block for blockable damage, before positive HP loss; persists until its charges are consumed or it is removed.",
+            text_id: crate::content::powers::PowerId::Buffer,
             round_duration: false,
         },
         PowerId::Barricade => PowerMechanics {
-            amount_unit: "presence; numeric amount is not a stack count",
-            effect: "Keeps the owner's remaining Block at the normal turn-start clearing point. Incoming damage still spends Block; the effect creates no Block itself.",
-            timing: "Owner turn start; persists for combat until removed.",
+            text_id: crate::content::powers::PowerId::Barricade,
             round_duration: false,
         },
         PowerId::Berserk => PowerMechanics {
-            amount_unit: "additional Energy per player turn",
-            effect: "Gain amount additional Energy at each player turn start. The card's self-Vulnerable is a separate debuff with its own duration.",
-            timing: "Player turn start, from the next turn after deployment; persists for combat.",
+            text_id: crate::content::powers::PowerId::Berserk,
             round_duration: false,
         },
         PowerId::Energized | PowerId::EnergizedBlue => PowerMechanics {
-            amount_unit: "additional Energy at the next player recharge",
-            effect: "Gain amount additional Energy at the next player energy recharge, then remove this power. Repeated applications of the same color add together; green and blue Energized remain separate powers and both trigger.",
-            timing: "Next player energy recharge, before ordinary start-of-turn draws; does not grant Energy when applied.",
+            text_id: crate::content::powers::PowerId::Energized,
             round_duration: false,
         },
         PowerId::Brutality => PowerMechanics {
-            amount_unit: "additional cards drawn and HP lost per turn",
-            effect: "After the normal draw, draw amount additional cards, then lose amount HP. Draw prevention and hand capacity apply to the draw; Block does not prevent the HP loss.",
-            timing: "Player turn start after normal draw, from the next turn after deployment; persists for combat.",
+            text_id: crate::content::powers::PowerId::Brutality,
             round_duration: false,
         },
         PowerId::DemonForm => PowerMechanics {
-            amount_unit: "Strength gained per player turn",
-            effect: "Gain amount Strength after each normal start-of-turn draw. Existing Strength remains, so gains accumulate across turns.",
-            timing: "Player turn start after normal draw, from the next turn after deployment; persists for combat.",
+            text_id: crate::content::powers::PowerId::DemonForm,
             round_duration: false,
         },
         PowerId::DoubleTap => PowerMechanics {
-            amount_unit: "remaining Attack cards to replay",
-            effect: "Each next Attack card is played a second time for free against the same target, after its original effects. Consume one charge per original Attack card; Skills and Powers keep the charges.",
-            timing: "On card play; unused charges expire at player turn end.",
+            text_id: crate::content::powers::PowerId::DoubleTap,
             round_duration: false,
         },
         PowerId::Evolve => PowerMechanics {
-            amount_unit: "additional cards drawn per Status drawn",
-            effect: "Drawing a Status requests amount additional draws. Curses do not trigger it. Draw prevention and hand capacity apply, and newly drawn Statuses can trigger further draws.",
-            timing: "On Status draw while active; persists for combat.",
+            text_id: crate::content::powers::PowerId::Evolve,
             round_duration: false,
         },
         PowerId::FireBreathing => PowerMechanics {
-            amount_unit: "damage to each enemy per Status or Curse drawn",
-            effect: "When a Status or Curse is drawn, deal amount THORNS damage to all enemies. Strength, Weak and Vulnerable do not modify this damage; enemy Block and damage caps apply.",
-            timing: "On Status or Curse draw while active; persists for combat.",
+            text_id: crate::content::powers::PowerId::FireBreathing,
             round_duration: false,
         },
         PowerId::Juggernaut => PowerMechanics {
-            amount_unit: "damage per positive Block gain event",
-            effect: "Whenever the player gains positive Block, deal amount THORNS damage to a random living enemy. Separate Block gains can trigger separately. This deals damage rather than granting more Block.",
-            timing: "On positive Block gain while active; persists for combat.",
+            text_id: crate::content::powers::PowerId::Juggernaut,
             round_duration: false,
         },
         PowerId::Rupture => PowerMechanics {
-            amount_unit: "Strength gained per qualifying self-inflicted HP-loss event",
-            effect: "Gain amount Strength when HP is actually lost from a qualifying self-inflicted card effect, such as Offering or Brutality. Fully prevented HP loss supplies no gain.",
-            timing: "On qualifying self-inflicted HP loss while active; persists for combat.",
+            text_id: crate::content::powers::PowerId::Rupture,
             round_duration: false,
         },
         PowerId::MagnetismPower => PowerMechanics {
-            amount_unit: "random Colorless cards generated per player turn",
-            effect: "Add amount random temporary Colorless cards to Hand at each turn start. They keep their ordinary costs; hand capacity applies.",
-            timing: "Player turn start from the next turn after deployment; persists for combat.",
+            text_id: crate::content::powers::PowerId::MagnetismPower,
             round_duration: false,
         },
         PowerId::MayhemPower => PowerMechanics {
-            amount_unit: "top draw-pile cards automatically played per player turn",
-            effect: "After normal turn draw, automatically play amount cards from the top of the remaining draw pile for free, choosing a random enemy when a target is required. Each played card keeps its own Exhaust rule.",
-            timing: "Player turn start after normal draw, from the next turn after deployment; persists for combat.",
+            text_id: crate::content::powers::PowerId::MayhemPower,
             round_duration: false,
         },
         PowerId::PanachePower => PowerMechanics {
-            amount_unit: "cards still to play before the next damage trigger this turn",
-            effect: "Every fifth card played this turn deals the stored THORNS damage to all enemies, then resets the counter to 5. The card supplies 10 damage (14 if upgraded); repeated deployment adds stored damage.",
-            timing: "On card play; the counter resets to 5 at player turn start, and the damage effect persists for combat.",
+            text_id: crate::content::powers::PowerId::PanachePower,
             round_duration: false,
         },
         PowerId::SadisticPower => PowerMechanics {
-            amount_unit: "damage per qualifying debuff application",
-            effect: "When the owner applies a debuff to another entity without Artifact, deal amount THORNS damage to that target. Artifact-blocked applications supply no damage.",
-            timing: "On debuff application while active; persists for combat.",
+            text_id: crate::content::powers::PowerId::SadisticPower,
             round_duration: false,
         },
         PowerId::Poison => PowerMechanics {
-            amount_unit: "HP lost at the next owner turn start",
-            effect: "At the owner's turn start, lose HP equal to amount, then reduce Poison by 1. Block does not prevent this loss. Artifact can block a new Poison application.",
-            timing: "Owner turn start; decreases per trigger until removed.",
+            text_id: crate::content::powers::PowerId::Poison,
             round_duration: false,
         },
         PowerId::Focus => PowerMechanics {
-            amount_unit: "modifier to Lightning, Frost and Dark Orb amounts",
-            effect: "Adds amount to affected Orb damage or Block values, with a minimum of 0. Affects Lightning damage, Frost Block and Dark passive charge gain; Plasma Energy and the Dark Orb's already stored charge are unchanged.",
-            timing: "When affected Orb values are evaluated; persists until changed or removed.",
+            text_id: crate::content::powers::PowerId::Focus,
             round_duration: false,
         },
         PowerId::Regeneration => PowerMechanics {
-            amount_unit: "HP healed at the next owner turn end",
-            effect: "Heal amount HP up to Max HP and subject to healing modifiers, then reduce the amount by 1. With 5 stacks and no modifiers, successive healing requests are 5, 4, 3, 2 and 1.",
-            timing: "Owner turn end, including the turn applied; decreases per trigger until removed.",
+            text_id: crate::content::powers::PowerId::Regeneration,
             round_duration: false,
         },
         PowerId::DuplicationPower => PowerMechanics {
-            amount_unit: "remaining original cards to replay",
-            effect: "Each next original card is played a second time for free against the same target after its first effects, consuming one charge. Works on Attacks, Skills and Powers. Replays themselves consume no additional charge.",
-            timing: "On card play; one unused charge is lost at each round end.",
+            text_id: crate::content::powers::PowerId::DuplicationPower,
             round_duration: false,
         },
         PowerId::Corruption => super::ironclad::corruption::MECHANICS,
@@ -158,7 +141,9 @@ pub fn get(power: PowerId) -> Option<PowerMechanics> {
         PowerId::Rage => core::rage::MECHANICS,
         PowerId::SharpHide => core::sharp_hide::MECHANICS,
         PowerId::Split => core::split::MECHANICS,
-        PowerId::ModeShift => crate::content::monsters::exordium::the_guardian::MODE_SHIFT_MECHANICS,
+        PowerId::ModeShift => {
+            crate::content::monsters::exordium::the_guardian::MODE_SHIFT_MECHANICS
+        }
         PowerId::Metallicize => super::ironclad::metallicize::MECHANICS,
         PowerId::FlameBarrier => super::ironclad::flame_barrier::MECHANICS,
         PowerId::Thievery => core::thievery::MECHANICS,
@@ -185,22 +170,16 @@ pub fn get(power: PowerId) -> Option<PowerMechanics> {
         PowerId::Intangible => core::intangible::MONSTER_MECHANICS,
         PowerId::IntangiblePlayer => core::intangible::PLAYER_MECHANICS,
         PowerId::Vigor => PowerMechanics {
-            amount_unit: "bonus damage per hit of the next Attack card",
-            effect: "Adds amount to every normal damage hit and target of the next Attack card, before damage modifiers. Multiple hits consume one Vigor effect, not one stack per hit.",
-            timing: "Consumed when an Attack card is played. Skills and Powers do not consume it.",
+            text_id: crate::content::powers::PowerId::Vigor,
             round_duration: false,
         },
         // Execution lives in the shared end-of-turn power dispatcher.
         PowerId::TheBombPower => PowerMechanics {
-            amount_unit: "remaining owner turn-end ticks until the explosion",
-            effect: "Decrements by 1 at each owner's turn end. At amount 1, removes this countdown and deals its stored damage to all enemies as THORNS damage. The Bomb stores 40 damage, or 50 when upgraded; Strength, Weak and Vulnerable do not modify it. Enemy Block and damage caps still apply.",
-            timing: "Owner turn end, including the turn it was applied. Starts at 3, so the explosion occurs on the third turn end.",
+            text_id: crate::content::powers::PowerId::TheBombPower,
             round_duration: false,
         },
         PowerId::Regen => PowerMechanics {
-            amount_unit: "HP healed at each owner's turn end",
-            effect: "Heal the owner by amount at its turn end, up to Max HP. Does not decrement. Awakened One retains it after Rebirth. This is the monster's Regenerate, distinct from the player's decreasing Regeneration effect.",
-            timing: "Owner turn end; persists until removed.",
+            text_id: crate::content::powers::PowerId::Regen,
             round_duration: false,
         },
         _ => return None,
@@ -213,9 +192,45 @@ mod tests {
     use crate::runtime::action::Action;
 
     #[test]
+    fn every_defined_power_has_complete_bilingual_mechanisms() {
+        let mut covered = std::collections::HashSet::new();
+        for id in PowerId::STABLE_IDS {
+            let Some(fact) = get(PowerId::from_stable_id(id).unwrap()) else {
+                continue;
+            };
+            covered.insert(fact.text_id);
+            for locale in [sts_presentation::Locale::En, sts_presentation::Locale::ZhCn] {
+                for text in [
+                    fact.amount_unit(locale),
+                    fact.effect(locale),
+                    fact.timing(locale),
+                ] {
+                    assert!(!text.is_empty() && !text.contains("{{"), "{locale}:{id}");
+                    if locale == sts_presentation::Locale::ZhCn {
+                        assert!(
+                            text.chars().any(|c| ('\u{4e00}'..='\u{9fff}').contains(&c)),
+                            "{id}: {text}"
+                        );
+                    }
+                }
+            }
+        }
+        let catalog: serde_json::Value =
+            serde_json::from_str(include_str!("../../../tools/presentation/locales/en.json"))
+                .unwrap();
+        let keys = catalog["game"]["powerRule"].as_object().unwrap();
+        assert_eq!(covered.len(), keys.len());
+        for power in covered {
+            assert!(keys.contains_key(power.stable_id()));
+        }
+    }
+
+    #[test]
     fn next_turn_block_explanation_matches_its_single_delayed_trigger() {
         let fact = get(PowerId::NextTurnBlock).unwrap();
-        assert!(fact.effect.contains("Multiple applications add"));
+        assert!(fact
+            .effect(sts_presentation::Locale::En)
+            .contains("Multiple applications add"));
         assert!(!fact.round_duration);
         assert!(matches!(
             core::next_turn_block::at_turn_start(0, 9).as_slice(),
@@ -344,7 +359,10 @@ mod tests {
                 [Action::ApplyPower { power_id, amount: -3, .. }, Action::RemovePower { power_id: removed, .. }]
                 if *power_id == stat && *removed == power
             ));
-            assert!(get(power).unwrap().effect.contains("fixed subtraction"));
+            assert!(get(power)
+                .unwrap()
+                .effect(sts_presentation::Locale::En)
+                .contains("fixed subtraction"));
         }
         for power in [
             PowerId::Corruption,
