@@ -1323,16 +1323,16 @@ function ordinaryRewardPolicy(state, cards, offers, profile, locale = 'en') {
 // native effect objects too, so a change in timing, selection or lifecycle
 // becomes a policy gap instead of disappearing behind the numeric summary.
 const cardVariantValues = {
-  BattleTrance: { field: 'draw_cards', label: 'requested draws' },
-  BurningPact: { field: 'draw_cards', label: 'requested draws' },
-  DeepBreath: { field: 'draw_cards', label: 'requested draws' },
-  DarkEmbrace: { field: 'exhaust_draw_power', label: 'draws per Exhaust after deployment' },
-  DemonForm: { field: 'strength_gain', label: 'Strength per supplied turn-start trigger' },
-  Inflame: { field: 'strength_gain', label: 'lasting Strength on play' },
-  Disarm: { field: 'enemy_strength_down', label: 'persistent enemy Strength reduction' },
+  BattleTrance: { field: 'draw_cards', label: 'variantRequestedDraws' },
+  BurningPact: { field: 'draw_cards', label: 'variantRequestedDraws' },
+  DeepBreath: { field: 'draw_cards', label: 'variantRequestedDraws' },
+  DarkEmbrace: { field: 'exhaust_draw_power', label: 'variantDrawPerExhaust' },
+  DemonForm: { field: 'strength_gain', label: 'variantStrengthPerTurnTrigger' },
+  Inflame: { field: 'strength_gain', label: 'variantLastingStrength' },
+  Disarm: { field: 'enemy_strength_down', label: 'variantPersistentStrengthReduction' },
 };
 
-function cardVariantComparisonPolicy(observation, offers, normalize) {
+function cardVariantComparisonPolicy(observation, offers, normalize, locale = 'en') {
   const id = offers[0]?.card, value = cardVariantValues[id];
   const native = new Map((observation.position.actions ?? []).map(row =>
     [normalize(row.semantic_action, observation), preparationCardAcquisition(observation, row)?.mechanics]));
@@ -1345,15 +1345,16 @@ function cardVariantComparisonPolicy(observation, offers, normalize) {
     return { command: row.command, card: row.card, cost: mechanics?.cost,
       amount: value ? mechanics?.[value.field] : undefined, otherEffects };
   });
-  const facts = variants.map(row => `${row.command}: ${row.cost} Energy`
-    + (value && row.card === id && Number.isSafeInteger(row.amount) ? `, ${row.amount} ${value.label}` : '') + '.');
+  const facts = variants.map(row => value && row.card === id && Number.isSafeInteger(row.amount)
+    ? strategyText(locale, 'variantCostAmount', { command: row.command, cost: row.cost, amount: row.amount, value: strategyText(locale, value.label) })
+    : strategyText(locale, 'variantCostOnly', { command: row.command, cost: row.cost }));
   const rule = { id: 'same-card-variant', origin: 'maintainer_strategy_default', sources: ['cx', 'equation'],
     dependencies: [], commands: [], conditions: facts };
-  const review = () => ({ ...rule, preference: 'Supply a reviewed preference for this candidate set.',
+  const review = () => ({ ...rule, preference: strategyText(locale, 'variantReviewRequired'),
     gap: { kind: 'strategy', reason: 'uncovered-card-variant-comparison',
-      message: 'This candidate set needs reviewed payment, effect and variant conditions.',
+      message: strategyText(locale, 'variantConditionsRequired'),
       candidates: variants.map(({ command, card, cost, amount }) => ({ command, card, cost,
-        ...(value && card === id && Number.isSafeInteger(amount) ? { amount, value: value.label } : {}) })) } });
+        ...(value && card === id && Number.isSafeInteger(amount) ? { amount, value: strategyText(locale, value.label) } : {}) })) } });
   if (!value || variants.some(row => row.card !== id || !Number.isSafeInteger(row.cost) || row.cost < 0
       || !Number.isSafeInteger(row.amount) || row.amount <= 0
       || !isDeepStrictEqual(row.otherEffects, variants[0].otherEffects))) return review();
@@ -1361,22 +1362,22 @@ function cardVariantComparisonPolicy(observation, offers, normalize) {
   const preferred = variants.filter(row => variants.every(other => row.cost <= other.cost && row.amount >= other.amount));
   if (!preferred.length) return review();
   return { ...rule, commands: [preferred.map(row => row.command).sort()[0]],
-    conditions: [...facts, `Other supplied native effects of ${id} match across these variants.`],
-    preference: `Use the ${id} variant with at least as much ${value.label} and at most the printed Energy payment.` };
+    conditions: [...facts, strategyText(locale, 'variantOtherEffectsMatch', { id: id })],
+    preference: strategyText(locale, 'variantPreferDominant', { id: id, label: strategyText(locale, value.label) }) };
 }
 
 // Conditions are resolved by the host. These defaults are strategy preferences,
 // separate from the native mechanism facts and from the player's final choice.
-function accessComparisonPolicy(observation, cards, offers, profile, normalize) {
-  if (new Set(offers.map(row => row.card)).size === 1) return cardVariantComparisonPolicy(observation, offers, normalize);
+function accessComparisonPolicy(observation, cards, offers, profile, normalize, locale = 'en') {
+  if (new Set(offers.map(row => row.card)).size === 1) return cardVariantComparisonPolicy(observation, offers, normalize, locale);
   const state = observation.position.observation.observation;
   const known = new Set(['BattleTrance', 'BurningPact', 'DeepBreath']);
-  const facts = offers.map(row => `${row.command}: ${row.cost} Energy, ${row.onPlayDraw.requested} requested draws.`);
+  const facts = offers.map(row => strategyText(locale, 'accessCostDraws', { command: row.command, cost: row.cost, requested: row.onPlayDraw.requested }));
   const rule = (id, commands, conditions, preference) => ({ id, origin: 'maintainer_strategy_default',
     sources: ['cx', 'equation'], dependencies: [], commands, conditions, preference });
   const review = () => ({ ...rule('access-comparison-coverage', [], facts,
-    'Supply a reviewed preference for this access set.'), gap: { kind: 'strategy',
-    reason: 'uncovered-access-comparison', message: 'This access set needs a reviewed default and its applicability conditions.',
+    strategyText(locale, 'accessReviewRequired')), gap: { kind: 'strategy',
+    reason: 'uncovered-access-comparison', message: strategyText(locale, 'accessConditionsRequired'),
     candidates: offers.map(row => ({ command: row.command, card: row.card, cost: row.cost,
       draws: row.onPlayDraw.requested })) } });
   if (offers.some(row => !known.has(row.card))) return review();
@@ -1386,7 +1387,7 @@ function accessComparisonPolicy(observation, cards, offers, profile, normalize) 
   const retained = [];
   for (const variants of groups) {
     if (variants.length === 1) { retained.push(variants[0]); continue; }
-    const resolved = cardVariantComparisonPolicy(observation, variants, normalize);
+    const resolved = cardVariantComparisonPolicy(observation, variants, normalize, locale);
     if (resolved.gap) return resolved;
     variantFacts.push(resolved.conditions.at(-1));
     retained.push(variants.find(row => row.command === resolved.commands[0]));
@@ -1400,8 +1401,8 @@ function accessComparisonPolicy(observation, cards, offers, profile, normalize) 
   if (offers.length === 2 && pact && breath && profile.baseEnergy >= 3 && cleanupCopies >= 4
       && pact.onPlayDraw.requested >= breath.onPlayDraw.requested) {
     return rule('access-with-basic-cleanup', [pact.command], [...facts,
-      `Owned basic cleanup pool: ${cleanupCopies} copies (${cleanup.map(labelCard).join(', ')}). Base Energy: ${profile.baseEnergy}.`],
-    'Default to BurningPact in this access pair: select a weak recurring Hand card for cleanup while reaching the owned functions.');
+      strategyText(locale, 'accessBasicCleanupPool', { cleanupCopies: cleanupCopies, cleanup: cleanup.map(labelCard).join(', '), baseEnergy: profile.baseEnergy })],
+    strategyText(locale, 'accessPreferBasicCleanup'));
   }
   const payable = row => row.persistent_cost >= 0 && row.persistent_cost <= profile.baseEnergy;
   const payoffs = cards.filter(row => payable(row)
@@ -1410,57 +1411,57 @@ function accessComparisonPolicy(observation, cards, offers, profile, normalize) 
   if (pact && profile.baseEnergy >= 3 && payoffs.length
       && (!breath || pact.onPlayDraw.requested >= breath.onPlayDraw.requested)) {
     return rule('access-with-exhaust-payoff', [pact.command], [...facts,
-      `Owned payable Exhaust payoffs: ${payoffs.map(labelCard).join(', ')}.`],
-    'Default to BurningPact for targeted Exhaust and access. Deploy the owned Powers before their triggers; on-Exhaust Energy requires selecting that source card.');
+      strategyText(locale, 'accessOwnedExhaustPayoffs', { payoffs: payoffs.map(labelCard).join(', ') })],
+    strategyText(locale, 'accessPreferExhaustPayoff'));
   }
   const trance = offers.find(row => row.card === 'BattleTrance' && row.cost === 0);
   if (trance && profile.baseEnergy >= 3 && !payoffs.length
       && !cards.some(row => ['BattleTrance', 'Corruption'].includes(row.card.card))
       && offers.every(row => row.onPlayDraw.requested <= trance.onPlayDraw.requested)) {
     return rule('first-free-large-draw', [trance.command], facts,
-      'Default to the first BattleTrance for this access set. Use other needed draws before BattleTrance; its draw precedes NoDraw for the rest of that turn.');
+      strategyText(locale, 'accessPreferFirstBattleTrance'));
   }
   return review();
 }
 
-function rewardFunctionComparisonPolicy(observation, offers, profile, normalize) {
+function rewardFunctionComparisonPolicy(observation, offers, profile, normalize, locale = 'en') {
   if (observation.position.observation.observation.run.act === 1 && offers.length > 1
       && offers.every(row => ['FiendFire', 'Corruption', 'DemonForm'].includes(row.card))
       && new Set(offers.map(row => row.card)).size === offers.length) {
     return { id: 'first-burst-payment-or-growth', origin: 'maintainer_strategy_default',
       sources: ['cx', 'panacea', 'jorbs'], dependencies: [], commands: offers.map(row => row.command), conditions: [],
-      preference: 'Default to FiendFire for burst and basic-card cleanup with owned draw. Compare Corruption for Skill payment and DemonForm for protected delayed growth. These are maintainer drafting preferences.',
-      question: 'Choose burst cleanup, Skill payment, or protected later Strength from the checked owned support and deployment costs.' };
+      preference: strategyText(locale, 'functionPreferBurst'),
+      question: strategyText(locale, 'functionBurstPaymentGrowthQuestion') };
   }
   if (observation.position.observation.observation.run.act === 1 && offers.length === 2
       && offers.some(row => row.card === 'Uppercut') && offers.some(row => row.card === 'FeelNoPain')) {
     return { id: 'first-weak-or-exhaust-block', origin: 'maintainer_strategy_default',
       sources: ['cx', 'panacea'], dependencies: [], commands: offers.map(row => row.command), conditions: [],
-      preference: 'Default to Uppercut for the first recurring Weak source. FeelNoPain is the alternative when the listed owned Exhaust events provide the more useful protection after deployment; sparse single-card triggers give modest immediate Block.',
-      question: 'Choose Uppercut for direct Weak coverage, or FeelNoPain for protection from the supplied owned Exhaust fuel. Compare the current Weak duration and payment with actual post-deployment trigger quantity and timing.' };
+      preference: strategyText(locale, 'functionPreferWeak'),
+      question: strategyText(locale, 'functionWeakExhaustQuestion') };
   }
   if (observation.position.observation.observation.run.act === 1 && offers.length === 2
       && offers.some(row => row.card === 'Armaments') && offers.some(row => row.card === 'Cleave')) {
     return { id: 'hand-upgrades-or-first-area-output', origin: 'maintainer_strategy_default',
       sources: ['cx', 'equation'], dependencies: [], commands: offers.map(row => row.command), conditions: [],
-      preference: 'Both first functions meet the checked drafting conditions. Default to Armaments+ to improve the owned basic cards and listed access targets; Cleave adds the larger immediate hit to each enemy.',
-      question: 'Choose one supplied function: use Armaments+ for the checked upgrades across combat hands, or Cleave when the first stronger standalone area hit is the more pressing need.' };
+      preference: strategyText(locale, 'functionPreferHandUpgrade'),
+      question: strategyText(locale, 'functionHandUpgradeAreaQuestion') };
   }
   if (offers.length === 2 && offers.some(row => row.card === 'Havoc')
       && offers.some(row => row.card === 'TrueGrit')) {
     return { id: 'planned-free-play-or-protective-cleanup', origin: 'maintainer_strategy_default',
       sources: ['cx', 'equation'], dependencies: ['draw', 'retention'],
       commands: offers.map(row => row.command), conditions: [],
-      preference: 'Both first functions fit the checked window. TrueGrit+ adds protection and selects weak Hand cards for cleanup. Havoc+ turns an arranged top card into a free play and applies its printed Exhaust rule.',
-      question: 'Choose one: favor TrueGrit+ for protection with controlled cleanup; choose Havoc+ when arranging a useful free top-card play is the stronger need. Include the target\'s later reuse or Exhaust in that choice.' };
+      preference: strategyText(locale, 'functionCleanupFreePlayPreference'),
+      question: strategyText(locale, 'functionCleanupFreePlayQuestion') };
   }
   if (offers.length === 2 && offers.some(row => row.card === 'Headbutt')
       && offers.some(row => row.card === 'TrueGrit')) {
     return { id: 'discard-retrieval-or-protective-cleanup', origin: 'maintainer_strategy_default',
       sources: ['cx', 'equation'], dependencies: ['draw', 'exhaust', 'strength', 'retention'],
       commands: offers.map(row => row.command), conditions: [],
-      preference: 'Both candidates add a useful first function under the checked conditions. Headbutt schedules another use of a useful Discard card; TrueGrit+ protects while removing weak recurring draws.',
-      question: 'Choose one: favor TrueGrit+ when weak recurring cards obstruct setup; choose Headbutt when retrieving an owned repeat-use target is the stronger need. Use the actual selection, draw and payment conditions.' };
+      preference: strategyText(locale, 'functionRetrievalCleanupPreference'),
+      question: strategyText(locale, 'functionRetrievalCleanupQuestion') };
   }
   if (offers.length === 2 && offers.some(row => row.card === 'ShrugItOff')
       && offers.some(row => row.card === 'Warcry')) {
@@ -1470,10 +1471,10 @@ function rewardFunctionComparisonPolicy(observation, offers, profile, normalize)
         ...(profile.blockSupport.retention.length ? ['retention'] : []),
         ...(profile.exhaustDraw.length ? ['exhaust-draw'] : [])],
       commands: offers.map(row => row.command), conditions: [],
-      preference: 'Both supplied Skills fit the checked setup window. ShrugItOff adds recurring protection with a replacement draw; Warcry adds free Hand planning and leaves circulation after play.',
-      question: 'Choose one: favor ShrugItOff for protection while reaching setup; choose Warcry when preserving Energy for the owned setup and arranging the next draw is the stronger need.' };
+      preference: strategyText(locale, 'functionProtectionPlanningPreference'),
+      question: strategyText(locale, 'functionProtectionPlanningQuestion') };
   }
-  return cardVariantComparisonPolicy(observation, offers, normalize);
+  return cardVariantComparisonPolicy(observation, offers, normalize, locale);
 }
 
 export function preparationCardPolicies(observation, profile, normalize = command => command, locale = 'en') {
@@ -1505,11 +1506,11 @@ export function preparationCardPolicies(observation, profile, normalize = comman
       && row.onPlayEnergy?.amount >= 2 && Number.isSafeInteger(row.selfHpLoss?.base_hp_loss)
       && row.selfHpLoss.base_hp_loss > 0 && row.selfHpLoss.base_hp_loss <= state.run.max_hp / 4);
     add('first-hp-funded-burst-access', ['cx', 'panacea'], [], [
-      `Preparation Act ${act}; HP ${state.run.current_hp}/${state.run.max_hp}; base Energy ${profile.baseEnergy}. Owned Offering: 0.`,
-      `Owned payable setup: ${accessibleEngines.map(row => row.card).join(', ')}.`,
-      ...burstAccess.map(row => `${row.command}: 0 Energy; base HP loss ${row.selfHpLoss.base_hp_loss}; gain ${row.onPlayEnergy.amount} Energy; request ${row.onPlayDraw.requested} draws; Exhaust after play.`),
+      strategyText(locale, 'policyOfferingReserve', { act: act, current_hp: state.run.current_hp, max_hp: state.run.max_hp, baseEnergy: profile.baseEnergy }),
+      strategyText(locale, 'policyPayableSetup', { accessibleEngines: accessibleEngines.map(row => row.card).join(', ') }),
+      ...burstAccess.map(row => strategyText(locale, 'policyOfferingEffect', { command: row.command, base_hp_loss: row.selfHpLoss.base_hp_loss, amount: row.onPlayEnergy.amount, requested: row.onPlayDraw.requested })),
     ], burstAccess.map(row => row.command),
-    'Default to a first Offering for immediate access and payment to deploy or use the owned functions. The checked HP reserve supports its base loss; choose when to play it using actual combat HP and modifiers. Its HP loss and once-per-combat lifecycle remain part of the tradeoff.');
+    strategyText(locale, 'policyPreferFirstOffering'));
   }
   const paidSingleWeak = weakCoverage.filter(row => row.persistent_cost > 0
     && row.mechanics.weak >= 2 && row.mechanics.play_target === 'one_enemy');
@@ -1522,12 +1523,12 @@ export function preparationCardPolicies(observation, profile, normalize = comman
     const freeWeak = offers.filter(row => row.card === 'Intimidate' && row.type === 'Skill'
       && row.cost === 0 && row.enemyWeak >= 2 && row.enemyWeakTarget === 'all_enemies' && row.exhausts === true);
     add('first-free-group-weak', ['cx', 'panacea'], [], [
-      `Preparation Act ${act}; base Energy ${profile.baseEnergy}. Owned zero-Energy group Weak: 0.`,
-      `Owned payable setup costing at least 2 Energy: ${paidSetup.map(row => row.card).join(', ')}.`,
-      `Owned paid recurring single-target Weak: ${paidSingleWeak.map(labelCard).join(', ')}.`,
-      ...freeWeak.map(row => `${row.command}: 0 Energy; ${row.enemyWeak} Weak turns to every enemy; Exhaust after play.`),
+      strategyText(locale, 'policyGroupWeakCoverage', { act: act, baseEnergy: profile.baseEnergy }),
+      strategyText(locale, 'policyPaidSetup', { paidSetup: paidSetup.map(row => row.card).join(', ') }),
+      strategyText(locale, 'policyPaidRecurringWeak', { paidSingleWeak: paidSingleWeak.map(labelCard).join(', ') }),
+      ...freeWeak.map(row => strategyText(locale, 'policyGroupWeakEffect', { command: row.command, enemyWeak: row.enemyWeak })),
     ], freeWeak.map(row => row.command),
-    'Default to a first free two-turn group Weak to protect paid setup while preserving Energy. It complements the owned paid single-target coverage, then leaves ordinary redraws through Exhaust. Enemy debuff prevention applies to each target; later Weak uses the owned recurring source.');
+    strategyText(locale, 'policyPreferFirstFreeWeak'));
   }
   if (act >= 2 && act <= 3 && enduringStrength.length
       && existingAttacks.reduce((n, row) => n + row.card.count, 0) >= 3 && !weakCoverage.length
@@ -1536,11 +1537,11 @@ export function preparationCardPolicies(observation, profile, normalize = comman
       && row.type === 'Attack' && row.cost >= 0 && row.cost <= 2 && row.exhausts === false
       && row.enemyWeak >= 2 && row.cost + 1 <= profile.baseEnergy);
     add('first-reusable-multiturn-weak', ['cx', 'panacea'], [], [
-      `Preparation Act ${act}; base Energy ${profile.baseEnergy}. Owned payable reusable Weak: 0.`,
-      `Owned payable Strength: ${enduringStrength.map(row => row.card).join(', ')}; transition attacks: ${existingAttacks.reduce((n, row) => n + row.card.count, 0)}.`,
-      ...firstWeak.map(row => `${row.command}: ${row.cost} Energy; ${row.enemyWeak} Weak turns; ordinary redraw permits another application.`),
+      strategyText(locale, 'policyReusableWeakCoverage', { act: act, baseEnergy: profile.baseEnergy }),
+      strategyText(locale, 'policyStrengthAttackCoverage', { enduringStrength: enduringStrength.map(row => row.card).join(', '), existingAttacks: existingAttacks.reduce((n, row) => n + row.card.count, 0) }),
+      ...firstWeak.map(row => strategyText(locale, 'policyReusableWeakEffect', { command: row.command, cost: row.cost, enemyWeak: row.enemyWeak })),
     ], firstWeak.map(row => row.command),
-    'Default to a first payable multi-turn Weak attack for setup and later protection. Its printed Weak applies after its own hit, reduces subsequent enemy Attack damage and follows enemy debuff prevention. Reaching and paying the card again refreshes coverage.');
+    strategyText(locale, 'policyPreferFirstReusableWeak'));
   }
   const recoveredProtection = cards.filter(row => row.mechanics.exhausts === true
     && row.mechanics.intangible_gain > 0 && row.mechanics.intangible_damage_cap === 1
@@ -1552,11 +1553,11 @@ export function preparationCardPolicies(observation, profile, normalize = comman
       && recoveredProtection.reduce((n, row) => n + row.card.count, 0) >= 2 && recoveredHealing.length
       && !(state.relics ?? []).some(row => ['SneckoEye', 'VelvetChoker'].includes(row.relic))) {
     add('recover-owned-protection-and-healing', ['cx', 'je'], [], [
-      `Owned playable Exhaust targets: ${[...recoveredProtection, ...recoveredHealing].map(labelCard).join(', ')}. Owned Exhume: 0 copies.`,
+      strategyText(locale, 'policyOwnedExhaustTargets', { value: [...recoveredProtection, ...recoveredHealing].map(labelCard).join(', ') }),
     ], offers.filter(row => row.card === 'Exhume' && row.type === 'Skill' && row.cost === 0
       && row.exhausts === true && row.exhaustRecovery?.count === 1
       && row.exhaustRecovery.excluded_card === 'Exhume').map(row => row.command),
-    'Default to a first zero-Energy Exhume to reuse the owned Intangible protection or Strength-supported Reaper. Select a target after it enters Exhaust, return it to Hand and pay for its next play.');
+    strategyText(locale, 'policyPreferFirstExhume'));
   }
   if (act >= 2 && profile.onPlayDrawCoverage.copies <= 1 && (engines.length || payment.length)
       && !offers.some(row => row.card === 'Offering' || row.selfHpLoss)) {
@@ -1567,17 +1568,17 @@ export function preparationCardPolicies(observation, profile, normalize = comman
       ...(profile.strengthSources.length ? ['strength'] : []),
       ...(profile.blockSupport.retention.length ? ['retention'] : []),
       ...(payment.length ? ['payment'] : []), ...(profile.exhaustDraw.length ? ['exhaust-draw'] : [])], [
-      `Preparation Act ${act}.`,
-      `Owned on-play multi-draw copies: ${profile.onPlayDrawCoverage.copies} (${profile.onPlayDrawCoverage.owned}).`,
+      strategyText(locale, 'policyPreparationAct', { act: act }),
+      strategyText(locale, 'policyOwnedMultiDraw', { copies: profile.onPlayDrawCoverage.copies, owned: profile.onPlayDrawCoverage.owned }),
     ], accessOffers.map(row => row.command),
-    'Default to the offered on-play multi-draw options to reach the owned functions.');
+    strategyText(locale, 'policyPreferMultiDraw'));
   }
   if (act >= 2 && profile.reusableOtherCardExhaustCopies > 0 && profile.onPlayDrawCoverage.copies === 0
       && profile.exhaustDraw.length === 0) {
     add('first-exhaust-draw', ['je', 'cx'], ['exhaust', ...(profile.onPlayDraw.length ? ['draw'] : [])], [
-      'Owned Exhaust-draw Powers: 0. Owned on-play multi-draw copies: 0.',
+      strategyText(locale, 'policyNoDrawCoverage'),
     ], offers.filter(row => payable(row) && row.drawPerExhaustAfterDeployment > 0).map(row => row.command),
-    'Default to a first Exhaust-draw Power for the owned reusable Exhaust route; pay for deployment before its draw triggers.');
+    strategyText(locale, 'policyPreferFirstExhaustDraw'));
   }
   const multiHit = cards.filter(row => row.mechanics.damage?.delivery?.kind === 'attack'
     && (row.mechanics.damage.delivery.hits?.count > 1 || row.mechanics.damage.delivery.hits?.kind === 'per_effective_x'));
@@ -1585,9 +1586,9 @@ export function preparationCardPolicies(observation, profile, normalize = comman
   if (act >= 2 && !profile.strengthSources.length && !ownsStrengthRelic && multiHit.length) {
     const recurring = offers.filter(row => payable(row) && row.enduringStrength?.delivery === 'each_player_turn_start_post_draw');
     add('first-recurring-strength', ['cx', 'panacea'], ['multi-hit'], [
-      'Owned native enduring Strength sources: 0.',
+      strategyText(locale, 'policyNoEnduringStrength'),
     ], recurring.map(row => row.command),
-    'Default to a first payable recurring Strength source for the owned multi-hit attacks. Protect deployment and use attacks after the actual Strength gains.');
+    strategyText(locale, 'policyPreferFirstRecurringStrength'));
   }
   if (!rules.length && state.context.kind === 'card_reward'
       && profile.candidates.some(row => row.kind === 'preserve')) {
@@ -1598,8 +1599,8 @@ export function preparationCardPolicies(observation, profile, normalize = comman
     if (common.length > 1 && !rules.some(rule => rule.question)) {
       const remaining = offers.filter(row => common.includes(row.command));
       rules.push(rules.some(rule => rule.id === 'reach-owned-functions')
-        ? accessComparisonPolicy(observation, cards, remaining, profile, normalize)
-        : rewardFunctionComparisonPolicy(observation, remaining, profile, normalize));
+        ? accessComparisonPolicy(observation, cards, remaining, profile, normalize, locale)
+        : rewardFunctionComparisonPolicy(observation, remaining, profile, normalize, locale));
     }
   }
   const resource = profile.candidates.find(row => row.resource?.kind === 'singing_bowl');
@@ -1616,9 +1617,9 @@ export function preparationCardPolicies(observation, profile, normalize = comman
       rules.push({ id: 'singing-bowl-reward-alternative', origin: 'maintainer_comparison_preference',
         sources: [], dependencies: [], conditions: [],
         commands: onlyPreserve ? [resource.command] : [...common, resource.command],
-        preference: onlyPreserve ? 'Take the permanent HP gain when the checked card policies preserve the deck.'
-          : 'Compare the supplied useful card function with permanent HP and keeping the current deck.',
-        ...(!onlyPreserve ? { question: 'Is the supplied card function worth an additional permanent card here, compared with the displayed immediate HP gain? Use the checked strategy conditions and current support.' } : {}) });
+        preference: onlyPreserve ? strategyText(locale, 'policyBowlWhenPreserving')
+          : strategyText(locale, 'policyBowlComparison'),
+        ...(!onlyPreserve ? { question: strategyText(locale, 'policyBowlQuestion') } : {}) });
     }
   }
   return rules;

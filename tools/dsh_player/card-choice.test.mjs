@@ -560,6 +560,47 @@ test('first lasting Strength variants use complete native effects and resolve th
   upgraded.mechanics.strength_gain_delivery = 'each_player_turn_start_post_draw';
   assert.equal(preparationCardChoice(window(owned, [first, upgraded])).route.kind, 'review');
 });
+
+test('localized variant access function and Bowl policies keep the same legal choices and numeric evidence', () => {
+  const variant = lastingStrength(), stronger = lastingStrength();
+  stronger.card.upgrades = stronger.mechanics.upgrades = 1;
+  stronger.mechanics.strength_gain = 3;
+  const owned = laterOutputDeck().map(source => ({ ...source, mechanics: { ...source.mechanics, tags: source.mechanics.tags ?? [] } }));
+  const mismatch = structuredClone(stronger);
+  mismatch.mechanics.draw_cards = 1;
+  const observations = [
+    window(owned, [variant, stronger]), window(owned, [variant, mismatch]),
+    window([growth()], [pact(), card('BattleTrance', 'Skill', 0, { draw_cards: 3 })]),
+    earlyReward(earlyUpgradeDeck(), [hemokinesis(), wholeHandUpgrade(), cleave()]),
+    earlyReward(earlyProtectionDeck(), [handBurst(), card('Corruption', 'Power', 3), growth()]),
+    bowl(lastingStrengthReward()),
+  ];
+  const display = new Set(['facts', 'ownedFacts', 'preference', 'conditions', 'question', 'message',
+    'comparisonGuidance', 'inputBudget', 'inventory', 'change']);
+  const decisions = value => Array.isArray(value) ? value.map(decisions)
+    : value && typeof value === 'object' ? Object.fromEntries(Object.entries(value)
+      .filter(([key, item]) => !display.has(key) && !(key === 'value' && typeof item === 'string'))
+      .map(([key, item]) => [key, decisions(item)])) : value;
+  for (const input of observations) {
+    const original = JSON.stringify(input);
+    const en = preparationCardChoice(input), zh = preparationCardChoice(input, undefined, 'zh-CN');
+    assert.deepEqual(decisions(en), decisions(zh));
+    for (const rule of zh.rules) {
+      assert.match(rule.preference, /[\u4e00-\u9fff]/, rule.id);
+      if (rule.question) assert.match(rule.question, /[\u4e00-\u9fff]/, rule.id);
+      if (rule.gap) assert.match(rule.gap.message, /[\u4e00-\u9fff]/, rule.id);
+    }
+    assert.deepEqual(en.candidates.map(row => row.nativeReading), zh.candidates.map(row => row.nativeReading));
+    assert.equal(JSON.stringify(input), original);
+  }
+  const same = preparationCardChoice(observations[0], undefined, 'zh-CN');
+  const rule = same.rules.find(row => row.id === 'same-card-variant');
+  assert.deepEqual(rule.commands, ['take:Inflame#1']);
+  assert.match(rule.conditions.join('\n'), /打出时获得的持久力量：3/);
+  const gap = preparationCardChoice(observations[1], undefined, 'zh-CN').rules.find(row => row.gap).gap;
+  assert.equal(gap.candidates[0].amount, 2);
+  assert.equal(gap.candidates[0].value, '打出时获得的持久力量');
+});
 const nonAttackClear = () => { const row = ordinaryTwoCost('SeverSoul', 16);
   row.mechanics.exhausts_other_cards = true; return row; };
 const conditionalClash = () => { const row = card('Clash', 'Attack', 0, { damage: {
