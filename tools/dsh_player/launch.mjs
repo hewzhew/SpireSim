@@ -129,7 +129,7 @@ export async function runPlayer(options, display = console.log) {
     if (taskScope === 'preparation' && !preparationRoot) throw new Error(launcherText(locale, 'missingPreparationRoot'));
   }
   if (options.supervised && taskScope !== 'run') throw new Error(launcherText(locale, 'coachedScope'));
-  if (options.supervised && !options.dry && playerIsRunning(await readPlayerBinding(session))) {
+  if (options.supervised && !options.dry && playerIsRunning(await readPlayerBinding(session, locale))) {
     throw new Error(launcherText(locale, 'coachedRunning'));
   }
   if (taskScope === 'preparation' && !preparationRoot) {
@@ -257,7 +257,7 @@ export async function runPlayer(options, display = console.log) {
       if (!['time-limit', 'interrupted'].includes(outcome)) {
         const end = handle.agent.session.snapshotEvents().filter(x => x.type === 'turn/end').at(-1);
         outcome = end?.data.reason.kind ?? 'idle-without-turn';
-        if (options.supervised && outcome === 'completed' && playerReviewOutstanding(await readPlayerReview(session))) outcome = 'needs-review';
+        if (options.supervised && outcome === 'completed' && playerReviewOutstanding(await readPlayerReview(session, locale))) outcome = 'needs-review';
         if (outcome === 'error') {
           const error = end.data.reason.error;
           runError = { code: error?.code, message: safeError(error?.message ?? error) };
@@ -362,7 +362,7 @@ export async function controlPlayer({ repository, session, parameters = [], bina
   let args = parameters.slice(1);
   if (operation === 'inspect') {
     const options = parseInspectionArgs(args);
-    const inspected = await inspectPlayer({ repository, session, binding: await readPlayerBinding(session), options });
+    const inspected = await inspectPlayer({ repository, session, binding: await readPlayerBinding(session, locale), options });
     display(inspected.text);
     return { outcome: 'inspected', report: inspected.report };
   }
@@ -374,20 +374,20 @@ export async function controlPlayer({ repository, session, parameters = [], bina
   if (['status', 'next', 'accept'].includes(operation) && args.length) throw new Error(launcherText(locale, 'controlNoArguments', { operation: operation }));
   if (['replace', 'reject', 'coach'].includes(operation) && !args.join(' ').trim()) throw new Error(launcherText(locale, 'controlArgumentRequired', { operation: operation, argument: operation === 'replace' ? launcherText(locale, 'replacementCommand') : launcherText(locale, 'conciseGuidance') }));
   openWorkbench ??= (await import(pathToFileURL(join(repository, 'tools/run_play/workbench.mjs')))).openWorkbench;
-  const binding = await readPlayerBinding(session);
+  const binding = await readPlayerBinding(session, locale);
   if (operation !== 'status' && playerIsRunning(binding)) throw new Error(launcherText(locale, 'pendingPlayerRunning'));
   const game = await openWorkbench({ repository, session, binary, agentLocale: binding?.agentLocale ?? 'en', commandPrefix: '' });
   let nextOptions;
   try {
-    let review = await readPlayerReview(session);
-    let frame = await capturePlayerFrame(game, review?.frameAfter?.task ?? review?.frame?.task ?? review?.guidance?.task);
-    if (operation === 'status') display(renderPlayerReview(frame, review));
+    let review = await readPlayerReview(session, locale);
+    let frame = await capturePlayerFrame(game, review?.frameAfter?.task ?? review?.frame?.task ?? review?.guidance?.task, locale);
+    if (operation === 'status') display(renderPlayerReview(frame, review, locale));
     else if (operation === 'coach' || operation === 'reject') {
-      await setPlayerGuidance(session, frame, args.join(' '), { reject: operation === 'reject' });
+      await setPlayerGuidance(session, frame, args.join(' '), { reject: operation === 'reject', locale });
       display(operation === 'reject' ? launcherText(locale, 'proposalRejected') : launcherText(locale, 'guidanceSaved'));
     } else if (operation === 'accept' || operation === 'replace') {
-      const result = await adoptPlayerProposal(session, game, operation === 'replace' ? { command: args.join(' ') } : {});
-      display(renderPlayerReview(result.frame, result.review));
+      const result = await adoptPlayerProposal(session, game, { ...(operation === 'replace' ? { command: args.join(' ') } : {}), locale });
+      display(renderPlayerReview(result.frame, result.review, locale));
       frame = result.frame;
       review = result.review;
     }

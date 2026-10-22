@@ -306,13 +306,14 @@ test('scripted tools retain current-reading metadata without adding it to model-
 });
 
 test('coached native tool pauses before a purchase while leaving investigations available', async t => {
+  for (const agentLocale of ['en', 'zh-CN']) {
   const f = await fixture(t, 'Current rules');
   await f.setPosition(scopedPosition('shop', 1));
-  const handle = await f.create({ supervised: true }); t.after(() => handle.dispose());
+  const handle = await f.create({ supervised: true, agentLocale }); t.after(() => handle.dispose());
   const result = await rawGameExec(f.ctx, handle.agent, 'buy:Inflame#0', undefined, { reason: 'Lasting Strength for existing attacks.' });
   assert.equal(Boolean(result.isError), false);
   assert.equal(result.concludesTurn, true);
-  assert.match(resultText(result), /Pending proposal \(not executed\)/);
+  assert.match(resultText(result), agentLocale === 'en' ? /Pending proposal \(not executed\)/ : /待审提案（尚未执行）/);
   assert.ok(!(await f.calls()).includes('buy:Inflame#0'));
   assert.equal((await readPlayerReview(f.session)).command, 'buy:Inflame#0');
   const before = await f.calls();
@@ -320,16 +321,17 @@ test('coached native tool pauses before a purchase while leaving investigations 
   for (const command of ['claim:Gold#0', 'open-card#0', 'read', 'leave']) {
     const queued = await rawGameExec(f.ctx, handle.agent, command);
     assert.equal(queued.concludesTurn, true);
-    assert.match(resultText(queued), /Pending proposal.*buy:Inflame#0/);
+    assert.match(resultText(queued), agentLocale === 'en' ? /Pending proposal.*buy:Inflame#0/ : /待审提案.*buy:Inflame#0/);
   }
   assert.deepEqual(await f.calls(), before, 'no command reaches the workbench after a pending proposal');
   const review = await readPlayerReview(f.session);
   await writeFile(join(f.session, 'dsh-review.json'), JSON.stringify({ ...review, status: 'execution-error' }));
   const blocked = await rawGameExec(f.ctx, handle.agent, 'buy:ShrugItOff#0');
   assert.equal(blocked.concludesTurn, true);
-  assert.match(resultText(blocked), /review required: execution-error/);
+  assert.match(resultText(blocked), agentLocale === 'en' ? /review required: execution-error/ : /需要维护者复核：execution-error/);
   assert.deepEqual(await f.calls(), before);
   assert.equal((await readPlayerReview(f.session)).command, 'buy:Inflame#0');
+  }
 });
 
 test('ordinary preparation assembly requests the native preparation rules scope', async t => {

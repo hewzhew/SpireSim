@@ -1,11 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, realpath, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, realpath, rm, writeFile, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, sep } from 'node:path';
 import { needsMaintainerReview, proposePlayerCommand, adoptPlayerProposal,
   capturePlayerFrame, readPlayerReview, renderPlayerReview, bindCoachedPlayer,
-  setPlayerGuidance, currentPlayerGuidance, currentPlayerAdoption } from './supervision.mjs';
+  setPlayerGuidance, currentPlayerGuidance, currentPlayerAdoption, playerPauseText } from './supervision.mjs';
 
 async function fixture(t) {
   const base = await realpath(tmpdir());
@@ -52,6 +52,39 @@ test('proposing stops before execution and adoption is source-bound and happens 
   f.observation.head_revision++;
   assert.equal(currentPlayerAdoption(accepted.review, await capturePlayerFrame(f.game)), '');
   await assert.rejects(adoptPlayerProposal(f.session, f.game), /No pending/);
+});
+
+test('bilingual supervision preserves recorded facts and once-only source-bound adoption', async t => {
+  for (const locale of ['en', 'zh-CN']) {
+    const f = await fixture(t), reason = 'Opaque reason {{literal}} 🐱', command = 'buy:Inflame#0';
+    const proposal = await proposePlayerCommand(f.session, f.game, command, reason, locale);
+    assert.deepEqual(f.adopted, []);
+    const recorded = await readFile(join(f.session, 'dsh-review.json'));
+    const frame = await capturePlayerFrame(f.game, undefined, locale);
+    for (const language of ['en', 'zh-CN']) {
+      const pause = playerPauseText(proposal, language), review = renderPlayerReview(frame, proposal, language);
+      assert.match(pause, language === 'en' ? /^Pending proposal/ : /^待审提案/);
+      assert.ok(pause.includes(command) && pause.includes(reason));
+      assert.ok(review.startsWith(frame.text) && review.includes(reason));
+      assert.ok(review.includes('player accept | player replace <command> | player reject <guidance>'));
+    }
+    assert.deepEqual(await readFile(join(f.session, 'dsh-review.json')), recorded);
+    const guidance = await setPlayerGuidance(f.session, frame, 'Opaque guidance {{kept}}', { locale });
+    assert.ok(currentPlayerGuidance(guidance, frame, locale).endsWith('Opaque guidance {{kept}}'));
+    const adopted = await adoptPlayerProposal(f.session, f.game, { locale, note: 'Opaque note {{kept}}' });
+    assert.deepEqual(f.adopted, [command]);
+    const handoff = currentPlayerAdoption(adopted.review, adopted.frame, locale);
+    assert.match(handoff, locale === 'en' ? /do not repeat/ : /不要重复执行/);
+    assert.ok(handoff.includes(command) && handoff.endsWith('Opaque note {{kept}}'));
+    await assert.rejects(adoptPlayerProposal(f.session, f.game, { locale }), locale === 'en' ? /No pending/ : /没有可采用/);
+    assert.deepEqual(f.adopted, [command]);
+    await proposePlayerCommand(f.session, f.game, 'leave', '', locale);
+    f.observation.head_revision++; f.observation.state_revision++;
+    const stale = await readFile(join(f.session, 'dsh-review.json'));
+    await assert.rejects(adoptPlayerProposal(f.session, f.game, { locale }), locale === 'en' ? /source changed/ : /来源已改变/);
+    assert.deepEqual(await readFile(join(f.session, 'dsh-review.json')), stale);
+    assert.deepEqual(f.adopted, [command]);
+  }
 });
 
 test('maintainer replacement executes the replacement; stale approval cannot execute anything', async t => {

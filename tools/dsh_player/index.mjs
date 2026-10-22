@@ -230,16 +230,16 @@ export async function apply(ctx, config) {
       try {
         const game = await getPlayer(exec);
         if (config.supervised) {
-          const outstanding = await readPlayerReview(config.session);
+          const outstanding = await readPlayerReview(config.session, presentation.locale);
           if (playerReviewOutstanding(outstanding)) {
             exec.concludeTurn();
-            return { text: playerPauseText(outstanding) };
+            return { text: playerPauseText(outstanding, presentation.locale) };
           }
           const tokens = commandTokens(command);
           if (needsMaintainerReview(commandGroups(tokens[0], tokens.slice(1)))) {
-            const proposal = await proposePlayerCommand(config.session, game, command, reason);
+            const proposal = await proposePlayerCommand(config.session, game, command, reason, presentation.locale);
             exec.concludeTurn();
-            return { text: playerPauseText(proposal) };
+            return { text: playerPauseText(proposal, presentation.locale) };
           }
         }
         if (taskScope === 'preparation') {
@@ -556,9 +556,9 @@ export async function apply(ctx, config) {
         }
         let contextReading = cardChoiceFrame ? renderPreparationCardChoice(cardChoiceFrame, presentation.locale) : supply.reading;
         if (config.supervised) {
-          const review = await readPlayerReview(config.session);
+          const review = await readPlayerReview(config.session, presentation.locale);
           const frame = { source: gameContextSource(reading), task };
-          const handoff = [currentPlayerAdoption(review, frame), currentPlayerGuidance(review, frame)].filter(Boolean);
+          const handoff = [currentPlayerAdoption(review, frame, presentation.locale), currentPlayerGuidance(review, frame, presentation.locale)].filter(Boolean);
           if (handoff.length) contextReading = `${handoff.join('\n\n')}\n\n${contextReading}`;
         }
         requestDecisionReset(owner, contextReading, gameContextSource(reading), { task, queries, queryRefs, agentLocale: presentation.locale });

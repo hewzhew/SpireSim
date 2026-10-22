@@ -4198,6 +4198,33 @@
       "exclusiveTask": "use either --task or --task-file",
       "invalidLocale": "--locale must be en or zh-CN",
       "flush": "flush"
+    },
+    "supervision": {
+      "frameChanged": "Game changed while reading the coached-play frame; inspect again.",
+      "unsupportedReview": "Unsupported coached-play review record.",
+      "bindingMismatch": "Coached player binding does not match this game session.",
+      "pendingPause": "Pending proposal (not executed): {{command}}{{reason}}\nThe maintainer will review this choice. No further command was executed.",
+      "reason": "\nReason: {{reason}}",
+      "reviewPause": "Maintainer review required: {{status}}. Inspect the actual game state and outstanding execution before continuing. No further command was executed.",
+      "outstandingProposal": "A prior proposal still requires maintainer handling.",
+      "pendingProposal": "Pending proposal (not executed): {{command}}",
+      "flashReason": "Flash reason: {{reason}}",
+      "staleProposal": "Proposal is stale; accepting or replacing it will be refused.",
+      "reviewCommands": "player accept | player replace <command> | player reject <guidance>",
+      "lastReview": "Last review: {{status}}{{commandSuffix}}",
+      "error": "Error: {{error}}",
+      "guidanceRequired": "Provide a concise maintainer instruction.",
+      "waitToGuide": "Wait for the player to stop before changing guidance.",
+      "uncertainExecution": "Inspect the uncertain execution, then explicitly reject it before continuing.",
+      "currentGuidance": "Maintainer guidance for this decision task (check against the latest game reading):\n{{guidance}}",
+      "previousDecisionCompleted": "The maintainer completed the previous {{previousTask}} decision. The supplied reading is its actual successor; the displayed {{currentTask}} choices are still available.",
+      "commandReplaced": " Your proposed command was {{command}}; the maintainer replaced it.",
+      "adoptedChoice": "The maintainer already executed this choice in the current {{task}} task: {{command}}. The supplied reading is after that execution; do not repeat it.{{correction}}{{reason}}",
+      "maintainerReason": "\nMaintainer reason: {{reason}}",
+      "waitToAdopt": "Wait for the player to stop before adopting a proposal.",
+      "noPendingProposal": "No pending proposal to adopt.",
+      "sourceChanged": "Proposal source changed. Inspect and reject the stale proposal before asking Flash again.",
+      "emptyCommand": "The selected command must not be empty."
     }
   }
 }

@@ -4198,6 +4198,33 @@
       "exclusiveTask": "--task 与 --task-file 只能使用一个",
       "invalidLocale": "--locale 必须是 en 或 zh-CN",
       "flush": "写入会话"
+    },
+    "supervision": {
+      "frameChanged": "读取监督对局局面时游戏发生变化；请重新检查。",
+      "unsupportedReview": "不支持的监督复核记录。",
+      "bindingMismatch": "监督玩家绑定与当前游戏会话不匹配。",
+      "pendingPause": "待审提案（尚未执行）：{{command}}{{reason}}\n维护者将复核此选择。未执行后续命令。",
+      "reason": "\n理由：{{reason}}",
+      "reviewPause": "需要维护者复核：{{status}}。继续前请检查实际游戏状态和未决执行。未执行后续命令。",
+      "outstandingProposal": "之前的提案仍需维护者处理。",
+      "pendingProposal": "待审提案（尚未执行）：{{command}}",
+      "flashReason": "Flash 理由：{{reason}}",
+      "staleProposal": "提案已过期；无法接受或替换。",
+      "reviewCommands": "player accept | player replace <command> | player reject <guidance>",
+      "lastReview": "上次复核：{{status}}{{commandSuffix}}",
+      "error": "错误：{{error}}",
+      "guidanceRequired": "请提供简短的维护者指导。",
+      "waitToGuide": "请等玩家停止后再修改指导。",
+      "uncertainExecution": "请先检查不确定的执行情况，再明确拒绝它，之后才能继续。",
+      "currentGuidance": "维护者对当前决策任务的指导（请对照最新游戏读数）：\n{{guidance}}",
+      "previousDecisionCompleted": "维护者已完成之前的 {{previousTask}} 决策。所供读数为实际后继局面；显示的 {{currentTask}} 选择仍可采用。",
+      "commandReplaced": " 你提议的命令是 {{command}}；维护者已替换它。",
+      "adoptedChoice": "维护者已在当前 {{task}} 任务中执行此选择：{{command}}。所供读数为执行后局面；不要重复执行。{{correction}}{{reason}}",
+      "maintainerReason": "\n维护者理由：{{reason}}",
+      "waitToAdopt": "请等玩家停止后再采用提案。",
+      "noPendingProposal": "没有可采用的待审提案。",
+      "sourceChanged": "提案来源已改变。再次请 Flash 决策前，请检查并拒绝过期提案。",
+      "emptyCommand": "所选命令不能为空。"
     }
   }
 }

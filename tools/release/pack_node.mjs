@@ -146,6 +146,7 @@ if (process.argv.slice(2).join(' ') === '--check') {
           const { cardChoiceInstructions, preparationCardChoiceRoute } = await import(pathToFileURL(join(installed, 'card-choice.mjs')).href);
           const { shopInstructions, renderShopBudget } = await import(pathToFileURL(join(installed, 'shop.mjs')).href);
           const { playedCardLifecycle, strengthTiming } = await import(pathToFileURL(join(installed, 'deck.mjs')).href);
+          const { playerPauseText } = await import(pathToFileURL(join(installed, 'supervision.mjs')).href);
           for (const locale of ['en', 'zh-CN']) {
             const manual = nativeGuide(true, locale), assisted = nativeGuide(false, locale);
             if (!manual.includes(locale === 'en' ? 'public-information manual play' : '依据公开信息手动出牌')
@@ -172,6 +173,11 @@ if (process.argv.slice(2).join(' ') === '--check') {
             if (!launcherError?.startsWith(locale === 'en' ? 'deepseek-v4-pro is prohibited' : '此玩家不使用 deepseek-v4-pro')) {
               throw new Error(`Installed launcher did not separate operator and agent language: ${locale}`);
             }
+            const paused = playerPauseText({ status: 'pending', command: 'buy:Inflame#0', reason: 'Opaque {{reason}}' }, locale);
+            if (!paused.startsWith(locale === 'en' ? 'Pending proposal (not executed)' : '待审提案（尚未执行）')
+                || !paused.includes('buy:Inflame#0') || !paused.includes('Opaque {{reason}}')) {
+              throw new Error(`Installed supervision lost language or recorded content: ${locale}`);
+            }
             const preparation = preparationInstructions(locale), card = cardChoiceInstructions(locale), shop = shopInstructions(locale);
             if (!preparationStageGuide('pending', undefined, {}, undefined, locale).includes(locale === 'en' ? 'Current task: rate' : '当前任务：评估')
                 || !preparation.text('eventCombatEntry').includes(locale === 'en' ? 'received after victory' : '在获胜后取得')
@@ -186,7 +192,7 @@ if (process.argv.slice(2).join(' ') === '--check') {
                 || !renderShopBudget({ gold: 40, starts: [] }, undefined, locale).includes(locale === 'en' ? 'Shop budget: Gold 40' : '商店预算：金币 40')) {
               throw new Error(`Installed preparation guide lost language or protocol: ${locale}`);
             }
-            report.installed_scripted_checks.push({ package: manifest.name, locale, imported_entries: true, preserved_guide_commands_and_operator: true, runtime_control_messages: true, launcher_operator_locale_independent: true, preparation_guides_and_schemas: true, deck_mechanism_messages: true, card_choice_messages: true, shop_messages: true, preparation_card_conditions: true, preparation_resource_conditions: true, preparation_classification_messages: true });
+            report.installed_scripted_checks.push({ package: manifest.name, locale, imported_entries: true, preserved_guide_commands_and_operator: true, runtime_control_messages: true, launcher_operator_locale_independent: true, supervision_record_content_preserved: true, preparation_guides_and_schemas: true, deck_mechanism_messages: true, card_choice_messages: true, shop_messages: true, preparation_card_conditions: true, preparation_resource_conditions: true, preparation_classification_messages: true });
           }
         }
       }

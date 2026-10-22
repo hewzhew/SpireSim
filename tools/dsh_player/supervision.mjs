@@ -3,10 +3,16 @@
 import { readFile, writeFile, rename } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { randomUUID } from 'node:crypto';
+import { createPresentation } from '@sts-simulator/presentation';
 import { gameContextSource, sameGameContextSource, gameDecisionTask, sameGameDecisionTask } from './context.mjs';
 
 const reviewFile = session => join(session, 'dsh-review.json');
 const bindingFile = session => join(session, 'dsh-player.json');
+
+function supervisionText(locale, key, parameters = {}) {
+  return createPresentation({ locale }).text(`scripted:supervision.${key}`,
+    Object.fromEntries(Object.entries(parameters).map(([name, value]) => [name, String(value)])));
+}
 
 async function readJson(path) {
   try { return JSON.parse(await readFile(path, 'utf8')); }
@@ -30,25 +36,25 @@ export function needsMaintainerReview(groups) {
   });
 }
 
-export async function capturePlayerFrame(game, previousTask) {
+export async function capturePlayerFrame(game, previousTask, locale = 'en') {
   const before = await game.observe();
   const result = await game.execute(before.position.kind === 'terminal' ? 'read' : 'read, inventory');
   const after = await game.observe();
-  if (!sameGameContextSource(before, after)) throw new Error('Game changed while reading the coached-play frame; inspect again.');
+  if (!sameGameContextSource(before, after)) throw new Error(supervisionText(locale, 'frameChanged'));
   return { source: gameContextSource(after), task: gameDecisionTask(after, previousTask), text: result.text };
 }
 
-export async function readPlayerReview(session) {
+export async function readPlayerReview(session, locale = 'en') {
   const review = await readJson(reviewFile(session));
-  if (review && review.schema !== 'sts-dsh-review-v1') throw new Error('Unsupported coached-play review record.');
+  if (review && review.schema !== 'sts-dsh-review-v1') throw new Error(supervisionText(locale, 'unsupportedReview'));
   return review;
 }
 
-export async function readPlayerBinding(session) {
+export async function readPlayerBinding(session, locale = 'en') {
   const binding = await readJson(bindingFile(session));
   if (binding && (binding.schema !== 'sts-dsh-player-binding-v1'
       || resolve(binding.session).toLowerCase() !== resolve(session).toLowerCase())) {
-    throw new Error('Coached player binding does not match this game session.');
+    throw new Error(supervisionText(locale, 'bindingMismatch'));
   }
   return binding;
 }
@@ -67,16 +73,16 @@ export function playerReviewOutstanding(review) {
   return ['pending', 'executing', 'execution-error'].includes(review?.status);
 }
 
-export function playerPauseText(review) {
+export function playerPauseText(review, locale = 'en') {
   return review.status === 'pending'
-    ? `Pending proposal (not executed): ${review.command}${review.reason ? `\nReason: ${review.reason}` : ''}\nThe maintainer will review this choice. No further command was executed.`
-    : `Maintainer review required: ${review.status}. Inspect the actual game state and outstanding execution before continuing. No further command was executed.`;
+    ? supervisionText(locale, 'pendingPause', { command: review.command, reason: review.reason ? supervisionText(locale, 'reason', { reason: review.reason }) : '' })
+    : supervisionText(locale, 'reviewPause', { status: review.status });
 }
 
-export async function proposePlayerCommand(session, game, command, reason = '') {
-  const previous = await readPlayerReview(session);
-  if (playerReviewOutstanding(previous)) throw new Error('A prior proposal still requires maintainer handling.');
-  const frame = await capturePlayerFrame(game, previous?.frameAfter?.task ?? previous?.frame?.task ?? previous?.guidance?.task);
+export async function proposePlayerCommand(session, game, command, reason = '', locale = 'en') {
+  const previous = await readPlayerReview(session, locale);
+  if (playerReviewOutstanding(previous)) throw new Error(supervisionText(locale, 'outstandingProposal'));
+  const frame = await capturePlayerFrame(game, previous?.frameAfter?.task ?? previous?.frame?.task ?? previous?.guidance?.task, locale);
   const proposal = { schema: 'sts-dsh-review-v1', id: randomUUID(), status: 'pending',
     at: new Date().toISOString(), command, reason, source: frame.source, frame,
     ...(previous?.guidance ? { guidance: previous.guidance } : {}) };
@@ -84,25 +90,25 @@ export async function proposePlayerCommand(session, game, command, reason = '') 
   return proposal;
 }
 
-export function renderPlayerReview(frame, review) {
+export function renderPlayerReview(frame, review, locale = 'en') {
   const lines = [frame.text.trimEnd()];
   if (review?.status === 'pending') {
-    lines.push('', `Pending proposal (not executed): ${review.command}`);
-    if (review.reason) lines.push(`Flash reason: ${review.reason}`);
-    if (!sameGameContextSource(review.source, frame.source)) lines.push('Proposal is stale; accepting or replacing it will be refused.');
-    lines.push('player accept | player replace <command> | player reject <guidance>');
+    lines.push('', supervisionText(locale, 'pendingProposal', { command: review.command }));
+    if (review.reason) lines.push(supervisionText(locale, 'flashReason', { reason: review.reason }));
+    if (!sameGameContextSource(review.source, frame.source)) lines.push(supervisionText(locale, 'staleProposal'));
+    lines.push(supervisionText(locale, 'reviewCommands'));
   } else if (review) {
-    lines.push('', `Last review: ${review.status}${review.selectedCommand ? ` · ${review.selectedCommand}` : ''}`);
-    if (review.error) lines.push(`Error: ${review.error}`);
+    lines.push('', supervisionText(locale, 'lastReview', { status: review.status, commandSuffix: review.selectedCommand ? ` · ${review.selectedCommand}` : '' }));
+    if (review.error) lines.push(supervisionText(locale, 'error', { error: review.error }));
   }
   return lines.join('\n') + '\n';
 }
 
-export async function setPlayerGuidance(session, frame, text, { reject = false } = {}) {
-  if (!text.trim()) throw new Error('Provide a concise maintainer instruction.');
-  if (playerIsRunning(await readPlayerBinding(session))) throw new Error('Wait for the player to stop before changing guidance.');
-  const previous = await readPlayerReview(session);
-  if (previous?.status === 'executing' && !reject) throw new Error('Inspect the uncertain execution, then explicitly reject it before continuing.');
+export async function setPlayerGuidance(session, frame, text, { reject = false, locale = 'en' } = {}) {
+  if (!text.trim()) throw new Error(supervisionText(locale, 'guidanceRequired'));
+  if (playerIsRunning(await readPlayerBinding(session, locale))) throw new Error(supervisionText(locale, 'waitToGuide'));
+  const previous = await readPlayerReview(session, locale);
+  if (previous?.status === 'executing' && !reject) throw new Error(supervisionText(locale, 'uncertainExecution'));
   const review = { ...(previous ?? { schema: 'sts-dsh-review-v1', status: 'guidance' }),
     ...(reject ? { status: 'rejected', rejectedAtSource: frame.source } : {}),
     guidance: { task: frame.task, text, at: new Date().toISOString() } };
@@ -110,38 +116,38 @@ export async function setPlayerGuidance(session, frame, text, { reject = false }
   return review;
 }
 
-export function currentPlayerGuidance(review, frame) {
+export function currentPlayerGuidance(review, frame, locale = 'en') {
   return review?.guidance && sameGameDecisionTask(review.guidance.task, frame.task)
-    ? `Maintainer guidance for this decision task (check against the latest game reading):\n${review.guidance.text}` : '';
+    ? supervisionText(locale, 'currentGuidance', { guidance: review.guidance.text }) : '';
 }
 
-export function currentPlayerAdoption(review, frame) {
+export function currentPlayerAdoption(review, frame, locale = 'en') {
   if (review?.status !== 'adopted' || !sameGameContextSource(review.sourceAfter, frame.source)) return '';
   if (!sameGameDecisionTask(review.frame?.task, frame.task)) {
-    return `The maintainer completed the previous ${review.frame?.task?.family ?? 'game'} decision. The supplied reading is its actual successor; the displayed ${frame.task.family} choices are still available.`;
+    return supervisionText(locale, 'previousDecisionCompleted', { previousTask: review.frame?.task?.family ?? 'game', currentTask: frame.task.family });
   }
-  const correction = review.selectedCommand !== review.command ? ` Your proposed command was ${review.command}; the maintainer replaced it.` : '';
+  const correction = review.selectedCommand !== review.command ? supervisionText(locale, 'commandReplaced', { command: review.command }) : '';
   const noteIsCurrentGuidance = review.guidance && review.guidance.text === review.maintainerNote
     && sameGameDecisionTask(review.guidance.task, frame.task);
-  return `The maintainer already executed this choice in the current ${frame.task.family} task: ${review.selectedCommand}. The supplied reading is after that execution; do not repeat it.${correction}${review.maintainerNote && !noteIsCurrentGuidance ? `\nMaintainer reason: ${review.maintainerNote}` : ''}`;
+  return supervisionText(locale, 'adoptedChoice', { task: frame.task.family, command: review.selectedCommand, correction: correction, reason: review.maintainerNote && !noteIsCurrentGuidance ? supervisionText(locale, 'maintainerReason', { reason: review.maintainerNote }) : '' });
 }
 
-export async function adoptPlayerProposal(session, game, { command, note = '' } = {}) {
-  const binding = await readPlayerBinding(session);
-  if (playerIsRunning(binding)) throw new Error('Wait for the player to stop before adopting a proposal.');
-  const proposal = await readPlayerReview(session);
-  if (proposal?.status !== 'pending') throw new Error('No pending proposal to adopt.');
+export async function adoptPlayerProposal(session, game, { command, note = '', locale = 'en' } = {}) {
+  const binding = await readPlayerBinding(session, locale);
+  if (playerIsRunning(binding)) throw new Error(supervisionText(locale, 'waitToAdopt'));
+  const proposal = await readPlayerReview(session, locale);
+  if (proposal?.status !== 'pending') throw new Error(supervisionText(locale, 'noPendingProposal'));
   const before = await game.observe();
-  if (!sameGameContextSource(proposal.source, before)) throw new Error('Proposal source changed. Inspect and reject the stale proposal before asking Flash again.');
+  if (!sameGameContextSource(proposal.source, before)) throw new Error(supervisionText(locale, 'sourceChanged'));
   const selectedCommand = command ?? proposal.command;
-  if (!selectedCommand.trim()) throw new Error('The selected command must not be empty.');
+  if (!selectedCommand.trim()) throw new Error(supervisionText(locale, 'emptyCommand'));
   const maintainerNote = note || (proposal.guidance && sameGameDecisionTask(proposal.guidance.task, gameDecisionTask(before))
     ? proposal.guidance.text : '');
   const executing = { ...proposal, status: 'executing', selectedCommand, maintainerNote };
   await writeJson(reviewFile(session), executing);
   try {
     const result = await game.execute(selectedCommand);
-    const frame = await capturePlayerFrame(game, proposal.frame.task);
+    const frame = await capturePlayerFrame(game, proposal.frame.task, locale);
     const review = { ...executing, status: 'adopted', sourceAfter: frame.source, frameAfter: frame };
     await writeJson(reviewFile(session), review);
     return { ...result, frame, review };
