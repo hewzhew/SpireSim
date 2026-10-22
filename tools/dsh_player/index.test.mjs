@@ -202,7 +202,13 @@ test('ordinary scripted players localize guides and tool descriptions per scope 
 
 test('preparation scopes localize the actual guide and schema from their model language', async t => {
   const f = await fixture(t, 'Raw rules {{literal}}');
-  await f.setPosition(scopedPosition('campfire', 1));
+  const current = scopedPosition('campfire', 1), state = current.observation.observation;
+  state.base_energy_per_turn = 3;
+  state.cards = state.cards.map(card => ({ ...card, misc_value: 0, cost_modifier: 0, base_damage_override: null, base_block_override: null }));
+  current.deckEvidence = { schema: 'sts-agent-deck-evidence-v1', public_snapshot_id: current.public_snapshot_id,
+    cards: state.cards.map(card => ({ card, persistent_cost: 1, persistent_damage: 0, persistent_block: 0,
+      mechanics: { card: card.card, upgrades: card.upgrades, card_type: card.card === 'Bash' ? 'Attack' : 'Skill', draw_cards: 0 } })) };
+  await f.setPosition(current);
   const schemas = [];
   for (const agentLocale of ['en', 'zh-CN']) {
     const handle = await f.create({ taskScope: 'preparation', agentLocale });
@@ -211,6 +217,8 @@ test('preparation scopes localize the actual guide and schema from their model l
     const tool = f.ctx.tools.schemas(handle.agent).find(tool => tool.name === 'sts');
     assert.match(guide, agentLocale === 'en' ? /Current task: rate the candidates/ : /当前任务：评估候选/);
     assert.match(tool.description, agentLocale === 'en' ? /Submit the current preparation step/ : /提交当前准备步骤/);
+    const comparison = assembly.sections.find(section => section.name === 'sts:classification').text;
+    assert.match(comparison, agentLocale === 'en' ? /Whole-deck comparison baseline/ : /完整卡组比较基线/);
     schemas.push(JSON.parse(JSON.stringify(tool, (key, value) => key === 'description' ? undefined : value)));
     await handle.dispose();
   }

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { preparationDeckComparison, renderDeckComparison, preparationDeckConditionBindings, preparationCardAcquisition, renderStatusRoutes } from './deck.mjs';
 import { preparationConditionBindings, parsePreparationClassification } from './preparation.mjs';
-import { preparationExpertGuidance } from './strategy.mjs';
+import { preparationExpertGuidance, preparationCardPolicies } from './strategy.mjs';
 
 function owned(card, count, type, cost, extra = {}, upgrades = 0) {
   return { card: { card, count, upgrades, misc_value: 0, cost_modifier: 0,
@@ -23,6 +23,40 @@ function root(rows, offers = []) {
     decision_evidence: { kind: 'card_acquisition_options', candidates: offers.map(row => ({
       semantic_action: `take:${row.card.card}#0`, cards: [{ current: row.mechanics }] })) } };
 }
+
+test('deck comparison languages preserve access probabilities and self-Exhaust realization requirements', () => {
+  const sentinel = owned('Sentinel', 1, 'Skill', 1, { base_block_delivery: 'once_on_play', block: 5, energy_gain_on_exhaust: 2 });
+  for (const sources of [[], [owned('TrueGrit', 2, 'Skill', 1, { exhausts_other_cards: true, selects_from_hand: true })]]) {
+    const observation = root(sources, [sentinel]);
+    const before = JSON.stringify(observation);
+    const profiles = ['en', 'zh-CN'].map(locale => preparationDeckComparison(observation, undefined, locale));
+    assert.deepEqual(profiles[0].candidates.map(row => row.access?.map(access => access.windows)), profiles[1].candidates.map(row => row.access?.map(access => access.windows)));
+    assert.equal(profiles[0].otherCardExhaustCopies, sources.length ? 2 : 0);
+    assert.equal(profiles[0].otherCardExhaustCopies, profiles[1].otherCardExhaustCopies);
+    const bindings = ['en', 'zh-CN'].map(locale => preparationDeckConditionBindings(observation, undefined, locale));
+    assert.deepEqual(bindings[0].map(row => [row.command, row.id, row.choices.map(choice => [choice.id, choice.realizations])]),
+      bindings[1].map(row => [row.command, row.id, row.choices.map(choice => [choice.id, choice.realizations])]));
+    const route = bindings[1].find(row => row.command === 'take:Sentinel#0').choices.find(row => row.id === '@self-exhaust-energy');
+    assert.deepEqual(route.realizations, sources.length ? ['sequence'] : ['future']);
+    assert.match(renderDeckComparison(profiles[1], { locale: 'zh-CN' }), /完整卡组比较基线/);
+    assert.equal(JSON.stringify(observation), before);
+  }
+});
+
+test('first Exhaust-draw policy uses typed copy counts independently of the display of an empty route', () => {
+  const offer = owned('DarkEmbrace', 1, 'Power', 2, { exhaust_draw_power: 1 });
+  const observation = root([owned('TrueGrit', 1, 'Skill', 1, { exhausts_other_cards: true })], [offer]);
+  Object.assign(observation.position.observation.observation, { run: { act: 2 }, context: { kind: 'card_reward' }, relics: [] });
+  const profile = preparationDeckComparison(observation, undefined, 'zh-CN');
+  const policies = preparationCardPolicies(observation, profile);
+  const selected = policies.find(row => row.id === 'first-exhaust-draw');
+  assert.ok(selected);
+  profile.reusableOtherCardExhaust = 'none';
+  assert.deepEqual(preparationCardPolicies(observation, profile).find(row => row.id === selected.id).commands, selected.commands);
+  profile.reusableOtherCardExhaustCopies = 0;
+  profile.reusableOtherCardExhaust = '显示文字不参与策略判断';
+  assert.equal(preparationCardPolicies(observation, profile).some(row => row.id === selected.id), false);
+});
 
 test('recurring area damage carries the native loss and damage pair rather than an immediate attack total', () => {
   const effect = { damage_per_enemy_per_application: 7, hp_loss_per_application: 1 };

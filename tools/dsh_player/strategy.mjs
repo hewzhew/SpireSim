@@ -1560,7 +1560,7 @@ export function preparationCardPolicies(observation, profile, normalize = comman
     ], accessOffers.map(row => row.command),
     'Default to the offered on-play multi-draw options to reach the owned functions.');
   }
-  if (act >= 2 && profile.reusableOtherCardExhaust !== 'none' && profile.onPlayDrawCoverage.copies === 0
+  if (act >= 2 && profile.reusableOtherCardExhaustCopies > 0 && profile.onPlayDrawCoverage.copies === 0
       && profile.exhaustDraw.length === 0) {
     add('first-exhaust-draw', ['je', 'cx'], ['exhaust', ...(profile.onPlayDraw.length ? ['draw'] : [])], [
       'Owned Exhaust-draw Powers: 0. Owned on-play multi-draw copies: 0.',

@@ -303,7 +303,7 @@ export function preparationCandidateGroups(observation, normalize = command => c
 // Bind maintainer-written relationships to typed, currently offered actions.
 // A reference selects an emphasis, not a claim that its access conditions hold.
 // Fixed mechanics accompany every selection, including a low rating.
-export function preparationConditionBindings(observation, normalize = command => command) {
+export function preparationConditionBindings(observation, normalize = command => command, locale = 'en') {
   const potionScope = shopPotionReplacementScope(observation, normalize);
   if (potionScope) return shopPotionConditionBindings(potionScope);
   const spendingScope = shopSpendingScope(observation, normalize);
@@ -317,9 +317,9 @@ export function preparationConditionBindings(observation, normalize = command =>
     ...rewardRevealConditionBindings(observation, normalize),
     ...statusDrawConditionBindings(observation, normalize),
     ...temporaryStrengthConditionBindings(observation, normalize)];
-  const bindings = [...specific, ...preparationDeckConditionBindings(observation, normalize)
+  const bindings = [...specific, ...preparationDeckConditionBindings(observation, normalize, locale)
     .filter(row => !specific.some(binding => binding.command === row.command))];
-  const profile = preparationDeckComparison(observation, normalize);
+  const profile = preparationDeckComparison(observation, normalize, locale);
   return [...bindings, ...preparationCandidateGroups(observation, normalize)
     .filter(group => !bindings.some(binding => binding.command === group.command))
     .map(group => ({ command: group.command, id: 'preparation-effect-tradeoff-v1',
@@ -788,7 +788,7 @@ function armamentsConditionBindings(observation, normalize) {
 
 // Expert preferences supply default tradeoffs; shared Rust readings continue
 // to own card effects and legal actions. Classification stays with the player.
-export function preparationClassificationContext(observation, normalize, draft) {
+export function preparationClassificationContext(observation, normalize, draft, locale = 'en') {
   const potionScope = shopPotionReplacementScope(observation, normalize);
   if (potionScope) return renderShopPotionComparison(potionScope, draft);
   const spendingScope = shopSpendingScope(observation, normalize);
@@ -800,7 +800,7 @@ export function preparationClassificationContext(observation, normalize, draft) 
   const allGroups = preparationCandidateGroups(observation, normalize);
   const accepted = sameGameContextSource(draft?.source, observation) ? draft.rows : [];
   const groups = allGroups.filter(group => !accepted.some(row => row.command === group.command));
-  const bindings = preparationConditionBindings(observation, normalize);
+  const bindings = preparationConditionBindings(observation, normalize, locale);
   const copyFacts = new Map(duplicateTargetFacts(observation, normalize).filter(row => !row.detailed)
     .map(row => [row.command, row.fixedMechanics]));
   const armamentsBound = bindings.some(binding => binding.id === 'armaments-limitbreak-v1');
@@ -873,7 +873,7 @@ export function preparationClassificationContext(observation, normalize, draft) 
     'Row format: command | high/medium/low/review | direct/sequence/future/review | @reference[, @reference]. Use the references beside that command.',
     ...(groups.some(group => group.members.length > 1)
       ? ['For grouped copies, classify one copy on its command line. The host expands the row to the matching legal commands.'] : []),
-    renderDeckComparison(preparationDeckComparison(observation, normalize), { candidateCommands: allGroups.map(group => group.command) }),
+    renderDeckComparison(preparationDeckComparison(observation, normalize, locale), { candidateCommands: allGroups.map(group => group.command), locale }),
     renderExpertGuidance(guidance, { includeCandidates: false }),
     renderShopBudget(observation.shopBudget, observation.shopPlan),
     ...(observation.shopRemovalPolicy ? [
@@ -896,8 +896,8 @@ export function preparationClassificationContext(observation, normalize, draft) 
     })].join('\n');
 }
 
-export function parsePreparationClassification(basis, observation, normalize = command => command) {
-  const collected = collectPreparationClassification(basis, observation, normalize);
+export function parsePreparationClassification(basis, observation, normalize = command => command, locale = 'en') {
+  const collected = collectPreparationClassification(basis, observation, normalize, undefined, undefined, locale);
   if (collected.issues.length) throw new Error(collected.issues.map(issue => issue.message).join('\n'));
   if (!collected.complete) throw new Error(`Classify remaining candidates: ${collected.pendingCommands.join(', ')}`);
   return collected.rows;
@@ -905,13 +905,13 @@ export function parsePreparationClassification(basis, observation, normalize = c
 
 // Independent row validation preserves usable assessments from the same source.
 // Drafts are host-owned; model prose stays in the raw submission journal only.
-export function collectPreparationClassification(basis, observation, normalize = command => command, previous, submission = {}) {
+export function collectPreparationClassification(basis, observation, normalize = command => command, previous, submission = {}, locale = 'en') {
   const potionScope = shopPotionReplacementScope(observation, normalize);
   const spendingScope = shopSpendingScope(observation, normalize);
   const simpleScope = potionScope ?? spendingScope;
   if (typeof basis !== 'string' || !basis.trim()) throw new Error(`Supply basis. ${simpleScope ? 'One row per supplied command: command | high/medium/low/review.' : PREPARATION_BASIS}`);
   const groups = preparationCandidateGroups(observation, normalize), rows = new Map();
-  const bindings = new Map(preparationConditionBindings(observation, normalize).map(binding => [binding.command, binding]));
+  const bindings = new Map(preparationConditionBindings(observation, normalize, locale).map(binding => [binding.command, binding]));
   const membership = new Map(groups.flatMap(group => group.members.map(command => [command, group])));
   if (sameGameContextSource(previous?.source, observation)) {
     for (const group of groups) {
@@ -1011,7 +1011,7 @@ export function preparationClassificationReceipt(draft) {
     draft.complete ? 'Complete current table recorded.' : `Classify remaining candidates: ${draft.pendingCommands.join(', ')}`].join('\n');
 }
 
-export function preparationRecordedTable(classification, observation, normalize) {
+export function preparationRecordedTable(classification, observation, normalize, locale = 'en') {
   const potionScope = shopPotionReplacementScope(observation, normalize);
   if (potionScope) return ['Recorded shop bottle recommendations:', ...potionScope.candidates.map(candidate => {
     const row = classification.rows.find(row => row.command === candidate.command);
@@ -1046,7 +1046,7 @@ export function preparationRecordedTable(classification, observation, normalize)
     'This table records your classify submission for the current decision.', ...representatives.map(group => {
     const row = classification.rows.find(row => row.command === group.command);
     return `  ${row.command} | ${row.category} | ${row.realization} | ${row.conditionIds?.join(',') ?? 'recorded basis below'}`;
-  }), renderDeckComparison(preparationDeckComparison(observation, normalize), { candidateCommands: representatives.map(group => group.command) }),
+  }), renderDeckComparison(preparationDeckComparison(observation, normalize, locale), { candidateCommands: representatives.map(group => group.command), locale }),
   renderExpertGuidance(preparationExpertGuidance(observation, normalize)),
   'Recorded basis facts and conditions:', ...[...shared].flatMap(([commands, texts]) => [
     `  Applies to ${commands}:`, ...texts.map(text => `    ${text}`),

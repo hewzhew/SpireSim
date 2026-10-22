@@ -281,7 +281,7 @@ export async function apply(ctx, config) {
               if (taskProgress === 'pending' && (shopPotionReplacementScope(reading, strategicOptionCommand) || shopSpendingScope(reading, strategicOptionCommand))
                   && ['read', 'options'].includes(group[0])) {
                 const supply = preparationReadingSupply(reading, strategicOptionCommand);
-                const context = preparationClassificationContext(reading, strategicOptionCommand, classificationDraft);
+                const context = preparationClassificationContext(reading, strategicOptionCommand, classificationDraft, presentation.locale);
                 return { text: `${supply.reading}\n${context}` };
               }
               if (group[0] === 'choose') {
@@ -297,7 +297,7 @@ export async function apply(ctx, config) {
                     } catch (error) { choiceIssue = error.message; }
                   }
                   const collected = collectPreparationClassification(basis, reading, strategicOptionCommand, classificationDraft,
-                    { choice: normalizedChoice, choiceIssue, comparison: submittedComparison });
+                    { choice: normalizedChoice, choiceIssue, comparison: submittedComparison }, presentation.locale);
                   await recording();
                   await appendFile(join(records, 'classification-submissions.jsonl'), JSON.stringify({
                     schema: 'sts-preparation-classification-submission-v1', at: new Date().toISOString(),
@@ -328,12 +328,12 @@ export async function apply(ctx, config) {
                     ratingMeaning: preparationContext?.potionReplacement ? 'shop-bottle-tradeoff-v1'
                       : preparationContext?.shopSpending ? 'shop-spending-tradeoff-v1' : 'current-window-recommendation-v1',
                     expertGuidance: preparationExpertGuidance(reading, strategicOptionCommand),
-                    deckComparison: preparationDeckComparison(reading, strategicOptionCommand),
+                    deckComparison: preparationDeckComparison(reading, strategicOptionCommand, presentation.locale),
                     shopBudget: reading.shopBudget, shopPlan: reading.shopPlan,
-                    classificationContext: preparationClassificationContext(reading, strategicOptionCommand),
+                    classificationContext: preparationClassificationContext(reading, strategicOptionCommand, undefined, presentation.locale),
                     runRules: rulesText,
                     groups: preparationCandidateGroups(reading, strategicOptionCommand),
-                    conditionBindings: preparationConditionBindings(reading, strategicOptionCommand),
+                    conditionBindings: preparationConditionBindings(reading, strategicOptionCommand, presentation.locale),
                   }) + '\n');
                   classification = recorded;
                   classificationDraft = undefined;
@@ -349,7 +349,7 @@ export async function apply(ctx, config) {
               if (['classify', 'choose'].includes(group[0])) {
                 if (!adoptionChoice?.trim()) {
                   requestBranchReset(exec.agent);
-                  return { text: `${preparationRecordedTable(classification, reading, strategicOptionCommand)}\n\n${progressText()}` };
+                  return { text: `${preparationRecordedTable(classification, reading, strategicOptionCommand, presentation.locale)}\n\n${progressText()}` };
                 }
                 group = preparationChoiceGroup(adoptionChoice);
                 assertPreparationCommand(group, taskProgress, reading, strategicOptionCommand);
@@ -493,7 +493,7 @@ export async function apply(ctx, config) {
     return reading;
   }
   const currentClassificationText = reading => cardChoiceFrame || !['pending', 'selection'].includes(taskProgress) ? '' : classification
-    ? preparationRecordedTable(classification, reading, strategicOptionCommand) : preparationClassificationContext(reading, strategicOptionCommand, classificationDraft);
+    ? preparationRecordedTable(classification, reading, strategicOptionCommand, presentation.locale) : preparationClassificationContext(reading, strategicOptionCommand, classificationDraft, presentation.locale);
   let classificationText = taskScope === 'preparation' ? currentClassificationText(initialReading) : '';
   ctx.systemPrompt.section({ name: 'sts:run-rules', order: 310,
     text: () => rulesText, interpolate: false });
