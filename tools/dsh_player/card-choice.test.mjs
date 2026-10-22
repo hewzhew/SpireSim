@@ -41,6 +41,45 @@ const growth = () => card('DemonForm', 'Power', 3, { strength_gain: 2, strength_
 const pact = () => card('BurningPact', 'Skill', 1, { draw_cards: 2, exhausts_other_cards: true });
 const sentinel = () => card('Sentinel', 'Skill', 1, { block: 5, base_block_delivery: 'once_on_play', energy_gain_on_exhaust: 2 });
 
+test('card-choice languages preserve the legal policy route and opaque native card blocks', () => {
+  const input = window([growth()], [pact(), sentinel()]);
+  const opaque = 'Original {{native}}\n保留 🐈 完整规则';
+  input.candidateReadings['take:BurningPact#0'].card_rules[0].view = opaque;
+  const before = JSON.stringify(input);
+  const en = preparationCardChoice(input), zh = preparationCardChoice(input, undefined, 'zh-CN');
+  assert.deepEqual(en.route, zh.route);
+  assert.deepEqual(en.defaultCommands, zh.defaultCommands);
+  assert.deepEqual(en.candidates.map(row => [row.command, row.kind, row.card, row.upgrades]), zh.candidates.map(row => [row.command, row.kind, row.card, row.upgrades]));
+  const rendered = renderPreparationCardChoice(zh, 'zh-CN');
+  assert.match(rendered, /^选牌 \| 第 2 幕 F21/);
+  assert.match(rendered, /永久卡组张数/);
+  assert.ok(rendered.includes(opaque.split('\n')[0]));
+  assert.ok(rendered.includes(opaque.split('\n')[1]));
+  assert.ok(zh.candidates.find(row => row.card === 'Sentinel').facts.some(text => /持有触发路线：无/.test(text)));
+  assert.equal(JSON.stringify(input), before);
+  const missing = { rules: [], candidates: [{ command: 'skip-card#0' }] };
+  assert.equal(preparationCardChoiceRoute(missing, 'zh-CN').gap.reason, preparationCardChoiceRoute(missing).gap.reason);
+  assert.match(preparationCardChoiceRoute(missing, 'zh-CN').gap.message, /需要提供策略规则/);
+});
+
+test('localized card adoption keeps source checks and execution identity while rendering its basis', async () => {
+  for (const locale of ['en', 'zh-CN']) {
+    const input = window([growth()], [pact(), sentinel()]), frame = preparationCardChoice(input, undefined, locale);
+    const successor = { ...input, head_revision: 2, state_revision: 2 };
+    let current = input;
+    const commands = [], records = [];
+    const game = { observe: async () => current, execute: async command => { commands.push(command); current = successor; return { text: 'Native {{receipt}} 原文' }; } };
+    const adopted = await adoptPreparationCardChoice(game, frame, input, { locale, owner: 'host-card-policy', choice: frame.route.commands[0], record: async row => records.push(row) });
+    assert.deepEqual(commands, ['take:BurningPact#0']);
+    assert.deepEqual(records.map(row => [row.phase, row.command]), [['intent', commands[0]], ['applied', commands[0]]]);
+    assert.equal(adopted.receipt.text, 'Native {{receipt}} 原文');
+    assert.match(adopted.adopted.renderedBasis, locale === 'en' ? /^Selected / : /^选择 /);
+    assert.throws(() => bindPreparationCardChoice(commands[0], frame, successor, 'host-card-policy', locale), error => {
+      assert.match(error.message, locale === 'en' ? /source changed/ : /来源已变化/); return true;
+    });
+  }
+});
+
 function freeCardEvent(input) {
   const offers = input.position.actions.filter(row => row.candidate.action.kind === 'take_card');
   input.position.observation.observation.context = { kind: 'event', event: 'TheLibrary' };
@@ -147,6 +186,9 @@ test('Singing Bowl joins a useful card comparison with native HP deltas and keep
   const frame = preparationCardChoice(input);
   assert.equal(frame.route.kind, 'model');
   assert.deepEqual(frame.route.commands, ['take:Disarm#0', 'singing-bowl#0']);
+  const localized = preparationCardChoice(input, undefined, 'zh-CN');
+  assert.deepEqual(localized.route, frame.route);
+  assert.match(renderPreparationCardChoice(localized, 'zh-CN'), /生命 50->52；生命上限 80->82/);
   assert.deepEqual(frame.defaultCommands, ['take:Disarm#0']);
   assert.equal(frame.candidates.length, 4);
   const rendered = renderPreparationCardChoice(frame);

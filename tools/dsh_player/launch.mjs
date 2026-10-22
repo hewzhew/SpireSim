@@ -603,13 +603,13 @@ export async function runPreparationFlow(options, display = console.log) {
       let cardFrame;
       if (!combat && !procedural) {
         try {
-          cardFrame = preparationCardChoice(policyReading, strategicOptionCommand);
+          cardFrame = preparationCardChoice(policyReading, strategicOptionCommand, agentLocale);
           if (cardFrame?.route.kind === 'model') {
             const supply = preparationReadingSupply(policyReading, strategicOptionCommand);
             policyReading.candidateReadings = supply.candidates;
             policyReading.ownedRelicReadings = supply.relicReadings;
-            cardFrame = preparationCardChoice(policyReading, strategicOptionCommand);
-            renderPreparationCardChoice(cardFrame);
+            cardFrame = preparationCardChoice(policyReading, strategicOptionCommand, agentLocale);
+            renderPreparationCardChoice(cardFrame, agentLocale);
           }
         }
         catch (error) {
@@ -691,7 +691,7 @@ export async function runPreparationFlow(options, display = console.log) {
           recordDirectory: join(folder, 'card-policy-wire'), commandPrefix: '' });
         try {
           const { adopted } = await adoptPreparationCardChoice(workbench, cardFrame, policyReading, {
-            choice: cardFrame.route.commands[0], owner: 'host-card-policy',
+            choice: cardFrame.route.commands[0], owner: 'host-card-policy', locale: agentLocale,
             record: row => appendFile(join(folder, 'adoptions.jsonl'), JSON.stringify(row) + '\n'),
           });
           execution = { owner: adopted.owner, command: adopted.command, route: adopted.route };

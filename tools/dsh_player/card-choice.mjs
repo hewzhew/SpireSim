@@ -1,12 +1,15 @@
-import { createPresentation } from '@sts-simulator/presentation';
+import { createPresentation, resolveLocale } from '@sts-simulator/presentation';
 import { gameContextSource, sameGameContextSource } from './context.mjs';
 import { preparationCardAcquisition, preparationDeckComparison, renderStatusRoutes, battleTranceDrawOrder,
-  strengthTiming, playedCardLifecycle, OTHER_CARD_EXHAUST_COMPARISON } from './deck.mjs';
+  strengthTiming, playedCardLifecycle, otherCardExhaustComparison } from './deck.mjs';
 import { preparationCardPolicies, STRATEGY_SOURCES } from './strategy.mjs';
 
+const cardChoiceViews = Object.fromEntries(['en', 'zh-CN'].map(locale => [locale, createPresentation({ locale })]));
+const cardChoiceText = (locale, key, parameters = {}) => cardChoiceViews[resolveLocale(locale)].text(`scripted:cardChoice.${key}`,
+  Object.fromEntries(Object.entries(parameters).map(([name, value]) => [name, String(value)])));
+
 export function cardChoiceInstructions(locale = 'en') {
-  const presentation = createPresentation({ locale });
-  const text = key => presentation.text(`scripted:cardChoice.${key}`);
+  const text = key => cardChoiceText(locale, key);
   return { guide: text('guide'), automatic: text('automatic'), review: text('review'), description: text('description'),
     parameters: { command: { type: 'string', required: true, description: text('parameterCommand') },
       choice: { type: 'string', description: text('parameterChoice') } } };
@@ -32,25 +35,25 @@ function gapError(kind, reason, message, details = {}) {
 // Resolve policy compatibility before asking the player to compare costs.
 // Keep the full legal set in the frame; an oversized comparison is a policy
 // gap rather than an arbitrary truncation of that set.
-export function preparationCardChoiceRoute(frame) {
+export function preparationCardChoiceRoute(frame, locale = 'en') {
   if (!frame) return;
   const gap = frame.rules.find(rule => rule.gap)?.gap;
   if (gap) return { kind: 'review', commands: [], gap: { ...gap, legalOptionCount: frame.candidates.length } };
   const legal = new Set(frame.candidates.map(row => row.command));
   const policies = frame.rules.map(rule => ({ id: rule.id, commands: [...new Set(rule.commands)] }));
   if (policies.some(rule => !rule.commands.length || rule.commands.some(command => !legal.has(command)))) {
-    throw gapError('strategy', 'invalid-policy-command', 'Card-choice policies require current legal commands.');
+    throw gapError('strategy', 'invalid-policy-command', cardChoiceText(locale, 'invalidPolicyCommands'));
   }
   const review = (reason, message) => ({ kind: 'review', commands: [],
     gap: { kind: 'strategy', reason, message, policies, legalOptionCount: legal.size } });
-  if (!policies.length) return review('missing-policy', 'This card choice needs a supplied strategy policy.');
+  if (!policies.length) return review('missing-policy', cardChoiceText(locale, 'missingPolicy'));
   const common = policies[0].commands.filter(command => policies.every(rule => rule.commands.includes(command)));
-  if (!common.length) return review('policy-conflict', 'The matched strategy policies need a priority decision.');
+  if (!common.length) return review('policy-conflict', cardChoiceText(locale, 'conflictingPolicies'));
   if (common.length > MAX_CARD_CHOICE_OPTIONS) return review('comparison-too-large',
-    `The matched strategy policies need a smaller comparison: ${common.length} options, limit ${MAX_CARD_CHOICE_OPTIONS}.`);
+    cardChoiceText(locale, 'comparisonTooLarge', { optionCount: common.length, limit: MAX_CARD_CHOICE_OPTIONS }));
   const commands = frame.candidates.filter(row => common.includes(row.command)).map(row => row.command);
   if (commands.length > 1 && !frame.rules.some(rule => rule.question)) return review('missing-comparison-question',
-    'This comparison needs a supplied policy question.');
+    cardChoiceText(locale, 'missingQuestion'));
   return { kind: commands.length === 1 ? 'automatic' : 'model', commands,
     policyIds: policies.map(rule => rule.id), legalOptionCount: legal.size };
 }
@@ -58,7 +61,7 @@ export function preparationCardChoiceRoute(frame) {
 // This replaces the preparation table only for a pure one-card acquisition
 // window. Shop spending, random grants and composite event costs keep their
 // existing owner; they cannot be silently projected into a free card choice.
-export function preparationCardChoice(observation, normalize = command => command) {
+export function preparationCardChoice(observation, normalize = command => command, locale = 'en') {
   const state = observation.position?.observation?.observation;
   if (!['card_reward', 'event'].includes(state?.context?.kind)) return;
   const actions = observation.position.actions;
@@ -69,7 +72,7 @@ export function preparationCardChoice(observation, normalize = command => comman
     if (['skip_card_reward', 'singing_bowl'].includes(action?.kind)) continue;
     const acquisition = preparationCardAcquisition(observation, row);
     if (action?.kind === 'take_card' && !acquisition?.mechanics) {
-      throw gapError('facts', 'missing-candidate-mechanics', 'Card choice needs the offered card\'s matching native mechanics.',
+      throw gapError('facts', 'missing-candidate-mechanics', cardChoiceText(locale, 'missingCandidateMechanics'),
         { command: row.semantic_action });
     }
     if (!acquisition || !acquisition.mechanics || action.kind === 'buy_card') return;
@@ -82,11 +85,11 @@ export function preparationCardChoice(observation, normalize = command => comman
     grants.push({ command: normalize(row.semantic_action, observation), ...acquisition });
   }
   if (!grants.length) return;
-  const profile = preparationDeckComparison(observation, normalize);
-  if (!profile) throw gapError('facts', 'missing-owned-mechanics', 'Card choice needs native mechanics for the current owned inventory.');
+  const profile = preparationDeckComparison(observation, normalize, locale);
+  if (!profile) throw gapError('facts', 'missing-owned-mechanics', cardChoiceText(locale, 'missingOwnedMechanics'));
   const owned = observation.deck_evidence.cards;
   const exhausters = owned.filter(row => row.mechanics.exhausts_other_cards);
-  const names = rows => rows.map(row => `${row.card.count}x ${label(row)}`).join(', ') || 'none';
+  const names = rows => rows.map(row => `${row.card.count}x ${label(row)}`).join(', ') || cardChoiceText(locale, 'none');
   const rules = preparationCardPolicies(observation, profile, normalize);
   const dependencies = new Set(rules.flatMap(rule => rule.dependencies ?? []));
   const relicRules = [];
@@ -108,50 +111,50 @@ export function preparationCardChoice(observation, normalize = command => comman
     if (!grant) {
       const resource = profile.candidates.find(item => item.command === command)?.resource;
       return { command, kind: resource ? 'resource' : 'skip',
-        facts: [`Keep the ${profile.size}-card permanent deck.`, ...(resource ? [
-          `Immediate native outcome: HP ${state.run.current_hp}->${state.run.current_hp + resource.hpGain}; Max HP ${state.run.max_hp}->${state.run.max_hp + resource.maxHpGain}. This consumes the card reward.`,
-          `Native rule: ${resource.nativeRule}`,
+        facts: [cardChoiceText(locale, 'keepDeck', { size: profile.size }), ...(resource ? [
+          cardChoiceText(locale, 'resourceOutcome', { hpBefore: state.run.current_hp, hpAfter: state.run.current_hp + resource.hpGain, maxHpBefore: state.run.max_hp, maxHpAfter: state.run.max_hp + resource.maxHpGain }),
+          cardChoiceText(locale, 'nativeRule', { nativeRule: resource.nativeRule }),
         ] : [])] };
     }
     const m = grant.mechanics;
-    const comparisonGuidance = m.exhausts_other_cards ? [OTHER_CARD_EXHAUST_COMPARISON] : [];
-    const facts = [`Gain one ${grant.card}${grant.upgrades > 0 ? '+' : ''}; deck ${profile.size}->${profile.size + 1}; play cost ${m.cost === -1 ? 'X' : m.cost} Energy.`];
-    facts.push(`Played copy: ${m.card_type}; ${playedCardLifecycle({ type: m.card_type, exhausts: m.exhausts, ethereal: m.ethereal })} before other deployed effects.`);
-    if (Array.isArray(m.tags)) facts.push(`Native card tags: ${m.tags.join(', ') || 'none'}.`);
+    const comparisonGuidance = m.exhausts_other_cards ? [otherCardExhaustComparison(locale)] : [];
+    const facts = [cardChoiceText(locale, 'gainCard', { card: grant.card, upgradeSuffix: grant.upgrades > 0 ? '+' : '', sizeBefore: profile.size, sizeAfter: profile.size + 1, cost: m.cost === -1 ? 'X' : m.cost })];
+    facts.push(cardChoiceText(locale, 'playedCopy', { type: m.card_type, lifecycle: playedCardLifecycle({ type: m.card_type, exhausts: m.exhausts, ethereal: m.ethereal }, locale) }));
+    if (Array.isArray(m.tags)) facts.push(cardChoiceText(locale, 'cardTags', { tags: m.tags.join(', ') || cardChoiceText(locale, 'none') }));
     if (m.damage?.delivery?.amount?.kind === 'base_plus_strike_cards') {
       if (!profile.strikeTags || !Array.isArray(m.tags)) throw gapError('facts', 'missing-strike-tags',
-        'Perfected Strike comparison needs native tags for the owned originals and offered card.');
+        cardChoiceText(locale, 'missingStrikeTags'));
       const added = m.tags.includes('Strike') ? 1 : 0;
-      facts.push(`Original Strike-tagged pool: ${profile.strikeTags.copies} copies (${profile.strikeTags.owned}). Adding this card brings it to ${profile.strikeTags.copies + added}. Counted cards use Hand, Draw and Discard; creation, Exhaust and recovery change that pool during combat.`);
+      facts.push(cardChoiceText(locale, 'strikePool', { copiesBefore: profile.strikeTags.copies, owned: profile.strikeTags.owned, copiesAfter: profile.strikeTags.copies + added }));
     }
-    if (m.base_block_delivery === 'once_on_play' && m.block > 0) facts.push(`On play: ${m.block} Block before combat modifiers.`);
-    if (m.draw_cards > 0) facts.push(`On play: request ${m.draw_cards} draws${m.exhausts_other_cards ? ' with the printed other-card selection' : ''}.`);
+    if (m.base_block_delivery === 'once_on_play' && m.block > 0) facts.push(cardChoiceText(locale, 'blockOnPlay', { block: m.block }));
+    if (m.draw_cards > 0) facts.push(cardChoiceText(locale, 'drawOnPlay', { draws: m.draw_cards, selection: m.exhausts_other_cards ? cardChoiceText(locale, 'otherCardSelection') : '' }));
     if (m.energy_gain_rule?.delivery === 'on_play' && m.energy_gain_rule.amount > 0) {
-      facts.push(`On play: gain ${m.energy_gain_rule.amount} Energy${m.self_hp_loss_on_play
-        ? `; base HP loss ${m.self_hp_loss_on_play.base_hp_loss} before the supplied combat modifiers` : ''}.`);
+      facts.push(cardChoiceText(locale, 'energyOnPlay', { energy: m.energy_gain_rule.amount, hpLoss: m.self_hp_loss_on_play
+        ? cardChoiceText(locale, 'baseHpLoss', { base_hp_loss: m.self_hp_loss_on_play.base_hp_loss }) : '' }));
     }
-    if (m.hand_topdeck_after_draw > 0) facts.push(`After drawing, place ${m.hand_topdeck_after_draw} Hand card on top of Draw. Spending this card, drawing and placing back contributes ${m.draw_cards - 1 - m.hand_topdeck_after_draw} cards to Hand before other effects and capacity. The top card awaits a later draw.`);
+    if (m.hand_topdeck_after_draw > 0) facts.push(cardChoiceText(locale, 'handTopdeck', { topdeckCount: m.hand_topdeck_after_draw, handChange: m.draw_cards - 1 - m.hand_topdeck_after_draw }));
     if (m.top_deck_play) {
-      if (m.top_deck_play.bypass_fixed_energy_cost === true) facts.push('Top-card play bypasses fixed Energy cost.');
-      if (m.top_deck_play.x_cost_uses_current_energy === true) facts.push('X-cost uses current Energy and the target card\'s own Energy spending rule.');
-      if (m.top_deck_play.exhaust_after_play === true) facts.push('Played Powers deploy and remain active; other targets follow the supplied Exhaust-after-play rule.');
+      if (m.top_deck_play.bypass_fixed_energy_cost === true) facts.push(cardChoiceText(locale, 'topPlayBypassCost'));
+      if (m.top_deck_play.x_cost_uses_current_energy === true) facts.push(cardChoiceText(locale, 'topPlayXCost'));
+      if (m.top_deck_play.exhaust_after_play === true) facts.push(cardChoiceText(locale, 'topPlayLifecycle'));
       const handPlanners = owned.filter(source => source.mechanics.hand_topdeck_after_draw > 0);
       const discardPlanners = owned.filter(source => source.card.card === 'Headbutt');
-      facts.push(`Owned Hand-to-top-of-Draw planning: ${names(handPlanners)}; use their draw first, then select the Hand card to put on top. Owned Discard-to-top-of-Draw planning: ${names(discardPlanners)}; the selected target must already be in Discard. Use Havoc after placing the intended target and before another draw removes it.`);
+      facts.push(cardChoiceText(locale, 'topdeckPlanning', { handPlanners: names(handPlanners), discardPlanners: names(discardPlanners) }));
     }
-    if (m.card === 'BattleTrance' && m.draw_cards > 0) facts.push(battleTranceDrawOrder(profile));
+    if (m.card === 'BattleTrance' && m.draw_cards > 0) facts.push(battleTranceDrawOrder(profile, locale));
     if (m.energy_gain_on_exhaust > 0) {
       const routes = [...exhausters.map(row => `${row.card.count}x ${label(row)}`),
-        ...(m.card_type === 'Skill' ? profile.skillExhaustPowers.map(row => `${row.card} after deployment`) : []),
-        ...(m.exhausts ? ['this card\'s Exhaust on play'] : []), ...(m.ethereal ? ['this card\'s Ethereal at turn end'] : [])];
-      facts.push(`When this card itself Exhausts: ${m.energy_gain_on_exhaust} Energy. Owned trigger routes: ${routes.join(', ') || 'none'}.`);
+        ...(m.card_type === 'Skill' ? profile.skillExhaustPowers.map(row => cardChoiceText(locale, 'afterDeployment', { card: row.card })) : []),
+        ...(m.exhausts ? [cardChoiceText(locale, 'selfExhaustRoute')] : []), ...(m.ethereal ? [cardChoiceText(locale, 'selfEtherealRoute')] : [])];
+      facts.push(cardChoiceText(locale, 'selfExhaustEnergy', { energy: m.energy_gain_on_exhaust, routes: routes.join(', ') || cardChoiceText(locale, 'none') }));
     }
     if (['Evolve', 'FireBreathing'].includes(m.card)) {
-      facts.push(`Owned generated Status routes: ${renderStatusRoutes(profile.statusGeneration) || 'none'}.`);
+      facts.push(cardChoiceText(locale, 'statusRoutes', { renderStatusRoutes: renderStatusRoutes(profile.statusGeneration, locale) || cardChoiceText(locale, 'none') }));
       const original = profile.statusInventory.filter(row => m.card === 'FireBreathing' || row.type === 'Status');
-      facts.push(`Owned original qualifying cards: ${original.map(row => row.card).join(', ') || 'none'}. Deploy this Power before the triggering draw.`);
+      facts.push(cardChoiceText(locale, 'originalQualifyingCards', { original: original.map(row => row.card).join(', ') || cardChoiceText(locale, 'none') }));
     }
-    if (m.temporary_strength_gain > 0) facts.push(`Same-turn attack support uses only owned attacks: ${profile.attackCopies}.`);
+    if (m.temporary_strength_gain > 0) facts.push(cardChoiceText(locale, 'temporaryStrengthAttacks', { attackCopies: profile.attackCopies }));
     return { command, kind: 'gain', card: grant.card, upgrades: grant.upgrades, facts,
       comparisonGuidance,
       nativeReading: observation.candidateReadings?.[command]?.card_rules
@@ -160,13 +163,13 @@ export function preparationCardChoice(observation, normalize = command => comman
         ?.some(rule => rule.card === grant.card && rule.upgrades === grant.upgrades && rule.available) === true };
   });
   const factGroups = {
-    strength: [`Enduring Strength: ${profile.strengthSources.map(row => `${row.card}: ${row.type}, ${row.cost} Energy; gain ${row.amount} Strength ${strengthTiming(row.delivery)}; ${playedCardLifecycle(row)}`).join('; ') || 'none from the supplied native cards'}.`],
-    retention: [`Block retention: ${profile.blockSupport.retention.map(row => `${row.card}: ${row.type}, ${row.cost} Energy; preserves surviving Block across turns after deployment`).join('; ') || 'none'}.`],
-    draw: [`Owned on-play draw requests: ${profile.onPlayDraw.map(row => `${row.card}: ${row.requested} draws, ${row.cost} Energy; ${row.type}; ${playedCardLifecycle(row)}`).join('; ') || 'none'}.`],
-    exhaust: [`Other-card Exhaust: ${names(exhausters)}. Skill-Exhaust Power: ${profile.skillExhaustPowers.map(row => `${row.card}, ${row.cost} Energy`).join(', ') || 'none'}.`],
-    'exhaust-draw': [`Owned Exhaust-draw Powers: ${profile.exhaustDraw.map(row => `${row.card}, ${row.cost} Energy; ${row.requested} draws per Exhaust after deployment`).join('; ') || 'none'}.`],
-    payment: [`Owned on-play Energy: ${profile.onPlayEnergy.map(row => `${row.card}, ${row.cost} Energy; gain ${row.amount} Energy, lose ${row.hpLoss} HP`).join('; ') || 'none'}. Skill-Exhaust Power: ${profile.skillExhaustPowers.map(row => `${row.card}, ${row.cost} Energy`).join(', ') || 'none'}.`],
-    'multi-hit': [`Owned multi-hit attacks: ${profile.attacks.filter(row => row.delivery?.hits?.count > 1 || row.delivery?.hits?.kind === 'per_effective_x').map(row => `${row.card}, ${row.cost === -1 ? 'X' : row.cost} Energy; ${row.delivery.hits.count ?? row.delivery.hits.kind} hits; ${row.delivery.targets}`).join('; ') || 'none'}.`],
+    strength: [cardChoiceText(locale, 'enduringStrength', { strengthSources: profile.strengthSources.map(row => cardChoiceText(locale, 'strengthSource', { card: row.card, type: row.type, cost: row.cost, strength: row.amount, timing: strengthTiming(row.delivery, locale), lifecycle: playedCardLifecycle(row, locale) })).join('; ') || cardChoiceText(locale, 'noNativeSource') })],
+    retention: [cardChoiceText(locale, 'blockRetention', { retention: profile.blockSupport.retention.map(row => cardChoiceText(locale, 'retentionSource', { card: row.card, type: row.type, cost: row.cost })).join('; ') || cardChoiceText(locale, 'none') })],
+    draw: [cardChoiceText(locale, 'onPlayDrawSources', { onPlayDraw: profile.onPlayDraw.map(row => cardChoiceText(locale, 'drawSource', { card: row.card, draws: row.requested, cost: row.cost, type: row.type, lifecycle: playedCardLifecycle(row, locale) })).join('; ') || cardChoiceText(locale, 'none') })],
+    exhaust: [cardChoiceText(locale, 'exhaustSources', { exhausters: names(exhausters), skillExhaustPowers: profile.skillExhaustPowers.map(row => cardChoiceText(locale, 'energyCost', { card: row.card, cost: row.cost })).join(', ') || cardChoiceText(locale, 'none') })],
+    'exhaust-draw': [cardChoiceText(locale, 'exhaustDrawPowers', { exhaustDraw: profile.exhaustDraw.map(row => cardChoiceText(locale, 'exhaustDrawSource', { card: row.card, cost: row.cost, draws: row.requested })).join('; ') || cardChoiceText(locale, 'none') })],
+    payment: [cardChoiceText(locale, 'onPlayEnergySources', { energySources: profile.onPlayEnergy.map(row => cardChoiceText(locale, 'onPlayEnergySource', { card: row.card, cost: row.cost, gain: row.amount, hpLoss: row.hpLoss })).join('; ') || cardChoiceText(locale, 'none'), skillExhaustPowers: profile.skillExhaustPowers.map(row => cardChoiceText(locale, 'energyCost', { card: row.card, cost: row.cost })).join(', ') || cardChoiceText(locale, 'none') })],
+    'multi-hit': [cardChoiceText(locale, 'multiHitAttacks', { attacks: profile.attacks.filter(row => row.delivery?.hits?.count > 1 || row.delivery?.hits?.kind === 'per_effective_x').map(row => cardChoiceText(locale, 'multiHitSource', { card: row.card, cost: row.cost === -1 ? 'X' : row.cost, hits: row.delivery.hits.count ?? row.delivery.hits.kind, targets: row.delivery.targets })).join('; ') || cardChoiceText(locale, 'none') })],
     'attack-play': [], // Complete native relic blocks supply these counters.
   };
   const frame = { schema: 'sts-preparation-card-choice-v1', source: gameContextSource(observation),
@@ -175,7 +178,7 @@ export function preparationCardChoice(observation, normalize = command => comman
     defaultCommands: [...new Set(rules.filter(rule => rule.origin === 'maintainer_strategy_default').flatMap(rule => rule.defaultCommands ?? rule.commands))],
     ownedFacts: [...dependencies].flatMap(id => factGroups[id]), relicRules,
     sources: Object.fromEntries([...new Set(rules.flatMap(rule => rule.sources))].map(id => [id, STRATEGY_SOURCES[id]])) };
-  frame.route = preparationCardChoiceRoute(frame);
+  frame.route = preparationCardChoiceRoute(frame, locale);
   frame.defaultCommands = frame.defaultCommands.filter(command => frame.route.commands.includes(command));
   return frame;
 }
@@ -185,78 +188,78 @@ function nativeRuleLines(text) {
   return (text ?? '').split('\n').map(line => line.trim()).filter(Boolean);
 }
 
-export function renderPreparationCardChoice(frame) {
+export function renderPreparationCardChoice(frame, locale = 'en') {
   if (!frame) return '';
-  const route = preparationCardChoiceRoute(frame);
+  const route = preparationCardChoiceRoute(frame, locale);
   const options = frame.candidates.filter(row => route.commands.includes(row.command));
   const missingRelics = (frame.relicRules ?? []).filter(row => !row.native);
   if (route.kind === 'model' && missingRelics.length) throw gapError('facts', 'missing-payment-relic-rules',
-    'Card comparison needs the native rules of the owned supporting relics.',
+    cardChoiceText(locale, 'missingRelicRules'),
     { relics: missingRelics.map(row => row.relic) });
   const missingRules = options.filter(row => row.kind === 'gain'
     && (!row.nativeRuleAvailable || !row.nativeReading?.trim()));
   if (missingRules.length) throw gapError('facts', 'missing-candidate-rules',
-    'Card comparison needs the full native printed rule for each supplied gain.',
+    cardChoiceText(locale, 'missingPrintedRules'),
     { commands: missingRules.map(row => row.command) });
   const reading = [
-    `Card choice | Act ${frame.run.act} F${frame.run.floor} | HP ${frame.run.current_hp}/${frame.run.max_hp} | ${frame.baseEnergy} Energy/turn`,
-    `Permanent deck size: ${frame.size}.`,
+    cardChoiceText(locale, 'heading', { act: frame.run.act, floor: frame.run.floor, hp: frame.run.current_hp, maxHp: frame.run.max_hp, energy: frame.baseEnergy }),
+    cardChoiceText(locale, 'deckSize', { size: frame.size }),
     ...(route.kind === 'model' && frame.defaultCommands.length
-      ? [`Maintainer default: ${frame.defaultCommands.join('; ')}.`] : []),
-    'Checked owned facts:', ...frame.ownedFacts.map(text => `  ${text}`),
-    ...(frame.relicRules ?? []).filter(row => row.native).map(row => `  Owned relic: ${row.native}`),
-    'Applied strategy (maintainer preferences):',
+      ? [cardChoiceText(locale, 'maintainerDefault', { defaultCommands: frame.defaultCommands.join('; ') })] : []),
+    cardChoiceText(locale, 'checkedFacts'), ...frame.ownedFacts.map(text => `  ${text}`),
+    ...(frame.relicRules ?? []).filter(row => row.native).map(row => cardChoiceText(locale, 'ownedRelic', { native: row.native })),
+    cardChoiceText(locale, 'appliedStrategy'),
     ...(frame.rules.length ? frame.rules.flatMap(rule => [
       `  ${rule.id}: ${rule.preference}`,
-      ...rule.conditions.map(text => `    Checked: ${text}`),
-    ]) : ['  This window needs a supplied strategy policy. Record the missing policy through sts_feedback.']),
-    ...(route.kind === 'review' ? [`Strategy gap: ${route.gap.message}`,
+      ...rule.conditions.map(text => cardChoiceText(locale, 'checkedCondition', { text: text })),
+    ]) : [cardChoiceText(locale, 'policyNeeded')]),
+    ...(route.kind === 'review' ? [cardChoiceText(locale, 'strategyGap', { message: route.gap.message }),
       ...(route.gap.candidates ?? []).map(row => `  ${row.command}: ${row.policy}`)]
-      : [`Policy comparison options (${options.length} of ${frame.candidates.length} legal options; full set retained by host):`]),
-    ...(route.kind === 'model' ? [`Comparison question: ${frame.rules.findLast(rule => rule.question).question}`] : []),
+      : [cardChoiceText(locale, 'comparisonOptions', { shownCount: options.length, legalCount: frame.candidates.length })]),
+    ...(route.kind === 'model' ? [cardChoiceText(locale, 'comparisonQuestion', { question: frame.rules.findLast(rule => rule.question).question })] : []),
     ...options.flatMap(row => [
       `  ${row.command}`, ...row.facts.map(text => `    ${text}`),
       ...nativeRuleLines(row.nativeReading).map(text => `    ${text}`),
-      ...(row.comparisonGuidance ?? []).map(text => `    Selection comparison: ${text}`),
+      ...(row.comparisonGuidance ?? []).map(text => cardChoiceText(locale, 'selectionComparison', { text: text })),
     ]),
-    `Current step: ${route.kind === 'review' ? 'record the strategy gap' : 'choose one supplied comparison option'}.`,
+    cardChoiceText(locale, 'currentStep', { kind: route.kind === 'review' ? cardChoiceText(locale, 'recordGap') : cardChoiceText(locale, 'chooseOption') }),
   ].join('\n');
-  const guide = { automatic: CARD_CHOICE_AUTOMATIC_GUIDE, model: CARD_CHOICE_GUIDE,
-    review: CARD_CHOICE_REVIEW_GUIDE }[route.kind];
+  const instructions = cardChoiceInstructions(locale);
+  const guide = { automatic: instructions.automatic, model: instructions.guide, review: instructions.review }[route.kind];
   const bytes = Buffer.byteLength(reading) + Buffer.byteLength(guide);
   frame.inputBudget = { bytes, target: TARGET_CARD_CHOICE_INPUT_BYTES, exceeded: bytes > TARGET_CARD_CHOICE_INPUT_BYTES,
     includes: ['reading', 'card-choice-guide'], componentBytes: [Buffer.byteLength(reading), Buffer.byteLength(guide)] };
   return reading;
 }
 
-export function bindPreparationCardChoice(choice, frame, observation, owner = 'flash-card-choice') {
-  if (!frame || !sameGameContextSource(frame.source, observation)) throw new Error('Card-choice source changed; read the current step.');
-  const route = preparationCardChoiceRoute(frame);
+export function bindPreparationCardChoice(choice, frame, observation, owner = 'flash-card-choice', locale = 'en') {
+  if (!frame || !sameGameContextSource(frame.source, observation)) throw new Error(cardChoiceText(locale, 'sourceChanged'));
+  const route = preparationCardChoiceRoute(frame, locale);
   if (route.kind === 'review') throw gapError(route.gap.kind, route.gap.reason, route.gap.message, { ...route.gap });
   const selected = frame.candidates.find(row => row.command === choice?.trim());
-  if (!selected) throw new Error(`Copy one current command into choice: ${frame.candidates.map(row => row.command).join('; ')}`);
-  if (!route.commands.includes(selected.command)) throw new Error(`Choose one supplied policy comparison option: ${route.commands.join('; ')}`);
+  if (!selected) throw new Error(cardChoiceText(locale, 'copyCommand', { candidates: frame.candidates.map(row => row.command).join('; ') }));
+  if (!route.commands.includes(selected.command)) throw new Error(cardChoiceText(locale, 'choosePolicyOption', { commands: route.commands.join('; ') }));
   if (!['flash-card-choice', 'host-card-policy'].includes(owner)
       || (owner === 'host-card-policy' && route.kind !== 'automatic')) {
-    throw new Error('Automatic card adoption requires one compatible policy command.');
+    throw new Error(cardChoiceText(locale, 'automaticPolicyRequired'));
   }
   return { schema: 'sts-preparation-card-choice-adoption-v1', source: frame.source, command: selected.command,
     owner, route,
     selected, followsDefault: frame.defaultCommands.includes(selected.command),
     suppliedPolicies: frame.rules, defaultCommands: frame.defaultCommands,
-    basisKind: 'host-checked-card-choice', renderedBasis: `Selected ${selected.command}; supplied policies: ${route.policyIds.join('; ')}.` };
+    basisKind: 'host-checked-card-choice', renderedBasis: cardChoiceText(locale, 'adoptedBasis', { command: selected.command, policyIds: route.policyIds.join('; ') }) };
 }
 
 // Both the flow's automatic choice and the player's bounded choice use this
 // source check and intent/applied journal around the real workbench execution.
-export async function adoptPreparationCardChoice(game, frame, observation, { choice, owner, signal, record }) {
-  const adopted = bindPreparationCardChoice(choice, frame, observation, owner);
+export async function adoptPreparationCardChoice(game, frame, observation, { choice, owner, signal, record, locale = 'en' }) {
+  const adopted = bindPreparationCardChoice(choice, frame, observation, owner, locale);
   if (!sameGameContextSource(frame.source, await game.observe({ signal }))) {
-    throw new Error('Game position changed before the card choice; read the current step.');
+    throw new Error(cardChoiceText(locale, 'positionChangedBeforeChoice'));
   }
   await record({ ...adopted, phase: 'intent', at: new Date().toISOString(), frame });
   if (!sameGameContextSource(frame.source, await game.observe({ signal }))) {
-    throw new Error('Game position changed while recording the card choice; read the current step.');
+    throw new Error(cardChoiceText(locale, 'positionChangedDuringRecord'));
   }
   let receipt, successor;
   try {

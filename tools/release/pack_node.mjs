@@ -143,7 +143,7 @@ if (process.argv.slice(2).join(' ') === '--check') {
           const { playerGuide } = await import(pathToFileURL(join(installed, 'index.mjs')).href);
           const { continuationTask } = await import(pathToFileURL(join(installed, 'launch.mjs')).href);
           const { preparationInstructions, preparationStageGuide } = await import(pathToFileURL(join(installed, 'preparation.mjs')).href);
-          const { cardChoiceInstructions } = await import(pathToFileURL(join(installed, 'card-choice.mjs')).href);
+          const { cardChoiceInstructions, preparationCardChoiceRoute } = await import(pathToFileURL(join(installed, 'card-choice.mjs')).href);
           const { shopInstructions } = await import(pathToFileURL(join(installed, 'shop.mjs')).href);
           const { playedCardLifecycle, strengthTiming } = await import(pathToFileURL(join(installed, 'deck.mjs')).href);
           for (const locale of ['en', 'zh-CN']) {
@@ -164,10 +164,12 @@ if (process.argv.slice(2).join(' ') === '--check') {
                 || !card.parameters.command.description.includes('choose') || !shop.spendingGuide.includes('then FOLLOW_UP_COMMAND')
                 || preparation.comparisons.map(row => row.id).join(',') !== '@function,@access,@protection,@resources,@opportunity'
                 || !playedCardLifecycle({ type: 'Power' }, locale).includes(locale === 'en' ? 'after deployment' : '部署后')
-                || !strengthTiming('each_player_turn_start_post_draw', locale).includes(locale === 'en' ? 'after draw' : '抽牌之后')) {
+                || !strengthTiming('each_player_turn_start_post_draw', locale).includes(locale === 'en' ? 'after draw' : '抽牌之后')
+                || !preparationCardChoiceRoute({ rules: [], candidates: [{ command: 'skip-card#0' }] }, locale).gap.message
+                  .includes(locale === 'en' ? 'supplied strategy policy' : '需要提供策略规则')) {
               throw new Error(`Installed preparation guide lost language or protocol: ${locale}`);
             }
-            report.installed_scripted_checks.push({ package: manifest.name, locale, imported_entries: true, preserved_guide_commands_and_operator: true, preparation_guides_and_schemas: true, deck_mechanism_messages: true });
+            report.installed_scripted_checks.push({ package: manifest.name, locale, imported_entries: true, preserved_guide_commands_and_operator: true, preparation_guides_and_schemas: true, deck_mechanism_messages: true, card_choice_messages: true });
           }
         }
       }

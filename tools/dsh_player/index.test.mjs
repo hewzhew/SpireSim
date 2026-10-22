@@ -249,6 +249,7 @@ test('both languages record acknowledged decisions on a failed tool result befor
     const failed = handle.agent.session.snapshotEvents().find(event => event.type === 'tool/result' && event.data.message.isError);
     assert.ok(failed);
     assert.equal(failed.data.meta.preparationDecision.command, command);
+    assert.match(failed.data.meta.preparationDecision.basis, agentLocale === 'en' ? /^Selected / : /^选择 /);
     assert.equal(restoredPreparationDecision(handle.agent.session).command, command);
     const content = failed.data.message.content.map(block => block.text ?? '').join('\n');
     assert.match(content, agentLocale === 'en' ? /Adopted preparation command:/ : /已采用的准备命令：/);

@@ -185,7 +185,7 @@ export async function apply(ctx, config) {
   const initialReading = await refreshRules();
   updateTaskProgress(initialReading);
   cardChoiceFrame = taskScope === 'preparation' && taskProgress === 'pending'
-    ? preparationCardChoice(initialReading, strategicOptionCommand) : undefined;
+    ? preparationCardChoice(initialReading, strategicOptionCommand, presentation.locale) : undefined;
   ctx.tools.presentAs('native');
   ctx.tools.restrict({ allow: ctx.tools.schemas().filter(tool => taskTools.has(tool.name)).map(tool => tool.name) });
   ctx.tools.guard(exec => taskTools.has(exec.name) ? undefined : text('tool.guard'));
@@ -260,16 +260,16 @@ export async function apply(ctx, config) {
             const reading = await prepareReading(await game.observe({ signal: exec.signal }), game, exec.signal);
             updateTaskProgress(reading);
             try {
-              const frame = taskProgress === 'pending' ? preparationCardChoice(reading, strategicOptionCommand) : undefined;
+              const frame = taskProgress === 'pending' ? preparationCardChoice(reading, strategicOptionCommand, presentation.locale) : undefined;
               if (frame) {
                 if (['read', 'options'].includes(group[0])) {
-                  cardChoiceFrame = preparationCardChoice(reading, strategicOptionCommand);
-                  return { text: renderPreparationCardChoice(cardChoiceFrame) };
+                  cardChoiceFrame = preparationCardChoice(reading, strategicOptionCommand, presentation.locale);
+                  return { text: renderPreparationCardChoice(cardChoiceFrame, presentation.locale) };
                 }
                 if (group[0] !== 'choose') throw new Error('Current card choice: submit command choose with one supplied choice.');
                 await recording();
                 const { adopted, successor } = await adoptPreparationCardChoice(game, frame, reading, {
-                  choice, owner: 'flash-card-choice', signal: exec.signal,
+                  choice, owner: 'flash-card-choice', signal: exec.signal, locale: presentation.locale,
                   record: row => appendFile(join(records, 'adoptions.jsonl'), JSON.stringify(row) + '\n'),
                 });
                 preparationFailures = 0;
@@ -469,7 +469,7 @@ export async function apply(ctx, config) {
       throw new Error('bound rules require a current typed game observation');
     }
     const state = observed.observation;
-    if (taskScope === 'preparation' && (preparationCardChoice(reading, strategicOptionCommand)
+    if (taskScope === 'preparation' && (preparationCardChoice(reading, strategicOptionCommand, presentation.locale)
         || shopPotionReplacementScope(reading, strategicOptionCommand) || shopSpendingScope(reading, strategicOptionCommand))) {
       rulesText = '';
       rulesKey = undefined;
@@ -507,7 +507,7 @@ export async function apply(ctx, config) {
     const reading = await refreshRules(context.signal);
     updateTaskProgress(reading);
     cardChoiceFrame = taskScope === 'preparation' && taskProgress === 'pending'
-      ? preparationCardChoice(reading, strategicOptionCommand) : undefined;
+      ? preparationCardChoice(reading, strategicOptionCommand, presentation.locale) : undefined;
     if (taskScope === 'preparation') classificationText = currentClassificationText(reading);
     if (context.agent) {
       authorize({ agent: context.agent, signal: context.signal });
@@ -540,7 +540,7 @@ export async function apply(ctx, config) {
         if (supply.candidates) {
           reading.candidateReadings = supply.candidates;
           reading.ownedRelicReadings = supply.relicReadings;
-          if (cardChoiceFrame) cardChoiceFrame = preparationCardChoice(reading, strategicOptionCommand);
+          if (cardChoiceFrame) cardChoiceFrame = preparationCardChoice(reading, strategicOptionCommand, presentation.locale);
           classificationText = currentClassificationText(reading);
         }
         if (taskScope === 'preparation' && (shopPotionReplacementScope(reading, strategicOptionCommand) || shopSpendingScope(reading, strategicOptionCommand))) {
@@ -552,7 +552,7 @@ export async function apply(ctx, config) {
             kind: spending ? 'shop-spending-comparison' : 'shop-potion-comparison', ...inputBudget,
           }) + '\n');
         }
-        let contextReading = cardChoiceFrame ? renderPreparationCardChoice(cardChoiceFrame) : supply.reading;
+        let contextReading = cardChoiceFrame ? renderPreparationCardChoice(cardChoiceFrame, presentation.locale) : supply.reading;
         if (config.supervised) {
           const review = await readPlayerReview(config.session);
           const frame = { source: gameContextSource(reading), task };
