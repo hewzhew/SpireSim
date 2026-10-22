@@ -311,10 +311,10 @@ export function preparationConditionBindings(observation, normalize = command =>
   if (potionScope) return shopPotionConditionBindings(potionScope, locale);
   const spendingScope = shopSpendingScope(observation, normalize, locale);
   if (spendingScope) return shopSpendingConditionBindings(spendingScope, locale);
-  const specific = [...preparationEnergyBindings(observation, normalize), ...armamentsConditionBindings(observation, normalize),
+  const specific = [...preparationEnergyBindings(observation, normalize, locale), ...armamentsConditionBindings(observation, normalize, locale),
     ...etherealUpgradeConditionBindings(observation, normalize, locale),
     ...attackUpgradeConditionBindings(observation, normalize, locale),
-    ...duplicateConditionBindings(observation, normalize), ...routeConditionBindings(observation, normalize),
+    ...duplicateConditionBindings(observation, normalize, locale), ...routeConditionBindings(observation, normalize, locale),
     ...bossRelicConditionBindings(observation, normalize, locale), ...eventCombatConditionBindings(observation, normalize, locale),
     ...apparitionConditionBindings(observation, normalize, locale),
     ...rewardRevealConditionBindings(observation, normalize, locale),
@@ -571,31 +571,31 @@ function bossRelicConditionBindings(observation, normalize, locale = 'en') {
         && Number.isSafeInteger(definition.energy_per_turn_delta)) {
       const held = Array.isArray(state.potions) ? state.potions.filter(slot => slot.potion != null) : undefined;
       return [{ command, id: 'relic-energy-potion-acquisition-v1', fixedMechanics: [
-        `${relic} adds ${definition.energy_per_turn_delta} base Energy each turn and prevents obtaining new potions for the rest of this run.`,
-        ...(held ? [`Current carried potions: ${held.map(slot => `P${slot.slot} ${slot.potion.potion}`).join(', ') || 'none'}. These already-owned bottles remain usable and are spent according to their normal use rules.`]
-          : ['Already-owned potions remain usable under their normal use rules.']),
-        'Later reward, shop and event potion acquisitions are blocked. The current carried reserve and the lost later refill opportunities are separate resources.',
-        'Compare the recurring payment improvement for accessed useful cards with covering later difficult fights using the retained potions and owned or newly acquired card/relic protection. A small carried reserve leaves fewer consumable fallback uses after those bottles are spent.',
+        preparationText(locale, 'sozuGain', { relic: relic, energy_per_turn_delta: definition.energy_per_turn_delta }),
+        ...(held ? [preparationText(locale, 'sozuHeldPotions', { held: held.map(slot => `P${slot.slot} ${slot.potion.potion}`).join(', ') || preparationText(locale, 'none') })]
+          : [preparationText(locale, 'sozuHeldUse')]),
+        preparationText(locale, 'sozuRefills'),
+        preparationText(locale, 'sozuProtection'),
       ], choices: [
-        { id: '@recurring-energy', text: 'Compare useful additional plays funded every turn, including the owned setup and protection combinations payable together.' },
-        { id: '@retained-potions', text: 'Assess the finite already-carried bottles and the difficult fights where each use can help.' },
-        { id: '@future-potion-tradeoff', text: 'Weigh recurring Energy against all subsequent potion refill opportunities and the protection still needed for later hard fights.' },
-        { id: '@review-access', text: 'A specific payment, protection or retained-potion fact is needed; record it through sts_feedback.' },
+        { id: '@recurring-energy', text: preparationText(locale, 'sozuExtraPlays') },
+        { id: '@retained-potions', text: preparationText(locale, 'sozuReserve') },
+        { id: '@future-potion-tradeoff', text: preparationText(locale, 'sozuTradeoff') },
+        { id: '@review-access', text: preparationText(locale, 'sozuReview') },
       ] }];
     }
     const cap = definition.card_play_limit_per_turn;
     if (Number.isSafeInteger(cap) && cap > 0 && Number.isSafeInteger(definition.energy_per_turn_delta)) {
       const profile = preparationDeckComparison(observation, normalize, locale);
       return [{ command, id: 'relic-energy-play-cap-v1', fixedMechanics: [
-        `${relic} adds ${definition.energy_per_turn_delta} base Energy every turn and permits at most ${cap} card plays in that turn; the allowance resets each turn.`,
-        'Draw Skills, zero-cost cards, setup Powers, defensive cards and attacks share that play allowance. A played multi-hit attack consumes one card play; each subsequent card consumes another. Drawing a card alone uses no card play.',
-        ...(profile ? [`Owned on-play draw: ${profile.onPlayDraw.map(row => row.card).join(', ') || 'none'}. These draw-card plays also use the allowance before the accessed cards are played.`] : []),
-        'The limit remains in later fights after useful draws, lower costs or additional Energy become available. Actual useful card sequences determine when it binds.',
+        preparationText(locale, 'chokerGain', { relic: relic, energy: definition.energy_per_turn_delta, playLimit: cap }),
+        preparationText(locale, 'chokerSharedAllowance'),
+        ...(profile ? [preparationText(locale, 'chokerDrawPlays', { onPlayDraw: profile.onPlayDraw.map(row => row.card).join(', ') || preparationText(locale, 'none') })] : []),
+        preparationText(locale, 'chokerLaterLimit'),
       ], choices: [
-        { id: '@recurring-energy', text: 'Compare the extra payment for owned useful plays when they are accessed together.' },
-        { id: '@shared-play-cap', text: 'Compare total useful draw, setup, protection and damage plays fitting the shared limit, including the access development still needed.' },
-        { id: '@few-play-output', text: 'Strong protection and output delivered in few actual plays can make the extra payment worth the permanent limit.' },
-        { id: '@review-access', text: 'A specific payment or play-limit fact is missing; record it through sts_feedback.' },
+        { id: '@recurring-energy', text: preparationText(locale, 'chokerPayment') },
+        { id: '@shared-play-cap', text: preparationText(locale, 'chokerSequence') },
+        { id: '@few-play-output', text: preparationText(locale, 'chokerCompactOutput') },
+        { id: '@review-access', text: preparationText(locale, 'chokerReview') },
       ] }];
     }
     const replacement = definition.starter_card_replacement, targets = candidate.starterCardsReplaced;
@@ -604,13 +604,13 @@ function bossRelicConditionBindings(observation, normalize, locale = 'en') {
         && Number.isSafeInteger(replacement.initial_upgrades)) {
       const count = targets.reduce((n, card) => n + card.count, 0);
       return [{ command, id: 'relic-starter-replacement-v1', fixedMechanics: [
-        `${relic} replaces ${count} owned starter cards on pickup: ${targets.map(card => `${card.count}x ${card.card}${card.upgrades > 0 ? '+' : ''}`).join(', ') || 'none'}. This includes the listed upgraded copies. Each is exchanged for one random class card from the ${replacement.pool_rarities.join('/')} pools, initially at upgrade ${replacement.initial_upgrades}.`,
-        'The deck keeps its card count; the other owned card instances remain. The exchange gives up the listed starter damage and Block. Each acquired replacement is permanent and used in later combats; identities are revealed after acquisition.',
-        ...(replacement.applies_obtain_effects ? ['The replacements receive normal obtain effects, including applicable owned Egg upgrades.'] : []),
+        preparationText(locale, 'starterReplacement', { relic: relic, count: count, cards: targets.map(card => `${card.count}x ${card.card}${card.upgrades > 0 ? '+' : ''}`).join(', ') || preparationText(locale, 'none'), pools: replacement.pool_rarities.join('/'), upgrades: replacement.initial_upgrades }),
+        preparationText(locale, 'replacementDeck'),
+        ...(replacement.applies_obtain_effects ? [preparationText(locale, 'replacementObtainEffects')] : []),
       ], choices: [
-        { id: '@replace-starters', text: 'Compare replacing these recurring starter draws using the declared pool with the retained owned engine, access and protection.' },
-        { id: '@replacement-tradeoff', text: 'Weigh the starter damage and Block given up, random replacement mix and unchanged deck size against the strongest offered recurring resource and its restriction.' },
-        { id: '@review-access', text: 'A specific replacement-pool or retained-function fact is missing; record it through sts_feedback.' },
+        { id: '@replace-starters', text: preparationText(locale, 'replacementPool') },
+        { id: '@replacement-tradeoff', text: preparationText(locale, 'replacementTradeoff') },
+        { id: '@review-access', text: preparationText(locale, 'replacementReview') },
       ] }];
     }
     const draw = definition.card_draw_on_hp_loss;
@@ -620,36 +620,36 @@ function bossRelicConditionBindings(observation, normalize, locale = 'en') {
       const recurring = sources.filter(source => source.hp_loss_each_turn_after_deployment > 0
         || source.end_of_turn_after_deployment?.hp_loss_per_application > 0);
       return [{ command, id: 'relic-hp-loss-draw-v1', fixedMechanics: [
-        `${relic} is active from combat start. Each independent event with at least ${draw.minimum_hp_lost_per_event} actual HP lost requests ${draw.cards_drawn_per_event} card(s) at that event. Prevented HP loss supplies zero draws; draw prevention and Hand capacity apply.`,
-        ...onPlay.map(source => `${label(source)}: its own play requests ${source.on_play.base_hp_loss} HP loss; that play's positive HP-loss event activates the relic immediately. This trigger's required card is ${source.card.card} itself.`),
-        ...recurring.map(source => `${label(source)}: first play this Power, then its recurring events request ${source.end_of_turn_after_deployment?.hp_loss_per_application ?? source.hp_loss_each_turn_after_deployment} HP loss per application. Each actual loss activates the already active relic.`),
-        'Enemy damage reaching HP also activates the relic at that hit. Each source provides its own independent event; useful draw is weighed against HP spent and its timing.',
+        preparationText(locale, 'hpLossRelic', { relic: relic, minimumHpLoss: draw.minimum_hp_lost_per_event, draws: draw.cards_drawn_per_event }),
+        ...onPlay.map(source => preparationText(locale, 'onPlayHpLossSource', { source: label(source), hpLoss: source.on_play.base_hp_loss, requiredCard: source.card.card })),
+        ...recurring.map(source => preparationText(locale, 'recurringHpLossSource', { label: label(source), value: source.end_of_turn_after_deployment?.hp_loss_per_application ?? source.hp_loss_each_turn_after_deployment })),
+        preparationText(locale, 'enemyHpLossTrigger'),
       ], choices: [
-        ...(onPlay.length ? [{ id: '@on-play-draw', text: 'Assess the immediate extra access supplied by the listed owned on-play HP payments, their normal payment and subsequent useful plays.' }] : []),
-        ...(recurring.length ? [{ id: '@recurring-draw', text: 'Assess additional repeated access after deploying a listed recurring Power, together with its later HP payments and protection.' }] : []),
-        { id: '@enemy-loss-draw', text: 'Assess draw timing after an enemy hit reaches HP and the HP needed to survive that hit and the following turns.' },
-        { id: '@draw-tradeoff', text: 'Compare recurring useful access and trigger frequency with the strongest feasible alternative resources.' },
-        { id: '@review-access', text: 'A specific trigger or draw-timing fact is needed; record it through sts_feedback.' },
+        ...(onPlay.length ? [{ id: '@on-play-draw', text: preparationText(locale, 'immediateHpLossDraw') }] : []),
+        ...(recurring.length ? [{ id: '@recurring-draw', text: preparationText(locale, 'recurringHpLossDraw') }] : []),
+        { id: '@enemy-loss-draw', text: preparationText(locale, 'enemyHitDraw') },
+        { id: '@draw-tradeoff', text: preparationText(locale, 'hpLossRelicTradeoff') },
+        { id: '@review-access', text: preparationText(locale, 'hpLossRelicReview') },
       ] }];
     }
     if (definition.gold_gain_rule === 'prevent_gold_gain'
         && Number.isSafeInteger(definition.energy_per_turn_delta) && definition.energy_per_turn_delta > 0
         && Number.isSafeInteger(state.run?.gold) && state.run.gold >= 0) {
       return [{ command, id: 'relic-energy-gold-v1', fixedMechanics: [
-        `${relic} supplies ${definition.energy_per_turn_delta} additional base Energy each turn.`,
-        `Owned Gold ${state.run.gold} remains available for purchases and removal after acquisition. Subsequent Gold income is prevented, so later shop budgets use the remaining owned balance.`,
+        preparationText(locale, 'energyRelicGain', { relic: relic, energy_per_turn_delta: definition.energy_per_turn_delta }),
+        preparationText(locale, 'ectoplasmGold', { gold: state.run.gold }),
       ], choices: [
-        { id: '@recurring-energy', text: 'Compare the useful extra plays funded every turn with owned access and normal card costs.' },
-        { id: '@retained-gold', text: 'Assess improvements affordable from the retained current Gold on a connected preparation route.' },
-        { id: '@future-gold-tradeoff', text: 'Compare the recurring combat resource with giving up subsequent income for later purchases and removal.' },
-        { id: '@review-access', text: 'A specific payment or connected-shop fact is needed; record it through sts_feedback.' },
+        { id: '@recurring-energy', text: preparationText(locale, 'energyRelicPayment') },
+        { id: '@retained-gold', text: preparationText(locale, 'retainedGoldPurchases') },
+        { id: '@future-gold-tradeoff', text: preparationText(locale, 'ectoplasmTradeoff') },
+        { id: '@review-access', text: preparationText(locale, 'ectoplasmReview') },
       ] }];
     }
     return [];
   });
 }
 
-function routeConditionBindings(observation, normalize) {
+function routeConditionBindings(observation, normalize, locale = 'en') {
   const evidence = observation.decision_evidence;
   const state = observation.position.observation.observation;
   if (state.context?.kind !== 'map' || evidence?.kind !== 'route_paths') return [];
@@ -667,21 +667,21 @@ function routeConditionBindings(observation, normalize) {
         || !first.observed_paths_with_first_elite) return [];
     return [{ command, id: 'route-preparation-window-v1', fixedMechanics: [
       ...(Number.isSafeInteger(state.run?.current_hp) && Number.isSafeInteger(state.run?.max_hp)
-        ? [`Current HP ${state.run.current_hp}/${state.run.max_hp}.`] : []),
+        ? [preparationText(locale, 'routeCurrentHp', { hp: state.run.current_hp, maxHp: state.run.max_hp })] : []),
       ...(Number.isSafeInteger(state.public_history?.recent_combat_hp_loss)
-        ? [`Last adopted combat net HP loss ${state.public_history.recent_combat_hp_loss}; this observed cost is a pressure signal for route preparation.`] : []),
-      `Before the first Elite on the supplied paths that reach it: Shops ${beforeShop}; campfires ${beforeCamp}. Ordinary fights ${path.min_hallway_fights_before}..${path.max_hallway_fights_before}; question-mark rooms ${path.min_unknowns_before}..${path.max_unknowns_before}.`,
-      `Whole published horizon: Shops ${totalShop}; campfires ${totalCamp}. Coverage ${candidate.path.coverage}. These whole-horizon opportunities include later development; first-Elite preparation uses the before-first-Elite counts and a connected path example.`,
+        ? [preparationText(locale, 'routeRecentCost', { recent_combat_hp_loss: state.public_history.recent_combat_hp_loss })] : []),
+      preparationText(locale, 'firstEliteWindow', { shops: beforeShop, rests: beforeCamp, fightsMin: path.min_hallway_fights_before, fightsMax: path.max_hallway_fights_before, questionsMin: path.min_unknowns_before, questionsMax: path.max_unknowns_before }),
+      preparationText(locale, 'routeHorizon', { shops: totalShop, rests: totalCamp, coverage: candidate.path.coverage }),
     ], choices: [
-      { id: '@first-preparation', text: 'Compare recovery, one upgrade or shopping actually available before the first Elite on one connected path. A shop occurring afterward supports later development.' },
-      { id: '@early-development', text: 'Ordinary fight victories supply card choices and permitted Gold rewards before the first Elite. Apply owned Gold-gain restrictions to the spending budget. Compare these development opportunities with their HP cost; question-mark outcomes are learned on arrival.' },
-      { id: '@later-development', text: 'Compare the whole-horizon resources and future branching flexibility after accounting for the first-Elite preparation window.' },
-      { id: '@review-access', text: 'A specific connected-path or preparation-window fact is needed; record it through sts_feedback.' },
+      { id: '@first-preparation', text: preparationText(locale, 'firstElitePreparation') },
+      { id: '@early-development', text: preparationText(locale, 'routeDevelopment') },
+      { id: '@later-development', text: preparationText(locale, 'routeFutureFlexibility') },
+      { id: '@review-access', text: preparationText(locale, 'routeWindowReview') },
     ] }];
   });
 }
 
-function duplicateTargetFacts(observation, normalize) {
+function duplicateTargetFacts(observation, normalize, locale = 'en') {
   const state = observation.position.observation.observation;
   if (state.context?.reason !== 'Duplicate' || state.context?.kind !== 'run_choice') return [];
   const targets = new Map(preparationSelectionTargets(observation, normalize).map(row => [row.command, row]));
@@ -692,39 +692,39 @@ function duplicateTargetFacts(observation, normalize) {
         || !Number.isSafeInteger(cost)) return [];
     const count = (state.cards ?? []).filter(card => card.card === definition.card).reduce((n, card) => n + card.count, 0);
     if (!Number.isSafeInteger(count) || count < 1) return [];
-    const fixedMechanics = [`${definition.card}: owned copies ${count} -> ${count + 1}; copying starts from the selected upgrade and persistent instance values, then applies obtain-time effects. One extra copy occupies one ordinary draw and Hand slot when drawn.`];
+    const fixedMechanics = [preparationText(locale, 'duplicateCopies', { card: definition.card, copiesBefore: count, copiesAfter: count + 1 })];
     const energy = state.base_energy_per_turn;
-    if (cost >= 0) fixedMechanics.push(`Its normal play costs ${cost} Energy before combat modifiers.`
-      + (Number.isSafeInteger(energy) && cost <= energy ? ` Base Energy ${energy} leaves ${energy - cost} after this play.` : '')
-      + (definition.card_type === 'Power' ? ` Playing two such copies normally costs ${cost * 2} Energy in total, with separate Hand access and deployment times.` : ''));
-    else if (cost === -1) fixedMechanics.push('Its normal X-cost play spends the Energy available at use; X bonuses and free-play effects follow their own rules. Strength changes attack damage per hit, while Energy grants and instance cost changes come from their named effect sources.');
-    else if (cost === -2) fixedMechanics.push('The copied card has the unplayable printed cost; assess its draw and other effect rules.');
+    if (cost >= 0) fixedMechanics.push(preparationText(locale, 'duplicateCost', { cost: cost })
+      + (Number.isSafeInteger(energy) && cost <= energy ? preparationText(locale, 'duplicateRemainingEnergy', { baseEnergy: energy, remainingEnergy: energy - cost }) : '')
+      + (definition.card_type === 'Power' ? preparationText(locale, 'duplicateCombinedCost', { cost: cost * 2 }) : ''));
+    else if (cost === -1) fixedMechanics.push(preparationText(locale, 'duplicateXCost'));
+    else if (cost === -2) fixedMechanics.push(preparationText(locale, 'duplicateUnplayable'));
     const effects = definition.reviewed_effects;
     const strength = effects?.player_strength_gain;
     const delayed = strength?.delivery === 'each_player_turn_start_post_draw';
-    if (delayed) fixedMechanics.push(`Each application adds 0 immediate Strength on deployment, then ${strength.amount} at each later player turn start after draw. After n later triggers, that application has contributed ${strength.amount} * n Strength. An already deployed copy continues its own schedule. Additional deployment starts its own later schedule.`);
+    if (delayed) fixedMechanics.push(preparationText(locale, 'duplicateDelayedStrength', { strengthPerTurn: strength.amount, strengthFactor: strength.amount }));
     const reduction = effects?.enemy_strength_reduction;
-    if (reduction?.restoration === 'no_scheduled_restoration') fixedMechanics.push(`Each successful application reduces one enemy's Strength by ${reduction.amount}, including from zero into negative Strength. The reduction affects every later attack hit until an effect changes or clears it. Across h hits it removes ${reduction.amount} * h from base attack damage before multipliers and the zero-damage floor. Artifact can prevent the application. The card's Exhaust affects its reuse; the applied reduction continues.`);
-    if (effects?.base_block_delivery === 'once_on_play') fixedMechanics.push(`The copy requests ${current.persistent_block} Block on play before combat modifiers.`);
+    if (reduction?.restoration === 'no_scheduled_restoration') fixedMechanics.push(preparationText(locale, 'duplicateReduction', { reduction: reduction.amount, reductionFactor: reduction.amount }));
+    if (effects?.base_block_delivery === 'once_on_play') fixedMechanics.push(preparationText(locale, 'duplicateBlock', { persistent_block: current.persistent_block }));
     return [{ command: group.command, fixedMechanics,
       detailed: delayed || reduction?.restoration === 'no_scheduled_restoration' }];
   });
 }
 
-function duplicateConditionBindings(observation, normalize) {
-  return duplicateTargetFacts(observation, normalize).filter(row => row.detailed).map(({ command, fixedMechanics }) => ({
+function duplicateConditionBindings(observation, normalize, locale = 'en') {
+  return duplicateTargetFacts(observation, normalize, locale).filter(row => row.detailed).map(({ command, fixedMechanics }) => ({
     command, id: 'permanent-copy-increment-v1', fixedMechanics, choices: [
-      { id: '@first-access', text: 'The extra copy helps reach the first useful play earlier across ordinary draws; assess that consistency gain against the extra draw occupied after the first application is active.' },
-      { id: '@extra-use', text: 'An actual additional play supplies the copied effect again. Compare its payment, deployment time and useful duration with what the existing copies already supply.' },
-      { id: '@setup-tradeoff', text: 'Compare protecting and using the existing engine through the next hard fight with another setup card. A full-base-Energy delayed application needs an owned way to cover its deployment and subsequent turns; cheap sustained mitigation can protect that setup.' },
-      { id: '@review-access', text: 'A specific fact about the copied effect or its access/payment is needed; record it through sts_feedback.' },
+      { id: '@first-access', text: preparationText(locale, 'duplicateFirstAccess') },
+      { id: '@extra-use', text: preparationText(locale, 'duplicateExtraPlay') },
+      { id: '@setup-tradeoff', text: preparationText(locale, 'duplicateSetupProtection') },
+      { id: '@review-access', text: preparationText(locale, 'duplicateReview') },
     ],
   }));
 }
 
 // Derive payment thresholds from simulator facts, including grouped smith
 // deltas. This is a base-Energy comparison, not an estimate of combat strength.
-function preparationEnergyBindings(observation, normalize) {
+function preparationEnergyBindings(observation, normalize, locale = 'en') {
   const state = observation.position.observation.observation;
   const energy = state.base_energy_per_turn;
   if (!Number.isSafeInteger(energy) || energy < 0) return [];
@@ -741,25 +741,25 @@ function preparationEnergyBindings(observation, normalize) {
     const crosses = before.cost > energy && after?.cost <= energy;
     if (before.cost <= energy && !(after && after.cost > energy)) return [];
     const cost = after?.cost ?? before.cost;
-    const mechanics = [`Base Energy per turn is ${energy}. ${before.name ?? action.card} printed cost is ${before.cost}`
-      + (after ? ` before this upgrade and ${cost} afterward.` : `; payment above base Energy needs ${cost - energy} additional Energy or an applicable cost reduction.`)];
-    if (crosses) mechanics.push(`This upgrade crosses the base-Energy payment threshold: the upgraded card leaves ${energy - cost} base Energy after payment, before other plays or modifiers.`);
+    const mechanics = [preparationText(locale, 'paymentThreshold', { baseEnergy: energy, card: before.name ?? action.card, cost: before.cost })
+      + (after ? preparationText(locale, 'upgradePaymentAfter', { cost: cost }) : preparationText(locale, 'extraEnergyNeeded', { cost: cost - energy }))];
+    if (crosses) mechanics.push(preparationText(locale, 'upgradeCrossesThreshold', { energy: energy - cost }));
     const hpReduction = (after ?? before).cost_change_on_hp_loss;
     if (Number.isSafeInteger(hpReduction) && hpReduction < 0) {
       const events = Math.max(0, Math.ceil((cost - energy) / -hpReduction));
-      mechanics.push(`Each positive HP-loss event lowers this card instance's cost by ${-hpReduction} for this combat. Paying from base Energy alone needs ${events} such events at the ${cost}-Energy printed cost. Fully blocked or prevented damage supplies zero HP-loss events. Intentional self-loss and enemy hits have their actual HP costs.`);
+      mechanics.push(preparationText(locale, 'hpLossCostReduction', { costReduction: -hpReduction, eventsNeeded: events, printedCost: cost }));
     }
     return [{ command: group.command, id: 'base-energy-payment-v1', fixedMechanics: mechanics, choices: [
-      { id: '@payment-access', text: 'Compare first-draw payment, available extra Energy or deployed cost reduction, and the Energy left for the other needed plays. Existing setup is sequence; an additional acquisition is future.' },
-      ...(crosses ? [{ id: '@upgrade-payment', text: 'The upgrade makes payment fit base Energy before any HP-loss event or extra-Energy setup; assess the earlier playable output and its remaining Energy together.' }] : []),
-      ...(Number.isSafeInteger(hpReduction) && hpReduction < 0 ? [{ id: '@hp-loss-payment', text: 'HP-loss cost reduction requires the actual events before payment. Assess the time to those events, their HP cost and later access to the discounted card.' }] : []),
-      { id: '@payment-tradeoff', text: 'Compare this output and its payment conditions with the strongest feasible alternative and the resource retained.' },
-      { id: '@review-access', text: 'A specific access or payment fact is needed to assess this candidate; record it through sts_feedback.' },
+      { id: '@payment-access', text: preparationText(locale, 'paymentAccess') },
+      ...(crosses ? [{ id: '@upgrade-payment', text: preparationText(locale, 'upgradePayment') }] : []),
+      ...(Number.isSafeInteger(hpReduction) && hpReduction < 0 ? [{ id: '@hp-loss-payment', text: preparationText(locale, 'hpLossPayment') }] : []),
+      { id: '@payment-tradeoff', text: preparationText(locale, 'paymentTradeoff') },
+      { id: '@review-access', text: preparationText(locale, 'paymentReview') },
     ] }];
   });
 }
 
-function armamentsConditionBindings(observation, normalize) {
+function armamentsConditionBindings(observation, normalize, locale = 'en') {
   const state = observation.position.observation.observation;
   const owns = id => (state.cards ?? []).some(card => card.card === id && card.count > 0);
   if (!(state.cards ?? []).some(card => card.card === 'LimitBreak' && card.count > 0 && card.upgrades === 0)) return [];
@@ -773,18 +773,18 @@ function armamentsConditionBindings(observation, normalize) {
     if (effect?.card !== 'Armaments' || !Number.isSafeInteger(effect.cost) || !Number.isSafeInteger(effect.block)
         || !['selected_card_in_hand', 'whole_hand'].includes(effect.combat_upgrade_scope)) return [];
     const fixedMechanics = [
-      `Adds one permanent ${effect.name} copy with printed cost ${effect.cost} and ${effect.block} Block; its combat upgrade affects ${effect.combat_upgrade_scope === 'whole_hand' ? 'the current Hand' : 'one selected card in the current Hand'}. The added copy occupies a future draw and its play needs access and payment.`,
-      'Printed LimitBreak doubles current Strength and Exhausts; LimitBreak+ normally enters Discard for later redraws. The upgrade changes destination, while the doubling effect uses the same current Strength.',
+      preparationText(locale, 'armamentsAddition', { card: effect.name, cost: effect.cost, block: effect.block, scope: effect.combat_upgrade_scope === 'whole_hand' ? preparationText(locale, 'wholeHand') : preparationText(locale, 'selectedHandCard') }),
+      preparationText(locale, 'limitBreakUpgrade'),
     ];
-    if (corruption) fixedMechanics.push('After Corruption deployment, Armaments still applies its upgrade effect before it is directed to Exhaust; Armaments and both LimitBreak versions cost 0 and are directed to Exhaust after play. Ordinary LimitBreak+ Draw/Discard cycling keeps Corruption awaiting deployment throughout the repeated uses.');
-    if (recovery) fixedMechanics.push('One ordinary Exhume play returns one eligible card other than Exhume from Exhaust to Hand when the effect resolves with room in Hand, then Exhume itself is directed to Exhaust. Returning base LimitBreak already supplies another use.'
-      + (corruption ? ' With Corruption deployed, both returned LimitBreak versions are directed to Exhaust again; this recovery benefit is shared by both versions.' : ' Compare that existing recovery with the extra ordinary redraws supplied by upgrading.'));
-    if (spoon) fixedMechanics.push('StrangeSpoon gives a played non-Power card directed to Exhaust a 50% chance to enter Discard instead. A saved Skill can be redrawn under Corruption; the saving is probabilistic.');
+    if (corruption) fixedMechanics.push(preparationText(locale, 'corruptionUpgradeOrder'));
+    if (recovery) fixedMechanics.push(preparationText(locale, 'exhumeRecovery')
+      + (corruption ? preparationText(locale, 'corruptionRecovery') : preparationText(locale, 'recoveryVersusUpgrade')));
+    if (spoon) fixedMechanics.push(preparationText(locale, 'spoonRecovery'));
     return [{ command: group.command, id: 'armaments-limitbreak-v1', fixedMechanics, choices: [
-      { id: '@limit-redraw', text: 'Upgrade the unupgraded LimitBreak sharing Hand before its use, then double positive Strength on later redraws while protecting those turns.'
-        + (corruption ? ' Keep Corruption awaiting deployment during this ordinary redraw sequence.' : '') },
-      { id: '@block-access', text: 'Compare the supplied Block and same-Hand upgrade opportunity with owned protection, Energy and the extra draw occupied by this permanent copy.' },
-      { id: '@review-access', text: 'A specific fact about shared-Hand access or setup protection is needed to rate the upgrade sequence; record that fact through sts_feedback.' },
+      { id: '@limit-redraw', text: preparationText(locale, 'limitBreakRedraw')
+        + (corruption ? preparationText(locale, 'delayCorruption') : '') },
+      { id: '@block-access', text: preparationText(locale, 'armamentsTradeoff') },
+      { id: '@review-access', text: preparationText(locale, 'armamentsReview') },
     ] }];
   });
 }
@@ -804,7 +804,7 @@ export function preparationClassificationContext(observation, normalize, draft, 
   const accepted = sameGameContextSource(draft?.source, observation) ? draft.rows : [];
   const groups = allGroups.filter(group => !accepted.some(row => row.command === group.command));
   const bindings = preparationConditionBindings(observation, normalize, locale);
-  const copyFacts = new Map(duplicateTargetFacts(observation, normalize).filter(row => !row.detailed)
+  const copyFacts = new Map(duplicateTargetFacts(observation, normalize, locale).filter(row => !row.detailed)
     .map(row => [row.command, row.fixedMechanics]));
   const armamentsBound = bindings.some(binding => binding.id === 'armaments-limitbreak-v1');
   const offered = id => observation.position.actions.some(row => row.candidate?.action?.card === id
@@ -823,7 +823,7 @@ export function preparationClassificationContext(observation, normalize, draft, 
     ...(selection.reason === 'Transform' ? ['Selected cards are replaced by the supplied random transformation pool. Compare the functions given up and the declared replacement distribution.'] : []),
   );
   if (selection?.reason === 'Duplicate' || observation.position.actions.some(row => row.candidate?.action?.public_semantics
-      ?.structured_semantics?.effects?.some(effect => effect.effect === 'duplicate_card'))) checks.push(defaultInstructions.text('duplication'));
+      ?.structured_semantics?.effects?.some(effect => effect.effect === 'duplicate_card'))) checks.push(preparationText(locale, 'duplication'));
   if (state.context?.kind === 'card_reward') checks.push(
     'Card reward: taking adds a permanent copy to the current deck; skipping preserves its current size. Both choices retain the same Gold. Assess the added card\'s function and draw cost alongside the existing copies.');
   if (state.context?.kind === 'boss_relic') checks.push(

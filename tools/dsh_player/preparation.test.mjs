@@ -9,6 +9,15 @@ import { preparationFixture } from './preparation-fixture.test.mjs';
 // These tests exercise specialized mechanics; every other candidate gets the shared effect contract.
 const specificBindings = (observation, normalize) => preparationConditionBindings(observation, normalize)
   .filter(row => row.id !== 'preparation-effect-tradeoff-v1');
+const compareConditionLocales = (current, normalize) => {
+  const before = JSON.stringify(current), en = preparationConditionBindings(current, normalize);
+  const zh = preparationConditionBindings(current, normalize, 'zh-CN');
+  const typed = rows => rows.map(({ fixedMechanics, choices, ...row }) => ({ ...row, choices: choices.map(({ text, ...choice }) => choice) }));
+  assert.deepEqual(typed(en), typed(zh));
+  assert.deepEqual(preparationConditionBindings(current, normalize), en);
+  assert.equal(JSON.stringify(current), before);
+  return zh;
+};
 
 const observation = cards => ({ schema: 'sts-run-play-agent-observation-v3', session_id: 'unit', head_revision: 0, state_revision: 0,
   position: { public_snapshot_id: 'unit-snapshot', observation: { domain: 'strategic', observation: { cards } }, actions: [
@@ -645,6 +654,9 @@ test('copy conditions bind actual counts, payment and delayed versus persistent 
   assert.match(text, /Base Energy 3 leaves 0.*two such copies normally costs 6/);
   assert.match(text, /After n later triggers.*2 \* n Strength/);
   assert.match(text, /Across h hits.*2 \* h.*Exhaust affects its reuse; the applied reduction continues/);
+  const localized = compareConditionLocales(current, conciseCardCommand);
+  assert.match(localized[0].fixedMechanics.join(' '), /立即增加 0 力量.*2 \* n 力量/);
+  assert.match(localized[1].fixedMechanics.join(' '), /2 \* h 基础攻击伤害/);
   const classified = parsePreparationClassification('act select:DemonForm#0 | low | sequence | @setup-tradeoff\nact select:Disarm#0 | high | direct | @extra-use', current, conciseCardCommand);
   assert.equal(classified[0].bindingId, 'permanent-copy-increment-v1');
   assert.match(classified[0].reason, /owned copies 1 -> 2.*0 immediate Strength/);
@@ -778,6 +790,7 @@ test('condition binding uses typed effects and applies to additions with an owne
   const current = boundObservation(), effect = current.decision_evidence.candidates[0].cards[0].current;
   effect.block = 8; effect.cost = 0; effect.name = 'Armaments+'; effect.combat_upgrade_scope = 'whole_hand';
   assert.match(specificBindings(current)[0].fixedMechanics[0], /Armaments\+.*cost 0 and 8 Block.*current Hand/);
+  assert.match(compareConditionLocales(current)[0].fixedMechanics[0], /Armaments\+.*费用 0，格挡 8.*当前整手牌/);
   current.position.observation.observation.cards[0].upgrades = 1;
   assert.deepEqual(specificBindings(current), []);
   current.position.observation.observation.cards[0].upgrades = 0;
@@ -841,6 +854,7 @@ test('potion-denying Energy relics bind the retained reserve separately from lat
   assert.match(binding.fixedMechanics.join('\n'), /P0 FearPotion.*remain usable/);
   assert.match(binding.fixedMechanics.join('\n'), /reward, shop and event potion acquisitions are blocked/);
   assert.ok(binding.choices.some(row => row.id === '@future-potion-tradeoff'));
+  assert.match(compareConditionLocales(current)[0].fixedMechanics.join(' '), /P0 FearPotion.*仍可使用.*药水获取均被阻止/);
   const row = parsePreparationClassification('boss-relic:Sozu#0 | high | direct | @recurring-energy', current)[0];
   assert.match(row.reason, /lost later refill opportunities/);
   state.potions[0].potion = null;
@@ -868,6 +882,7 @@ test('payment conditions bind acquisition and a grouped upgrade crossing base En
   assert.match(binding.fixedMechanics.join(' '), /crosses the base-Energy payment threshold.*leaves 0 base Energy/);
   assert.match(binding.fixedMechanics.join(' '), /needs 0 such events/);
   assert.ok(binding.choices.some(row => row.id === '@upgrade-payment'));
+  assert.match(compareConditionLocales(current, conciseCardCommand)[0].fixedMechanics.join(' '), /跨过基础能量支付门槛.*剩余 0 基础能量/);
   state.base_energy_per_turn = 4;
   assert.deepEqual(specificBindings(current, conciseCardCommand), []);
   delete state.base_energy_per_turn;
@@ -974,6 +989,8 @@ test('route conditions keep a later shop separate from before-first-Elite prepar
   assert.match(context, /Condition references for go 2,1/);
   assert.match(context, /Before the first Elite.*Shops 0\.\.0; campfires 0\.\.1/);
   assert.match(context, /Whole published horizon: Shops 0\.\.1/);
+  const localized = compareConditionLocales(current, strategicOptionCommand);
+  assert.match(localized[1].fixedMechanics.join(' '), /精英之前：商店 0\.\.0.*完整公开后路：商店 0\.\.1/);
   const rows = parsePreparationClassification('go 1,1 | medium | direct | @early-development\ngo 2,1 | high | direct | @first-preparation,@later-development', current, strategicOptionCommand);
   assert.equal(rows[1].bindingId, 'route-preparation-window-v1');
   assert.match(rows[1].reason, /shop occurring afterward.*Before the first Elite.*Shops 0\.\.0/);
@@ -1193,6 +1210,9 @@ test('boss relic references keep owned on-play triggers independent of recurring
   const rows = parsePreparationClassification(basis, current);
   assert.deepEqual(rows[0].conditionIds, ['@on-play-draw', '@draw-tradeoff']);
   assert.match(rows[1].reason, /Owned Gold 126 remains available/);
+  const localized = compareConditionLocales(current);
+  assert.match(localized[0].fixedMechanics.join(' '), /请求抽 2 张牌/);
+  assert.match(localized[1].fixedMechanics.join(' '), /已持有的 126 金币.*后续金币收入被阻止/);
   assert.throws(() => parsePreparationClassification(basis.replace('@on-play-draw,@draw-tradeoff', 'Needs Brutality first.'), current), /Use supplied condition references/);
   state.cards = state.cards.filter(row => row.card !== 'Brutality');
   assert.ok(specificBindings(current)[0].choices.some(row => row.id === '@on-play-draw'));
@@ -1258,6 +1278,9 @@ test('Boss relic references preserve cap and replacement tradeoffs for either se
   const text = 'boss-relic:VelvetChoker#0 | high | direct | @recurring-energy\nboss-relic:PandorasBox#0 | medium | direct | @replace-starters';
   const rows = parsePreparationClassification(text, current);
   assert.match(rows[0].reason, /at most 6 card plays.*resets each turn/);
+  const localized = compareConditionLocales(current);
+  assert.match(localized[0].fixedMechanics.join(' '), /最多打出 6 张牌.*每回合重置/);
+  assert.match(localized[1].fixedMechanics.join(' '), /替换 6 张持有起始牌.*2x Strike\+, 4x Defend/);
   assert.match(rows[1].reason, /replaces 6 owned starter cards.*2x Strike\+, 4x Defend/);
   assert.match(rows[1].reason, /deck keeps its card count/);
   assert.throws(() => parsePreparationClassification(text.replace('@replace-starters', '@shared-play-cap'), current), /Use supplied condition references/);
