@@ -103,6 +103,27 @@ test('native observer expands digest-checked dispatch inputs and rejects altered
   assert.deepEqual(f.executed, ['read', 'broken', 'inventory']);
 });
 
+test('native observation uses the recorded public summary and keeps localized raw results intact', async t => {
+  const f = await fixture(t);
+  const log = structuredClone(f.log);
+  const event = log.events.findLast(event => event.type === 'tool/result' && !event.data.message.isError);
+  const text = '查询前缀\n第三幕 F38 | 生命 40/75 | 商店\n卡组：29 张\n';
+  const currentReading = { control: 'strategic', summary: '第三幕 F38 | 商店\n',
+    text: '第三幕 F38 | 生命 40/75 | 商店\n卡组：29 张\n' };
+  event.data.message.content = [{ type: 'text', text }];
+  event.data.meta.currentReading = currentReading;
+  const report = await nativeJournalSummary(log, f.binding);
+  assert.equal(report.recorded.text, text);
+  assert.deepEqual(report.recorded.currentReading, currentReading);
+  assert.match(renderNativeObservation(report), /第三幕 F38 \| 商店/);
+  assert.doesNotMatch(renderNativeObservation(report), /查询前缀|卡组：29/);
+  delete event.data.meta.currentReading;
+  const raw = await nativeJournalSummary(log, f.binding);
+  assert.match(renderNativeObservation(raw), /查询前缀\n第三幕 F38[^]*卡组：29/);
+  event.data.meta.currentReading = { ...currentReading, text: 'a different result' };
+  await assert.rejects(nativeJournalSummary(log, f.binding), /does not match/);
+});
+
 test('native observer reads official compressed logs, scopes turns and leaves gameplay and history untouched', async t => {
   const f = await fixture(t), neverOpen = () => assert.fail('log inspection must not connect to Rust');
   const args = ['--home', f.home, '--chat', 'observe-fixture', '--turn', '1'];

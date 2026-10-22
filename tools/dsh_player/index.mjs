@@ -225,9 +225,13 @@ export async function apply(ctx, config) {
       ...(config.supervised ? { reason: { type: 'string', description: 'Brief benefit and tradeoff of the proposed choice.' } } : {}),
     },
     output: { schema: { type: 'object', additionalProperties: false,
-      properties: { text: { type: 'string', required: true }, query: { type: 'object', additionalProperties: true } } },
+      properties: { text: { type: 'string', required: true }, query: { type: 'object', additionalProperties: true },
+        currentReading: { type: 'object', additionalProperties: true } } },
       render: (_args, value) => [{ type: 'text', text: value.text }],
-      presentationMeta: (_args, value) => value.query ? { schema: 'sts-context-query-v1', ...value.query } : null },
+      presentationMeta: (_args, value) => value.query || value.currentReading ? {
+        ...(value.query ? { schema: 'sts-context-query-v1', ...value.query } : { schema: 'sts-game-result-v1' }),
+        ...(value.currentReading ? { currentReading: value.currentReading } : {}),
+      } : null },
     async execute({ command, reason, basis, choice, comparison: submittedComparison }, exec) {
       let preparationExecution;
       try {
@@ -418,7 +422,8 @@ export async function apply(ctx, config) {
           throw new Error('Game position changed while reading the requested information; recover the current state.');
         }
         if (result.branchChanged) resetBranch(exec.agent);
-        return { text: result.text, ...(beforeQuery ? { query: { command: queryCommand,
+        return { text: result.text, ...(result.currentReading ? { currentReading: result.currentReading } : {}),
+          ...(beforeQuery ? { query: { command: queryCommand,
           task: gameDecisionTask(beforeQuery, decisionTask ?? decisionContextSource(owner.session)?.task) } } : {}) };
       } catch (error) {
         const acknowledged = error.preparationExecution ?? preparationExecution;

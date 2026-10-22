@@ -31,6 +31,36 @@ test('printing a reading does not query plans based on an English or localized h
   }
 });
 
+test('execution records only the final displayed actual reading and keeps previews separate', async t => {
+  let revision = 0;
+  const current = () => ({ control: 'combat', summary: `当前局面 ${revision}\n`,
+    view: `当前局面 ${revision}\n手牌：防御\n./p act end\n`,
+    raw: { observation: { position: { kind: 'decision', public_snapshot_id: `s${revision}`,
+      actions: [], observation: { domain: 'combat', observation: {} } } } },
+  });
+  const wb = await fixture(t, async () => ({
+    async decision() { return current(); },
+    async act() { revision++; return current(); },
+    async preview() { return { view: '假设后继\nTerminal | Failure\n' }; },
+    async observe() { assert.fail('reading metadata must not add a query'); },
+    async close() {},
+  }), undefined, { commandPrefix: '' });
+  const read = await wb.execute('read');
+  assert.deepEqual(read.currentReading, { control: 'combat', summary: '当前局面 0\n',
+    text: '当前局面 0\n手牌：防御\nact end\n' });
+  assert.ok(read.text.includes(read.currentReading.text));
+  const preview = await wb.execute('preview end');
+  assert.equal(preview.currentReading, undefined, 'earlier calls cannot supply metadata for a preview');
+  const mixed = await wb.execute('read, preview end');
+  assert.deepEqual(mixed.currentReading, read.currentReading);
+  assert.ok(mixed.text.includes('假设后继'));
+  assert.ok(!mixed.currentReading.text.includes('假设'));
+  const acted = await wb.execute('act end, act end');
+  assert.equal(acted.currentReading.summary, '当前局面 2\n');
+  assert.ok(acted.text.includes(acted.currentReading.text));
+  assert.doesNotMatch(acted.text, /当前局面 1/);
+});
+
 test('board reads one typed observation for both commands and its numeric summary', async () => {
   let observations = 0, text = '';
   const ctx = createWorkbenchContext({ write(chunk) { text += chunk; }, game: {

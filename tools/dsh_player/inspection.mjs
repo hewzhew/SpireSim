@@ -276,8 +276,12 @@ export function renderInspection(report, { step, attempt, input } = {}) {
         if (showChanged('reading', [checkpoint.source?.gameSource, checkpoint.content])) {
           lines.push(`Source supplied: ${sourceLabel(checkpoint.source?.gameSource)}`);
           if (entry.refreshedQueries?.length) lines.push('Refreshed prior queries:', ...entry.refreshedQueries.map(command => `  ${command}`));
-          const boundary = checkpointText.search(/^(?:Act \d+ F\d+ \||Turn \d+|Terminal[: |])/m);
-          const reading = step === undefined && boundary >= 0 ? checkpointText.slice(boundary) : checkpointText;
+          const range = checkpoint.source?.readingRange;
+          if (range && (!Number.isSafeInteger(range.start) || !Number.isSafeInteger(range.end)
+              || range.start < 0 || range.end <= range.start || range.end > checkpointText.length)) {
+            throw new Error('Recorded checkpoint reading range is invalid');
+          }
+          const reading = range ? checkpointText.slice(range.start, range.end) : checkpointText;
           lines.push(`Supplied reading:\n${brief(reading, step === undefined ? 10 : Infinity)}`);
         } else lines.push('Same supplied checkpoint; expand input for this request\'s complete history.');
       }

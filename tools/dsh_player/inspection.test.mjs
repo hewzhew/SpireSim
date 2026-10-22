@@ -144,6 +144,21 @@ test('historical requests exactly match SDK dispatch across retry and later cont
   assert.match(text, /same as first supplied source/);
   assert.match(renderInspection(report, { step: 2, attempt: 2, input: true }), /Earlier guide/);
   assert.match(renderInspection(report, { step: 2 }), /Uncommitted failed output\./);
+  const localized = structuredClone(report);
+  for (const item of localized.steps) for (const entry of item.requests) {
+    const checkpoint = entry.request?.messages.find(message => message.source?.kind === 'sts-decision');
+    if (!checkpoint) continue;
+    const prefix = '说明含 Act 99 F99 | 这不是局面起点\n';
+    const reading = '第二幕 F24 | 生命 55/75 | 营火\n当前牌组 23 张\n';
+    checkpoint.content = [{ type: 'text', text: prefix + reading + '查询附录' }];
+    checkpoint.source.readingRange = { start: prefix.length, end: prefix.length + reading.length };
+  }
+  const translated = renderInspection(localized);
+  assert.match(translated, /Supplied reading:\n第二幕 F24/);
+  assert.doesNotMatch(translated, /这不是局面起点|查询附录/);
+  const corruptedRange = localized.steps[0].requests[0].request.messages.find(message => message.source?.kind === 'sts-decision');
+  corruptedRange.source.readingRange.end = Number.MAX_SAFE_INTEGER;
+  assert.throws(() => renderInspection(localized), /reading range is invalid/);
 });
 
 test('inspection uses a read handle, scopes the selected run, and never connects a game or starts a model', async t => {

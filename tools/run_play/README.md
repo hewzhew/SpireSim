@@ -5,6 +5,7 @@ Rust 拥有状态、来源检查、真实执行和提交；客户端只保存返
 
 `workbench.mjs` 是命令行与 [dsh 玩家插件](../dsh_player/README.md) 共用的命令 owner。
 `openWorkbench` 固定绑定一个会话，`execute` 接收短命令并返回 `{ text }`，输出不写到全局 stdout。
+本次返回实际展示了当前读数时，结果另带 `currentReading: { control, summary, text }`：摘要来自 Rust，文字是本次返回中保留的最后一份实际局面读数，使用同样的命令前缀。私下预演和纯规则查询不生成它，失败调用也不借早先的读数生成当前边界。此数据用于日志与上下文压缩，不应重复渲染到模型消息。
 命令逐条排队；部分成功后的错误保留前面的收据。回退先关闭连接再恢复、重连，关闭等待进行中的命令。
 新连接始终使用新的记录目录，不改变共享 CLI 焦点。直接使用时传绝对路径的 `repository`、`session`；
 可指定 `binary` 和一个尚不存在的 `recordDirectory`。

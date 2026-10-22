@@ -9,6 +9,7 @@ import Projections from '@deepseek-ai/dsh-session-projection';
 import TokenMeter from '@deepseek-ai/dsh-token-meter';
 import { readPlayerJournal, journalRequest, requestFromBoundary, settlementBlocks, settlementUsage } from './inspection.mjs';
 import { workspaceFacts } from './native.mjs';
+import { recordedGameReading } from './context.mjs';
 
 const usage = 'observe [STEP [input] | live | list] [--home DSH_HOME] [--chat ID_FRAGMENT] [--turn N]';
 const textOf = message => (message?.content ?? []).filter(block => block.type === 'text').map(block => block.text).join('\n');
@@ -124,7 +125,8 @@ export async function nativeJournalSummary(log, binding, { turn: wantedTurn, ste
     pending: calls.filter(call => !call.result),
     intervening: gameCalls.filter(call => call.seq > (latest?.seq ?? -1)),
     returnedAfterRecord: workspaceFacts(events).some(fact => fact.receipt && fact.seq > (latest?.seq ?? -1)),
-    recorded: latest ? { seq: latest.seq, turn: latest.data.turn, step: latest.data.step, text: textOf(latest.data.message) } : null };
+    recorded: latest ? { seq: latest.seq, turn: latest.data.turn, step: latest.data.step,
+      text: textOf(latest.data.message), currentReading: recordedGameReading(latest.data) } : null };
   if (wantedStep !== undefined) {
     const step = steps.find(step => step.number === wantedStep);
     const before = gameResults.filter(event => event.seq < step.seq).at(-1);
@@ -204,8 +206,9 @@ export function renderNativeObservation(report) {
     if (last) lines.push(`Last reported request input: ${last.uncachedInputTokens + last.cacheReadTokens + last.cacheWriteTokens} tokens`);
   } else lines.push('Token usage was not reported.');
   if (report.recorded) {
-    const compact = report.recorded.text.split('\n').filter(line => /^(Act \d|Turn \d|Hand:|Deck:|Potions:|Relics:)/.test(line));
-    lines.push(`Last recorded successful game result (step ${report.recorded.step}, event ${report.recorded.seq}; not a live read):\n${compact.length ? compact.join('\n') : report.recorded.text.split('\n')[0]}`);
+    const compact = report.recorded.currentReading?.summary
+      ?? report.recorded.text.split('\n').slice(0, 8).join('\n');
+    lines.push(`Last recorded successful game result (step ${report.recorded.step}, event ${report.recorded.seq}; not a live read):\n${compact.trimEnd()}`);
   } else lines.push('No successful game result recorded.');
   if (report.intervening.length) lines.push('Later game calls failed or have no result; the recorded page may no longer describe the current game. Use observe live to check.');
   if (report.returnedAfterRecord) lines.push('The game was returned after this recorded page. Use observe live for the actual current state.');

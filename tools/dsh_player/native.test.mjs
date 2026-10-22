@@ -101,8 +101,13 @@ test('native preset capability is lazy and isolates real games for two agents sh
       name: 'sts', arguments: { command }, agent: handle.agent, signal, callId: ToolCallId(randomUUID()),
     });
     const [initialA, initialB] = await Promise.all([execute(a, 'read'), execute(b, 'read')]);
-    for (const result of [initialA, initialB]) { assert.equal(Boolean(result.isError), false, textOf(result)); assert.match(textOf(result), /Neow \| Event screen 1/); }
-    assert.match(textOf(initialB), /Commands \(copy text before \|\):\nevent:Neow:0/);
+    for (const result of [initialA, initialB]) {
+      assert.equal(Boolean(result.isError), false, textOf(result)); assert.match(textOf(result), /Neow \| Event screen 1/);
+      assert.equal(result.meta.currentReading.control, 'strategic');
+      assert.ok(textOf(result).includes(result.meta.currentReading.text));
+      assert.doesNotMatch(textOf(result), /currentReading|"summary"/);
+    }
+    assert.match(textOf(initialB), /^event:Neow:0  \|  Effect:/m);
     const mistakes = [
       ['info event Neow', /use info with no arguments/],
       ['preview 3', /semantic actions, not row numbers/],
@@ -125,6 +130,7 @@ test('native preset capability is lazy and isolates real games for two agents sh
     }
     const preview = await execute(b, 'preview event:Neow:0');
     assert.equal(Boolean(preview.isError), false, textOf(preview));
+    assert.equal(preview.meta.currentReading, undefined);
     assert.match(textOf(preview), /Private result/);
     assert.equal(textOf(await execute(b, 'read')), textOf(initialB));
     const trade = await execute(b, 'preview event:Neow:3');

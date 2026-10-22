@@ -83,6 +83,8 @@ async function fixture(t, rules, fail = false, behavior = {}) {
           if (Array.isArray(command)) command = command.join(' ');
           await log(command);
           if (${fail}) throw new Error('bound rules unavailable');
+          const recorded = ${JSON.stringify(behavior.recordedReadings ?? {})}[command];
+          if (recorded) return { text: recorded.text, currentReading: recorded };
           const current = await position();
           const action = ${JSON.stringify(behavior.actions ?? {})}[command];
           if (action) {
@@ -177,6 +179,17 @@ test('bound rules are loaded before play, remain scoped, and close with the play
     .find(x => x.name === 'sts:run-rules').text, rules);
   await handle.dispose();
   assert.deepEqual(await f.calls(), ['observe', 'info rules preparation', 'observe', 'observe', 'close']);
+});
+
+test('scripted tools retain current-reading metadata without adding it to model-visible text', async t => {
+  const reading = { control: 'strategic', summary: '第一幕 | 商店\n', text: '第一幕 | 商店\n金币 99\n' };
+  const f = await fixture(t, 'Current rules', false, { recordedReadings: { read: reading } });
+  const handle = await f.create(); t.after(() => handle.dispose());
+  const result = await rawGameExec(f.ctx, handle.agent, 'read');
+  assert.equal(Boolean(result.isError), false, resultText(result));
+  assert.equal(resultText(result), reading.text);
+  assert.deepEqual(result.meta.currentReading, reading);
+  assert.doesNotMatch(resultText(result), /currentReading|"summary"/);
 });
 
 test('coached native tool pauses before a purchase while leaving investigations available', async t => {

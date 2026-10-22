@@ -169,7 +169,7 @@ function decisionCheckpoint(messages, reading, { retainOperator = true, queries 
       if (!execution.receipts.length) execution = undefined;
     }
   }
-  return [{ type: 'text', text: [
+  const prefix = [
     'Player context refreshed from actual game state. Continue the operator task from its current progress.',
     ...(instruction ? ['Operator task:', instruction] : []),
     ...(execution ? [
@@ -177,41 +177,59 @@ function decisionCheckpoint(messages, reading, { retainOperator = true, queries 
       `Submitted command: ${execution.command}`,
       'Returned execution receipts:', ...execution.receipts,
     ] : []),
-    'Current actual game reading (already read by the host):', reading,
+    'Current actual game reading (already read by the host):',
+  ].join('\n') + '\n';
+  return { readingRange: { start: prefix.length, end: prefix.length + reading.length },
+    content: [{ type: 'text', text: prefix + [reading,
     ...(queries.length ? ['Previously requested information, refreshed by the host for this task:',
       ...queries.flatMap(query => [`Query: ${query.command}`, query.text])] : []),
-  ].join('\n') }];
+    ].join('\n') }] };
 }
 
 // A game already owns its complete working state. Preserve an actual tool
 // reading at the cut, rather than asking the player to restate mechanics and
 // turn its own guesses into the next request's established background.
-export function gameCheckpoint(messages) {
-  const calls = new Map();
+export function recordedGameReading(result) {
+  if (result?.message?.isError || !result?.meta?.currentReading) return;
+  const reading = result.meta.currentReading;
+  const text = result.message.content.filter(block => block.type === 'text').map(block => block.text).join('\n');
+  if (!['strategic', 'combat', 'terminal'].includes(reading.control)
+      || typeof reading.summary !== 'string' || !reading.summary.trim()
+      || typeof reading.text !== 'string' || !reading.text.trim() || !text.includes(reading.text)) {
+    throw new Error('Recorded game reading does not match its tool result');
+  }
+  return reading;
+}
+
+export function gameCheckpoint(messages, results = []) {
+  const recorded = new Map(results.filter(result => typeof result.message?.id === 'string')
+    .map(result => [result.message.id, result]));
+  const calls = new Set();
   let reading;
   for (const message of messages) {
     if (message.role === 'assistant') {
       for (const block of message.content) {
         if (block.type !== 'tool-call' || block.name !== 'sts') continue;
-        let args = block.arguments;
-        try { if (typeof args === 'string') args = JSON.parse(args); } catch { continue; }
-        if (typeof args?.command === 'string') calls.set(block.id, args.command);
+        calls.add(block.id);
       }
     }
     if (message.role !== 'tool') continue;
-    const command = calls.get(message.toolCallId);
+    const paired = calls.has(message.toolCallId);
     calls.delete(message.toolCallId);
-    if (!command || message.isError || /(^|,\s+)(preview|deck-lab|research)\b/.test(command)) continue;
-    const text = message.content.filter(c => c.type === 'text').map(c => c.text).join('\n');
-    const boundaries = [...text.matchAll(/^(?:Act \d+ F\d+ \||Terminal \|)/gm)];
-    if (boundaries.length) reading = text.slice(boundaries.at(-1).index);
+    if (!paired) continue;
+    if (message.isError) { reading = undefined; continue; }
+    const result = typeof message.id === 'string' ? recorded.get(message.id) : undefined;
+    if (!result || result.message.toolCallId !== message.toolCallId) continue;
+    const current = recordedGameReading({ message, meta: result.meta });
+    if (current) reading = current.text;
   }
+  if (calls.size) reading = undefined;
   const operator = messages.filter(m => m.role === 'user' && m.source?.kind === 'user').at(-1);
   const instruction = operator?.content.filter(c => c.type === 'text').map(c => c.text).join('\n');
   return [{ type: 'text', text: [
     'Game history checkpoint. Continue from the recent messages following this checkpoint.',
     ...(instruction ? ['Operator task:', instruction] : []),
-    ...(reading ? ['Actual tool reading at the end of the earlier history:', reading] : []),
+    ...(reading ? ['Last recorded actual game reading in the earlier history:', reading] : []),
     'Rebuild the startup, defense/damage and next-need plan from the current inventory. Obtain card, relic, potion, power and enemy mechanics from game readings and info queries.',
   ].join('\n') }];
 }
@@ -237,10 +255,12 @@ export default class GameContextCompaction extends BasicCompaction {
       // has not committed its protected system head. Admit the factual reading
       // through the loop's message decision so it follows that head in the log.
       if (agent.session.surface.nodes.length === 0) {
+        const rendered = decisionCheckpoint(decision.messages, reset.reading, { retainOperator, queries: reset.queries });
         const checkpoint = createUserMessage({
           source: { kind: 'sts-decision', version: 1, ...(reset.source ? { gameSource: reset.source } : {}),
+            readingRange: rendered.readingRange,
             ...(reset.task ? { task: reset.task } : {}), ...(reset.queryRefs.length ? { queryRefs: reset.queryRefs } : {}) },
-          content: decisionCheckpoint(decision.messages, reset.reading, { retainOperator, queries: reset.queries }),
+          content: rendered.content,
         });
         pending.delete(agent);
         return { ...decision, messages: [...decision.messages, checkpoint] };
@@ -260,10 +280,13 @@ export default class GameContextCompaction extends BasicCompaction {
     const sources = range ? nodes.slice(nodes.indexOf(range.start), nodes.indexOf(range.end) + 1) : [];
     const operator = operatorTask(agent);
     const messages = agent.session.deriveMessages();
+    const rendered = decisionCheckpoint(operator ? [...messages, operator] : messages,
+      reset.reading, { retainOperator, queries: reset.queries });
     const checkpoint = createUserMessage({
       source: { kind: 'sts-decision', version: 1, ...(reset.source ? { gameSource: reset.source } : {}),
+        readingRange: rendered.readingRange,
         ...(reset.task ? { task: reset.task } : {}), ...(reset.queryRefs.length ? { queryRefs: reset.queryRefs } : {}) },
-      content: decisionCheckpoint(operator ? [...messages, operator] : messages, reset.reading, { retainOperator, queries: reset.queries }),
+      content: rendered.content,
     });
     // A fresh player has no old reasoning to replace, but still needs the
     // supplied actual state. Keep its operator task and append the checkpoint.
@@ -286,7 +309,9 @@ export default class GameContextCompaction extends BasicCompaction {
     const operator = operatorTask(agent);
     const messages = operator ? [...input.messages, operator] : input.messages;
     return {
-      summary: gameCheckpoint(messages), provider: 'sts-player', model: 'game-checkpoint',
+      summary: gameCheckpoint(messages, agent.session.snapshotEvents()
+        .filter(event => event.type === 'tool/result').map(event => event.data)),
+      provider: 'sts-player', model: 'game-checkpoint',
     };
   }
 }

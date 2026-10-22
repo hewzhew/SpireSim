@@ -308,7 +308,8 @@ export class NativeGameControl {
       signal.throwIfAborted();
       if (this.paused) throw new Error('The game is paused in the workspace.');
       const result = await game.execute(command, { signal });
-      return { text: result.text, game: { agent: this.binding.agent, session: this.binding.session, seed: this.binding.seed } };
+      return { text: result.text, game: { agent: this.binding.agent, session: this.binding.session, seed: this.binding.seed,
+        ...(result.currentReading ? { currentReading: result.currentReading } : {}) } };
     });
   }
   points() { return this.serial(async () => ({ points: await (await this.game()).returnPoints(), control: this.status() })); }

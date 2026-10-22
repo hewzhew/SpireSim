@@ -11,7 +11,8 @@ import ProjectionRegistry from '@deepseek-ai/dsh-session-projection';
 import TokenMeter from '@deepseek-ai/dsh-token-meter';
 import GameContextCompaction, { gameCheckpoint, requestBranchReset,
   gameContextSource, sameGameContextSource, gameDecisionTask, sameGameDecisionTask,
-  requestDecisionReset, decisionContextRange, contextQueryCommand, decisionContextSource, decisionQueryReferences } from './context.mjs';
+  requestDecisionReset, decisionContextRange, contextQueryCommand, decisionContextSource, decisionQueryReferences,
+  recordedGameReading } from './context.mjs';
 import { runPlayer } from './launch.mjs';
 import { commandTokens, commandGroups } from '../run_play/session.mjs';
 
@@ -173,40 +174,56 @@ test('context backend loads with installed dependencies and no adjacent run_play
   });
 });
 
-test('pressure checkpoints retain paired actual readings, rather than model rules or hypothetical states', () => {
+test('pressure checkpoints retain source-recorded actual text in either language, without parsing commands or headings', () => {
   const call = (id, command) => ({ role: 'assistant', content: [
     { type: 'reasoning', text: 'Confirmed: Heavy Blade+ uses Strength x3. This deck blocks 30 per turn.' },
     { type: 'tool-call', id, name: 'sts', arguments: JSON.stringify({ command }) },
   ] });
-  const result = (toolCallId, text, isError = false) => ({ role: 'tool', toolCallId, isError,
+  const result = (toolCallId, text, isError = false) => ({ id: `result-${toolCallId}`, role: 'tool', toolCallId, isError,
     content: [{ type: 'text', text }] });
+  const actual = '第三幕 F38 | 生命 40/75 | 商店\nDeck: 29 cards\nRelics: Runic Pyramid\nCard Heavy Blade+: Strength contributes 5 times.\n';
   const messages = [
     { role: 'user', source: { kind: 'user' }, content: [{ type: 'text', text: 'Finish the bound Heart run.' }] },
     call('buy', 'buy:HeavyBlade+#0, buy:FeelNoPain#0'),
-    result('buy', 'Completed: buy Heavy Blade+\nAct 3 F38 | HP 40/75 | Shop\nDeck: 28 cards\nCompleted: buy Feel No Pain\nAct 3 F38 | HP 40/75 | Shop\nDeck: 29 cards\nRelics: Runic Pyramid\nCard Heavy Blade+: Strength contributes 5 times.'),
+    result('buy', `Completed: buy Heavy Blade+\nAct 3 F38 | HP 40/75 | Shop\nDeck: 28 cards\n${actual}`),
     call('preview', 'preview end'),
     result('preview', 'Actual position before adopting actions:\nAct 3 F38 | HP 40/75\nHypothetical successor of preview;\nTerminal | Failure'),
     call('lab', 'deck-lab TheHeart scenarios 3'),
     result('lab', 'Act 4 F56 | HP 75/75 | diagnostic root'),
-    call('error', 'act end'),
-    result('error', 'Act 3 F38 | HP 1/75 | incomplete call', true),
     result('unpaired', 'Act 3 F38 | HP 2/75 | unpaired data'),
     { role: 'user', source: { kind: 'compact-checkpoint' }, content: [{ type: 'text', text: 'Old summary: remove all defense.' }] },
   ];
-  const checkpoint = JSON.stringify(gameCheckpoint(messages));
+  const recorded = [{ message: messages[2], meta: { currentReading: {
+    control: 'strategic', summary: '第三幕 F38 | 商店\n', text: actual,
+  } } }];
+  const checkpoint = JSON.stringify(gameCheckpoint(messages, recorded));
   assert.match(checkpoint, /Finish the bound Heart run/);
   assert.match(checkpoint, /Deck: 29 cards/);
+  assert.match(checkpoint, /第三幕 F38/);
   assert.match(checkpoint, /Strength contributes 5 times/);
   assert.doesNotMatch(checkpoint, /Deck: 28 cards|Confirmed:|blocks 30|Strength x3|Failure|75\/75|1\/75|2\/75|remove all defense/);
   assert.doesNotMatch(checkpoint, /branch was restored/);
+  assert.doesNotMatch(JSON.stringify(gameCheckpoint(messages)), /Deck: 29 cards|Deck: 28 cards/,
+    'English-looking text without a recorded boundary is not a current reading');
+  assert.doesNotMatch(JSON.stringify(gameCheckpoint([...messages, call('error', 'act end'),
+    result('error', 'Act 3 F38 | HP 1/75 | incomplete call', true)], recorded)), /Deck: 29 cards/);
+  assert.doesNotMatch(JSON.stringify(gameCheckpoint([...messages, call('pending', 'act end')], recorded)), /Deck: 29 cards/);
+  assert.doesNotMatch(JSON.stringify(gameCheckpoint(messages, [{ ...recorded[0],
+    message: { ...messages[2], id: 'another-result' } }])), /Deck: 29 cards/);
+  assert.throws(() => recordedGameReading({ message: messages[2], meta: { currentReading: {
+    control: 'strategic', summary: '假数据', text: 'not in the actual result',
+  } } }), /does not match/);
 });
 
 test('official pressure compaction makes a factual game checkpoint without a summarization model request', async t => {
   const { ctx, session, agent } = await fixture(t, { experiments: [
-    { command: 'read', text: 'Act 3 F38 | A20 | HP 40/75 | Shop\nDeck: 29 cards\nRelics: Runic Pyramid' },
+    { command: 'read', text: '第三幕 F38 | 生命 40/75 | 商店\nDeck: 29 cards\nRelics: Runic Pyramid',
+      meta: { currentReading: { control: 'strategic', summary: '第三幕 F38 | 商店\n',
+        text: '第三幕 F38 | 生命 40/75 | 商店\nDeck: 29 cards\nRelics: Runic Pyramid' } } },
     { command: 'preview end', text: 'Act 3 F38 | HP 0/75 | hypothetical only' },
   ] });
   const range = { start: session.surface.nodes[0], end: session.surface.nodes.at(-3) };
+  const originalEvents = structuredClone(session.snapshotEvents());
   await ctx.compaction.compactRegion(range.start, range.end, agent, new AbortController().signal);
   const visible = JSON.stringify(session.deriveMessages());
   assert.match(visible, /Game history checkpoint/);
@@ -217,6 +234,8 @@ test('official pressure compaction makes a factual game checkpoint without a sum
   const summary = session.snapshotEvents().find(e => e.type === 'compaction/summary');
   assert.equal(summary.data.model, 'game-checkpoint');
   assert.equal(summary.data.llmStreamCall, undefined);
+  assert.deepEqual(session.snapshotEvents().slice(0, originalEvents.length), originalEvents);
+  assert.deepEqual(Session.create(session.id, session.snapshotEvents(), session.header).deriveMessages(), session.deriveMessages());
 });
 
 test('v4-pro is rejected before resolving paths or creating a player', async () => {

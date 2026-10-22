@@ -24,11 +24,15 @@ export function createWorkbenchContext(options) {
     const doc = reading.control === 'combat'
       ? document ?? await ctx.decisionDocument(reading) : null;
     if (doc) assertCurrentDecision(reading, doc);
+    const chunks = [];
     printReading(reading, {
-      write: ctx.write, expanded,
+      write: text => chunks.push(text), expanded,
       combatCommands: doc ? (expanded ? expandedCombatCommands(reading, doc)
         : distinctCombatCommands(reading, doc)) : [],
     });
+    const text = chunks.join('');
+    ctx.write(text);
+    ctx.recordReading?.({ control: reading.control, summary: reading.summary, text });
   };
   ctx.resolveOptionByName = async (wanted, reading) => resolveOptionName(
     wanted, reading, await ctx.decisionDocument(reading));
@@ -289,6 +293,8 @@ export async function openWorkbench({ repository, session, binary = join(reposit
         }
         chunks = [];
         ctx.signal = signal;
+        let currentReading;
+        ctx.recordReading = reading => { currentReading = reading; };
         let branchChanged = false;
         try {
           const output = await executeWorkbenchCommands(ctx, groups, async (ctx, command, args) => {
@@ -306,7 +312,11 @@ export async function openWorkbench({ repository, session, binary = join(reposit
             } else return dispatchWorkbench(ctx, command, args);
           });
           ctx.write(output);
-          return { text: chunks.join(''), ...(branchChanged ? { branchChanged: true } : {}) };
+          const text = chunks.join('');
+          const recorded = typeof currentReading?.summary === 'string' && { ...currentReading,
+            summary: formatOutput(currentReading.summary), text: formatOutput(currentReading.text) };
+          return { text, ...(recorded && text.includes(recorded.text) ? { currentReading: recorded } : {}),
+            ...(branchChanged ? { branchChanged: true } : {}) };
         } catch (caught) {
           // AbortSignal's default reason is a DOMException with a read-only
           // message. Format our own error while retaining transport metadata.
@@ -328,7 +338,7 @@ export async function openWorkbench({ repository, session, binary = join(reposit
             throw wrapped;
           }
           throw error;
-        } finally { chunks = null; ctx.signal = undefined; }
+        } finally { chunks = null; ctx.signal = undefined; ctx.recordReading = undefined; }
       }));
     },
     returnPoints() {
