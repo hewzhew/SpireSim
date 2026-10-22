@@ -5,6 +5,7 @@ import { promisify } from 'node:util';
 import { Remote, TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol';
 import { SessionId } from '@deepseek-ai/dsh-session';
 import { z } from 'zod';
+import { createPresentation } from '@sts-simulator/presentation';
 import { nativeBinding, isWorkspaceEvent } from './native.mjs';
 import { mapGraphFromObservation } from '@sts-simulator/run-play/render';
 import { renderMapPicture } from './map-layout.mjs';
@@ -52,10 +53,11 @@ export class StsMapView extends TypertRemoteService {
     this.inspectSession = inspectSession ?? (id => ctx.sessionController.inspect(SessionId(id)));
     for (const initialize of initializers) initialize.call(this);
   }
-  async read(sessionId) {
-    if (typeof sessionId !== 'string' || !sessionId) throw new Error('需要指定当前会话。');
+  async read(sessionId, locale) {
+    const presentation = createPresentation({ locale });
+    if (typeof sessionId !== 'string' || !sessionId) throw new Error(presentation.text('native:validation.sessionRequired'));
     const { meta } = await this.inspectSession(sessionId);
-    if (meta.id !== sessionId) throw new Error('会话记录与选中的聊天不一致。');
+    if (meta.id !== sessionId) throw new Error(presentation.text('native:validation.journalMismatch'));
     const binding = await nativeBinding({ id: sessionId, session: { header: meta } }, {}, { create: false });
     if (!binding) return { status: 'not-started' };
     const { stdout } = await this.execute(binding.binary, ['show', '--session', binding.session, '--decision-json'],

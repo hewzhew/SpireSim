@@ -16,7 +16,7 @@ export const inject = ['sessionController', 'sessionProjections', 'typert', 'age
 const textOf = message => (message?.content ?? []).filter(block => block.type === 'text').map(block => block.text).join('\n');
 const positive = value => Number.isSafeInteger(value) && value > 0;
 const run = promisify(execFile);
-function viewText(locale, key) { return createPresentation({ locale }).text(`native:observation.${key}`); }
+function viewText(locale, key, namespace = 'observation') { return createPresentation({ locale }).text(`native:${namespace}.${key}`); }
 export function observationOverview(report) {
   return { status: 'ready', turn: report.turn ?? null, phase: report.status,
     timeline: report.timeline, turns: report.turnNumbers, gameCalls: report.gameCalls,
@@ -56,9 +56,9 @@ export class StsObservationView extends TypertRemoteService {
     for (const initialize of initializers) initialize.call(this);
   }
   async journal(sessionId, locale = 'en') {
-    if (typeof sessionId !== 'string' || !sessionId) throw new Error(viewText(locale, 'sessionRequired'));
+    if (typeof sessionId !== 'string' || !sessionId) throw new Error(viewText(locale, 'sessionRequired', 'validation'));
     const log = await this.inspectSession(sessionId);
-    if (log.meta.id !== sessionId) throw new Error(viewText(locale, 'journalMismatch'));
+    if (log.meta.id !== sessionId) throw new Error(viewText(locale, 'journalMismatch', 'validation'));
     const agent = { id: sessionId, session: { header: log.meta } };
     const binding = await readNativeBinding(agent);
     if (!binding) return null;

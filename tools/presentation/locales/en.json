@@ -3532,14 +3532,16 @@
       "moreErrorLines": "  {{count}} more error lines; observe {{step}} shows the full result."
     },
     "observation": {
-      "sessionRequired": "Select the current session.",
-      "journalMismatch": "The journal does not match the selected chat.",
       "positiveTurn": "Turn must be a positive integer.",
       "validSelection": "Select a valid turn, step and input expansion mode.",
       "noGame": "This chat has no game.",
       "ownerMismatch": "The game owner does not match the selected chat.",
       "missingControl": "This chat still uses an older game tool. Update the tool and create a new chat, or restart the service and reopen it; no return was executed.",
       "completeReturnIdentity": "Use the complete source and target from the return-point list."
+    },
+    "validation": {
+      "sessionRequired": "Select the current session.",
+      "journalMismatch": "The journal does not match the selected chat."
     }
   },
   "scripted": {

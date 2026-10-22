@@ -356,6 +356,7 @@ window.__ModuleLoader__.load({ id: '@sts-simulator/dsh-player', factory(require)
           );
     }
     function MapPanel({ sessionId, useProjection, t }) {
+      const operatorLocale = resolveLocale(ctx.locale.getSnapshot().active);
       const tick = useProjection('stsMapTick');
       const [view, setView] = React.useState(null);
       const [error, setError] = React.useState('');
@@ -381,7 +382,7 @@ window.__ModuleLoader__.load({ id: '@sts-simulator/dsh-player', factory(require)
       React.useEffect(() => {
         const abort = new AbortController();
         setError('');
-        ctx.connection.rpc.call('/api', 'stsMapView/read', { args: { sessionId } }, abort.signal).then(result => {
+        ctx.connection.rpc.call('/api', 'stsMapView/read', { args: { sessionId, locale: operatorLocale } }, abort.signal).then(result => {
           if (abort.signal.aborted) return;
           if (result.ok) setView({ ...result.value, sessionId }); else setError(result.error.message);
         }).catch(error => { if (!abort.signal.aborted) setError(error.message); });

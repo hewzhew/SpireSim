@@ -72,13 +72,20 @@ test('human map read does not initialize a game and uses only the selected chat 
   const session = ctx.sessions.create('map-chat', { meta: { cwd: repository } });
   const calls = [];
   const view = new StsMapView(ctx, { inspectSession: async id => {
+    if (id === 'mismatched-chat') return { meta: session.header };
     const selected = ctx.sessions.get(id); if (!selected) throw new Error('fixture: 未加载');
     return { meta: selected.header };
   }, execute: async (binary, args) => { calls.push({ binary, args }); return { stdout: JSON.stringify(decision()) }; } });
   assert.equal((await view.read(session.id)).status, 'not-started'); assert.equal(calls.length, 0);
+  for (const locale of ['en', 'zh-CN']) {
+    await assert.rejects(view.read('', locale), locale === 'en' ? /Select the current session/ : /需要指定当前会话/);
+    await assert.rejects(view.read('mismatched-chat', locale), locale === 'en' ? /journal does not match/ : /会话记录与选中的聊天不一致/);
+  }
+  assert.equal(calls.length, 0);
   const binding = await nativeBinding({ id: session.id, session }, {}, { run: async (_binary, args) => mkdir(args[2]) });
   const before = await readFile(join(binding.session, 'dsh-native.json'), 'utf8');
   assert.equal((await view.read(session.id)).status, 'ready');
+  assert.deepEqual(await view.read(session.id, 'en'), await view.read(session.id, 'zh-CN'));
   assert.deepEqual(calls[0].args, ['show', '--session', binding.session, '--decision-json']);
   assert.equal(await readFile(join(binding.session, 'dsh-native.json'), 'utf8'), before);
   await assert.rejects(view.read('another-chat'), /未加载/);
@@ -126,7 +133,7 @@ test('map and update controls use named Remote args and only publish on a click'
   await Promise.resolve();
   assert.deepEqual(calls, [
     { channel: '/api', endpoint: 'stsToolUpdates/status', payload: { args: {} } },
-    { channel: '/api', endpoint: 'stsMapView/read', payload: { args: { sessionId: 'selected-chat' } } },
+    { channel: '/api', endpoint: 'stsMapView/read', payload: { args: { sessionId: 'selected-chat', locale: 'zh-CN' } } },
   ]);
   function find(node) {
     if (!node || typeof node !== 'object') return null;
