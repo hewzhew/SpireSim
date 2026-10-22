@@ -1925,8 +1925,21 @@ fn run(cli: Cli) -> Result<(), String> {
             } else {
                 let controller = RunPlayControllerV1::open(paths)?;
                 if let Some(output) = public_output {
-                    public_decision::export_head_public_decision_v1(controller.head(), &output)?;
-                    println!("Public decision exported for offline reading; Rust-only, not an action permit.");
+                    public_decision::export_head_public_decision_v1(
+                        controller.head(),
+                        &output,
+                        locale,
+                    )?;
+                    println!(
+                        "{}",
+                        locale
+                            .text(
+                                "publicDecision",
+                                "exported",
+                                &[("path", &output.display().to_string())]
+                            )
+                            .expect("public export message")
+                    );
                 } else if decision_json {
                     let inventory = controller
                         .head()

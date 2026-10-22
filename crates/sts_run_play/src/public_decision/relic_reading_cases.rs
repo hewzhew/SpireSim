@@ -77,7 +77,7 @@ fn documents() -> Vec<Value> {
             TaskPublicObservationV1::Strategic { observation },
             actions.into_iter().map(|action| TaskPublicCandidateV1::Strategic { action }).collect()).unwrap();
         json!({"case": case, "document": public_decision_export_v3(&decision,
-            PublicDecisionSourceV1::ConstructedContractCase { case_id: format!("visible-relic-reading-{case}") }).unwrap()})
+            PublicDecisionSourceV1::ConstructedContractCase { case_id: format!("visible-relic-reading-{case}") }, sts_presentation::Locale::En).unwrap()})
     }).collect()
 }
 
@@ -98,10 +98,17 @@ fn relic_reading_fixture_matches_typed_producer() {
             "relic_mechanics",
             "strategic_reading",
         ] {
-            assert_eq!(
-                recorded["document"]["payload"][field], current["document"]["payload"][field],
-                "{field}"
-            );
+            if field == "strategic_reading" {
+                super::tests::assert_reading_surface_eq(
+                    &recorded["document"]["payload"][field],
+                    &current["document"]["payload"][field],
+                );
+            } else {
+                assert_eq!(
+                    recorded["document"]["payload"][field], current["document"]["payload"][field],
+                    "{field}"
+                );
+            }
         }
         assert_eq!(
             recorded["document"]["payload_sha256"],
@@ -183,6 +190,7 @@ fn boss_resource_document() -> Value {
         PublicDecisionSourceV1::ConstructedContractCase {
             case_id: "boss-relic-resource-restrictions".into(),
         },
+        sts_presentation::Locale::En,
     )
     .unwrap()
 }
@@ -196,6 +204,15 @@ fn boss_resource_fixture_matches_typed_producer() {
     let mut current = boss_resource_document()["payload"].clone();
     recorded.as_object_mut().unwrap().remove("producer");
     current.as_object_mut().unwrap().remove("producer");
+    super::tests::assert_reading_surface_eq(
+        &recorded["strategic_reading"],
+        &current["strategic_reading"],
+    );
+    recorded
+        .as_object_mut()
+        .unwrap()
+        .remove("strategic_reading");
+    current.as_object_mut().unwrap().remove("strategic_reading");
     assert_eq!(recorded, current);
     assert_eq!(
         fixture["payload_sha256"],
@@ -240,6 +257,7 @@ fn snecko_document() -> Value {
         PublicDecisionSourceV1::ConstructedContractCase {
             case_id: "boss-relic-snecko-draw-cost".into(),
         },
+        sts_presentation::Locale::En,
     )
     .unwrap()
 }
@@ -253,6 +271,15 @@ fn snecko_fixture_matches_typed_producer_and_scoped_confusion_rule() {
     let mut current = snecko_document()["payload"].clone();
     recorded.as_object_mut().unwrap().remove("producer");
     current.as_object_mut().unwrap().remove("producer");
+    super::tests::assert_reading_surface_eq(
+        &recorded["strategic_reading"],
+        &current["strategic_reading"],
+    );
+    recorded
+        .as_object_mut()
+        .unwrap()
+        .remove("strategic_reading");
+    current.as_object_mut().unwrap().remove("strategic_reading");
     assert_eq!(recorded, current);
     assert_eq!(
         fixture["payload_sha256"],
@@ -334,6 +361,7 @@ fn gold_gain_document() -> Value {
         PublicDecisionSourceV1::ConstructedContractCase {
             case_id: "boss-relic-gold-gain-restriction".into(),
         },
+        sts_presentation::Locale::En,
     )
     .unwrap()
 }
@@ -347,6 +375,15 @@ fn gold_gain_fixture_matches_typed_producer_without_rewriting_owned_gold() {
     let mut current = gold_gain_document()["payload"].clone();
     recorded.as_object_mut().unwrap().remove("producer");
     current.as_object_mut().unwrap().remove("producer");
+    super::tests::assert_reading_surface_eq(
+        &recorded["strategic_reading"],
+        &current["strategic_reading"],
+    );
+    recorded
+        .as_object_mut()
+        .unwrap()
+        .remove("strategic_reading");
+    current.as_object_mut().unwrap().remove("strategic_reading");
     assert_eq!(recorded, current);
     assert_eq!(
         current["decision"]["observation"]["observation"]["run"]["gold"],

@@ -111,7 +111,7 @@ fn documents() -> Vec<Value> {
             actions.into_iter().map(|action| TaskPublicCandidateV1::Strategic { action }).collect(),
         ).unwrap();
         json!({"case": case, "document": public_decision_export_v3(&decision,
-            PublicDecisionSourceV1::ConstructedContractCase { case_id: format!("potion-reading-{case}") }).unwrap()})
+            PublicDecisionSourceV1::ConstructedContractCase { case_id: format!("potion-reading-{case}") }, sts_presentation::Locale::En).unwrap()})
     }).collect()
 }
 
@@ -131,10 +131,17 @@ fn potion_reading_fixture_matches_typed_producer() {
             "potion_mechanics",
             "strategic_reading",
         ] {
-            assert_eq!(
-                recorded["document"]["payload"][field], current["document"]["payload"][field],
-                "{field}"
-            );
+            if field == "strategic_reading" {
+                super::tests::assert_reading_surface_eq(
+                    &recorded["document"]["payload"][field],
+                    &current["document"]["payload"][field],
+                );
+            } else {
+                assert_eq!(
+                    recorded["document"]["payload"][field], current["document"]["payload"][field],
+                    "{field}"
+                );
+            }
         }
         assert_eq!(
             recorded["document"]["payload_sha256"],

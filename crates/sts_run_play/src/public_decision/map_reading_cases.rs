@@ -118,6 +118,7 @@ fn exports() -> Value {
                     PublicDecisionSourceV1::ConstructedContractCase {
                         case_id: format!("route-reading-{name}"),
                     },
+                    sts_presentation::Locale::En,
                 )
                 .unwrap(),
             )
@@ -129,7 +130,7 @@ fn exports() -> Value {
 #[test]
 fn public_route_reading_preserves_candidate_order_and_uses_one_topology_owner() {
     for (name, decision) in cases() {
-        let surface = strategic_reading::project(&decision).unwrap();
+        let surface = strategic_reading::project(&decision, sts_presentation::Locale::En).unwrap();
         let TaskPublicObservationV1::Strategic { observation } = &decision.observation else {
             unreachable!()
         };
@@ -156,10 +157,14 @@ fn public_route_reading_preserves_candidate_order_and_uses_one_topology_owner() 
                         assert!(row["brief"].as_str().unwrap().contains(&reading.summary()));
                         assert!(row["detail"].as_str().unwrap().contains(&reading.detail()));
                     }
-                    Err(_) => {
+                    Err(error) => {
                         assert_eq!(name, "cycle");
                         assert!(summaries[ordinal].contains("Unknown"));
-                        assert!(row["detail"].as_str().unwrap().contains("unknown"));
+                        assert!(row["detail"].as_str().unwrap().contains(&error));
+                        assert!(row["detail"]
+                            .as_str()
+                            .unwrap()
+                            .contains("Route topology unavailable"));
                     }
                 }
                 ordinal += 1;

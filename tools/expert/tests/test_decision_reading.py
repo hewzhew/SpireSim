@@ -21,6 +21,23 @@ def edited_fixture(tmp_path, change, *, resign=False):
     return path
 
 
+def test_disposable_snapshot_keeps_its_source_kind_without_claiming_trajectory(tmp_path):
+    def change(payload):
+        payload["source"] = {
+            "kind": "run_play_scratch_head", "session_id": "private-seed-in-name",
+            "head_revision": 7, "archive_node_id": "snapshot-node",
+        }
+        payload["producer"]["text_locale"] = "en"
+
+    path = edited_fixture(tmp_path, change, resign=True)
+    reading = DecisionReading(path)
+    view = reading.view()
+    assert view["source"] == {"kind": "run_play_scratch_head", "head_revision": 7}
+    assert "private-seed-in-name" not in json.dumps(view)
+    assert "Rust h7" in render_decision(view)
+    assert "evidence_identity" not in json.loads(path.read_bytes())["payload"]["source"]
+
+
 def test_rust_produced_export_reads_all_candidates_without_raw_corpus():
     decision = DecisionReading(FIXTURE)
     view = decision.view()

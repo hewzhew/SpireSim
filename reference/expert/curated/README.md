@@ -74,7 +74,7 @@ V1 选牌包保留单个 `decision_site`，两种范围格式不能混用。
 ## 从公开战略局面读取
 
 Rust `run-play` 的现有 `show` 可以把当前战略决策导出一次，之后展开牌组、地图与知识均不再
-打开游戏控制器。传入一个尚不存在的输出文件；原会话不会因资料读取推进。
+打开游戏控制器。传入一个尚不存在的输出文件；原会话不会因资料读取推进。可丢弃新局的来源记为 `run_play_scratch_head`，保存当前局面身份；保留轨迹沿原有来源检查，不把可丢弃局面当作轨迹证据。根参数 `--locale en|zh-CN` 决定新导出的正文语言，写入 `producer.text_locale`；原始导出不会在读取时改写。
 
 ```powershell
 cargo run --locked -p sts_run_play --bin run_play -- show --session <session> --public-output <decision.json>

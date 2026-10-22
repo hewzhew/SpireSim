@@ -33,12 +33,18 @@ use sts_oracle_learning::agent::task::{
 };
 use sts_oracle_learning::ai::card_semantics_v1::card_acquisition_reading_v1;
 use sts_oracle_learning::state::rewards::RewardCard;
+use sts_presentation::Locale;
 
 use crate::model::{RunPlayEvidenceIdentityV1, RunPlayHeadV1};
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 enum PublicDecisionSourceV1 {
+    RunPlayScratchHead {
+        session_id: String,
+        head_revision: u64,
+        archive_node_id: String,
+    },
     RunPlayHead {
         session_id: String,
         head_revision: u64,
@@ -53,6 +59,7 @@ enum PublicDecisionSourceV1 {
 fn public_decision_export_v3(
     decision: &TaskPublicDecisionV1,
     source: PublicDecisionSourceV1,
+    locale: Locale,
 ) -> Result<Value, String> {
     decision.validate()?;
     if !matches!(
@@ -78,9 +85,9 @@ fn public_decision_export_v3(
     let payload = json!({
         "source": source,
         "producer": {"component": "sts_run_play", "version": env!("CARGO_PKG_VERSION"),
-            "evidence_identity": RunPlayEvidenceIdentityV1::current_v1()},
+            "evidence_identity": RunPlayEvidenceIdentityV1::current_v1(), "text_locale": locale},
         "decision": decision,
-        "strategic_reading": strategic_reading::project(decision)?,
+        "strategic_reading": strategic_reading::project(decision, locale)?,
         "potion_mechanics": potion_mechanics::project(decision),
         "relic_mechanics": relic_mechanics::project(decision),
         "deck_mechanics": deck_mechanics::project(decision)?,
@@ -106,26 +113,34 @@ fn public_decision_export_v3(
 pub(crate) fn export_head_public_decision_v1(
     head: &RunPlayHeadV1,
     output: &Path,
+    locale: Locale,
 ) -> Result<(), String> {
-    let identity = head
-        .evidence_identity
-        .as_ref()
-        .ok_or("public export lacks source identity")?;
-    RunPlayEvidenceIdentityV1::require_current_v1(Some(identity))?;
-    let decision = head
-        .current_decision
-        .as_ref()
-        .ok_or("head has no public decision")?
-        .public_decision_v1()?;
-    let document = public_decision_export_v3(
-        &decision,
+    let source = if head.scratch {
+        // This snapshot belongs to disposable play, not a retained trajectory.
+        PublicDecisionSourceV1::RunPlayScratchHead {
+            session_id: head.session_id.clone(),
+            head_revision: head.head_revision,
+            archive_node_id: head.position.archive_node_id().to_owned(),
+        }
+    } else {
+        let identity = head
+            .evidence_identity
+            .as_ref()
+            .ok_or("public export lacks source identity")?;
+        RunPlayEvidenceIdentityV1::require_current_v1(Some(identity))?;
         PublicDecisionSourceV1::RunPlayHead {
             session_id: head.session_id.clone(),
             head_revision: head.head_revision,
             archive_node_id: head.position.archive_node_id().to_owned(),
             evidence_identity: identity.clone(),
-        },
-    )?;
+        }
+    };
+    let decision = head
+        .current_decision
+        .as_ref()
+        .ok_or("head has no public decision")?
+        .public_decision_v1()?;
+    let document = public_decision_export_v3(&decision, source, locale)?;
     let bytes = serde_json::to_vec_pretty(&document).map_err(|error| error.to_string())?;
     crate::storage::write_new_synced(output, &bytes, "public decision reading export")
 }
@@ -139,6 +154,132 @@ mod tests {
     };
     use sts_oracle_learning::ai::planner_core::*;
     use sts_oracle_learning::content::{cards::CardId, potions::PotionId, relics::RelicId};
+
+    #[test]
+    fn disposable_new_run_exports_a_snapshot_without_trajectory_identity() {
+        let directory = crate::decision_tests::TestDirectory::new();
+        let paths = crate::storage::RunPlayPathsV1::new(directory.0.join("fresh"));
+        let workspace = crate::driver::create_scratch_natural_session_v1(
+            &paths,
+            Default::default(),
+            sts_oracle_learning::agent::task::TaskBudgetV1 {
+                max_world_transitions: 64,
+                max_reloads: 0,
+            },
+            Default::default(),
+        )
+        .unwrap();
+        assert!(workspace.head.scratch);
+        assert!(workspace.head.evidence_identity.is_none());
+        for locale in [Locale::En, Locale::ZhCn] {
+            let output = directory.0.join(format!("{locale}.json"));
+            export_head_public_decision_v1(&workspace.head, &output, locale).unwrap();
+            let document: Value = serde_json::from_slice(&std::fs::read(output).unwrap()).unwrap();
+            let source = &document["payload"]["source"];
+            assert_eq!(source["kind"], "run_play_scratch_head");
+            assert!(source.get("evidence_identity").is_none());
+            assert_eq!(source["head_revision"], workspace.head.head_revision);
+            assert_eq!(paths.load().unwrap().head, workspace.head);
+        }
+    }
+
+    /// Stored prose is evidence of its original renderer, not a wording contract.
+    /// Check all typed facts exactly and keep the full display/identity join.
+    pub(super) fn assert_reading_surface_eq(recorded: &Value, current: &Value) {
+        fn surface(value: &Value) -> Value {
+            let mut value = value.clone();
+            let object = value.as_object_mut().expect("reading surface object");
+            assert_eq!(object.len(), 7);
+            for key in ["context_summary", "context_detail"] {
+                assert!(object.remove(key).unwrap().is_string(), "{key}");
+            }
+            for row in object["candidates"].as_array_mut().unwrap() {
+                let row = row.as_object_mut().unwrap();
+                assert_eq!(row.len(), 4);
+                for key in ["brief", "detail"] {
+                    assert!(
+                        !row.remove(key).unwrap().as_str().unwrap().trim().is_empty(),
+                        "{key}"
+                    );
+                }
+            }
+            value
+        }
+        assert_eq!(surface(recorded), surface(current));
+    }
+
+    pub(super) fn assert_reading_payload_eq(recorded: &Value, current: &Value) {
+        assert_reading_surface_eq(
+            &recorded["strategic_reading"],
+            &current["strategic_reading"],
+        );
+        // Some older exports predate the optional typed mechanics blocks.
+        // Every block actually present in the capture must remain identical.
+        for (key, value) in recorded.as_object().unwrap() {
+            if key != "producer" && key != "strategic_reading" {
+                assert_eq!(value, &current[key], "{key}");
+            }
+        }
+    }
+
+    #[test]
+    fn localized_exports_keep_all_frozen_decision_facts_and_bindings() {
+        fn check(value: &Value, count: &mut usize) {
+            match value {
+                Value::Object(object)
+                    if object.get("schema").and_then(Value::as_str)
+                        == Some("sts-public-decision-export-v3") =>
+                {
+                    let old = &value["payload"];
+                    assert_eq!(
+                        value["payload_sha256"],
+                        format!("{:x}", Sha256::digest(serde_json::to_vec(old).unwrap()))
+                    );
+                    let decision = serde_json::from_value(old["decision"].clone()).unwrap();
+                    let source: PublicDecisionSourceV1 =
+                        serde_json::from_value(old["source"].clone()).unwrap();
+                    let mut rendered = Vec::new();
+                    for locale in [Locale::En, Locale::ZhCn] {
+                        let current =
+                            public_decision_export_v3(&decision, source.clone(), locale).unwrap();
+                        assert_eq!(
+                            current["payload"]["producer"]["text_locale"],
+                            serde_json::to_value(locale).unwrap()
+                        );
+                        assert_reading_payload_eq(old, &current["payload"]);
+                        rendered.push(current["payload"]["strategic_reading"].clone());
+                    }
+                    assert_ne!(rendered[0], rendered[1]);
+                    *count += 1;
+                }
+                Value::Object(object) => {
+                    for value in object.values() {
+                        check(value, count);
+                    }
+                }
+                Value::Array(array) => {
+                    for value in array {
+                        check(value, count);
+                    }
+                }
+                _ => {}
+            }
+        }
+        let directory =
+            Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tools/expert/tests/fixtures");
+        let mut count = 0;
+        for entry in std::fs::read_dir(directory).unwrap() {
+            let path = entry.unwrap().path();
+            if path.extension().and_then(|value| value.to_str()) == Some("json") {
+                let value: Value = serde_json::from_slice(&std::fs::read(path).unwrap()).unwrap();
+                check(&value, &mut count);
+            }
+        }
+        assert!(
+            count >= 30,
+            "expected broad frozen decision coverage, found {count}"
+        );
+    }
 
     pub(super) fn fixture_decision() -> TaskPublicDecisionV1 {
         let card = |ordinal, upgrades| TaskStrategicCardV1 {
@@ -301,6 +442,7 @@ mod tests {
             PublicDecisionSourceV1::ConstructedContractCase {
                 case_id: "card-reward-reading-中文".into(),
             },
+            sts_presentation::Locale::En,
         )
         .unwrap()
     }
@@ -340,6 +482,7 @@ mod tests {
             PublicDecisionSourceV1::ConstructedContractCase {
                 case_id: "damage-delivery-reading-contract".into(),
             },
+            sts_presentation::Locale::En,
         )
         .unwrap()
     }
@@ -374,6 +517,7 @@ mod tests {
             PublicDecisionSourceV1::ConstructedContractCase {
                 case_id: "strength-delivery-reading-contract".into(),
             },
+            sts_presentation::Locale::En,
         )
         .unwrap()
     }
@@ -408,7 +552,8 @@ mod tests {
             &decision,
             PublicDecisionSourceV1::ConstructedContractCase {
                 case_id: "invalid".into()
-            }
+            },
+            sts_presentation::Locale::En
         )
         .is_err());
     }

@@ -70,6 +70,7 @@ fn export() -> Value {
         PublicDecisionSourceV1::ConstructedContractCase {
             case_id: "ordered-and-secondary-shop-card-readings".into(),
         },
+        sts_presentation::Locale::En,
     )
     .unwrap()
 }
@@ -88,10 +89,17 @@ fn secondary_reading_fixture_matches_typed_producer() {
         "relic_mechanics",
         "strategic_reading",
     ] {
-        assert_eq!(
-            fixture["payload"][field], current["payload"][field],
-            "{field}"
-        );
+        if field == "strategic_reading" {
+            super::tests::assert_reading_surface_eq(
+                &fixture["payload"][field],
+                &current["payload"][field],
+            );
+        } else {
+            assert_eq!(
+                fixture["payload"][field], current["payload"][field],
+                "{field}"
+            );
+        }
     }
     assert_eq!(
         fixture["payload_sha256"],

@@ -55,6 +55,7 @@ fn export() -> Value {
         PublicDecisionSourceV1::ConstructedContractCase {
             case_id: "campfire-combat-upgrade-scope".into(),
         },
+        sts_presentation::Locale::En,
     )
     .unwrap()
 }
@@ -69,6 +70,18 @@ fn upgrade_reading_fixture_matches_typed_producer() {
     let mut current_payload = current["payload"].clone();
     expected_payload.as_object_mut().unwrap().remove("producer");
     current_payload.as_object_mut().unwrap().remove("producer");
+    super::tests::assert_reading_surface_eq(
+        &expected_payload["strategic_reading"],
+        &current_payload["strategic_reading"],
+    );
+    expected_payload
+        .as_object_mut()
+        .unwrap()
+        .remove("strategic_reading");
+    current_payload
+        .as_object_mut()
+        .unwrap()
+        .remove("strategic_reading");
     assert_eq!(expected_payload, current_payload);
     assert_eq!(
         fixture["payload_sha256"],

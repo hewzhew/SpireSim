@@ -2897,7 +2897,8 @@
       "leaveChest": "Leave chest unopened",
       "proceed": "Proceed",
       "proceedSite": "proceed {{site}}",
-      "cancel": "cancel {{site}}"
+      "cancel": "cancel {{site}}",
+      "beginSelection": "{{reason}} | Choose {{min}}..{{max}} cards from {{count}} eligible"
     },
     "reward": {
       "gold": "{{amount}} gold",
@@ -5650,5 +5651,12 @@
       "startFlush": "failed to flush preview start signal: {{error}}",
       "completeFlush": "failed to flush preview completion signal: {{error}}"
     }
+  },
+  "publicDecision": {
+    "rewardItem": "Reward item {{index}}: {{reward}}",
+    "routeUnavailable": "Route topology unavailable: {{error}}",
+    "eligibleCards": "Eligible cards: {{cards}}",
+    "exported": "Exported public decision: {{path}}",
+    "selectionBounds": "Choose {{min}}..{{max}} cards."
   }
 }

@@ -62,7 +62,7 @@ class DecisionReading:
             )
             self._source = self._payload["source"]
             _require(
-                self._source["kind"] in {"run_play_head", "constructed_contract_case"}
+                self._source["kind"] in {"run_play_head", "run_play_scratch_head", "constructed_contract_case"}
                 and self._payload["producer"]["component"] == "sts_run_play",
                 "unknown public export producer or source",
             )
@@ -299,7 +299,7 @@ class DecisionReading:
                     "kind": self._source["kind"],
                     **(
                         {"head_revision": self._source["head_revision"]}
-                        if self._source["kind"] == "run_play_head"
+                        if self._source["kind"] in {"run_play_head", "run_play_scratch_head"}
                         else {}
                     ),
                 },
@@ -465,7 +465,7 @@ def render_decision(document: dict[str, Any]) -> str:
     source = document["source"]
     origin = (
         f"Rust h{source['head_revision']}"
-        if source["kind"] == "run_play_head"
+        if source["kind"] in {"run_play_head", "run_play_scratch_head"}
         else "构造案例"
     )
     lines = [

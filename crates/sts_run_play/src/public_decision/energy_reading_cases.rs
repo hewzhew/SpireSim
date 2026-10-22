@@ -42,6 +42,7 @@ fn export() -> Value {
         PublicDecisionSourceV1::ConstructedContractCase {
             case_id: "energy-delivery-reading-contract".into(),
         },
+        sts_presentation::Locale::En,
     )
     .unwrap()
 }
@@ -53,10 +54,17 @@ fn energy_reading_fixture_matches_typed_producer() {
     let fixture: Value = serde_json::from_slice(&std::fs::read(path).unwrap()).unwrap();
     let current = export();
     for field in ["source", "decision", "card_mechanics", "strategic_reading"] {
-        assert_eq!(
-            fixture["payload"][field], current["payload"][field],
-            "{field}"
-        );
+        if field == "strategic_reading" {
+            super::tests::assert_reading_surface_eq(
+                &fixture["payload"][field],
+                &current["payload"][field],
+            );
+        } else {
+            assert_eq!(
+                fixture["payload"][field], current["payload"][field],
+                "{field}"
+            );
+        }
     }
     assert_eq!(
         fixture["payload_sha256"],

@@ -7280,6 +7280,7 @@ mod tests {
         crate::public_decision::export_head_public_decision_v1(
             controller.head(),
             &root.join("current-export.json"),
+            sts_presentation::Locale::En,
         )
         .unwrap();
 
@@ -7312,10 +7313,12 @@ mod tests {
             )
             .is_err());
             let output = root.join(format!("{variant}.json"));
-            assert!(
-                crate::public_decision::export_head_public_decision_v1(&before.head, &output,)
-                    .is_err()
-            );
+            assert!(crate::public_decision::export_head_public_decision_v1(
+                &before.head,
+                &output,
+                sts_presentation::Locale::En
+            )
+            .is_err());
             assert!(!output.exists());
             let retained = old_paths.load().unwrap();
             assert_eq!(retained.head, before.head);

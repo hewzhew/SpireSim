@@ -1151,7 +1151,7 @@ fn run_selection_card_label(
     )
 }
 
-fn run_selection_label(
+pub(crate) fn run_selection_label(
     reason: sts_oracle_learning::state::selection::SelectionReason,
     locale: Locale,
 ) -> Result<&'static str, String> {
@@ -1392,6 +1392,30 @@ pub(crate) fn option_label(
         }
         TaskPublicCandidateV1::Strategic {
             action:
+                TaskStrategicActionV1::BeginRunCardSelection {
+                    reason,
+                    min_choices,
+                    max_choices,
+                    selectable_card_ordinals,
+                    ..
+                },
+        } => text(
+            locale,
+            "action.beginSelection",
+            &[
+                (
+                    "reason",
+                    &run_selection_label(*reason, locale)
+                        .map(str::to_owned)
+                        .unwrap_or_else(|_| format!("{reason:?}")),
+                ),
+                ("min", &min_choices.to_string()),
+                ("max", &max_choices.to_string()),
+                ("count", &selectable_card_ordinals.len().to_string()),
+            ],
+        ),
+        TaskPublicCandidateV1::Strategic {
+            action:
                 TaskStrategicActionV1::SubmitRunSelection {
                     selected_card_ordinals,
                     ..
@@ -1521,7 +1545,7 @@ fn route_option_label(
     )
 }
 
-fn write_event_resource_modifiers(
+pub(crate) fn write_event_resource_modifiers(
     out: &mut String,
     action: &TaskStrategicActionV1,
     observation: &TaskStrategicObservationV1,
@@ -1588,7 +1612,7 @@ fn write_event_resource_modifiers(
 
 /// The choice's typed identity supplies its category and rules. Do not make
 /// players infer a potion/relic distinction from a shared `buy` label.
-fn write_choice_mechanics(
+pub(crate) fn write_choice_mechanics(
     out: &mut String,
     action: &TaskStrategicActionV1,
     brief: bool,
@@ -1874,7 +1898,7 @@ fn shop_offers(
         .collect()
 }
 
-fn render_shop(
+pub(crate) fn render_shop(
     out: &mut String,
     decision: &TaskPublicDecisionV1,
     inventory: &PlannerShopInventoryV1,

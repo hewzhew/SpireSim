@@ -279,6 +279,7 @@ fn exports() -> Value {
                 PublicDecisionSourceV1::ConstructedContractCase {
                     case_id: format!("strategic-reading-{name}"),
                 },
+                sts_presentation::Locale::En,
             )
             .unwrap();
             (name.to_owned(), export)
@@ -295,6 +296,7 @@ fn strategic_reading_preserves_every_public_candidate_and_its_typed_binding() {
             PublicDecisionSourceV1::ConstructedContractCase {
                 case_id: name.into(),
             },
+            sts_presentation::Locale::En,
         )
         .unwrap();
         let surface = &export["payload"]["strategic_reading"];
@@ -354,7 +356,8 @@ fn open_card_reading_retains_the_other_pending_rewards() {
         }],
     )
     .unwrap();
-    let reading = super::strategic_reading::project(&decision).unwrap();
+    let reading =
+        super::strategic_reading::project(&decision, sts_presentation::Locale::En).unwrap();
     let detail = reading["context_detail"].as_str().unwrap();
     assert!(detail.contains("Reward item 0: 25 gold"));
     assert!(detail.contains("Reward item 2: potion"));

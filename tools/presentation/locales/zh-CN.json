@@ -2897,7 +2897,8 @@
       "leaveChest": "离开未打开的宝箱",
       "proceed": "继续",
       "proceedSite": "继续 {{site}}",
-      "cancel": "取消 {{site}}"
+      "cancel": "取消 {{site}}",
+      "beginSelection": "{{reason}} | 从 {{count}} 张可选卡牌中选择 {{min}}..{{max}} 张"
     },
     "reward": {
       "gold": "{{amount}} 金币",
@@ -5650,5 +5651,12 @@
       "startFlush": "无法刷新预演开始提示：{{error}}",
       "completeFlush": "无法刷新预演完成提示：{{error}}"
     }
+  },
+  "publicDecision": {
+    "rewardItem": "奖励 {{index}}：{{reward}}",
+    "routeUnavailable": "路网信息不可用：{{error}}",
+    "eligibleCards": "可选卡牌：{{cards}}",
+    "exported": "已导出公开决策：{{path}}",
+    "selectionBounds": "选择 {{min}}..{{max}} 张卡牌。"
   }
 }
