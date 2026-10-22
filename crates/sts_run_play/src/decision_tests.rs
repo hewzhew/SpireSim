@@ -475,7 +475,7 @@ fn brief_reading_preserves_choices_resources_and_pending_card_rules() {
             assert!(!brief.view.contains("Printed rule (base/upgraded):"));
             assert!(!brief
                 .view
-                .contains(crate::mechanics_info::KEY_COLLECTION_TIMING));
+                .contains(crate::mechanics_info::KeyRuleV1::Timing.text(Locale::En)));
         }
         if kind == "full_reward" {
             assert!(brief.view.contains("Unavailable reward:"));
@@ -3268,10 +3268,10 @@ fn deck_rules_distinguish_strike_tags_and_missing_key_sources() {
     assert!(!reading.view.contains("Missing keys: Sapphire"));
     assert!(reading
         .view
-        .contains(crate::mechanics_info::KEY_COLLECTION_TIMING));
+        .contains(crate::mechanics_info::KeyRuleV1::Timing.text(Locale::En)));
     assert!(!reading
         .view
-        .contains(crate::mechanics_info::EMERALD_KEY_OPPORTUNITIES));
+        .contains(crate::mechanics_info::KeyRuleV1::EmeraldOpportunities.text(Locale::En)));
     assert_eq!(*game.head(), before);
 }
 
@@ -3361,7 +3361,7 @@ fn brief_emerald_reward_explains_and_preserves_the_other_relic() {
         .unwrap();
     assert!(reading
         .view
-        .contains(crate::mechanics_info::EMERALD_KEY_REWARD_RELATIONSHIP));
+        .contains(crate::mechanics_info::KeyRuleV1::EmeraldRewards.text(Locale::En)));
     assert_eq!(*game.head(), before);
     game.choose_bound_v1(&pick(&reading, |action| {
         matches!(
@@ -3474,10 +3474,10 @@ fn missing_emerald_reading_exposes_later_act_opportunities_without_advancing() {
             .contains("Missing keys: Emerald: burning elite key reward"));
         assert!(reading
             .view
-            .contains(crate::mechanics_info::KEY_COLLECTION_TIMING));
+            .contains(crate::mechanics_info::KeyRuleV1::Timing.text(Locale::En)));
         assert!(reading
             .view
-            .contains(crate::mechanics_info::EMERALD_KEY_OPPORTUNITIES));
+            .contains(crate::mechanics_info::KeyRuleV1::EmeraldOpportunities.text(Locale::En)));
         assert_eq!(*game.head(), before);
     }
 }

@@ -24,11 +24,55 @@ use sts_presentation::Locale;
 mod deck_links;
 pub(crate) use deck_links::write_owned_card_links;
 
-const CHEST_KEY_OPPORTUNITIES: &str = "While Sapphire is missing, an opened normal treasure chest offers the key instead of its linked relic, including a chest reached through a question-mark room. Normal Acts 1-3 each have a fixed treasure row at map y=8. Parallel nodes on that row are alternative paths: you visit one, not all of them. If you defer Sapphire, a later Act's fixed chest is another opportunity; after the Act 3 chest, the existence of a future random question-mark chest is uncertain. Base chest-size and relic-tier rolls use the same rules in Acts 1-3; the later relic's identity is revealed when its chest opens. Use the current chest's displayed rewards to choose.\n";
-const RUBY_KEY_OPPORTUNITIES: &str = "While Ruby is missing and Act 4 is enabled, Recall is available at campfires in normal Acts 1-3. Each of those Acts has a fixed final campfire row at map y=14 before its Boss. Deferring Ruby at the last campfire of Act 1 or Act 2 leaves the later Act's final campfire as another opportunity. Recall uses that campfire's action instead of another available recovery or improvement.";
-pub(crate) const KEY_COLLECTION_TIMING: &str = "Heart access requires all three keys before completing Act 3. Collected keys persist between Acts.";
-pub(crate) const EMERALD_KEY_REWARD_RELATIONSHIP: &str =
-    "The Emerald Key and the elite's other rewards can all be claimed.";
+#[derive(Clone, Copy)]
+pub(crate) enum KeyRuleV1 {
+    Timing,
+    RubyOpportunities,
+    ChestOpportunities,
+    EmeraldOpportunities,
+    EmeraldRewards,
+    Ruby,
+    Sapphire,
+    Emerald,
+    RubyDefinition,
+    SapphireDefinition,
+    EmeraldDefinition,
+    Unavailable,
+}
+
+impl KeyRuleV1 {
+    pub(crate) fn text(self, locale: Locale) -> &'static str {
+        let key = match self {
+            Self::Timing => "timing",
+            Self::RubyOpportunities => "rubyOpportunities",
+            Self::ChestOpportunities => "chestOpportunities",
+            Self::EmeraldOpportunities => "emeraldOpportunities",
+            Self::EmeraldRewards => "emeraldRewards",
+            Self::Ruby => "ruby",
+            Self::Sapphire => "sapphire",
+            Self::Emerald => "emerald",
+            Self::RubyDefinition => "rubyDefinition",
+            Self::SapphireDefinition => "sapphireDefinition",
+            Self::EmeraldDefinition => "emeraldDefinition",
+            Self::Unavailable => "unavailable",
+        };
+        locale
+            .entry("mechanics", &format!("key.{key}"))
+            .expect("key rule message")
+    }
+}
+
+fn render_key_rules(locale: Locale, rules: &[KeyRuleV1]) -> String {
+    let mut out = rules
+        .iter()
+        .map(|rule| rule.text(locale))
+        .collect::<Vec<_>>()
+        .join("\n");
+    if !out.ends_with('\n') {
+        out.push('\n');
+    }
+    out
+}
 
 pub(crate) fn write_key_status(
     out: &mut String,
@@ -78,7 +122,6 @@ pub(crate) fn write_key_status(
         }
     }
 }
-pub(crate) const EMERALD_KEY_OPPORTUNITIES: &str = "While Emerald is missing and Act 4 is enabled, each normal Act (1, 2 and 3) marks one elite as a burning elite. Win that fight and claim its key reward. Deferring Emerald to a later Act leaves that Act's burning elite as another opportunity; use the published map to check its route and preparation windows.";
 const BLOCK_LIFETIME: &str = "Block normally clears at the start of its owner's turn: player Block before the next player turn, and each enemy's Block before that enemy acts. End-of-turn Block such as Metallicize protects until that owner's next turn. Barricade retains Block, and Blur preserves player Block for its duration. Otherwise player Calipers loses up to 15 Block at the usual clear point.";
 pub(crate) const EXHAUST_SCOPE: &str = "Exhaust removes a card from the current combat's draw/discard cycle. Its permanent deck copy remains and returns next combat. Permanent card removal is a separate deck-changing action.";
 pub(crate) const SHOP_REMOVAL_RULES: &str = "Shop card removal: each shop permits only one removal. Base price is 75 Gold + 25 per previous shop removal in this run. Skipping removal leaves the count and base price unchanged. Completing a shop removal increments the count by one, adding 25 Gold to the future base price. Each shop's displayed price includes its current relic price modifiers.";
@@ -598,12 +641,12 @@ fn render_query(
                 out.push('\n');
                 write_key_status(&mut out, keys, true, locale);
                 if keys.contains(&false) {
-                    writeln!(out, "{KEY_COLLECTION_TIMING}").unwrap();
+                    writeln!(out, "{}", KeyRuleV1::Timing.text(locale)).unwrap();
                 }
                 for (held, opportunities) in keys.into_iter().zip([
-                    RUBY_KEY_OPPORTUNITIES,
-                    CHEST_KEY_OPPORTUNITIES,
-                    EMERALD_KEY_OPPORTUNITIES,
+                    KeyRuleV1::RubyOpportunities.text(locale),
+                    KeyRuleV1::ChestOpportunities.text(locale),
+                    KeyRuleV1::EmeraldOpportunities.text(locale),
                 ]) {
                     if !held {
                         writeln!(out, "{opportunities}").unwrap();
@@ -669,15 +712,51 @@ fn render_query(
             if let Some(keys) = run_keys {
                 write_key_status(&mut out, keys, true, locale);
             } else if current_observation.is_some() {
-                out.push_str("Current key status unavailable: this detached combat has no run context.\n");
+                writeln!(out, "{}", KeyRuleV1::Unavailable.text(locale)).unwrap();
             }
-            write!(out, "{KEY_COLLECTION_TIMING}\nRuby Key: choose Recall at a campfire instead of another campfire action.\n{RUBY_KEY_OPPORTUNITIES}\nSapphire Key: take it instead of the linked chest relic; taking either removes the other reward.\nEmerald Key: win against a burning elite and claim the key reward.\n{EMERALD_KEY_REWARD_RELATIONSHIP}\n{EMERALD_KEY_OPPORTUNITIES}\n{CHEST_KEY_OPPORTUNITIES}").unwrap();
+            out.push_str(&render_key_rules(
+                locale,
+                &[
+                    KeyRuleV1::Timing,
+                    KeyRuleV1::Ruby,
+                    KeyRuleV1::RubyOpportunities,
+                    KeyRuleV1::Sapphire,
+                    KeyRuleV1::Emerald,
+                    KeyRuleV1::EmeraldRewards,
+                    KeyRuleV1::EmeraldOpportunities,
+                    KeyRuleV1::ChestOpportunities,
+                ],
+            ));
             return Ok(out);
-        },
-        "rubykey" => return Ok(format!("Ruby Key: choose Recall at a campfire instead of another campfire action. One of the three keys required to reach Act 4 and the Heart.\n{KEY_COLLECTION_TIMING}\n{RUBY_KEY_OPPORTUNITIES}\n")),
-        "sapphirekey" => return Ok(format!("Sapphire Key: take it instead of the linked chest relic; taking either removes the other reward. One of the three keys required to reach Act 4 and the Heart.\n{CHEST_KEY_OPPORTUNITIES}")),
-        "emeraldkey" => return Ok(format!("Emerald Key: win against a burning elite and claim the key reward. One of the three keys required to reach Act 4 and the Heart.\n{EMERALD_KEY_REWARD_RELATIONSHIP}\n{KEY_COLLECTION_TIMING}\n{EMERALD_KEY_OPPORTUNITIES}\n")),
-        _ => {},
+        }
+        "rubykey" => {
+            return Ok(render_key_rules(
+                locale,
+                &[
+                    KeyRuleV1::RubyDefinition,
+                    KeyRuleV1::Timing,
+                    KeyRuleV1::RubyOpportunities,
+                ],
+            ))
+        }
+        "sapphirekey" => {
+            return Ok(render_key_rules(
+                locale,
+                &[KeyRuleV1::SapphireDefinition, KeyRuleV1::ChestOpportunities],
+            ))
+        }
+        "emeraldkey" => {
+            return Ok(render_key_rules(
+                locale,
+                &[
+                    KeyRuleV1::EmeraldDefinition,
+                    KeyRuleV1::EmeraldRewards,
+                    KeyRuleV1::Timing,
+                    KeyRuleV1::EmeraldOpportunities,
+                ],
+            ))
+        }
+        _ => {}
     }
     if lower == "help" {
         return Ok("Current event or decision option effects: info (no arguments).\nMechanics queries: info <power, enemy, card, relic, potion or encounter name>, info card <name>, info relic <name>, info potion <name>, info enemy <name>, info encounter <name>, info power <name>, info M0, info player, info powers, info rules, info rules preparation, info transition <HP>, info keys or info <key name>.\nNames match exactly, ignoring spaces and case; power names take precedence. Missing explanation coverage is reported as Unknown.\nEnemy definitions use the current run's ascension. Encounter definitions list fixed members and weighted random starting slots, then member mechanics. Card definitions honor an explicit + or +N upgrade suffix (no suffix means base); combat readings give current hand values.\n".into());
@@ -2475,12 +2554,12 @@ mod tests {
         assert!(keys.contains("Ruby Key: choose Recall at a campfire"));
         assert!(keys.contains("Sapphire Key: take it instead of the linked chest relic"));
         assert!(keys.contains("Emerald Key: win against a burning elite"));
-        assert!(keys.contains(KEY_COLLECTION_TIMING));
-        assert!(keys.contains(RUBY_KEY_OPPORTUNITIES));
+        assert!(keys.contains(KeyRuleV1::Timing.text(Locale::En)));
+        assert!(keys.contains(KeyRuleV1::RubyOpportunities.text(Locale::En)));
         assert!(render_query(None, Some(20), "rubykey")
             .unwrap()
-            .contains(RUBY_KEY_OPPORTUNITIES));
-        assert!(keys.contains(EMERALD_KEY_OPPORTUNITIES));
+            .contains(KeyRuleV1::RubyOpportunities.text(Locale::En)));
+        assert!(keys.contains(KeyRuleV1::EmeraldOpportunities.text(Locale::En)));
         assert!(keys.contains("Parallel nodes on that row are alternative paths"));
         assert!(keys.contains("including a chest reached through a question-mark room"));
         assert!(keys.contains("after the Act 3 chest"));
@@ -2489,7 +2568,7 @@ mod tests {
             assert!(definition.contains("One of the three keys"), "{definition}");
         }
         let emerald = render_query(None, Some(20), "emerald_key").unwrap();
-        assert!(emerald.contains(EMERALD_KEY_OPPORTUNITIES));
+        assert!(emerald.contains(KeyRuleV1::EmeraldOpportunities.text(Locale::En)));
         let spore = render_query(None, Some(20), "Spore Cloud").unwrap();
         assert!(spore.contains("Vulnerable stacks applied on death"));
         assert!(spore.contains("does not apply Weak"));
@@ -3020,7 +3099,7 @@ mod tests {
         for fact in [
             "heal 75% of missing HP",
             SHOP_REMOVAL_RULES,
-            CHEST_KEY_OPPORTUNITIES,
+            KeyRuleV1::ChestOpportunities.text(Locale::En),
             "The Champ",
             "Scouring Whip: add 3 Wound to discard pile",
             "Painful Stabs",
@@ -3032,8 +3111,8 @@ mod tests {
                 "{fact}: {brief}"
             );
         }
-        assert!(!brief.contains(RUBY_KEY_OPPORTUNITIES));
-        assert!(!brief.contains(EMERALD_KEY_OPPORTUNITIES));
+        assert!(!brief.contains(KeyRuleV1::RubyOpportunities.text(Locale::En)));
+        assert!(!brief.contains(KeyRuleV1::EmeraldOpportunities.text(Locale::En)));
         assert!(!brief.contains("Base starting HP range"));
         assert!(!brief.contains("Possible moves (base values"));
         assert!(!brief.contains("deck-lab encounters"));
@@ -3171,9 +3250,9 @@ mod tests {
                 "{view}"
             );
             assert!(view.contains("Gold you carry into it"));
-            assert!(view.contains(KEY_COLLECTION_TIMING));
-            assert!(view.contains(CHEST_KEY_OPPORTUNITIES));
-            assert!(view.contains(EMERALD_KEY_OPPORTUNITIES));
+            assert!(view.contains(KeyRuleV1::Timing.text(Locale::En)));
+            assert!(view.contains(KeyRuleV1::ChestOpportunities.text(Locale::En)));
+            assert!(view.contains(KeyRuleV1::EmeraldOpportunities.text(Locale::En)));
             assert!(view.contains("Act 3 bosses advance without a normal reward screen"));
             assert!(view.contains("Base starting HP range: 800..800"));
             assert!(view.contains("Starting power: Beat of Death 2"));
@@ -3205,11 +3284,14 @@ mod tests {
                 let view =
                     super::render_query(None, Some(20), Some(observation), "rules", Locale::En)
                         .unwrap();
-                assert_eq!(view.contains(KEY_COLLECTION_TIMING), keys.contains(&false));
+                assert_eq!(
+                    view.contains(KeyRuleV1::Timing.text(Locale::En)),
+                    keys.contains(&false)
+                );
                 for (held, opportunities) in keys.into_iter().zip([
-                    RUBY_KEY_OPPORTUNITIES,
-                    CHEST_KEY_OPPORTUNITIES,
-                    EMERALD_KEY_OPPORTUNITIES,
+                    KeyRuleV1::RubyOpportunities.text(Locale::En),
+                    KeyRuleV1::ChestOpportunities.text(Locale::En),
+                    KeyRuleV1::EmeraldOpportunities.text(Locale::En),
                 ]) {
                     assert_eq!(view.contains(opportunities), !held, "{view}");
                 }
@@ -3217,9 +3299,9 @@ mod tests {
                 let full =
                     super::render_query(None, Some(20), Some(observation), "keys", Locale::En)
                         .unwrap();
-                assert!(full.contains(RUBY_KEY_OPPORTUNITIES));
-                assert!(full.contains(CHEST_KEY_OPPORTUNITIES));
-                assert!(full.contains(EMERALD_KEY_OPPORTUNITIES));
+                assert!(full.contains(KeyRuleV1::RubyOpportunities.text(Locale::En)));
+                assert!(full.contains(KeyRuleV1::ChestOpportunities.text(Locale::En)));
+                assert!(full.contains(KeyRuleV1::EmeraldOpportunities.text(Locale::En)));
             }
         }
         let TaskPublicObservationV1::Strategic { observation } = &mut strategic else {

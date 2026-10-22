@@ -1025,6 +1025,20 @@
       "unusedEthereal": "if still in Hand without Retain, enter Exhaust at turn end via Ethereal",
       "unusedDiscard": "follow ordinary turn-end discard and Retain rules",
       "lifecycle": "    At this upgrade, printed lifecycle: when played, {{play}}; when unplayed, {{unused}}. Combat powers, relics and instance overrides apply their actual rules."
+    },
+    "key": {
+      "chestOpportunities": "While Sapphire is missing, an opened normal treasure chest offers the key instead of its linked relic, including a chest reached through a question-mark room. Normal Acts 1-3 each have a fixed treasure row at map y=8. Parallel nodes on that row are alternative paths: you visit one, not all of them. If you defer Sapphire, a later Act's fixed chest is another opportunity; after the Act 3 chest, the existence of a future random question-mark chest is uncertain. Base chest-size and relic-tier rolls use the same rules in Acts 1-3; the later relic's identity is revealed when its chest opens. Use the current chest's displayed rewards to choose.\n",
+      "rubyOpportunities": "While Ruby is missing and Act 4 is enabled, Recall is available at campfires in normal Acts 1-3. Each of those Acts has a fixed final campfire row at map y=14 before its Boss. Deferring Ruby at the last campfire of Act 1 or Act 2 leaves the later Act's final campfire as another opportunity. Recall uses that campfire's action instead of another available recovery or improvement.",
+      "timing": "Heart access requires all three keys before completing Act 3. Collected keys persist between Acts.",
+      "emeraldRewards": "The Emerald Key and the elite's other rewards can all be claimed.",
+      "emeraldOpportunities": "While Emerald is missing and Act 4 is enabled, each normal Act (1, 2 and 3) marks one elite as a burning elite. Win that fight and claim its key reward. Deferring Emerald to a later Act leaves that Act's burning elite as another opportunity; use the published map to check its route and preparation windows.",
+      "ruby": "Ruby Key: choose Recall at a campfire instead of another campfire action.",
+      "rubyDefinition": "Ruby Key: choose Recall at a campfire instead of another campfire action. One of the three keys required to reach Act 4 and the Heart.",
+      "sapphire": "Sapphire Key: take it instead of the linked chest relic; taking either removes the other reward.",
+      "sapphireDefinition": "Sapphire Key: take it instead of the linked chest relic; taking either removes the other reward. One of the three keys required to reach Act 4 and the Heart.",
+      "emerald": "Emerald Key: win against a burning elite and claim the key reward.",
+      "emeraldDefinition": "Emerald Key: win against a burning elite and claim the key reward. One of the three keys required to reach Act 4 and the Heart.",
+      "unavailable": "Current key status unavailable: this detached combat has no run context."
     }
   },
   "inventory": {
@@ -1245,8 +1259,7 @@
       "rubySource": "Ruby: Recall at campfire",
       "sapphireSource": "Sapphire: chest key instead of linked relic",
       "emeraldSource": "Emerald: burning elite key reward",
-      "recall": "Gain the Ruby Key instead of another campfire action.",
-      "eliteRewards": "The Emerald Key and the elite's other rewards can all be claimed."
+      "recall": "Gain the Ruby Key instead of another campfire action."
     },
     "room": {
       "monster": "Monster",
@@ -1394,7 +1407,14 @@
     "event": {
       "unknownFaceTraderResult": "Unknown (Face Trader result choice unavailable)",
       "sceneUnavailable": "Unknown (original event scene unavailable)"
-    }
+    },
+    "otherCommands": "Other commands in options: {{commands}}",
+    "commandKind": {
+      "usePotion": "use held potion",
+      "discardPotion": "discard held potion",
+      "removeCard": "card removals"
+    },
+    "ownedRules": "Owned deck rules (deduplicated by card and upgrade; Power effects apply after deployment):"
   },
   "map": {
     "boss": "Boss: {{name}}",

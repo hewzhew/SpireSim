@@ -903,11 +903,7 @@ fn read_public_decision_v1(
         for card in &observation.cards {
             if seen.insert((card.card, card.upgrades)) {
                 if seen.len() == 1 {
-                    writeln!(
-                        out,
-                        "Owned deck rules (deduplicated by card and upgrade; Power effects apply after deployment):"
-                    )
-                    .unwrap();
+                    writeln!(out, "{}", text(locale, "ownedRules", &[])).unwrap();
                     writeln!(out, "{}", crate::mechanics_info::EXHAUST_SCOPE).unwrap();
                 }
                 crate::mechanics_info::write_card_rule(out, card.card, card.upgrades, locale);
@@ -916,15 +912,27 @@ fn read_public_decision_v1(
     }
     if tucked > 0 && !details.contains(&DecisionDetailV1::Options) {
         let kinds = [
-            ("use held potion", use_potion_choices),
-            ("discard held potion", discard_potion_choices),
-            ("card removals", removal_choices),
+            ("usePotion", use_potion_choices),
+            ("discardPotion", discard_potion_choices),
+            ("removeCard", removal_choices),
         ]
         .into_iter()
-        .filter_map(|(name, count)| (count > 0).then(|| format!("{name} x{count}")))
+        .filter_map(|(name, count)| {
+            (count > 0).then(|| {
+                format!(
+                    "{} x{count}",
+                    text(locale, &format!("commandKind.{name}"), &[])
+                )
+            })
+        })
         .collect::<Vec<_>>()
         .join(", ");
-        writeln!(out, "Other commands in options: {kinds}").unwrap();
+        writeln!(
+            out,
+            "{}",
+            text(locale, "otherCommands", &[("commands", &kinds)])
+        )
+        .unwrap();
     }
     // Current commands and their effects precede broader preparation context.
     // Whole-inventory mechanics have one owner: inventory --effects, also
@@ -961,9 +969,19 @@ fn read_public_decision_v1(
         crate::mechanics_info::write_preparation_window(out, observation, locale);
     }
     if !brief && heart_goal && run.keys.contains(&false) {
-        writeln!(out, "{}", crate::mechanics_info::KEY_COLLECTION_TIMING).unwrap();
+        writeln!(
+            out,
+            "{}",
+            crate::mechanics_info::KeyRuleV1::Timing.text(locale)
+        )
+        .unwrap();
         if !run.keys[2] {
-            writeln!(out, "{}", crate::mechanics_info::EMERALD_KEY_OPPORTUNITIES).unwrap();
+            writeln!(
+                out,
+                "{}",
+                crate::mechanics_info::KeyRuleV1::EmeraldOpportunities.text(locale)
+            )
+            .unwrap();
         }
     }
     if !brief
@@ -1542,7 +1560,12 @@ fn write_choice_mechanics(
             if query == "RubyKey" {
                 writeln!(out, "  {}", text(locale, "keys.recall", &[])).unwrap();
             } else if query == "EmeraldKey" {
-                writeln!(out, "  {}", text(locale, "keys.eliteRewards", &[])).unwrap();
+                writeln!(
+                    out,
+                    "  {}",
+                    crate::mechanics_info::KeyRuleV1::EmeraldRewards.text(locale)
+                )
+                .unwrap();
             }
             return;
         }

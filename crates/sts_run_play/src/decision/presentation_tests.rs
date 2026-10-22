@@ -3,6 +3,41 @@ use crate::decision_tests::{controller_with_session, fixture, TestDirectory};
 use sts_presentation::Locale;
 
 #[test]
+fn localized_key_queries_keep_current_keys_and_distinct_acquisition_rules() {
+    let directory = TestDirectory::new();
+    let game = controller_with_session(&directory.0, "key-query-locale", &fixture("reward"));
+    let mut public = game
+        .head()
+        .current_decision
+        .as_ref()
+        .unwrap()
+        .public_decision_v1()
+        .unwrap();
+    let TaskPublicObservationV1::Strategic { observation } = &mut public.observation else {
+        panic!("strategic fixture")
+    };
+    observation.run.keys = [true, false, true];
+    let before = public.clone();
+    let en = crate::mechanics_info::render(Some(&public), "keys", Locale::En).unwrap();
+    let zh = crate::mechanics_info::render(Some(&public), "keys", Locale::ZhCn).unwrap();
+    assert!(en.starts_with("Keys: Ruby, Emerald\nMissing keys: Sapphire:"));
+    assert!(zh.starts_with("钥匙：红宝石, 绿宝石\n缺少钥匙：蓝宝石："));
+    assert!(zh.contains("第三幕前集齐三把钥匙"));
+    assert!(zh.contains("已获得的钥匙会保留到后续幕"));
+    let ruby = crate::mechanics_info::render(None, "RubyKey", Locale::ZhCn).unwrap();
+    assert!(ruby.contains("地图 y=14"));
+    assert!(ruby.contains("回忆会占用该营火的一次行动"));
+    let sapphire = crate::mechanics_info::render(None, "SapphireKey", Locale::ZhCn).unwrap();
+    assert!(sapphire.contains("地图 y=8"));
+    assert!(sapphire.contains("领取任一项都会移除另一项"));
+    assert!(sapphire.contains("问号房间遇到的宝箱也一样"));
+    let emerald = crate::mechanics_info::render(None, "EmeraldKey", Locale::ZhCn).unwrap();
+    assert!(emerald.contains("绿宝石钥匙与该精英的其他奖励可以全部领取"));
+    assert!(emerald.contains("第一、第二、第三幕各标记一只燃烧精英"));
+    assert_eq!(public, before);
+}
+
+#[test]
 fn original_event_names_and_current_scene_share_connection_locale_without_changing_choices() {
     use sts_oracle_learning::eval::run_control::{RunControlConfig, RunControlSession};
     use sts_oracle_learning::state::{
