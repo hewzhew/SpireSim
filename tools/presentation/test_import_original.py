@@ -29,6 +29,8 @@ def sources():
         result[f"localization/{language}/stances.json"] = {key: {"NAME": f"{language}:{key}"} for key in owner.STANCES.values()}
         result[f"localization/{language}/events.json"] = {key: {"NAME": f"{language}:{key}"} for key in owner.EVENTS.values()}
         result[f"localization/{language}/events.json"]["FaceTrader"]["DESCRIPTIONS"] = [f'{language}:scene {index} NL ~original~' for index in range(5)]
+        for stable, count in owner.EVENT_OPTIONS.items():
+            result[f"localization/{language}/events.json"][owner.EVENTS[stable]]["OPTIONS"] = [f'{language}:option {index} #goriginal' for index in range(count)]
         result[f"localization/{language}/ui.json"] = {"RunHistoryMonsterNames": {"TEXT": [f"{language}:encounter {index}" for index in range(29)]}}
         for key in ["FuzzyLouseNormal", "FuzzyLouseDefensive"]:
             result[f"localization/{language}/monsters.json"][key]["NAME"] = f"{language}:Louse"
@@ -113,13 +115,17 @@ def test_card_templates_keep_original_fields_and_do_not_guess_upgrade_semantics(
     assert "Impulse" not in imported["cards"]["en"]
 
 
-def test_event_templates_keep_only_consumed_original_scenes_with_their_source(tmp_path, sources):
+def test_event_templates_keep_only_consumed_original_fields_with_their_source(tmp_path, sources):
     jar = archive(tmp_path, sources)
     _, manifest, bindings = owner.names_from_archive(jar)
     imported = owner.event_texts_from_archive(jar, bindings)
     for locale, language in owner.LANGUAGES.items():
-        assert list(imported["events"][locale]) == ["FaceTrader"]
+        assert set(imported["events"][locale]) == owner.EVENT_SCENES.keys() | owner.EVENT_OPTIONS.keys()
         assert imported["events"][locale]["FaceTrader"]["DESCRIPTIONS"] == sources[f"localization/{language}/events.json"]["FaceTrader"]["DESCRIPTIONS"]
+        for stable in owner.EVENT_OPTIONS:
+            assert imported["events"][locale][stable]["OPTIONS"] == sources[f"localization/{language}/events.json"][owner.EVENTS[stable]]["OPTIONS"]
+            if stable not in owner.EVENT_SCENES:
+                assert "DESCRIPTIONS" not in imported["events"][locale][stable]
     assert all(manifest["entries_sha256"][entry] == digest for entry, digest in imported["entries_sha256"].items())
 
 
@@ -129,6 +135,22 @@ def test_changed_event_scene_layout_requires_review(tmp_path, sources):
     _, _, bindings = owner.names_from_archive(jar)
     with pytest.raises(ValueError, match="layout requires review"):
         owner.event_texts_from_archive(jar, bindings)
+
+
+@pytest.mark.parametrize("change", ["added", "missing", "empty"])
+def test_changed_original_option_layout_stops_before_writing(tmp_path, sources, change):
+    options = sources["localization/zhs/events.json"]["FaceTrader"]["OPTIONS"]
+    if change == "added":
+        options.append("new fragment")
+    elif change == "missing":
+        options.pop()
+    else:
+        options[0] = ""
+    directory = tmp_path / "catalogue"
+    directory.mkdir()
+    with pytest.raises(ValueError, match="OPTIONS layout requires review"):
+        owner.update(archive(tmp_path, sources), directory, write=True)
+    assert list(directory.iterdir()) == []
 
 
 def test_english_display_aliases_are_not_used_for_lookup(tmp_path, sources, monkeypatch):

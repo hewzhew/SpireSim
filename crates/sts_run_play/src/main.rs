@@ -16,7 +16,7 @@ mod decision;
 mod decision_tests;
 mod deck_lab;
 mod driver;
-mod event_scene;
+mod event_text;
 mod history;
 mod history_render;
 mod history_state;

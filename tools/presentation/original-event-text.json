@@ -5,11 +5,45 @@
     "localization/zhs/events.json": "a274ab52893804e2ae9b3361cc096bbec902bd2be0df55700d291c323379ada2"
   },
   "bindings_sha256": {
-    "en": "d6c047c86424957c91487e7d871e4785b9a1faee4667500e8eb319421e25ad9a",
-    "zh-CN": "36e1e996500759a18f8863f019ff5c7ee049b7c846c2aef494349ea094439296"
+    "en": "b541f8b3cc01c062fc8793f1d6e43caa2483cf104f183d63708ecb0632d89301",
+    "zh-CN": "3f0f8a1cdaf7a10b9ce1f5e2671b8a22717c1d965a511fe7e8673d9122805db5"
   },
   "events": {
     "en": {
+      "AccursedBlacksmith": {
+        "OPTIONS": [
+          "[Forge] #gUpgrade #ga #gcard #gin #gyour #gdeck.",
+          "[Rummage] #gObtain #ga #gspecial #gRelic. #rBecome #rCursed #r- #rPain.",
+          "[Leave]",
+          "Choose a Card to Upgrade",
+          "[Locked] Requires: Upgradeable Cards"
+        ]
+      },
+      "BackTotheBasics": {
+        "OPTIONS": [
+          "[Elegance] #gRemove #ga #gcard #gfrom #gyour #gdeck.",
+          "[Simplicity] #gUpgrade #gall #gStrikes #gand #gDefends.",
+          "Select a Card to Remove.",
+          "[Leave]"
+        ]
+      },
+      "BigFish": {
+        "OPTIONS": [
+          "[Banana] #gHeal #g",
+          " #gHP.",
+          "[Donut] #gMax #gHP #g+",
+          ".",
+          "[Box] #gObtain #ga #gRelic. #rBecome #rCursed #r- #rRegret.",
+          "[Leave]"
+        ]
+      },
+      "Duplicator": {
+        "OPTIONS": [
+          "[Pray] #gDuplicate #ga #gcard #gin #gyour #gdeck.",
+          "[Leave]",
+          "Select a Card to Duplicate."
+        ]
+      },
       "FaceTrader": {
         "DESCRIPTIONS": [
           "You walk by an eerie statue holding several masks... NL Something behind you softly whispers, NL ~\"Stop.\"~",
@@ -17,10 +51,128 @@
           "~\"Compensation?~ ~Compensation.\"~ NL Mechanically, he cranes out a neat stack of #ygold and places it into your pouch. NL NL ~\"What~ ~a~ ~nice~ ~face.~ ~Nice~ ~face.\"~ NL While he touches your face, you begin to feel your life drain out of it! NL During this, his mask falls off and shatters. Screaming, he quickly covers his face with all six arms dropping even more masks! Amidst all the screaming and shattering, you escape. NL NL His face was completely blank.",
           "~\"For~ ~me?~ @FOR@ @ME?@ ~Oh~ ~yes..~ ~Yes.~ ~Yes..~ ~mmm...\"~ NL NL You see one of his arms flicker, and your face is in its hand! Your face has been swapped. NL NL ~\"Nice~ ~face.~ ~Nice~ ~face.\"~",
           "~\"Stop.~ ~Stop.~ ~Stop.~ ~Stop.~ ~Stop.\"~ NL NL This was probably the right call."
+        ],
+        "OPTIONS": [
+          "[Touch] #rLose #r",
+          " #gGold.",
+          "[Trade] #g50%: #gGood #gFace. #r50%: #rBad #rFace.",
+          "[Leave]",
+          "[Continue]",
+          " #rHP, #ggain #g"
+        ]
+      },
+      "GoldenShrine": {
+        "OPTIONS": [
+          "[Pray] #gGain #g",
+          " #gGold.",
+          "[Desecrate] #gGain #g275 #gGold. #rBecome #rCursed #r- #rRegret.",
+          "[Leave]"
+        ]
+      },
+      "Lab": {
+        "OPTIONS": [
+          "[Search] #gFind #gsome #gPotions!"
+        ]
+      },
+      "LivingWall": {
+        "OPTIONS": [
+          "[Forget] #gRemove #ga #gcard #gfrom #gyour #gdeck.",
+          "[Change] #gTransform #ga #gcard #gin #gyour #gdeck.",
+          "[Grow] #gUpgrade #ga #gcard #gin #gyour #gdeck.",
+          "Select a Card to Remove.",
+          "Choose a Card to Transform.",
+          "Choose a Card to Upgrade.",
+          "[Leave]",
+          "[Locked] Requires: Upgradeable Cards"
+        ]
+      },
+      "Mushrooms": {
+        "OPTIONS": [
+          "[Stomp] #rAnger #rthe #rMushrooms.",
+          "[Eat] #gHeal #g",
+          " #gHP. #rBecome #rCursed #r- #rParasite.",
+          "[Fight]",
+          "[Leave]"
+        ]
+      },
+      "ShiningLight": {
+        "OPTIONS": [
+          "[Enter] #gUpgrade #g2 #grandom #gcards. #rLose #r",
+          " #rHP.",
+          "[Leave]",
+          "[Locked] Requires: Upgradeable Cards"
+        ]
+      },
+      "Ssssserpent": {
+        "OPTIONS": [
+          "[Agree] #gGain #g",
+          " #gGold. #rBecome #rCursed #r- #rDoubt.",
+          "[Disagree]",
+          "[Continue]",
+          "[Leave]"
+        ]
+      },
+      "Transmorgrifier": {
+        "OPTIONS": [
+          "[Pray] #gTransform #ga #gcard.",
+          "[Leave]",
+          "Select a Card to Transform."
+        ]
+      },
+      "UpgradeShrine": {
+        "OPTIONS": [
+          "[Pray] #gUpgrade #ga #gcard.",
+          "[Leave]",
+          "Select a Card to Upgrade.",
+          "[Locked] Requires: Upgradeable Cards"
+        ]
+      },
+      "WorldOfGoop": {
+        "OPTIONS": [
+          "[Gather Gold] #gGain #g",
+          " #gGold. #rLose #r",
+          " #rHP.",
+          "[Leave It] #rLose #r",
+          " #rGold.",
+          "[Leave]"
         ]
       }
     },
     "zh-CN": {
+      "AccursedBlacksmith": {
+        "OPTIONS": [
+          "[锻造] #g升级你牌组中的一张牌。",
+          "[翻查] #g获得一件特别遗物。 #r被诅咒——疼痛。",
+          "[离开]",
+          "选择一张牌升级",
+          "[锁定] 需要： 可以升级的牌"
+        ]
+      },
+      "BackTotheBasics": {
+        "OPTIONS": [
+          "[简约] #g从你的牌组中移除一张牌。",
+          "[质朴] #g升级所有 #g打击 #g与 #g防御 。",
+          "选择一张牌移除。",
+          "[离开]"
+        ]
+      },
+      "BigFish": {
+        "OPTIONS": [
+          "[香蕉]  #g回复  #g",
+          " #g生命。",
+          "[甜甜圈] #g最大生命值 #g+",
+          " #g。",
+          "[盒子] #g获得一件遗物。 #r被诅咒——悔恨。",
+          "[离开]"
+        ]
+      },
+      "Duplicator": {
+        "OPTIONS": [
+          "[祈祷] #g从你的牌组中复制一张牌。",
+          "[离开]",
+          "选择一张牌复制。"
+        ]
+      },
       "FaceTrader": {
         "DESCRIPTIONS": [
           "你经过一尊举着许多不同的面具的奇怪雕像，但没走几步…… NL 你就听见身后传来一个轻柔的声音： NL ~“请留步。”~",
@@ -28,6 +180,90 @@
           "~“补偿吗？~ ~当然了。”~ NL 他动作机械地伸出手，将一叠 #y金币 放进了你的钱袋里。 NL NL ~“真是张好脸。~ ~啊啊，多好的脸。”~ NL 当他触碰你的脸颊时，你觉得自己的生命好像正在流失！ NL 突然之间，只见他戴着的面具掉落了下来在地上摔得粉碎。他立即尖叫起来，六只手飞快地捂住了自己的脸，这下那些面具全都摔落下来了！在这凄厉的尖叫与众多面具粉碎的声音中，你赶紧逃离了这里。 NL NL 你在不经意间瞥到了他面具下的样子：他的脸是一片完全的空白。",
           "~“和我？~ @和我吗？@ ~啊，当然了……~ ~可以。~ ~可以……~ ~唔嗯……”~ NL NL 你看见他的一根手臂抖动了一下，突然你的脸出现在了他的手里！似乎你的脸和那个面具交换了。 NL NL ~“很好的脸。~ ~嗯，很好的脸。”~",
           "~“留步。~ ~留步啊。~ ~请留步。~ ~请留步。~ ~请留步。”~ NL NL 你觉得自己做出了正确的选择。"
+        ],
+        "OPTIONS": [
+          "[触碰] #r失去",
+          " #g金币。",
+          "[交易] #g50%：获得好脸。 #r50%：获得坏脸。",
+          "[离开]",
+          "[继续]",
+          " #r生命， #g获得 #g"
+        ]
+      },
+      "GoldenShrine": {
+        "OPTIONS": [
+          "[祈祷] #g获得 #g",
+          " #g金币。",
+          "[亵渎] #g获得 #g275 #g金币。 #r被诅咒——悔恨。",
+          "[离开]"
+        ]
+      },
+      "Lab": {
+        "OPTIONS": [
+          "[搜索] #g找到一些药水！"
+        ]
+      },
+      "LivingWall": {
+        "OPTIONS": [
+          "[遗忘] #g移除你牌组中的一张牌。",
+          "[改变] #g变化你牌组中的一张牌。",
+          "[成长] #g升级你牌组中的一张牌。",
+          "选择一张牌移除。",
+          "选择一张牌变化。",
+          "选择一张牌升级。",
+          "[离开]",
+          "[锁定] 需要： 可以升级的牌"
+        ]
+      },
+      "Mushrooms": {
+        "OPTIONS": [
+          "[踩扁] #r激怒蘑菇们。",
+          "[吃下]  #g回复 #g",
+          " #g点生命。 #r被诅咒——寄生。",
+          "[战斗]",
+          "[离开]"
+        ]
+      },
+      "ShiningLight": {
+        "OPTIONS": [
+          "[走进] #g随机升级 #g2 #g张牌。 #r失去 #r",
+          " #r生命。",
+          "[离开]",
+          "[锁定] 需要： 可以升级的牌"
+        ]
+      },
+      "Ssssserpent": {
+        "OPTIONS": [
+          "[同意] #g获得 #g",
+          " #g金币。 #r被诅咒——疑虑。",
+          "[反对]",
+          "[继续]",
+          "[离开]"
+        ]
+      },
+      "Transmorgrifier": {
+        "OPTIONS": [
+          "[祈祷] #g变化一张牌。",
+          "[离开]",
+          "选择一张牌变化。"
+        ]
+      },
+      "UpgradeShrine": {
+        "OPTIONS": [
+          "[祈祷] #g升级一张牌。",
+          "[离开]",
+          "选择一张牌升级。",
+          "[锁定] 需要： 可以升级的牌"
+        ]
+      },
+      "WorldOfGoop": {
+        "OPTIONS": [
+          "[收集金币] #g获得 #g",
+          " #g金币。 #r失去 #r",
+          " #r生命。",
+          "[放手吧] #r失去 #r",
+          " #r金币。",
+          "[离开]"
         ]
       }
     }

@@ -107,6 +107,15 @@ EVENTS = {
     "WorldOfGoop": "World of Goop"
 }
 EVENT_SCENES = {"FaceTrader": 5}
+# OPTIONS layouts used by explicit event/screen/option bindings in the native
+# event text renderer. Values are original fragment counts, not button counts.
+EVENT_OPTIONS = {
+    "FaceTrader": 6, "BigFish": 6, "Lab": 1, "LivingWall": 8,
+    "ShiningLight": 4, "WorldOfGoop": 6, "Ssssserpent": 5,
+    "GoldenShrine": 4, "AccursedBlacksmith": 5, "Duplicator": 3,
+    "UpgradeShrine": 4, "Transmorgrifier": 3, "BackTotheBasics": 4,
+    "Mushrooms": 5,
+}
 # Explicit original power localization keys, audited against original class IDs.
 # Regen is monster Regenerate, while Regeneration is the decaying RegenPower.
 POWERS = {
@@ -426,7 +435,7 @@ def card_texts_from_archive(jar: Path, bindings: dict) -> dict:
 
 
 def event_texts_from_archive(jar: Path, bindings: dict) -> dict:
-    """Only snapshot scenes whose index is owned by an existing consumer."""
+    """Snapshot only event fields with explicit native presentation bindings."""
     events, entries, event_bindings = {}, {}, {}
     with zipfile.ZipFile(jar) as archive:
         for locale, language in LANGUAGES.items():
@@ -435,15 +444,19 @@ def event_texts_from_archive(jar: Path, bindings: dict) -> dict:
             entries[entry] = digest(raw)
             source = json.loads(raw.decode("utf-8-sig"), strict=False)
             events[locale], event_bindings[locale] = {}, {}
-            for stable, expected_count in EVENT_SCENES.items():
+            for stable in sorted(EVENT_SCENES.keys() | EVENT_OPTIONS.keys()):
                 binding = bindings[locale][f"event.{stable}"]
                 if binding["entry"] != entry:
-                    raise ValueError(f"Event scene requires an explicit original events source: {stable}")
-                descriptions = source[binding["key"]]["DESCRIPTIONS"]
-                if not isinstance(descriptions, list) or len(descriptions) != expected_count or not all(isinstance(text, str) and text.strip() for text in descriptions):
-                    raise ValueError(f"Original event scene layout requires review: {locale}/{stable}")
-                events[locale][stable] = {"DESCRIPTIONS": descriptions}
-                event_bindings[locale][stable] = {**binding, "field": "DESCRIPTIONS", "index": None}
+                    raise ValueError(f"Event text requires an explicit original events source: {stable}")
+                events[locale][stable], event_bindings[locale][stable] = {}, {}
+                for field, consumers in [("DESCRIPTIONS", EVENT_SCENES), ("OPTIONS", EVENT_OPTIONS)]:
+                    if stable not in consumers:
+                        continue
+                    texts = source[binding["key"]][field]
+                    if not isinstance(texts, list) or len(texts) != consumers[stable] or not all(isinstance(text, str) and text.strip() for text in texts):
+                        raise ValueError(f"Original event {field} layout requires review: {locale}/{stable}")
+                    events[locale][stable][field] = texts
+                    event_bindings[locale][stable][field] = {**binding, "field": field, "index": None}
     return {"schema": "sts-original-event-text-v1", "entries_sha256": entries,
             "bindings_sha256": {locale: digest(encoded(rows)) for locale, rows in event_bindings.items()},
             "events": events}

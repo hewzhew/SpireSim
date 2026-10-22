@@ -47,9 +47,7 @@ fn catalog(locale: Locale) -> &'static Value {
 }
 
 impl Locale {
-    /// Verbatim original event scenes whose layout has an explicit consumer.
-    /// This reads embedded resources; it never opens a local game installation.
-    pub fn original_event_description(self, id: &str, index: usize) -> Option<&'static str> {
+    fn original_event_text(self, id: &str, field: &str, index: usize) -> Option<&'static str> {
         static EVENTS: OnceLock<Value> = OnceLock::new();
         let source = EVENTS.get_or_init(|| {
             serde_json::from_str(include_str!("../original-event-text.json"))
@@ -63,9 +61,21 @@ impl Locale {
             .get("events")?
             .get(language)?
             .get(id)?
-            .get("DESCRIPTIONS")?
+            .get(field)?
             .get(index)?
             .as_str()
+    }
+
+    /// Verbatim original event scenes whose layout has an explicit consumer.
+    /// This reads embedded resources; it never opens a local game installation.
+    pub fn original_event_description(self, id: &str, index: usize) -> Option<&'static str> {
+        self.original_event_text(id, "DESCRIPTIONS", index)
+    }
+
+    /// Raw original button fragment. The event renderer owns its assembly and
+    /// supplies public numeric effects; this resource layer owns no game rules.
+    pub fn original_event_option(self, id: &str, index: usize) -> Option<&'static str> {
+        self.original_event_text(id, "OPTIONS", index)
     }
 
     /// Native scalar text only. Plural selection remains with each renderer;

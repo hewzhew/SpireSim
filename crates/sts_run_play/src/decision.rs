@@ -621,7 +621,7 @@ fn read_public_decision_v1(
     } = &observation.context
     {
         if let Some(scene) =
-            crate::event_scene::current_scene(*event, *screen, *face_trader_result, locale)
+            crate::event_text::current_scene(*event, *screen, *face_trader_result, locale)
         {
             writeln!(out, "{}", text(locale, "scene", &[("scene", &scene)])).unwrap();
         }
@@ -1387,17 +1387,30 @@ fn option_label(
         TaskPublicCandidateV1::Strategic {
             action:
                 TaskStrategicActionV1::ChooseEventOption {
-                    public_semantics, ..
+                    event,
+                    screen,
+                    option_index,
+                    public_semantics,
+                    ..
                 },
         } if public_semantics
             .public_label
             .as_ref()
             .is_some_and(|label| !label.trim().is_empty()) =>
         {
-            public_semantics
-                .public_label
-                .clone()
-                .expect("nonempty public label")
+            crate::event_text::option_label(
+                *event,
+                *screen,
+                *option_index,
+                public_semantics,
+                locale,
+            )?
+            .unwrap_or_else(|| {
+                public_semantics
+                    .public_label
+                    .clone()
+                    .expect("nonempty public label")
+            })
         }
         TaskPublicCandidateV1::Strategic {
             action: TaskStrategicActionV1::ChooseRouteNode { x, y, flight, .. },

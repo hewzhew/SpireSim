@@ -3,6 +3,199 @@ use crate::decision_tests::{controller_with_session, fixture, TestDirectory};
 use sts_presentation::Locale;
 
 #[test]
+fn original_event_button_bindings_preserve_public_actions_sources_and_state() {
+    use sts_oracle_learning::state::{
+        core::EngineState,
+        events::{EventId, EventState},
+    };
+    let events: &[(EventId, &[usize])] = &[
+        (EventId::FaceTrader, &[0, 1, 2]),
+        (EventId::BigFish, &[0, 1]),
+        (EventId::Lab, &[0]),
+        (EventId::LivingWall, &[0, 1]),
+        (EventId::ShiningLight, &[0, 1]),
+        (EventId::WorldOfGoop, &[0, 1]),
+        (EventId::Ssssserpent, &[0, 1, 2]),
+        (EventId::GoldenShrine, &[0, 1]),
+        (EventId::AccursedBlacksmith, &[0, 1]),
+        (EventId::Duplicator, &[0, 1]),
+        (EventId::UpgradeShrine, &[0, 1]),
+        (EventId::Transmorgrifier, &[0, 1]),
+        (EventId::BackTotheBasics, &[0, 1]),
+        (EventId::Mushrooms, &[0, 1, 2]),
+    ];
+    for &(event, screens) in events {
+        for &screen in screens {
+            for ascension in [14, 15] {
+                let directory = TestDirectory::new();
+                let mut session = fixture("reward");
+                session.engine_state = EngineState::EventRoom;
+                session.run_state.ascension_level = ascension;
+                session.run_state.max_hp = 83;
+                session.run_state.current_hp = 17;
+                session.run_state.gold = 250;
+                let mut state = EventState::new(event);
+                state.current_screen = screen;
+                state.internal_state = if event == EventId::FaceTrader && screen == 2 {
+                    1
+                } else {
+                    23
+                };
+                session.run_state.event_state = Some(state);
+                let mut game = controller_with_session(&directory.0, "original-buttons", &session);
+                let before = game.head().clone();
+                let en = game
+                    .decision_reading_v1(
+                        &[DecisionDetailV1::Options, DecisionDetailV1::State],
+                        None,
+                        Locale::En,
+                    )
+                    .unwrap();
+                let zh = game
+                    .decision_reading_v1(
+                        &[DecisionDetailV1::Options, DecisionDetailV1::State],
+                        None,
+                        Locale::ZhCn,
+                    )
+                    .unwrap();
+                assert_eq!(en.source, zh.source);
+                assert_eq!(en.state, zh.state);
+                assert_eq!(en.options.len(), zh.options.len());
+                assert!(!zh.options.is_empty(), "{event:?} screen {screen}");
+                for (en_option, zh_option) in en.options.iter().zip(&zh.options) {
+                    assert_eq!(en_option.candidate, zh_option.candidate);
+                    assert_eq!(en_option.choice, zh_option.choice);
+                    assert_ne!(
+                        en_option.label, zh_option.label,
+                        "{event:?} screen {screen}: {}",
+                        zh_option.label
+                    );
+                    assert!(
+                        zh_option
+                            .label
+                            .chars()
+                            .any(|ch| ('\u{4e00}'..='\u{9fff}').contains(&ch)),
+                        "{}",
+                        zh_option.label
+                    );
+                    assert!(!zh_option.label.contains("#g") && !zh_option.label.contains("#r"));
+                }
+                assert_eq!(
+                    *game.head(),
+                    before,
+                    "{event:?} screen {screen}: language must not change state or RNG"
+                );
+                if event == EventId::FaceTrader && screen == 1 {
+                    let gold = if ascension < 15 { 75 } else { 50 };
+                    assert!(
+                        zh.options[0].label.contains(&format!("{gold} 金币")),
+                        "{}",
+                        zh.options[0].label
+                    );
+                    assert!(zh.options[0].label.contains("失去8"));
+                }
+                if event == EventId::BigFish && screen == 0 {
+                    assert!(
+                        zh.options[0].label.contains("23"),
+                        "frozen heal must not be recomputed from Max HP"
+                    );
+                }
+                if event == EventId::ShiningLight && screen == 0 {
+                    let damage = if ascension < 15 { 17 } else { 25 };
+                    assert!(zh.options[0].label.contains(&damage.to_string()));
+                }
+                if event == EventId::WorldOfGoop && screen == 0 {
+                    assert!(zh.options[1].label.contains("23"));
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn choices_from_original_translated_buttons_execute_the_same_actions_and_rng() {
+    use sts_oracle_learning::eval::run_control::RunControlSessionCheckpointV1;
+    use sts_oracle_learning::state::{
+        core::EngineState,
+        events::{EventId, EventState},
+    };
+    for (event, screen, option_index) in [
+        (EventId::FaceTrader, 1, 0),
+        (EventId::BigFish, 0, 0),
+        (EventId::WorldOfGoop, 0, 1),
+        (EventId::LivingWall, 0, 0),
+        (EventId::Mushrooms, 0, 1),
+        (EventId::Lab, 0, 0),
+    ] {
+        let mut checkpoints = Vec::new();
+        let mut labels = Vec::new();
+        for locale in [Locale::En, Locale::ZhCn] {
+            let directory = TestDirectory::new();
+            let mut session = fixture("reward");
+            session.engine_state = EngineState::EventRoom;
+            session.run_state.current_hp = 17;
+            session.run_state.max_hp = 83;
+            session.run_state.gold = 250;
+            let mut state = EventState::new(event);
+            state.current_screen = screen;
+            state.internal_state = 23;
+            session.run_state.event_state = Some(state);
+            let mut game =
+                controller_with_session(&directory.0, "translated-event-choice", &session);
+            let reading = game
+                .decision_reading_v1(&[DecisionDetailV1::Options], None, locale)
+                .unwrap();
+            let option = reading.options.iter().find(|option| matches!(&option.candidate,
+                TaskPublicCandidateV1::Strategic { action: TaskStrategicActionV1::ChooseEventOption { option_index: index, .. } } if *index == option_index)).unwrap();
+            labels.push(option.label.clone());
+            game.choose_bound_v1(&crate::decision::RunPlayBoundChoiceV1 {
+                source: reading.source.clone().expect("bound event reading"),
+                choice: option.choice.clone(),
+            })
+            .unwrap();
+            let actual = game
+                .current_external_exact_checkpoint_v1()
+                .unwrap()
+                .into_session()
+                .unwrap();
+            match event {
+                EventId::FaceTrader => {
+                    assert_eq!(actual.run_state.current_hp, 9);
+                    assert_eq!(actual.run_state.gold, 300);
+                }
+                EventId::BigFish => assert_eq!(actual.run_state.current_hp, 40),
+                EventId::WorldOfGoop => assert_eq!(actual.run_state.gold, 227),
+                EventId::LivingWall => assert!(matches!(
+                    actual.engine_state,
+                    EngineState::RunPendingChoice(_)
+                )),
+                EventId::Mushrooms => {
+                    assert_eq!(actual.run_state.current_hp, 37);
+                    assert!(actual.run_state.master_deck.iter().any(
+                        |card| card.id == sts_oracle_learning::content::cards::CardId::Parasite
+                    ));
+                }
+                EventId::Lab => {
+                    let EngineState::RewardScreen(ref rewards) = actual.engine_state else {
+                        panic!("Lab must open its reward screen")
+                    };
+                    assert_eq!(rewards.items.len(), 2);
+                }
+                _ => unreachable!(),
+            }
+            checkpoints.push(
+                serde_json::to_value(RunControlSessionCheckpointV1::from_session(&actual)).unwrap(),
+            );
+        }
+        assert_ne!(labels[0], labels[1]);
+        assert_eq!(
+            checkpoints[0], checkpoints[1],
+            "{event:?}: actual effects and RNG must be independent of translated button labels"
+        );
+    }
+}
+
+#[test]
 fn run_query_languages_keep_bound_recovery_state_and_rng_unchanged() {
     for kind in ["reward", "combat_multiturn"] {
         let directory = TestDirectory::new();

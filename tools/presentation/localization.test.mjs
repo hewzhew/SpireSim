@@ -51,15 +51,19 @@ test('generated name sections match their recorded original-resource import', as
   assert.equal(catalogs.en.game.event.BonfireSpirits, undefined);
 });
 
-test('consumed original event scenes ship separately with the same resource provenance', async () => {
+test('consumed original event scenes and button fragments retain source provenance', async () => {
   const original = JSON.parse(await readFile(new URL('./original-event-text.json', import.meta.url), 'utf8'));
   const names = JSON.parse(await readFile(new URL('./original-names.json', import.meta.url), 'utf8'));
   assert.equal(original.schema, 'sts-original-event-text-v1');
   for (const [entry, sha] of Object.entries(original.entries_sha256)) assert.equal(names.entries_sha256[entry], sha);
   for (const locale of ['en', 'zh-CN']) {
-    assert.deepEqual(Object.keys(original.events[locale]), ['FaceTrader']);
+    assert.equal(Object.keys(original.events[locale]).length, 14);
     assert.equal(original.events[locale].FaceTrader.DESCRIPTIONS.length, 5);
     assert.ok(original.events[locale].FaceTrader.DESCRIPTIONS[0].includes('NL'));
+    assert.equal(original.events[locale].FaceTrader.OPTIONS.length, 6);
+    assert.equal(original.events[locale].Lab.OPTIONS.length, 1);
+    assert.equal(original.events[locale].BigFish.DESCRIPTIONS, undefined);
+    assert.equal(Object.values(original.events[locale]).reduce((sum,event) => sum + event.OPTIONS.length,0), 64);
   }
   assert.notEqual(original.events.en.FaceTrader.DESCRIPTIONS[0], original.events['zh-CN'].FaceTrader.DESCRIPTIONS[0]);
 });
