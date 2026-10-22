@@ -620,14 +620,10 @@ fn read_public_decision_v1(
         face_trader_result,
     } = &observation.context
     {
-        if let Some(scene) = crate::event_scene::current_scene(*event, *screen, *face_trader_result)
+        if let Some(scene) =
+            crate::event_scene::current_scene(*event, *screen, *face_trader_result, locale)
         {
-            writeln!(
-                out,
-                "{}",
-                text(locale, "sceneEnglish", &[("scene", &scene)])
-            )
-            .unwrap();
+            writeln!(out, "{}", text(locale, "scene", &[("scene", &scene)])).unwrap();
         }
     }
     if (repeat_deck && !brief) || show_build_resources {

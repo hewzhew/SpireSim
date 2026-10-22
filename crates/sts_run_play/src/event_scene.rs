@@ -1,32 +1,33 @@
-//! Current event scene from the installed game's localization. This is display
+//! Current event scene from imported original localization. This is display
 //! data only; the simulator's typed event options remain the action source.
-
-use std::fs::File;
-use std::io::Read;
-use std::path::{Path, PathBuf};
 
 use sts_oracle_learning::content::events::face_trader::FaceTraderResult;
 use sts_oracle_learning::state::events::EventId;
-use zip::ZipArchive;
-
-const DEFAULT_GAME_JAR: &str =
-    r"C:\Program Files (x86)\Steam\steamapps\common\SlayTheSpire\desktop-1.0.jar";
+use sts_presentation::Locale;
 
 pub(crate) fn current_scene(
     event: EventId,
     screen: usize,
     face_trader_result: Option<FaceTraderResult>,
+    locale: Locale,
 ) -> Option<String> {
     if event == EventId::FaceTrader && screen == 2 && face_trader_result.is_none() {
-        return Some("Unknown (Face Trader result choice unavailable)".to_owned());
+        return Some(
+            locale
+                .text("decision", "event.unknownFaceTraderResult", &[])
+                .expect("event result message"),
+        );
     }
     let index = description_index(event, screen, face_trader_result)?;
-    let path = std::env::var_os("STS_GAME_JAR")
-        .map(PathBuf::from)
-        .unwrap_or_else(|| PathBuf::from(DEFAULT_GAME_JAR));
     Some(
-        read_description(&path, "FaceTrader", index)
-            .unwrap_or_else(|_| "Unknown (installed game text unavailable)".to_owned()),
+        locale
+            .original_event_description("FaceTrader", index)
+            .map(clean_scene)
+            .unwrap_or_else(|| {
+                locale
+                    .text("decision", "event.sceneUnavailable", &[])
+                    .expect("missing scene message")
+            }),
     )
 }
 
@@ -42,30 +43,6 @@ fn description_index(
         (EventId::FaceTrader, 2, Some(FaceTraderResult::Leave)) => Some(4),
         _ => None,
     }
-}
-
-fn read_description(path: &Path, event_key: &str, index: usize) -> Result<String, String> {
-    let file = File::open(path).map_err(|e| e.to_string())?;
-    let mut archive = ZipArchive::new(file).map_err(|e| e.to_string())?;
-    let mut source = archive
-        .by_name("localization/eng/events.json")
-        .map_err(|e| e.to_string())?;
-    let mut json = String::new();
-    source
-        .read_to_string(&mut json)
-        .map_err(|e| e.to_string())?;
-    parse_description(&json, event_key, index)
-}
-
-fn parse_description(json: &str, event_key: &str, index: usize) -> Result<String, String> {
-    let value: serde_json::Value = serde_json::from_str(json).map_err(|e| e.to_string())?;
-    let raw = value
-        .get(event_key)
-        .and_then(|event| event.get("DESCRIPTIONS"))
-        .and_then(|descriptions| descriptions.get(index))
-        .and_then(serde_json::Value::as_str)
-        .ok_or_else(|| format!("missing event description {event_key}[{index}]"))?;
-    Ok(clean_scene(raw))
 }
 
 fn clean_scene(raw: &str) -> String {
@@ -108,31 +85,29 @@ mod tests {
         );
         assert_eq!(description_index(EventId::Nest, 0, None), None);
         assert_eq!(
-            current_scene(EventId::FaceTrader, 2, None).as_deref(),
+            current_scene(EventId::FaceTrader, 2, None, Locale::En).as_deref(),
             Some("Unknown (Face Trader result choice unavailable)")
         );
     }
 
     #[test]
     fn parses_and_cleans_the_selected_description_only() {
-        let json = r##"{"FaceTrader":{"DESCRIPTIONS":["A statue. NL ~Stop.~","A face. NL Trade?","#ygold for @ME?@"]}}"##;
-        assert_eq!(
-            parse_description(json, "FaceTrader", 0).unwrap(),
-            "A statue. Stop."
-        );
-        assert_eq!(
-            parse_description(json, "FaceTrader", 1).unwrap(),
-            "A face. Trade?"
-        );
-        assert_eq!(
-            parse_description(json, "FaceTrader", 2).unwrap(),
-            "gold for ME?"
-        );
-        assert!(parse_description(json, "FaceTrader", 3).is_err());
+        assert_eq!(clean_scene("A statue. NL ~Stop.~"), "A statue. Stop.");
+        assert_eq!(clean_scene("A face. NL Trade?"), "A face. Trade?");
+        assert_eq!(clean_scene("#ygold for @ME?@"), "gold for ME?");
     }
 
     #[test]
-    fn missing_jar_is_a_read_error_not_a_game_error() {
-        assert!(read_description(Path::new("no-such-game.jar"), "FaceTrader", 0).is_err());
+    fn scenes_use_connection_language_and_only_the_publicly_selected_branch() {
+        let en = current_scene(EventId::FaceTrader, 0, None, Locale::En).unwrap();
+        let zh = current_scene(EventId::FaceTrader, 0, None, Locale::ZhCn).unwrap();
+        assert_ne!(en, zh);
+        assert!(en.contains("statue"));
+        assert!(!en.contains("Compensation"));
+        assert!(!zh.contains("NL"));
+        assert!(!zh.contains("#y"));
+        assert!(current_scene(EventId::Nest, 0, None, Locale::ZhCn).is_none());
+        let unknown = current_scene(EventId::FaceTrader, 2, None, Locale::ZhCn).unwrap();
+        assert!(unknown.contains("换脸商结果选项未公开"));
     }
 }

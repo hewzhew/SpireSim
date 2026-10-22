@@ -27,6 +27,8 @@ def sources():
         result[f"localization/{language}/characters.json"] = characters
         result[f"localization/{language}/powers.json"] = {key: {"NAME": f"{language}:{key}"} for key in owner.POWERS.values()}
         result[f"localization/{language}/stances.json"] = {key: {"NAME": f"{language}:{key}"} for key in owner.STANCES.values()}
+        result[f"localization/{language}/events.json"] = {key: {"NAME": f"{language}:{key}"} for key in owner.EVENTS.values()}
+        result[f"localization/{language}/events.json"]["FaceTrader"]["DESCRIPTIONS"] = [f'{language}:scene {index} NL ~original~' for index in range(5)]
     return result
 
 
@@ -57,7 +59,15 @@ def test_exact_source_keys_preserve_identity_and_skip_deprecated_names(tmp_path,
     assert bindings["zh-CN"]["potion.Elixir"]["entry"] == "localization/zhs/potions.json"
     assert "Impulse" not in names["en"]["card"]
     assert manifest["name_counts"]["en"]["card"] == 370
-    assert len(manifest["entries_sha256"]) == 14
+    assert len(manifest["entries_sha256"]) == 16
+    assert manifest["name_counts"]["en"]["event"] == 53
+    assert names["zh-CN"]["event"]["Ssssserpent"] == "zhs:Liars Game"
+    assert names["en"]["event"]["BackTotheBasics"] == "eng:Back to Basics"
+    assert names["zh-CN"]["event"]["Neow"] == "zhs:Neow"
+    assert "BonfireSpirits" not in names["en"]["event"]
+    assert bindings["en"]["event.FountainOfCurseCleansing"]["entry"] == "localization/eng/events.json"
+    assert bindings["en"]["event.FountainOfCurseCleansing"]["key"] == "Fountain of Cleansing"
+    assert bindings["en"]["event.Neow"]["entry"] == "localization/eng/characters.json"
     assert names["zh-CN"]["stance"]["Wrath"] == "zhs:Wrath"
     assert names["en"]["encounter"]["TheHeart"] == names["en"]["enemy"]["CorruptHeart"]
     assert names["zh-CN"]["encounter"]["DonuAndDeca"] == "zhs:Donu与zhs:Deca"
@@ -76,6 +86,24 @@ def test_card_templates_keep_original_fields_and_do_not_guess_upgrade_semantics(
     assert imported["cards"]["en"]["ShrugItOff"]["DESCRIPTION"] == "!D! NL !B! !M!"
     assert len(imported["cards"]["en"]) == 370
     assert "Impulse" not in imported["cards"]["en"]
+
+
+def test_event_templates_keep_only_consumed_original_scenes_with_their_source(tmp_path, sources):
+    jar = archive(tmp_path, sources)
+    _, manifest, bindings = owner.names_from_archive(jar)
+    imported = owner.event_texts_from_archive(jar, bindings)
+    for locale, language in owner.LANGUAGES.items():
+        assert list(imported["events"][locale]) == ["FaceTrader"]
+        assert imported["events"][locale]["FaceTrader"]["DESCRIPTIONS"] == sources[f"localization/{language}/events.json"]["FaceTrader"]["DESCRIPTIONS"]
+    assert all(manifest["entries_sha256"][entry] == digest for entry, digest in imported["entries_sha256"].items())
+
+
+def test_changed_event_scene_layout_requires_review(tmp_path, sources):
+    sources["localization/eng/events.json"]["FaceTrader"]["DESCRIPTIONS"].append("new source layout")
+    jar = archive(tmp_path, sources)
+    _, _, bindings = owner.names_from_archive(jar)
+    with pytest.raises(ValueError, match="layout requires review"):
+        owner.event_texts_from_archive(jar, bindings)
 
 
 def test_english_display_aliases_are_not_used_for_lookup(tmp_path, sources, monkeypatch):

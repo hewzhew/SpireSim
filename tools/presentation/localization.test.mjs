@@ -24,7 +24,7 @@ test('locale selection maps the host zh and browser tags without claiming Tradit
 test('generated name sections match their recorded original-resource import', async () => {
   const source = JSON.parse(await readFile(new URL('./original-names.json', import.meta.url), 'utf8'));
   assert.equal(source.schema, 'sts-original-localization-names-v1');
-  assert.equal(Object.keys(source.entries_sha256).length, 14);
+  assert.equal(Object.keys(source.entries_sha256).length, 16);
   for (const locale of ['en', 'zh-CN']) {
     const names = {};
     for (const [kind, count] of Object.entries(source.name_counts[locale])) {
@@ -41,6 +41,23 @@ test('generated name sections match their recorded original-resource import', as
   assert.equal(catalogs.en.game.enemy.LouseNormal, catalogs.en.game.enemy.LouseDefensive);
   assert.ok(source.omitted['card.Impulse']);
   assert.equal(catalogs.en.game.card.Impulse, undefined);
+  assert.equal(source.name_counts.en.event, 53);
+  assert.equal(catalogs['zh-CN'].game.event.Ssssserpent, '蛇～');
+  assert.equal(catalogs.en.game.event.DrugDealer, 'Augmenter');
+  assert.equal(catalogs.en.game.event.BonfireSpirits, undefined);
+});
+
+test('consumed original event scenes ship separately with the same resource provenance', async () => {
+  const original = JSON.parse(await readFile(new URL('./original-event-text.json', import.meta.url), 'utf8'));
+  const names = JSON.parse(await readFile(new URL('./original-names.json', import.meta.url), 'utf8'));
+  assert.equal(original.schema, 'sts-original-event-text-v1');
+  for (const [entry, sha] of Object.entries(original.entries_sha256)) assert.equal(names.entries_sha256[entry], sha);
+  for (const locale of ['en', 'zh-CN']) {
+    assert.deepEqual(Object.keys(original.events[locale]), ['FaceTrader']);
+    assert.equal(original.events[locale].FaceTrader.DESCRIPTIONS.length, 5);
+    assert.ok(original.events[locale].FaceTrader.DESCRIPTIONS[0].includes('NL'));
+  }
+  assert.notEqual(original.events.en.FaceTrader.DESCRIPTIONS[0], original.events['zh-CN'].FaceTrader.DESCRIPTIONS[0]);
 });
 
 test('original card templates retain their source fields without entering interface messages', async () => {

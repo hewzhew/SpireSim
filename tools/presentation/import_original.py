@@ -51,6 +51,62 @@ OMITTED = {
 }
 CHARACTERS = {"ironclad": "Ironclad", "silent": "Silent", "defect": "Defect", "watcher": "Watcher"}
 STANCES = {"Calm": "Calm", "Wrath": "Wrath", "Divinity": "Divinity"}
+# Reviewed original event localization keys. Neow is in characters.json.
+EVENTS = {
+    "AccursedBlacksmith": "Accursed Blacksmith",
+    "Addict": "Addict",
+    "BackTotheBasics": "Back to Basics",
+    "Beggar": "Beggar",
+    "BigFish": "Big Fish",
+    "BonfireElementals": "Bonfire Elementals",
+    "Cleric": "The Cleric",
+    "Colosseum": "Colosseum",
+    "CursedTome": "Cursed Tome",
+    "DeadAdventurer": "Dead Adventurer",
+    "Designer": "Designer",
+    "DrugDealer": "Drug Dealer",
+    "Duplicator": "Duplicator",
+    "FaceTrader": "FaceTrader",
+    "Falling": "Falling",
+    "ForgottenAltar": "Forgotten Altar",
+    "FountainOfCurseCleansing": "Fountain of Cleansing",
+    "Ghosts": "Ghosts",
+    "GoldenIdol": "Golden Idol",
+    "GoldenShrine": "Golden Shrine",
+    "GoldenWing": "Golden Wing",
+    "GremlinWheelGame": "Wheel of Change",
+    "KnowingSkull": "Knowing Skull",
+    "Lab": "Lab",
+    "LivingWall": "Living Wall",
+    "MaskedBandits": "Masked Bandits",
+    "MatchAndKeep": "Match and Keep!",
+    "Mausoleum": "The Mausoleum",
+    "MindBloom": "MindBloom",
+    "MoaiHead": "The Moai Head",
+    "Mushrooms": "Mushrooms",
+    "MysteriousSphere": "Mysterious Sphere",
+    "Nest": "Nest",
+    "Nloth": "N'loth",
+    "NoteForYourself": "NoteForYourself",
+    "Purifier": "Purifier",
+    "ScrapOoze": "Scrap Ooze",
+    "SecretPortal": "SecretPortal",
+    "SensoryStone": "SensoryStone",
+    "ShiningLight": "Shining Light",
+    "SpireHeart": "Spire Heart",
+    "Ssssserpent": "Liars Game",
+    "TheJoust": "The Joust",
+    "TheLibrary": "The Library",
+    "TombRedMask": "Tomb of Lord Red Mask",
+    "Transmorgrifier": "Transmorgrifier",
+    "UpgradeShrine": "Upgrade Shrine",
+    "Vampires": "Vampires",
+    "WeMeetAgain": "WeMeetAgain",
+    "WindingHalls": "Winding Halls",
+    "WomanInBlue": "The Woman in Blue",
+    "WorldOfGoop": "World of Goop"
+}
+EVENT_SCENES = {"FaceTrader": 5}
 # Explicit original power localization keys, audited against original class IDs.
 # Regen is monster Regenerate, while Regeneration is the decaying RegenPower.
 POWERS = {
@@ -207,6 +263,9 @@ def digest(value: bytes) -> str:
 
 def names_from_archive(jar: Path, repository: Path = REPOSITORY) -> tuple[dict, dict, dict]:
     entities, identity_sources = build_simulator_catalog(repository)
+    active_events = {entity.stable_id for entity in entities if entity.kind == "event"}
+    if set(EVENTS) | {"Neow"} != active_events or "Neow" in EVENTS:
+        raise ValueError("Original event name bindings do not cover the current active EventId identities")
     power_path = repository / "src/content/powers/mod.rs"
     power_ids = _stable_identity_owner(power_path.read_text(encoding="utf-8"), "PowerId")
     if not power_ids:
@@ -233,13 +292,13 @@ def names_from_archive(jar: Path, repository: Path = REPOSITORY) -> tuple[dict, 
             records = {kind: source(language, resource) for kind, resource in RESOURCES.items()}
             bindings[locale] = {}
 
-            def take(kind: str, stable_id: str, key: str, record: dict, field: str = "NAME", index: int | None = None) -> str:
+            def take(kind: str, stable_id: str, key: str, record: dict, field: str = "NAME", index: int | None = None, *, resource: str | None = None) -> str:
                 value = record[key][field]
                 if index is not None:
                     value = value[index]
                 if not isinstance(value, str) or not value.strip():
                     raise ValueError(f"Empty original name: {locale}/{kind}/{stable_id}/{key}")
-                resource = RESOURCES.get(kind) or {"character": "characters", "event": "characters", "power": "powers", "stance": "stances"}[kind]
+                resource = resource or RESOURCES.get(kind) or {"character": "characters", "event": "events", "power": "powers", "stance": "stances"}[kind]
                 bindings[locale][f"{kind}.{stable_id}"] = {"entry": f"localization/{language}/{resource}.json",
                                                           "key": key, "field": field, "index": index}
                 return value
@@ -259,7 +318,9 @@ def names_from_archive(jar: Path, repository: Path = REPOSITORY) -> tuple[dict, 
                     names[kind][entity.stable_id] = take(kind, entity.stable_id, key, records[kind])
             characters = source(language, "characters")
             names["character"] = {stable: take("character", stable, key, characters, "NAMES", 0) for stable, key in CHARACTERS.items()}
-            names["event"] = {"Neow": take("event", "Neow", "Neow Event", characters, "NAMES", 0)}
+            events = source(language, "events")
+            names["event"] = {stable: take("event", stable, key, events) for stable, key in EVENTS.items()}
+            names["event"]["Neow"] = take("event", "Neow", "Neow Event", characters, "NAMES", 0, resource="characters")
             powers = source(language, "powers")
             for stable, key in [("GuardianThreshold", "GuardianThreshold"), ("GenericStrengthUp", "Generic Strength Up Power")]:
                 if powers.get(key, {}).get("NAME", "").strip():
@@ -323,10 +384,35 @@ def card_texts_from_archive(jar: Path, bindings: dict) -> dict:
             "cards": cards}
 
 
+def event_texts_from_archive(jar: Path, bindings: dict) -> dict:
+    """Only snapshot scenes whose index is owned by an existing consumer."""
+    events, entries, event_bindings = {}, {}, {}
+    with zipfile.ZipFile(jar) as archive:
+        for locale, language in LANGUAGES.items():
+            entry = f"localization/{language}/events.json"
+            raw = archive.read(entry)
+            entries[entry] = digest(raw)
+            source = json.loads(raw.decode("utf-8-sig"), strict=False)
+            events[locale], event_bindings[locale] = {}, {}
+            for stable, expected_count in EVENT_SCENES.items():
+                binding = bindings[locale][f"event.{stable}"]
+                if binding["entry"] != entry:
+                    raise ValueError(f"Event scene requires an explicit original events source: {stable}")
+                descriptions = source[binding["key"]]["DESCRIPTIONS"]
+                if not isinstance(descriptions, list) or len(descriptions) != expected_count or not all(isinstance(text, str) and text.strip() for text in descriptions):
+                    raise ValueError(f"Original event scene layout requires review: {locale}/{stable}")
+                events[locale][stable] = {"DESCRIPTIONS": descriptions}
+                event_bindings[locale][stable] = {**binding, "field": "DESCRIPTIONS", "index": None}
+    return {"schema": "sts-original-event-text-v1", "entries_sha256": entries,
+            "bindings_sha256": {locale: digest(encoded(rows)) for locale, rows in event_bindings.items()},
+            "events": events}
+
+
 def update(jar: Path, directory: Path, *, write: bool = False) -> dict:
     names, manifest, bindings = names_from_archive(jar)
     card_texts = card_texts_from_archive(jar, bindings)
-    if any(manifest["entries_sha256"][entry] != sha for entry, sha in card_texts["entries_sha256"].items()):
+    event_texts = event_texts_from_archive(jar, bindings)
+    if any(manifest["entries_sha256"][entry] != sha for collection in (card_texts, event_texts) for entry, sha in collection["entries_sha256"].items()):
         raise ValueError("Original resources changed during import")
     outputs, changed = {}, []
     for locale, sections in names.items():
@@ -339,6 +425,7 @@ def update(jar: Path, directory: Path, *, write: bool = False) -> dict:
         outputs[file] = original if json.loads(original) == catalog else encoded(catalog)
     outputs[directory / "original-names.json"] = encoded(manifest)
     outputs[directory / "original-card-text.json"] = encoded(card_texts)
+    outputs[directory / "original-event-text.json"] = encoded(event_texts)
     for file, content in outputs.items():
         if not file.exists() or file.read_bytes() != content:
             changed.append(file.name)

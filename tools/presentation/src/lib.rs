@@ -47,6 +47,27 @@ fn catalog(locale: Locale) -> &'static Value {
 }
 
 impl Locale {
+    /// Verbatim original event scenes whose layout has an explicit consumer.
+    /// This reads embedded resources; it never opens a local game installation.
+    pub fn original_event_description(self, id: &str, index: usize) -> Option<&'static str> {
+        static EVENTS: OnceLock<Value> = OnceLock::new();
+        let source = EVENTS.get_or_init(|| {
+            serde_json::from_str(include_str!("../original-event-text.json"))
+                .expect("embedded original event text")
+        });
+        let language = match self {
+            Self::En => "en",
+            Self::ZhCn => "zh-CN",
+        };
+        source
+            .get("events")?
+            .get(language)?
+            .get(id)?
+            .get("DESCRIPTIONS")?
+            .get(index)?
+            .as_str()
+    }
+
     /// Native scalar text only. Plural selection remains with each renderer;
     /// this does not interpret i18next options or reparse substituted values.
     pub fn entry(self, namespace: &str, key: &str) -> Option<&'static str> {
@@ -110,6 +131,12 @@ mod tests {
 
     #[test]
     fn original_names_retain_stable_ids_when_display_names_are_shared_or_changed() {
+        assert_eq!(Locale::ZhCn.entity("event", "DrugDealer"), "增益研究者");
+        assert_eq!(Locale::En.entity("event", "Ssssserpent"), "The Ssssserpent");
+        assert_eq!(
+            Locale::ZhCn.entity("event", "FountainOfCurseCleansing"),
+            "神圣泉水"
+        );
         assert_eq!(Locale::En.card_name("SearingBlow", 1), "Searing Blow+1");
         assert_eq!(Locale::ZhCn.card_name("SearingBlow", 1), "灼热攻击+1");
         for id in ["Strike", "StrikeG", "StrikeB", "StrikeP"] {
@@ -126,6 +153,22 @@ mod tests {
         assert_eq!(Locale::ZhCn.entity("potion", "Elixir"), "万灵药水");
         assert_eq!(Locale::ZhCn.entity("relic", "HappyFlower"), "开心小花");
         assert_eq!(Locale::ZhCn.entity("card", "Impulse"), "Impulse");
+    }
+
+    #[test]
+    fn event_scene_templates_are_embedded_and_retain_the_original_control_markup() {
+        assert!(Locale::En
+            .original_event_description("FaceTrader", 0)
+            .unwrap()
+            .contains("~\"Stop.\"~"));
+        assert!(Locale::ZhCn
+            .original_event_description("FaceTrader", 0)
+            .unwrap()
+            .contains("NL"));
+        assert!(Locale::En
+            .original_event_description("FaceTrader", 5)
+            .is_none());
+        assert!(Locale::ZhCn.original_event_description("Neow", 0).is_none());
     }
 
     #[test]

@@ -9,6 +9,7 @@
   "entries_sha256": {
     "localization/eng/cards.json": "864d2d024ebc423bc7722a4c8f704f26e995d8ea440d804148f1b5ed2398f2b1",
     "localization/eng/characters.json": "0649402af16b911fd61a5900927733f772fbfd8970fd3cd0dfea9664bb92db1c",
+    "localization/eng/events.json": "ed878f84ff97b86bae8b6c4b83b63fe3d8e61b58dc77d6396979333990f44517",
     "localization/eng/monsters.json": "c78460c5faedba0da97832e9abaa1376c2300436495ee9dd84d4165d89af0361",
     "localization/eng/potions.json": "0e28ac6eaea7046061d5e163d28f4a158f8de0998428d98074ecf20d05b80958",
     "localization/eng/powers.json": "32116a638adfdcf786847bdfb40b739bffecda646b6c534773387e885ccb7d13",
@@ -16,6 +17,7 @@
     "localization/eng/stances.json": "2922b2db9de21d77de9825f44c1a393825e965cb660f1a69befad466d8936022",
     "localization/zhs/cards.json": "f1e3856ddeed29bb83d2b9a08de38967e99eb5e183abe6f62929303ddda34115",
     "localization/zhs/characters.json": "dfe855326e920fcb0b240d3d9866279a21dee13e3c60413143a85062a2092b4d",
+    "localization/zhs/events.json": "a274ab52893804e2ae9b3361cc096bbec902bd2be0df55700d291c323379ada2",
     "localization/zhs/monsters.json": "49dcf8455fa6fa8dfe8702e05a9b37627ee870fbe52167c704250e68311326de",
     "localization/zhs/potions.json": "8eb86bb9719c3977d443d572b613e5d2fe4f4ee3583b7995d9589e02d67ed296",
     "localization/zhs/powers.json": "cd57a85765555b92462c77be235d84bd67c52098233319afc8923f72757216ca",
@@ -35,8 +37,8 @@
     "src/runtime/combat/orbs.rs": "304e8fadd9404a9308abf27665d1b0b2048ade00e41a53cc5947df4f4b95b688"
   },
   "bindings_sha256": {
-    "en": "a25e9e743c71e2e4523c19978083fd27bba0aca90e3af79c62c2a171d93c2c69",
-    "zh-CN": "fb964a67c19a0a52db25ea31c58ee5ad12690d221ed512828ec98ee0702eff09"
+    "en": "b25765049210bc5aada08e554cb4026dda4ab0cd677837468a8ebbb37db3c523",
+    "zh-CN": "b0e0b4090d5947138f2cc002fc89a6aebccdc7518a69fd79d292d8fa625d771b"
   },
   "name_counts": {
     "en": {
@@ -45,7 +47,7 @@
       "potion": 42,
       "enemy": 65,
       "character": 4,
-      "event": 1,
+      "event": 53,
       "power": 134,
       "stance": 3,
       "encounter": 11
@@ -56,15 +58,15 @@
       "potion": 42,
       "enemy": 65,
       "character": 4,
-      "event": 1,
+      "event": 53,
       "power": 134,
       "stance": 3,
       "encounter": 11
     }
   },
   "generated_names_sha256": {
-    "en": "dca81db5f4028db11a144a2bfd7ab25cef5452d86c501599330263850d52146e",
-    "zh-CN": "f47bd6bbd39cb5ca95a75376666482c4debc82b9fa329cd99ab48eba00b87e33"
+    "en": "b45ce21b0015440fd739163304f4dc9595e80c7ac62782ec5ef4c52204479ed3",
+    "zh-CN": "150cd8103c47fd9eab90a1a6fb065986cb221b2fa0d6ca2ce3a02d80e5d247ec"
   },
   "omitted": {
     "card.Impulse": "No corresponding card localization entry in the installed release; retain stable-ID fallback.",

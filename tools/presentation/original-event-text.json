@@ -1,0 +1,35 @@
+{
+  "schema": "sts-original-event-text-v1",
+  "entries_sha256": {
+    "localization/eng/events.json": "ed878f84ff97b86bae8b6c4b83b63fe3d8e61b58dc77d6396979333990f44517",
+    "localization/zhs/events.json": "a274ab52893804e2ae9b3361cc096bbec902bd2be0df55700d291c323379ada2"
+  },
+  "bindings_sha256": {
+    "en": "d6c047c86424957c91487e7d871e4785b9a1faee4667500e8eb319421e25ad9a",
+    "zh-CN": "36e1e996500759a18f8863f019ff5c7ee049b7c846c2aef494349ea094439296"
+  },
+  "events": {
+    "en": {
+      "FaceTrader": {
+        "DESCRIPTIONS": [
+          "You walk by an eerie statue holding several masks... NL Something behind you softly whispers, NL ~\"Stop.\"~",
+          "You swerve around to face the statue which is now facing you! NL On closer inspection, it's not a statue but a statuesque, gaunt man. Is he even breathing? NL NL ~\"Face.~ ~Let~ ~me~ ~touch?~ ~Maybe~ ~trade?\"~",
+          "~\"Compensation?~ ~Compensation.\"~ NL Mechanically, he cranes out a neat stack of #ygold and places it into your pouch. NL NL ~\"What~ ~a~ ~nice~ ~face.~ ~Nice~ ~face.\"~ NL While he touches your face, you begin to feel your life drain out of it! NL During this, his mask falls off and shatters. Screaming, he quickly covers his face with all six arms dropping even more masks! Amidst all the screaming and shattering, you escape. NL NL His face was completely blank.",
+          "~\"For~ ~me?~ @FOR@ @ME?@ ~Oh~ ~yes..~ ~Yes.~ ~Yes..~ ~mmm...\"~ NL NL You see one of his arms flicker, and your face is in its hand! Your face has been swapped. NL NL ~\"Nice~ ~face.~ ~Nice~ ~face.\"~",
+          "~\"Stop.~ ~Stop.~ ~Stop.~ ~Stop.~ ~Stop.\"~ NL NL This was probably the right call."
+        ]
+      }
+    },
+    "zh-CN": {
+      "FaceTrader": {
+        "DESCRIPTIONS": [
+          "你经过一尊举着许多不同的面具的奇怪雕像，但没走几步…… NL 你就听见身后传来一个轻柔的声音： NL ~“请留步。”~",
+          "你回了回头，却发现那尊雕像也已经转向了你！ NL 仔细一看，原来这并不是一尊雕像，只是一个肤色如同雕像的消瘦男人……他是不是根本没有在呼吸？ NL NL ~“你的脸。~ ~让我碰碰？~ ~或者，想要交易？”~",
+          "~“补偿吗？~ ~当然了。”~ NL 他动作机械地伸出手，将一叠 #y金币 放进了你的钱袋里。 NL NL ~“真是张好脸。~ ~啊啊，多好的脸。”~ NL 当他触碰你的脸颊时，你觉得自己的生命好像正在流失！ NL 突然之间，只见他戴着的面具掉落了下来在地上摔得粉碎。他立即尖叫起来，六只手飞快地捂住了自己的脸，这下那些面具全都摔落下来了！在这凄厉的尖叫与众多面具粉碎的声音中，你赶紧逃离了这里。 NL NL 你在不经意间瞥到了他面具下的样子：他的脸是一片完全的空白。",
+          "~“和我？~ @和我吗？@ ~啊，当然了……~ ~可以。~ ~可以……~ ~唔嗯……”~ NL NL 你看见他的一根手臂抖动了一下，突然你的脸出现在了他的手里！似乎你的脸和那个面具交换了。 NL NL ~“很好的脸。~ ~嗯，很好的脸。”~",
+          "~“留步。~ ~留步啊。~ ~请留步。~ ~请留步。~ ~请留步。”~ NL NL 你觉得自己做出了正确的选择。"
+        ]
+      }
+    }
+  }
+}

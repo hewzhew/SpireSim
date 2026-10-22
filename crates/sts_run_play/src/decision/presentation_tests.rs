@@ -3,6 +3,50 @@ use crate::decision_tests::{controller_with_session, fixture, TestDirectory};
 use sts_presentation::Locale;
 
 #[test]
+fn original_event_names_and_current_scene_share_connection_locale_without_changing_choices() {
+    use sts_oracle_learning::eval::run_control::{RunControlConfig, RunControlSession};
+    use sts_oracle_learning::state::{
+        core::EngineState,
+        events::{EventId, EventState},
+    };
+    let directory = TestDirectory::new();
+    let mut session = RunControlSession::new(RunControlConfig::default());
+    session.engine_state = EngineState::EventRoom;
+    let mut event = EventState::new(EventId::FaceTrader);
+    event.current_screen = 1;
+    session.run_state.event_state = Some(event);
+    let mut game = controller_with_session(&directory.0, "event-scene-locale", &session);
+    let before = game.head().clone();
+    let en = game
+        .decision_reading_v1(&[DecisionDetailV1::State], None, Locale::En)
+        .unwrap();
+    let zh = game
+        .decision_reading_v1(&[DecisionDetailV1::State], None, Locale::ZhCn)
+        .unwrap();
+    assert!(en.summary.contains("Face Trader | Event screen 1"));
+    assert!(zh.summary.contains("换脸商 | 事件阶段 1"));
+    assert!(en.view.contains("Scene: You swerve"));
+    assert!(zh.view.contains("事件正文："));
+    assert!(!zh.view.contains("事件正文（英文）"));
+    assert!(!zh
+        .view
+        .contains("Unknown (installed game text unavailable)"));
+    assert_eq!(en.state, zh.state);
+    assert_eq!(en.source, zh.source);
+    assert_eq!(
+        en.options
+            .iter()
+            .map(|option| (&option.choice, &option.candidate))
+            .collect::<Vec<_>>(),
+        zh.options
+            .iter()
+            .map(|option| (&option.choice, &option.candidate))
+            .collect::<Vec<_>>()
+    );
+    assert_eq!(*game.head(), before);
+}
+
+#[test]
 fn campfire_locales_keep_upgrade_values_copy_groups_and_legal_bindings() {
     use sts_oracle_learning::content::cards::CardId;
     use sts_oracle_learning::state::core::EngineState;

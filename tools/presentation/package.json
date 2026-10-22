@@ -10,9 +10,10 @@
     "./catalogs": "./catalogs.mjs",
     "./original-names": "./original-names.json",
     "./original-card-text": "./original-card-text.json",
+    "./original-event-text": "./original-event-text.json",
     "./locales/*.json": "./locales/*.json"
   },
-  "files": ["index.mjs", "catalogs.mjs", "original-names.json", "original-card-text.json", "locales/*.json", "replay/*", "README.md"],
+  "files": ["index.mjs", "catalogs.mjs", "original-names.json", "original-card-text.json", "original-event-text.json", "locales/*.json", "replay/*", "README.md"],
   "scripts": {
     "test": "node --test localization.test.mjs"
   },

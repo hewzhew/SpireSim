@@ -29,7 +29,6 @@ sts_java_parity_compare = { path = "../sts_java_parity_compare" }
 sts_java_parity_projection = { path = "../sts_java_parity_projection" }
 sts_java_parity_protocol = { path = "../sts_java_parity_protocol" }
 sts_paired_root = { path = "../sts_paired_root" }
-zip = { version = "4.6", default-features = false, features = ["deflate"] }
 
 [build-dependencies]
 sha2 = "0.10"
