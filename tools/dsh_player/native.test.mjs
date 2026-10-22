@@ -179,6 +179,8 @@ test('bundle distribution declares native entry, localized metadata, icon, and n
   const packageDir = dirname(fileURLToPath(import.meta.url));
   const manifest = JSON.parse(await readFile(join(packageDir, 'package.json'), 'utf8'));
   assert.equal(manifest.dsh.bundle.patch, './cordis.patch.yml');
+  assert.equal(manifest.dependencies['@sts-simulator/presentation'], 'file:../presentation');
+  assert.ok(manifest.bundledDependencies.includes('@sts-simulator/presentation'));
   assert.equal(manifest.exports['./native'], './native.mjs');
   const patch = await readFile(join(packageDir, 'cordis.patch.yml'), 'utf8');
   assert.match(patch, /@sts-simulator\/dsh-player\/native/);
@@ -188,6 +190,55 @@ test('bundle distribution declares native entry, localized metadata, icon, and n
     assert.ok(locale.meta.title && locale.meta.description);
   }
 });
+
+test('one preset gives English and Chinese chats independent model guides and tool schemas',
+  { skip: !existsSync(realBinary), timeout: 20000 }, async t => {
+    const ctx = new Context(), handles = [];
+    const repository = await workspace(t, { beforeRemove: async () => {
+      for (const handle of handles) await handle.dispose();
+      await ctx.fiber.dispose();
+    } });
+    for (const plugin of [LlmRuntime, SessionStore, ProjectionRegistry, AgentRegistry, ToolRuntime, CommandRuntime]) await ctx.plugin(plugin);
+    await ctx.plugin(SystemPrompt, { includeHarnessIdentity: false, includeRuntimeContext: false });
+    await ctx.plugin(AgentLoop, { agents: [] });
+    const presetKey = {}, preset = createScope(ctx, presetKey);
+    const plugin = await preset.ctx.plugin(Native, { binary: realBinary });
+    await Native.nativeBinding({ id: 'locale-zh', session: { header: { cwd: repository } } },
+      { binary: realBinary, manual: true, agentLocale: 'zh-CN' });
+    const descriptions = [], signatures = [];
+    for (const [id, locale, manual] of [['locale-en', 'en', false], ['locale-zh', 'zh-CN', true]]) {
+      const handle = await ctx.agents.create({ sessionId: SessionId(id), meta: { cwd: repository },
+        agentOptions: { provider: 'unused', model: 'unused' }, setup: scoped => { bindScopeParent(scopeOf(scoped), presetKey); } });
+      handles.push(handle);
+      const prompt = await ctx.systemPrompt.assemble({ scope: scopeOf(handle.agent.ctx) });
+      assert.deepEqual(prompt.sections.map(section => section.text), [Native.nativeGuide(manual, locale)]);
+      const tools = ctx.tools.schemas(handle.agent);
+      assert.deepEqual(tools.map(tool => tool.name).sort(), ['sts', 'sts_feedback']);
+      assert.equal(Native.nativeGameControl(handle.agent).workbench, undefined);
+      const game = tools.find(tool => tool.name === 'sts');
+      const feedback = tools.find(tool => tool.name === 'sts_feedback');
+      descriptions.push([game.description, game.parameters.properties.command.description, feedback.description]);
+      signatures.push(JSON.parse(JSON.stringify(tools, (key, value) => key === 'description' ? undefined : value)));
+      assert.deepEqual(Object.keys(game.parameters.properties), ['command']);
+      const missing = await ctx.tools.execute({ name: 'sts_feedback', arguments: { message: ' ' }, agent: handle.agent,
+        signal: new AbortController().signal, callId: ToolCallId(randomUUID()) });
+      assert.equal(missing.isError, true);
+      assert.match(textOf(missing), locale === 'en' ? /concrete problem/ : /具体问题/);
+      assert.equal(Native.nativeGameControl(handle.agent).workbench, undefined, 'validation does not create or open a game');
+      assert.equal(handle.agent.session.snapshotEvents().filter(event => event.type === 'step/start').length, 0);
+    }
+    assert.match(descriptions[0][0], /Operate this chat/);
+    assert.match(descriptions[1][0], /当前聊天/);
+    assert.notDeepEqual(descriptions[0], descriptions[1]);
+    assert.deepEqual(signatures[0], signatures[1], 'language changes descriptions, not the tool schema or callable identities');
+    assert.equal(ctx.tools.schemas(handles[0].agent).find(tool => tool.name === 'sts').description, descriptions[0][0]);
+    await plugin.dispose();
+    for (const handle of handles) {
+      assert.ok(!ctx.tools.schemas(handle.agent).some(tool => tool.name === 'sts'));
+      const prompt = await ctx.systemPrompt.assemble({ scope: scopeOf(handle.agent.ctx) });
+      assert.ok(!prompt.sections.some(section => section.name === 'sts:native-guide'));
+    }
+  });
 
 test('native workspace returns and restores its prior endpoint through the same real game owner without model calls',
   { skip: !existsSync(realBinary), timeout: 20000 }, async t => {
@@ -215,7 +266,8 @@ test('native workspace returns and restores its prior endpoint through the same 
     assert.match(textOf(await execute('info potion SteroidPotion')), /药水定义：类固醇药水 \| ID：SteroidPotion/);
     assert.deepEqual((await control.points()).points.source, beforeInfo);
     const prompt = await ctx.systemPrompt.assemble({ scope: scopeOf(handle.agent.ctx) });
-    assert.deepEqual(prompt.sections.map(section => section.text), [Native.nativeGuide(true)]);
+    assert.deepEqual(prompt.sections.map(section => section.text), [Native.nativeGuide(true, 'zh-CN')]);
+    assert.match(ctx.tools.schemas(handle.agent).find(tool => tool.name === 'sts').description, /当前聊天/);
     assert.doesNotMatch(prompt.sections[0].text, /research whole_combat|deck-lab|piles sl|preview play:/);
     assert.equal((await control.workbench.observe()).capabilities.permission_envelope.profile, 'public_manual_v1');
     assert.match(textOf(await execute('preview end')), /公开信息手打不提供搜索/);
@@ -249,6 +301,9 @@ test('native workspace returns and restores its prior endpoint through the same 
     assert.equal(resumedOwner.workbench, undefined, 'restoring the official chat does not open Rust or run a model');
     assert.equal(await resumedOwner.live(), endpoint);
     assert.equal(resumedOwner.binding.agentLocale, 'zh-CN');
+    const reopenedPrompt = await ctx.systemPrompt.assemble({ scope: scopeOf(handle.agent.ctx) });
+    assert.deepEqual(reopenedPrompt.sections.map(section => section.text), [Native.nativeGuide(true, 'zh-CN')]);
+    assert.match(ctx.tools.schemas(handle.agent).find(tool => tool.name === 'sts').description, /当前聊天/);
     const reopenedInfo = await resumedOwner.serial(async () => (await resumedOwner.game(false)).execute('info potion FairyPotion'));
     assert.match(reopenedInfo.text, /绽放印记会阻止此次复活/);
     assert.equal(handle.agent.session.snapshotEvents().filter(event => event.type === 'step/start').length, 0);

@@ -23,7 +23,7 @@ const point = (revision, origins = []) => ({ identity: identity(revision), origi
   location: { kind: 'strategic', act: 1, floor: revision, site: 'map' }, resources: { hp: 70, max_hp: 75, gold: revision * 10, potions: [null, null] } });
 
 async function fixture(t, { inFlight = false, noGame = false, usage, actOnFirst = true,
-  transientFailures = 0, partialFailure = false } = {}) {
+  transientFailures = 0, partialFailure = false, agentLocale = 'en', manual = false } = {}) {
   const ctx = new Context(), started = gate(), release = gate(), calls = [], requests = [];
   for (const plugin of [LlmRuntime, SessionStore, ProjectionRegistry, AgentRegistry, ToolRuntime, CommandRuntime]) await ctx.plugin(plugin);
   await ctx.plugin(TokenMeter);
@@ -33,7 +33,7 @@ async function fixture(t, { inFlight = false, noGame = false, usage, actOnFirst 
   const handle = await ctx.agents.create({ sessionId: SessionId('native-controls'),
     agentOptions: { provider: 'fixture', model: 'fixture' } });
   let version = 2, previous = null, opens = 0, failRead = false, active = 0;
-  const binding = { agent: String(handle.agent.id), session: 'fixture-game', repository: 'fixture', seed: '1' };
+  const binding = { agent: String(handle.agent.id), session: 'fixture-game', repository: 'fixture', seed: '1', agentLocale, manual };
   const source = () => ({ session_path: binding.session, session_id: 'fixture', identity: identity(version) });
   const points = () => ({ schema: 'run-play-return-points-v2', source: source(), current: point(version),
     targets: [point(1, [{ kind: 'floor', floor: 1 }]), ...(previous === null ? [] : [point(previous, [{ kind: 'previous_endpoint' }])])] });
@@ -92,7 +92,8 @@ async function fixture(t, { inFlight = false, noGame = false, usage, actOnFirst 
     }
   }
   ctx.llm.registerAdapter(['fixture'], new Adapter());
-  let control = new NativeGameControl(handle.agent, {}, deps);
+  const config = { agentLocale, manual };
+  let control = new NativeGameControl(handle.agent, config, deps);
   registerNativeCommands(ctx);
   ctx.tools.register(defineTool({ name: 'sts', description: 'fixture', parameters: { command: { type: 'string', required: true } },
     output: { schema: { type: 'string' }, render: (_args, value) => [{ type: 'text', text: value }] },
@@ -103,9 +104,28 @@ async function fixture(t, { inFlight = false, noGame = false, usage, actOnFirst 
   return { ctx, handle, started, release, calls, requests, points, binding, workbench,
     get control() { return control; }, get opens() { return opens; }, get version() { return version; },
     failRead(value) { failRead = value; },
-    async reload() { await control.close(); control = new NativeGameControl(handle.agent, {}, deps); },
+    async reload() { await control.close(); control = new NativeGameControl(handle.agent, config, deps); },
   };
 }
+
+test('Chinese manual resume keeps actual reading and return receipt verbatim', async t => {
+  const f = await fixture(t, { agentLocale: 'zh-CN', manual: true, actOnFirst: false });
+  const listed = await f.control.points();
+  const restored = await f.control.restore({ schema: 'run-play-return-request-v1', source: listed.points.source, target: listed.points.targets[0].identity });
+  assert.equal(restored.status, 'ready');
+  await f.control.resume();
+  await f.handle.agent.whenIdle();
+  assert.equal(f.requests.length, 1);
+  const strings = value => typeof value === 'string' ? [value]
+    : value && typeof value === 'object' ? Object.values(value).flatMap(strings) : [];
+  const context = strings(f.requests[0]).find(text => text.startsWith('用户已明确通过工作台继续此对局'));
+  assert.ok(context);
+  assert.match(context, /当前是依据公开信息手动出牌/);
+  assert.match(context, /Actual game state 1/);
+  assert.match(context, /Commands: act-current-1/);
+  assert.ok(context.includes(JSON.stringify(restored.receipt)), 'the actual receipt is inserted unchanged');
+  assert.deepEqual(f.calls.filter(command => command === 'advance'), []);
+});
 
 test('native experiment stops before a second model request and preserves pause across control reattachment', async t => {
   const f = await fixture(t);

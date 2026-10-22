@@ -54,13 +54,13 @@
     "test:client": "npm run build:client && node --test map-layout.test.mjs map-view.test.mjs map-locale.test.mjs observation-client.test.mjs native-inspection.test.mjs updates.test.mjs"
   },
   "devDependencies": {
-    "@sts-simulator/presentation": "file:../presentation",
     "@deepseek-ai/dsh-client-locale": "0.2.1-rc.2",
     "esbuild": "0.28.2"
   },
-  "bundledDependencies": ["@sts-simulator/run-play"],
+  "bundledDependencies": ["@sts-simulator/run-play", "@sts-simulator/presentation"],
   "dependencies": {
     "@sts-simulator/run-play": "file:../run_play",
+    "@sts-simulator/presentation": "file:../presentation",
     "@deepseek-ai/cordis": "4.0.5",
     "@deepseek-ai/dsh-agent": "0.2.1-rc.2",
     "@deepseek-ai/dsh-agent-loop": "0.2.1-rc.2",

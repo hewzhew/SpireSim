@@ -40,7 +40,7 @@ if (process.argv.slice(2).join(' ') === '--check') {
   const revision = (await run('git', ['rev-parse', 'HEAD'], { cwd: repository, windowsHide: true })).stdout.trim();
   const sourceDirty = Boolean((await run('git', ['status', '--porcelain'], { cwd: repository, windowsHide: true })).stdout.trim());
   const report = { schema: 'sts-node-distribution-v1', source_revision: revision, source_dirty: sourceDirty,
-    producer_sha256: sha(await readFile(fileURLToPath(import.meta.url))), packages: [], source_files_sha256: {}, installed_reading_checks: [], remote_modified: false };
+    producer_sha256: sha(await readFile(fileURLToPath(import.meta.url))), packages: [], source_files_sha256: {}, installed_reading_checks: [], installed_native_checks: [], remote_modified: false };
   let commandIndex = 0;
   async function npmCommand(cwd, parameters) {
     const log = join(output, `npm-${String(commandIndex++).padStart(2, '0')}.txt`);
@@ -120,7 +120,8 @@ if (process.argv.slice(2).join(' ') === '--check') {
         const verification = join(stageRoot, `verify-${directoryName}`);
         await mkdir(verification);
         await writeFile(join(verification, 'package.json'), '{"private":true,"type":"module"}\n');
-        await npmCommand(verification, ['install', '--offline', '--ignore-scripts', '--legacy-peer-deps', '--no-audit', '--no-fund', path]);
+        const hostPeers = Object.entries(manifest.peerDependencies ?? {}).map(([name, version]) => `${name}@${version}`);
+        await npmCommand(verification, ['install', '--offline', '--ignore-scripts', '--no-audit', '--no-fund', path, ...hostPeers]);
         const installed = join(verification, 'node_modules', ...manifest.name.split('/'));
         const workbench = directoryName === 'run_play' ? installed : join(installed, 'node_modules/@sts-simulator/run-play');
         const renderer = join(workbench, 'render.mjs');
@@ -134,6 +135,19 @@ if (process.argv.slice(2).join(' ') === '--check') {
             throw new Error(`Installed reading did not retain language and command: ${manifest.name}/${locale}`);
           }
           report.installed_reading_checks.push({ package: manifest.name, locale, preserved_record_and_command: true });
+        }
+        if (directoryName === 'dsh_player') {
+          const entry = join(installed, 'native.mjs');
+          within(verification, await realpath(createRequire(entry).resolve('@sts-simulator/presentation')));
+          const { nativeGuide } = await import(pathToFileURL(entry).href);
+          for (const locale of ['en', 'zh-CN']) {
+            const manual = nativeGuide(true, locale), assisted = nativeGuide(false, locale);
+            if (!manual.includes(locale === 'en' ? 'public-information manual play' : '依据公开信息手动出牌')
+                || manual.includes('research whole_combat') || !assisted.includes('research whole_combat 8000 work 200000')) {
+              throw new Error(`Installed native guide lost its language or play mode: ${locale}`);
+            }
+            report.installed_native_checks.push({ package: manifest.name, locale, imported_entry: true, preserved_mode_and_commands: true });
+          }
         }
       }
     }

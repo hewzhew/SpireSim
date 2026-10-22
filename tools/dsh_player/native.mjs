@@ -3,6 +3,7 @@
 import { mkdir, readFile, writeFile, stat, realpath, appendFile } from 'node:fs/promises';
 import { join, resolve, isAbsolute } from 'node:path';
 import { openWorkbench as openSharedWorkbench } from '@sts-simulator/run-play';
+import { createPresentation } from '@sts-simulator/presentation';
 import { createHash, randomBytes } from 'node:crypto';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
@@ -22,20 +23,15 @@ export const Config = z.object({
   agentLocale: z.union(['en', 'zh-CN']).required(false),
 });
 
-export function nativeGuide(manual = false) {
-  return `You play Slay the Spire through sts. Each chat has its own Ironclad Ascension 20 Heart run.
-${manual ? 'Play mode: public-information manual play, with retained free returns. Search, private previews and exact hidden pile order are unavailable. Make decisions from public facts and actual results.' : 'Play mode: search-assisted play.'}
-Begin with sts read: it creates a fresh run for this chat or reopens this chat's saved game. Each action returns its successor; use that state and its legal options for your next action. When a game fact or command meaning needed for your decision is unclear, briefly state what you need to clarify, query it, and use the answer for your next choice. Use read to recover missing state or a failed connection. Chat history and compaction are managed by dsh; room changes do not erase this conversation.
-Put the complete command before | into sts.command, without adding a verb: {"command":"event:Neow:0"} chooses that event option. Discovery uses choose:<card>; pile selections use act select:<card>, exactly as printed. ${manual ? 'act takes semantic actions, never row numbers or ordinal:<...>. For example, act play:Inflame#0, play:ShrugItOff#0 executes both. After drawing or generating a card, use the actual returned hand before choosing an unknown continuation.' : 'act and preview take semantic actions, never row numbers or ordinal:<...>. Their action line can use spaces or comma-space: preview play:Inflame#0, play:ShrugItOff#0 previews both without applying either. A query or another explicit command ends that action line; preview event:CursedTome:0, act event:CursedTome:0 previews then applies it.'}
-info expands the current event; info M0 reads the actual enemy in slot 0. Named mechanisms use info card/enemy/encounter/power/relic/potion <name>; use info <name> if its category is uncertain. info keys reads actual held keys and acquisition rules. inventory [effects] reads the permanent deck and owned resources; map reads this game's public map and Boss. Its printed routes follow connected rooms on that map; map full shows every published node and connection. options expands the current legal commands, including hidden shop removals and exact combat plays; use it rather than inventing a command. Copy command IDs even when display names differ. Use ASCII + for upgrades; +0 explicitly selects an unupgraded card.
-Hand costs are current instance costs. Hand damage is per hit after Strength, Weak and the listed target's Vulnerable, before enemy Block; those modifiers are already included. Displayed combat intent damage includes current damage modifiers and are per hit; multiply by the displayed hit count. Block, on-play triggers and turn-end effects affect HP separately. ${manual ? 'Check these public effects when planning, then inspect the actual successor.' : 'Use preview for the actual proposed sequence. A failed or lethal preview rules out that line, not every alternative. Search potion expenditure counts additional spending from the displayed search start.'} Printed card rules describe base effects and can differ from a generated card's current cost.
-piles reads the current combat's unordered draw, discard and exhaust card sets. inventory reads the permanent deck; cards exhausted in this fight remain in that permanent list but cannot be redrawn normally this fight.
-For deck, upgrade, shop, event and route choices, compare the current deck/resources and the next serious threat with the strongest alternative, including skip or leave where available. Count actual copies; distinguish existing effects from an upgrade's increment and conditional effects from immediately available ones.
-${manual ? 'Use act for actual card and potion plays. If a tried line needs revision, back returns to a retained earlier decision and restores its original RNG. Use mark <name> to retain an important start and back mark <name> to return. Attempts and returns remain visible; report any intervention. Do not use a failed transaction to probe unknown cards.' : `When preparation depends on how this deck performs against a named encounter, deck-lab list shows available encounters. For example, deck-lab Hexaghost scenarios 2 work 200000 ms 8000 potions 2 tests the current resources privately; append after <current legal preparation actions> to compare an upgrade, rest, purchase or card choice. Add details before after to include full turn traces in that diagnostic run. Keep the same encounter, seeds, budgets and potion limit for the baseline and alternative. These are fixed diagnostic shuffles, not the actual future or a win-rate estimate; zero retained wins leaves other lines unknown. Actual draws, energy and card movement matter: do not assume a permanent-deck card can be played every turn.
-If read lists saved combat wins, they are already replayed from this root; use plans/review/commit without rerunning research. At a combat start, a visible immediate kill can be played directly. Otherwise use research whole_combat 8000 work 200000 (milliseconds 1..20000, work 1..1000000). Each retained win has already been replayed from this exact position and RNG, including generated choices. Copy the complete plan ID printed by research/plans, including its @ report suffix. review <plan ID> [turn] only reads it; commit <plan ID> executes the complete saved combat line to its displayed outcome, with no new search or random reroll. Compare settled HP, minimum observed HP and additional potion spending. A replayed win is a checked baseline; it does not need to be reconstructed turn by turn. If it is expensive, preview one concrete alternative, then adopt a checked line or prefix and search its continuation when useful. If no win is retained at a player-turn boundary without a pending selection, preview end as a baseline, then compare a concrete card or potion line. Playing additional cards need not improve survival. Manual actions make the old search root stale. Budget exhaustion leaves other possibilities unknown.
-preview <semantic actions> privately tests combat or supported strategic choices, including events: preview event:Neow:3. If an action cannot resolve, it returns the private boundary reached before that action, including its hand and current costs; use this to repair the line. If it reaches a terminal early, it reports the actual outcome and unsimulated tail. These partial results do not validate the whole requested line. Every preview and act starts from the actual current position; read/options also refer to that actual position, not a prior preview. The displayed go x,y also works inside act or preview, with explicit coordinates; it selects that route without automatically finishing other room choices. A syntax error does not establish that preview is unavailable. research, plans, review and commit are combat-only; plans reads an existing search report. piles sl explicitly reads exact combat piles.`}
-back, jump and mark navigate this chat's saved game only; follow the user's rewind instructions. Collect all three Heart keys before leaving Act 3; missing keys end the run there even when both bosses are defeated. Stop at the user's requested checkpoint and report actual resources and unresolved concerns.
-The user can pause and return the game through the workspace panel. Explicit continuation supplies a checked actual-state read and any new return receipt. Reuse options only when bound to that current state. A return restores the saved RNG, not a new random draw. Cancellation may leave an in-flight game action completed. Use sts_feedback for a specific tool problem. Source maintenance belongs to the developer.`;
+export function nativeGuide(manual = false, locale = 'en') {
+  const presentation = createPresentation({ locale });
+  const text = key => presentation.text(`native:guide.${key}`);
+  return [text('opening'), text(manual ? 'modeManual' : 'modeAssisted'), text('begin'),
+    `${text('commands')} ${text(manual ? 'syntaxManual' : 'syntaxAssisted')}`, text('info'),
+    `${text('combat')} ${text(manual ? 'combatManual' : 'combatAssisted')} ${text('printed')}`,
+    text('piles'), text('preparation'),
+    ...(manual ? [text('manualPlay')] : [text('deckLab'), text('research'), text('preview')]),
+    text('returns'), text('workspace')].join('\n');
 }
 export const NATIVE_GUIDE = nativeGuide();
 
@@ -213,6 +209,11 @@ export class NativeGameControl {
     return nativeBudgetUsage(this.agent.session.snapshotEvents(), this.budget,
       this.agent.ctx.sessionProjections.checkpoint(this.agent.session).tokenUsage?.val);
   }
+  text(key, parameters) {
+    const locale = this.binding?.agentLocale ?? this.config.agentLocale ?? 'en';
+    if (this.presentation?.locale !== locale) this.presentation = createPresentation({ locale });
+    return this.presentation.text(`native:${key}`, parameters);
+  }
   scheduleBudgetDeadline() {
     clearTimeout(this.budgetTimer);
     if (!this.budget?.deadlineAt || this.closed) return;
@@ -374,12 +375,15 @@ export class NativeGameControl {
       if (!this.paused) throw new Error('The game is not paused.');
       return this.maintenance(async signal => {
         const game = await this.existingGame();
-        const text = game ? await this.readCurrent(game) : 'No game has been created for this chat. Begin with sts read to create this chat’s run.';
+        const text = game ? await this.readCurrent(game) : this.text('resume.noGame');
         signal.throwIfAborted();
         const facts = workspaceFacts(this.agent.session.snapshotEvents());
         const resumedThrough = facts.findLast(fact => fact.kind === 'resumed')?.seq ?? -1;
         const lastReturn = facts.findLast(fact => fact.receipt && fact.seq > resumedThrough);
-        const context = `The user explicitly resumed this game from the workspace. Follow pending user instructions. This is a checked current-state read. Reuse ${this.config.manual ? 'options' : 'options and candidates'} only when bound to this current state.${this.config.manual ? ' This is public-information manual play.' : ' Pausing alone does not invalidate unchanged-root saved wins. Any saved combat wins listed below have been checked against this root.'}${lastReturn ? '\nLatest new return receipt (the saved RNG was restored, not rerolled): ' + JSON.stringify(lastReturn.receipt) : ''}\n\n${text}`;
+        const manual = this.binding?.manual ?? this.config.manual ?? false;
+        const context = this.text('resume.lead', { reuse: this.text(manual ? 'resume.reuseManual' : 'resume.reuseAssisted') })
+          + this.text(manual ? 'resume.manual' : 'resume.assisted')
+          + (lastReturn ? this.text('resume.receipt', { receipt: JSON.stringify(lastReturn.receipt) }) : '') + '\n\n' + text;
         this.paused = false;
         try {
           this.agent.send(createUserMessage({ source: { kind: 'sts-workspace' }, content: [{ type: 'text', text: context }] }), 'next-step', true);
@@ -397,7 +401,7 @@ export class NativeGameControl {
       await this.game(true);
       await appendFile(join(this.binding.session, 'native-feedback.jsonl'), JSON.stringify({ at: new Date().toISOString(),
         agent: this.binding.agent, message }) + '\n');
-      return 'Feedback recorded; the game was not advanced.';
+      return this.text('message.feedbackRecorded');
     });
   }
   async close() {
@@ -430,12 +434,14 @@ export async function apply(ctx, config) {
     const binding = await readNativeBinding(agent, config);
     const manual = binding?.manual ?? config.manual ?? false;
     controlFor(agent, manual);
-    // Preset tools are inherited by the Agent, so restrict on the Agent's
-    // own scope rather than filtering the preset's descendant tools away.
-    await agent.ctx.plugin({ inject: ['tools', 'systemPrompt'], apply(child) {
-      child.tools.restrict({ allow: ['sts', 'sts_feedback'] });
-      child.systemPrompt.section({ name: 'sts:native-guide', order: 300, text: nativeGuide(manual), interpolate: false, complete: true });
+    // Mask inherited host tools; each chat owns its localized game schemas.
+    const locale = binding?.agentLocale ?? config.agentLocale ?? 'en';
+    const capability = await agent.ctx.plugin({ inject: ['tools', 'systemPrompt'], apply(child) {
+      child.tools.restrict({ allow: [] });
+      registerNativeTools(child, controlFor, locale);
+      child.systemPrompt.section({ name: 'sts:native-guide', order: 300, text: nativeGuide(manual, locale), interpolate: false, complete: true });
     } });
+    ctx.effect(() => () => capability.dispose(), 'sts-native.capability');
   });
   registerNativeCommands(ctx);
   ctx.effect(() => () => {
@@ -443,10 +449,15 @@ export async function apply(ctx, config) {
     return Promise.all([...controls.values()].map(control => control.dispose()));
   }, 'sts-native.sessions');
   ctx.tools.presentAs('native');
+}
+
+function registerNativeTools(ctx, controlFor, locale) {
+  const presentation = createPresentation({ locale });
+  const text = key => presentation.text(`native:tools.${key}`);
   ctx.tools.register(defineTool({
     name: 'sts',
-    description: 'Operate this chat’s A20 Heart game in its declared play mode. Start with read. Copy the complete command before | into command, e.g. event:Neow:0. act executes real actions; info queries mechanics. Each action returns its actual successor.',
-    parameters: { command: { type: 'string', required: true, description: 'A complete displayed command or query; do not prepend choose to an event command. Comma-space separates complete commands.' } },
+    description: text('sts'),
+    parameters: { command: { type: 'string', required: true, description: text('command') } },
     output: { schema: { type: 'object', additionalProperties: false, properties: {
       text: { type: 'string', required: true }, game: { type: 'object', additionalProperties: true, required: true },
     } }, render: (_args, value) => [{ type: 'text', text: value.text }],
@@ -457,11 +468,11 @@ export async function apply(ctx, config) {
   }));
   ctx.tools.register(defineTool({
     name: 'sts_feedback',
-    description: 'Record a specific missing game fact or tool problem for the developer.',
-    parameters: { message: { type: 'string', required: true, description: 'What happened and what information or behavior was needed.' } },
+    description: text('feedback'),
+    parameters: { message: { type: 'string', required: true, description: text('feedbackMessage') } },
     output: { schema: { type: 'string' }, render: (_args, value) => [{ type: 'text', text: value }] },
     async execute({ message }, exec) {
-      if (!message.trim()) throw new Error('Describe a concrete problem.');
+      if (!message.trim()) throw new Error(text('feedbackRequired'));
       return controlFor(exec.agent).feedback(message, exec.signal);
     },
   }));
