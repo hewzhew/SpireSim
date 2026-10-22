@@ -3477,6 +3477,16 @@
       "verifiedInput": "在 SDK 派发时捕获的输入；请求摘要已核验。未记录服务商 HTTP 请求体。",
       "recentError": "  步骤 {{step}}：{{command}}\n    {{text}}",
       "moreErrorLines": "  还有 {{count}} 行错误；observe {{step}} 可查看完整返回。"
+    },
+    "observation": {
+      "sessionRequired": "需要指定当前会话。",
+      "journalMismatch": "会话记录与选中的聊天不一致。",
+      "positiveTurn": "轮次必须是正整数。",
+      "validSelection": "需要指定有效的轮次、步骤和输入展开方式。",
+      "noGame": "这段聊天还没有游戏。",
+      "ownerMismatch": "游戏 owner 与选中的聊天不一致。",
+      "missingControl": "这段聊天仍使用旧版游戏工具。请更新工具并新建聊天，或重启服务后重新打开；没有执行返回。",
+      "completeReturnIdentity": "需要使用返回点列表中的完整来源与目标。"
     }
   },
   "scripted": {

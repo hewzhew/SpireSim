@@ -444,7 +444,8 @@ test('return-point observation does not resolve cold Agents, and mutations reach
   await view.pause(String(f.handle.agent.id)); assert.equal(resolves, 1); assert.equal(f.control.paused, true);
   const result = await view.restore(String(f.handle.agent.id), { schema: 'run-play-return-request-v1', source: f.points().source, target: identity(1) });
   assert.equal(result.receipt.to.state_revision, 1); assert.equal(result.control.paused, true); assert.ok(result.throughSeq > 0);
-  await assert.rejects(view.pause('another-chat'), /不一致/);
+  await assert.rejects(view.pause('another-chat'), /does not match/);
+  await assert.rejects(view.pause('another-chat', 'zh-CN'), /不一致/);
   assert.equal(f.requests.length, 0);
   for (const projection of [observationTickProjection, mapTickProjection]) {
     const event = { type: 'command/run', seq: 99, data: { name: 'sts-return', commandId: '99' } };

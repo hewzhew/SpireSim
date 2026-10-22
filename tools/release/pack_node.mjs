@@ -141,6 +141,7 @@ if (process.argv.slice(2).join(' ') === '--check') {
           within(verification, await realpath(createRequire(entry).resolve('@sts-simulator/presentation')));
           const { nativeGuide } = await import(pathToFileURL(entry).href);
           const { renderNativeObservation } = await import(pathToFileURL(join(installed, 'native-inspection.mjs')).href);
+          const { StsObservationView } = await import(pathToFileURL(join(installed, 'observation-view.mjs')).href);
           const { playerGuide, apply: applyScripted } = await import(pathToFileURL(join(installed, 'index.mjs')).href);
           const { continuationTask, runPlayer } = await import(pathToFileURL(join(installed, 'launch.mjs')).href);
           const { preparationInstructions, preparationStageGuide } = await import(pathToFileURL(join(installed, 'preparation.mjs')).href);
@@ -161,7 +162,13 @@ if (process.argv.slice(2).join(' ') === '--check') {
                 || !nativeInspection.includes('Opaque {{title}}') || !nativeInspection.includes('observe N input')) {
               throw new Error(`Installed native inspection lost language, record or command: ${locale}`);
             }
-            report.installed_native_checks.push({ package: manifest.name, locale, imported_entry: true, preserved_mode_and_commands: true, inspection_operator_language: true });
+            let observationError;
+            try { await StsObservationView.prototype.journal.call({}, '', locale); }
+            catch (error) { observationError = error.message; }
+            if (observationError !== (locale === 'en' ? 'Select the current session.' : '需要指定当前会话。')) {
+              throw new Error(`Installed observation service lost operator language: ${locale}`);
+            }
+            report.installed_native_checks.push({ package: manifest.name, locale, imported_entry: true, preserved_mode_and_commands: true, inspection_operator_language: true, observation_service_operator_language: true });
             const guide = playerGuide(locale), task = 'Opaque {{operator}}\nact play:Strike@0';
             if (!guide.includes(locale === 'en' ? 'Bare info expands the current options' : '无参数 info 展开当前选项')
                 || !guide.includes('research whole_combat 8000 work 200000')

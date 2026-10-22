@@ -207,8 +207,12 @@ test('native observation Remote shares the journal interpreter, loads input only
   assert.equal(await readFile(f.focus, 'utf8'), 'unrelated-game');
   await assert.rejects(view.read('foreign-chat'), /not found/);
   await assert.rejects(view.step(f.id, 1, 99), /No step/);
-  await assert.rejects(view.step(f.id, 0, 1), /有效/);
-  await assert.rejects(view.read(f.id, -1), /正整数/);
+  await assert.rejects(view.step(f.id, 0, 1), /valid turn/);
+  await assert.rejects(view.read(f.id, -1), /positive integer/);
+  await assert.rejects(view.step(f.id, 0, 1, false, 'zh-CN'), /有效/);
+  await assert.rejects(view.read(f.id, -1, 'zh-CN'), /正整数/);
+  await assert.rejects(view.read(f.id, 99, 'zh-CN'), /没有已记录的轮次 99/);
+  await assert.rejects(view.step(f.id, 1, 99, false, 'zh-CN'), /此轮次没有步骤 99/);
   const empty = f.ctx.sessions.create('empty-chat', { meta: { cwd: f.repository } });
   assert.equal((await view.read(empty.id)).status, 'not-started');
   assert.equal((await view.live(empty.id)).status, 'not-started');
@@ -260,7 +264,7 @@ test('observation can inspect a cold stored chat without attaching an Agent or r
   assert.equal((await view.read(f.id)).gameCalls, 1);
   assert.deepEqual(f.executed, ['read', 'broken', 'inventory']);
   const foreign = new Context(); t.after(() => foreign.fiber.dispose());
-  await assert.rejects(new StsObservationView(foreign, { inspectSession: async () => ({ ...f.log, meta: { ...f.log.meta, id: 'wrong' } }) }).read(f.id), /不一致/);
+  await assert.rejects(new StsObservationView(foreign, { inspectSession: async () => ({ ...f.log, meta: { ...f.log.meta, id: 'wrong' } }) }).read(f.id), /does not match/);
 });
 
 test('missing delivery evidence stays unavailable and invalid or foreign evidence is rejected', async t => {

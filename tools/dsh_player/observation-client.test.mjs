@@ -76,18 +76,18 @@ async function fixture({ usage = null, inputs = [], messages = [], returnPoints 
 test('native observation uses named args, loads and reuses input on demand, and hides another chat’s records', async () => {
   const f = await fixture();
   f.render(); await f.settle();
-  assert.deepEqual(f.calls, [{ channel: '/api', endpoint: 'stsObservation/read', args: { sessionId: 'selected-chat', turn: null } }]);
+  assert.deepEqual(f.calls, [{ channel: '/api', endpoint: 'stsObservation/read', args: { sessionId: 'selected-chat', turn: null, locale: 'zh-CN' } }]);
   f.render(); await f.settle();
-  assert.deepEqual(f.calls.at(-1).args, { sessionId: 'selected-chat', turn: 1, step: 2, input: false });
+  assert.deepEqual(f.calls.at(-1).args, { sessionId: 'selected-chat', turn: 1, step: 2, input: false, locale: 'zh-CN' });
   button(f.render(), '输入').props.onClick(); f.render(); await f.settle();
-  assert.deepEqual(f.calls.at(-1).args, { sessionId: 'selected-chat', turn: 1, step: 2, input: true });
+  assert.deepEqual(f.calls.at(-1).args, { sessionId: 'selected-chat', turn: 1, step: 2, input: true, locale: 'zh-CN' });
   assert.match(text(f.render()), /本步没有保存请求边界/);
   const count = f.calls.length;
   button(f.render(), '返回').props.onClick(); f.render(); await f.settle();
   button(f.render(), '输入').props.onClick(); f.render(); await f.settle();
   assert.equal(f.calls.length, count, 'switching content does not re-fetch an already loaded input');
   button(f.render(), '当前游戏').props.onClick(); f.render(); await f.settle();
-  assert.deepEqual(f.calls.at(-1), { channel: '/api', endpoint: 'stsObservation/live', args: { sessionId: 'selected-chat' } });
+  assert.deepEqual(f.calls.at(-1), { channel: '/api', endpoint: 'stsObservation/live', args: { sessionId: 'selected-chat', locale: 'zh-CN' } });
   assert.match(text(f.render()), /Actual inventory/);
   await button(f.render(), '复制').props.onClick(); assert.deepEqual(f.copies, ['Actual inventory']);
   f.render('another-chat'); await f.settle();
@@ -124,7 +124,7 @@ test('workspace reads exact return points, submits one source-bound restore, sta
   const first = start(), duplicate = start(); await Promise.all([first, duplicate]);
   const restore = f.calls.filter(call => call.endpoint.endsWith('/restore'));
   assert.equal(restore.length, 1);
-  assert.deepEqual(restore[0].args, { sessionId: 'selected-chat', request: { schema: 'run-play-return-request-v1',
+  assert.deepEqual(restore[0].args, { sessionId: 'selected-chat', locale: 'zh-CN', request: { schema: 'run-play-return-request-v1',
     source: { session_path: 'selected-game', session_id: 'same', identity: { head_revision: 7, state_revision: 7, archive_node_id: 'n7', public_snapshot_id: 's7' } },
     target: { head_revision: 6, state_revision: 6, archive_node_id: 'n6', public_snapshot_id: 's6' } } });
   assert.match(text(f.render()), /已暂停/); assert.ok(button(f.render(), '继续运行')); assert.ok(button(f.render(), '回到刚才'));
@@ -212,6 +212,7 @@ test('translated return controls keep exact source and target identities and nev
   await button(f.render(), 'Return here').props.onClick();
   const restore = f.calls.filter(call => call.endpoint.endsWith('/restore'));
   assert.equal(restore.length, 1);
+  assert.equal(restore[0].args.locale, 'en');
   assert.equal(restore[0].args.request.source.identity.state_revision, 7);
   assert.equal(restore[0].args.request.target.state_revision, 6);
   assert.ok(button(f.render(), 'Resume')); assert.ok(button(f.render(), 'Back to previous endpoint'));

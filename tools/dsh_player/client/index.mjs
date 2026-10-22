@@ -1,5 +1,6 @@
 // Same client module and sidebar extension contracts as the shipped dsh viewers.
 import { mapNamespace, gameNamespace, workbenchNamespace, mapDictionaries, gameDictionaries, workbenchDictionaries, mapTokenTitle, codeText, returnOutcomeText } from './locale.mjs';
+import { resolveLocale } from '@sts-simulator/presentation/catalogs';
 
 window.__ModuleLoader__.load({ id: '@sts-simulator/dsh-player', factory(require) {
   const React = require('react');
@@ -116,6 +117,7 @@ window.__ModuleLoader__.load({ id: '@sts-simulator/dsh-player', factory(require)
     }
     function ObservePanel({ sessionId, useProjection, t }) {
       const language = ctx.locale.getSnapshot().active;
+      const operatorLocale = resolveLocale(language);
       const count = value => formatNumber(value, language);
       const tick = useProjection('stsObservationTick'), gameTick = useProjection('stsMapTick');
       const [view, setView] = React.useState(null), [error, setError] = React.useState('');
@@ -171,7 +173,7 @@ window.__ModuleLoader__.load({ id: '@sts-simulator/dsh-player', factory(require)
       React.useEffect(() => {
         const abort = new AbortController();
         setError('');
-        ctx.connection.rpc.call('/api', 'stsObservation/read', { args: { sessionId, turn } }, abort.signal).then(result => {
+        ctx.connection.rpc.call('/api', 'stsObservation/read', { args: { sessionId, turn, locale: operatorLocale } }, abort.signal).then(result => {
           if (abort.signal.aborted) return;
           if (result.ok && result.value.status === 'ready' && !Array.isArray(result.value.timeline)) setError({ reason: 'protocolMismatch' });
           else if (result.ok) setView({ ...result.value, sessionId, requestedTurn: turn }); else setError({ message: result.error.message });
@@ -184,7 +186,7 @@ window.__ModuleLoader__.load({ id: '@sts-simulator/dsh-player', factory(require)
         const abort = new AbortController();
         setDetailError(null);
         ctx.connection.rpc.call('/api', 'stsObservation/step', { args: {
-          sessionId, turn: current.turn, step: selected.step, input: wantsInput,
+          sessionId, turn: current.turn, step: selected.step, input: wantsInput, locale: operatorLocale,
         } }, abort.signal).then(result => {
           if (abort.signal.aborted) return;
           if (result.ok && result.value.status === 'ready') setDetail({ ...result.value, key });
@@ -195,7 +197,7 @@ window.__ModuleLoader__.load({ id: '@sts-simulator/dsh-player', factory(require)
       React.useEffect(() => {
         if (mode !== 'returns') return;
         const abort = new AbortController();
-        ctx.connection.rpc.call('/api', 'stsObservation/points', { args: { sessionId } }, abort.signal).then(result => {
+        ctx.connection.rpc.call('/api', 'stsObservation/points', { args: { sessionId, locale: operatorLocale } }, abort.signal).then(result => {
           if (!abort.signal.aborted) setReturns({ ...(result.ok ? result.value : { status: 'error', message: result.error.message }), sessionId });
         }).catch(error => { if (!abort.signal.aborted) setReturns({ status: 'error', message: error.message, sessionId }); });
         return () => abort.abort();
@@ -203,7 +205,7 @@ window.__ModuleLoader__.load({ id: '@sts-simulator/dsh-player', factory(require)
       React.useEffect(() => {
         if (liveRequest?.sessionId !== sessionId) return;
         const abort = new AbortController();
-        ctx.connection.rpc.call('/api', 'stsObservation/live', { args: { sessionId } }, abort.signal).then(result => {
+        ctx.connection.rpc.call('/api', 'stsObservation/live', { args: { sessionId, locale: operatorLocale } }, abort.signal).then(result => {
           if (abort.signal.aborted) return;
           setLive({ ...(result.ok ? result.value : { status: 'error', message: result.error.message }),
             sessionId, gameTick: liveRequest.gameTick, request: liveRequest });
@@ -218,7 +220,7 @@ window.__ModuleLoader__.load({ id: '@sts-simulator/dsh-player', factory(require)
         operationRef.current = true;
         setWorking({ sessionId, kind });
         try {
-          const args = { sessionId };
+          const args = { sessionId, locale: operatorLocale };
           if (kind === 'restore') args.request = { schema: 'run-play-return-request-v1', source: currentReturns.points.source, target: point.identity };
           const result = await ctx.connection.rpc.call('/api', 'stsObservation/' + kind, { args });
           const value = result.ok ? result.value : { status: 'error', message: result.error.message };
