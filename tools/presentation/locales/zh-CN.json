@@ -5529,6 +5529,32 @@
       "export": {
         "about": "将当前 head 的活动恢复路径导出为新的产物"
       }
+    },
+    "shell": {
+      "intro": "输入 play Strike @0、claim Relic#0、act <actions...>，或 help 查看帮助。",
+      "input": "\n输入：{{command}}",
+      "promptFlush": "无法刷新 run-play 提示符：{{error}}",
+      "inputRead": "无法读取 run-play 命令：{{error}}",
+      "infoName": "info 需要查询名称；输入 info help 查看用法",
+      "adviceHead": "run-play advice 需要当前决策",
+      "anchorRequired": "anchor 需要一条以斜杠分隔动作的命令行",
+      "anchorSingle": "anchor 只接受一条命令行",
+      "historyLimit": "history 条数无效 {{value}}：{{error}}",
+      "terminalLimit": "terminals 条数无效 {{value}}：{{error}}",
+      "semanticRequired": "{{command}} 需要一个语义动作",
+      "semanticSingle": "{{command}} 只接受一个语义动作",
+      "backSteps": "back 步数无效 {{value}}：{{error}}",
+      "jumpRequired": "jump 需要 n<NODE>、source:h<revision> 或 target:h<revision>",
+      "helpAtomic": "act play Strike @0 play Defend end（整行执行） | view | actions",
+      "helpLegacy": "也可使用 play:<card>[@monster] 和 use-potion:<potion>。",
+      "helpDisplayed": "<显示的选项编号> | route:x.y | info <name>",
+      "unknown": "未知 run-play 命令：{{command}}；输入 help 查看命令",
+      "semanticOnly": "奖励、卡牌奖励和商店页面请使用显示的语义动作，选项编号可能变化",
+      "noDisplayed": "没有可供选择的已显示决策",
+      "noSource": "已显示的决策没有可选择来源",
+      "selectionMember": "已显示决策中没有选牌成员 {{index}}",
+      "option": "已显示决策中没有选项 {{index}}",
+      "terminal": "此终局没有可执行动作。"
     }
   },
   "compact": {

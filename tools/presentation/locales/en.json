@@ -5529,6 +5529,32 @@
       "export": {
         "about": "Export the current head's active recovery path to fresh artifacts"
       }
+    },
+    "shell": {
+      "intro": "Enter play Strike @0, claim Relic#0, act <actions...>, or help.",
+      "input": "\nInput: {{command}}",
+      "promptFlush": "failed to flush run-play prompt: {{error}}",
+      "inputRead": "failed to read run-play command: {{error}}",
+      "infoName": "info requires a name; enter info help for examples",
+      "adviceHead": "run-play advice requires a decision head",
+      "anchorRequired": "anchor requires one slash-separated line",
+      "anchorSingle": "anchor accepts exactly one line",
+      "historyLimit": "invalid history limit {{value}}: {{error}}",
+      "terminalLimit": "invalid terminals limit {{value}}: {{error}}",
+      "semanticRequired": "{{command}} requires one semantic action",
+      "semanticSingle": "{{command}} accepts exactly one semantic action",
+      "backSteps": "invalid back steps {{value}}: {{error}}",
+      "jumpRequired": "jump requires n<NODE>, source:h<revision>, or target:h<revision>",
+      "helpAtomic": "act play Strike @0 play Defend end (atomic) | view | actions",
+      "helpLegacy": "Legacy play:<card>[@monster] and use-potion:<potion> remain valid.",
+      "helpDisplayed": "<displayed option number> | route:x.y | info <name>",
+      "unknown": "unknown run-play command: {{command}}; enter help for commands",
+      "semanticOnly": "Use the displayed semantic action on reward, card reward, and shop screens; their option numbers can move",
+      "noDisplayed": "No displayed decision to choose from",
+      "noSource": "Displayed decision has no selectable source",
+      "selectionMember": "Selection member {{index}} is not in the displayed decision",
+      "option": "Option {{index}} is not in the displayed decision",
+      "terminal": "No actions at this terminal."
     }
   },
   "compact": {

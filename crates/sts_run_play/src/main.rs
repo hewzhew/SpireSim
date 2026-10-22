@@ -2219,7 +2219,7 @@ fn run(cli: Cli) -> Result<(), String> {
         }
         Command::Options { session } => {
             let controller = RunPlayControllerV1::open(RunPlayPathsV1::new(session))?;
-            print_shell_actions_v1(controller.head())?;
+            print_shell_actions_v1(controller.head(), locale)?;
         }
         Command::Status { session } => {
             let paths = RunPlayPathsV1::new(session);
@@ -4679,26 +4679,36 @@ fn run_shell_v1(session: PathBuf, locale: Locale) -> Result<(), String> {
     let mut controller = RunPlayControllerV1::open(RunPlayPathsV1::new(session))?;
     let mut known = None;
     let mut displayed = None;
-    print_shell_reading_v1(&mut controller, &mut known, &mut displayed)?;
-    println!("Enter play Strike @0, claim Relic#0, act <actions...>, or help.");
+    print_shell_reading_v1(&mut controller, &mut known, &mut displayed, locale)?;
+    println!("{}", cli_presentation::message(locale, "shell.intro", &[]));
     let stdin = io::stdin();
     let echo_input = !stdin.is_terminal();
     loop {
         print!("run-play> ");
-        io::stdout()
-            .flush()
-            .map_err(|error| format!("failed to flush run-play prompt: {error}"))?;
+        io::stdout().flush().map_err(|error| {
+            cli_presentation::message(
+                locale,
+                "shell.promptFlush",
+                &[("error", &error.to_string())],
+            )
+        })?;
         let mut line = String::new();
-        if stdin
-            .read_line(&mut line)
-            .map_err(|error| format!("failed to read run-play command: {error}"))?
-            == 0
+        if stdin.read_line(&mut line).map_err(|error| {
+            cli_presentation::message(locale, "shell.inputRead", &[("error", &error.to_string())])
+        })? == 0
         {
             break;
         }
         if echo_input && !line.trim().is_empty() {
             let parts = line.split_whitespace().collect::<Vec<_>>();
-            println!("\nInput: {}", compact_action_input_v1(&parts));
+            println!(
+                "{}",
+                cli_presentation::message(
+                    locale,
+                    "shell.input",
+                    &[("command", &compact_action_input_v1(&parts))]
+                )
+            );
         }
         let mut words = line.split_whitespace();
         let Some(command) = words.next() else {
@@ -4707,14 +4717,16 @@ fn run_shell_v1(session: PathBuf, locale: Locale) -> Result<(), String> {
         let command_started = Instant::now();
         let command_result = (|| -> Result<bool, String> {
             match command {
-                "view" => print_shell_reading_v1(&mut controller, &mut known, &mut displayed)?,
+                "view" => {
+                    print_shell_reading_v1(&mut controller, &mut known, &mut displayed, locale)?
+                }
                 "status" => print_shell_view_v1(&render_status_v1(controller.head(), locale)?),
                 "show" => print_shell_view_v1(&render_show_v1(controller.head())?),
-                "actions" => print_shell_actions_v1(controller.head())?,
+                "actions" => print_shell_actions_v1(controller.head(), locale)?,
                 "info" => {
                     let query = words.collect::<Vec<_>>().join(" ");
                     if query.is_empty() {
-                        return Err("info requires a name; enter info help for examples".into());
+                        return Err(cli_presentation::message(locale, "shell.infoName", &[]));
                     }
                     let decision = controller
                         .head()
@@ -4725,14 +4737,14 @@ fn run_shell_v1(session: PathBuf, locale: Locale) -> Result<(), String> {
                     print_shell_view_v1(&mechanics_info::render(
                         decision.as_ref(),
                         &query,
-                        Locale::En,
+                        locale,
                     )?);
                 }
                 "advice" => {
                     let advice = controller.advise_v1()?;
                     let decision =
                         controller.head().current_decision.as_ref().ok_or_else(|| {
-                            "run-play advice requires a decision head".to_string()
+                            cli_presentation::message(locale, "shell.adviceHead", &[])
                         })?;
                     print!("{}", render_advice_v1(&advice, decision)?);
                 }
@@ -4740,7 +4752,7 @@ fn run_shell_v1(session: PathBuf, locale: Locale) -> Result<(), String> {
                     let advice = controller.advise_v1()?;
                     let decision =
                         controller.head().current_decision.as_ref().ok_or_else(|| {
-                            "run-play advice requires a decision head".to_string()
+                            cli_presentation::message(locale, "shell.adviceHead", &[])
                         })?;
                     print!("{}", render_advice_v1(&advice, decision)?);
                     let detail = controller.advice_detail_v1()?;
@@ -4755,24 +4767,28 @@ fn run_shell_v1(session: PathBuf, locale: Locale) -> Result<(), String> {
                     );
                 }
                 "anchor" => {
-                    let spec = words
-                        .next()
-                        .ok_or_else(|| "anchor requires one slash-separated line".to_string())?;
+                    let spec = words.next().ok_or_else(|| {
+                        cli_presentation::message(locale, "shell.anchorRequired", &[])
+                    })?;
                     if words.next().is_some() {
-                        return Err("anchor accepts exactly one line".to_string());
+                        return Err(cli_presentation::message(locale, "shell.anchorSingle", &[]));
                     }
                     let choices = parse_action_line_v1(spec, "anchor")?;
                     controller.anchor_action_line_v1(&choices)?;
                     println!("Completed: anchor {spec}");
-                    print_shell_reading_v1(&mut controller, &mut known, &mut displayed)?;
+                    print_shell_reading_v1(&mut controller, &mut known, &mut displayed, locale)?;
                 }
                 "history" => {
                     let limit = words
                         .next()
                         .map(|value| {
-                            value
-                                .parse::<usize>()
-                                .map_err(|error| format!("invalid history limit {value}: {error}"))
+                            value.parse::<usize>().map_err(|error| {
+                                cli_presentation::message(
+                                    locale,
+                                    "shell.historyLimit",
+                                    &[("value", value), ("error", &error.to_string())],
+                                )
+                            })
                         })
                         .transpose()?
                         .unwrap_or(40);
@@ -4783,7 +4799,11 @@ fn run_shell_v1(session: PathBuf, locale: Locale) -> Result<(), String> {
                         .next()
                         .map(|value| {
                             value.parse::<usize>().map_err(|error| {
-                                format!("invalid terminals limit {value}: {error}")
+                                cli_presentation::message(
+                                    locale,
+                                    "shell.terminalLimit",
+                                    &[("value", value), ("error", &error.to_string())],
+                                )
                             })
                         })
                         .transpose()?
@@ -4802,7 +4822,7 @@ fn run_shell_v1(session: PathBuf, locale: Locale) -> Result<(), String> {
                         controller.anchor_action_line_v1(&selectors)?;
                     }
                     println!("Completed: act {}", compact_action_input_v1(&actions));
-                    print_shell_reading_v1(&mut controller, &mut known, &mut displayed)?;
+                    print_shell_reading_v1(&mut controller, &mut known, &mut displayed, locale)?;
                 }
                 "play" | "use" | "claim" | "take" | "buy" | "remove" | "smith" | "toke"
                 | "choose" | "discard-potion" | "boss-relic" => {
@@ -4810,58 +4830,78 @@ fn run_shell_v1(session: PathBuf, locale: Locale) -> Result<(), String> {
                     let selector = parse_shell_single_action_v1(&actions, command)?;
                     controller.choose_action_v1(&selector, true)?;
                     println!("Completed: {}", actions.join(" "));
-                    print_shell_reading_v1(&mut controller, &mut known, &mut displayed)?;
+                    print_shell_reading_v1(&mut controller, &mut known, &mut displayed, locale)?;
                 }
                 "manual" | "auto" => {
-                    let action = words
-                        .next()
-                        .ok_or_else(|| format!("{command} requires one semantic action"))?;
+                    let action = words.next().ok_or_else(|| {
+                        cli_presentation::message(
+                            locale,
+                            "shell.semanticRequired",
+                            &[("command", command)],
+                        )
+                    })?;
                     if words.next().is_some() {
-                        return Err(format!("{command} accepts exactly one semantic action"));
+                        return Err(cli_presentation::message(
+                            locale,
+                            "shell.semanticSingle",
+                            &[("command", command)],
+                        ));
                     }
                     let selector = parse_action_selector_v1(action, command)?;
                     controller.choose_action_v1(&selector, command == "manual")?;
                     println!("Completed: {command} {action}");
-                    print_shell_reading_v1(&mut controller, &mut known, &mut displayed)?;
+                    print_shell_reading_v1(&mut controller, &mut known, &mut displayed, locale)?;
                 }
                 "back" => {
                     let steps = words
                         .next()
                         .map(|value| {
-                            value
-                                .parse::<usize>()
-                                .map_err(|error| format!("invalid back steps {value}: {error}"))
+                            value.parse::<usize>().map_err(|error| {
+                                cli_presentation::message(
+                                    locale,
+                                    "shell.backSteps",
+                                    &[("value", value), ("error", &error.to_string())],
+                                )
+                            })
                         })
                         .transpose()?
                         .unwrap_or(1);
                     controller.back(steps)?;
                     println!("Completed: back {steps}");
                     known = None;
-                    print_shell_reading_v1(&mut controller, &mut known, &mut displayed)?;
+                    print_shell_reading_v1(&mut controller, &mut known, &mut displayed, locale)?;
                 }
                 "jump" => {
                     let selector = words.next().ok_or_else(|| {
-                        "jump requires n<NODE>, source:h<revision>, or target:h<revision>"
-                            .to_string()
+                        cli_presentation::message(locale, "shell.jumpRequired", &[])
                     })?;
                     controller.jump(selector)?;
                     println!("Completed: jump {selector}");
                     known = None;
-                    print_shell_reading_v1(&mut controller, &mut known, &mut displayed)?;
+                    print_shell_reading_v1(&mut controller, &mut known, &mut displayed, locale)?;
                 }
                 "checkpoint" => {
                     controller.checkpoint()?;
                     println!("Completed: checkpoint");
-                    print_shell_reading_v1(&mut controller, &mut known, &mut displayed)?;
+                    print_shell_reading_v1(&mut controller, &mut known, &mut displayed, locale)?;
                 }
                 "help" => {
                     println!("play <card>[#copy] [@monster] | use <potion> [@monster] | end");
                     println!("claim <reward> | take <card> | buy <item> | remove <card>");
                     println!("smith <card> | toke <card> | boss-relic <relic>");
                     println!("choose <card> | discard-potion <potion>");
-                    println!("act play Strike @0 play Defend end (atomic) | view | actions");
-                    println!("Legacy play:<card>[@monster] and use-potion:<potion> remain valid.");
-                    println!("<displayed option number> | route:x.y | info <name>");
+                    println!(
+                        "{}",
+                        cli_presentation::message(locale, "shell.helpAtomic", &[])
+                    );
+                    println!(
+                        "{}",
+                        cli_presentation::message(locale, "shell.helpLegacy", &[])
+                    );
+                    println!(
+                        "{}",
+                        cli_presentation::message(locale, "shell.helpDisplayed", &[])
+                    );
                     println!("status | show | info help");
                     println!(
                         "advice | advice-detail | compare <lines...> | compare-detail <lines...>"
@@ -4873,22 +4913,28 @@ fn run_shell_v1(session: PathBuf, locale: Locale) -> Result<(), String> {
                 "quit" | "exit" => return Ok(true),
                 unknown => {
                     if words.next().is_some() {
-                        return Err(format!(
-                            "unknown run-play command: {unknown}; enter help for commands"
+                        return Err(cli_presentation::message(
+                            locale,
+                            "shell.unknown",
+                            &[("command", unknown)],
                         ));
                     }
                     if let Ok(index) = unknown.parse::<usize>() {
                         if shell_requires_semantic_action_v1(
                             controller.head().current_decision.as_ref().map(|d| d.site),
                         ) {
-                            return Err("Use the displayed semantic action on reward, card reward, and shop screens; their option numbers can move".to_string());
+                            return Err(cli_presentation::message(
+                                locale,
+                                "shell.semanticOnly",
+                                &[],
+                            ));
                         }
-                        let reading = displayed
-                            .as_ref()
-                            .ok_or_else(|| "No displayed decision to choose from".to_string())?;
-                        let (choice, label) = shell_numbered_choice_v1(reading, index)?;
+                        let reading = displayed.as_ref().ok_or_else(|| {
+                            cli_presentation::message(locale, "shell.noDisplayed", &[])
+                        })?;
+                        let (choice, label) = shell_numbered_choice_v1(reading, index, locale)?;
                         let source = reading.source.clone().ok_or_else(|| {
-                            "Displayed decision has no selectable source".to_string()
+                            cli_presentation::message(locale, "shell.noSource", &[])
                         })?;
                         controller
                             .choose_bound_v1(&decision::RunPlayBoundChoiceV1 { source, choice })?;
@@ -4898,7 +4944,7 @@ fn run_shell_v1(session: PathBuf, locale: Locale) -> Result<(), String> {
                         controller.choose_action_v1(&selector, true)?;
                         println!("Completed: {unknown}");
                     }
-                    print_shell_reading_v1(&mut controller, &mut known, &mut displayed)?;
+                    print_shell_reading_v1(&mut controller, &mut known, &mut displayed, locale)?;
                 }
             }
             Ok(false)
@@ -4922,22 +4968,26 @@ fn run_shell_v1(session: PathBuf, locale: Locale) -> Result<(), String> {
 fn shell_numbered_choice_v1(
     reading: &decision::RunPlayDecisionReadingV1,
     index: usize,
+    locale: Locale,
 ) -> Result<(sts_oracle_learning::agent::task::TaskPublicChoiceV1, String), String> {
     if reading.options.is_empty() && reading.selections.len() == 1 {
         let selection = &reading.selections[0];
         if selection.min == 1 && selection.max == 1 {
             let member = selection.members.get(index).ok_or_else(|| {
-                format!("Selection member {index} is not in the displayed decision")
+                cli_presentation::message(
+                    locale,
+                    "shell.selectionMember",
+                    &[("index", &index.to_string())],
+                )
             })?;
             let mut choice = selection.choice.clone();
             choice.ordinal_path.push(member.ordinal);
             return Ok((choice, member.label.clone()));
         }
     }
-    let option = reading
-        .options
-        .get(index)
-        .ok_or_else(|| format!("Option {index} is not in the displayed decision"))?;
+    let option = reading.options.get(index).ok_or_else(|| {
+        cli_presentation::message(locale, "shell.option", &[("index", &index.to_string())])
+    })?;
     Ok((option.choice.clone(), option.label.clone()))
 }
 
@@ -4945,47 +4995,18 @@ fn print_shell_reading_v1(
     controller: &mut RunPlayControllerV1,
     known: &mut Option<decision::DecisionKnownContextV1>,
     displayed: &mut Option<decision::RunPlayDecisionReadingV1>,
+    locale: Locale,
 ) -> Result<(), String> {
-    let reading = controller.decision_reading_v1(&[], known.as_ref(), Locale::En)?;
+    let reading = controller.decision_reading_v1(&[], known.as_ref(), locale)?;
     println!(
         "h{} node=n{}",
         controller.head().head_revision,
         render::short_id(controller.head().position.archive_node_id())
     );
-    print_shell_view_v1(&shell_view_with_actions_v1(&reading, controller.head()));
+    print_shell_view_v1(&reading.view);
     *known = reading.context.clone();
     *displayed = Some(reading);
     Ok(())
-}
-
-fn shell_view_with_actions_v1(
-    reading: &decision::RunPlayDecisionReadingV1,
-    head: &model::RunPlayHeadV1,
-) -> String {
-    if !shell_requires_semantic_action_v1(head.current_decision.as_ref().map(|d| d.site)) {
-        return reading.view.clone();
-    }
-    let public = head
-        .current_decision
-        .as_ref()
-        .and_then(|inventory| inventory.public_decision_v1().ok());
-    let mut output = String::new();
-    for line in reading.view.lines() {
-        output.push_str(line);
-        if let (Some(public), Some((prefix, _))) = (&public, line.split_once(": ")) {
-            if let Ok(index) = prefix.parse::<usize>() {
-                if let Some(option) = reading.options.get(index) {
-                    if let Ok(action) = semantic_action_for_choice_v1(public, &option.choice) {
-                        output.push_str("  [");
-                        output.push_str(&action);
-                        output.push(']');
-                    }
-                }
-            }
-        }
-        output.push('\n');
-    }
-    output
 }
 
 fn shell_requires_semantic_action_v1(site: Option<TaskDecisionSiteV1>) -> bool {
@@ -5029,9 +5050,12 @@ fn shell_cell_width_v1(text: &str) -> usize {
         .sum()
 }
 
-fn print_shell_actions_v1(head: &model::RunPlayHeadV1) -> Result<(), String> {
+fn print_shell_actions_v1(head: &model::RunPlayHeadV1, locale: Locale) -> Result<(), String> {
     let Some(inventory) = head.current_decision.as_ref() else {
-        println!("No actions at this terminal.");
+        println!(
+            "{}",
+            cli_presentation::message(locale, "shell.terminal", &[])
+        );
         return Ok(());
     };
     let decision = inventory.public_decision_v1()?;
@@ -5489,10 +5513,16 @@ mod tests {
             state: None,
             last_choice: None,
         };
-        let (choice, label) = shell_numbered_choice_v1(&reading, 0).unwrap();
-        assert_eq!(choice.ordinal_path, vec![7, 9]);
-        assert_eq!(label, "Wound");
-        assert!(shell_numbered_choice_v1(&reading, 1).is_err());
+        for locale in [Locale::En, Locale::ZhCn] {
+            let (choice, label) = shell_numbered_choice_v1(&reading, 0, locale).unwrap();
+            assert_eq!(choice.ordinal_path, vec![7, 9]);
+            assert_eq!(label, "Wound");
+            let error = shell_numbered_choice_v1(&reading, 1, locale).unwrap_err();
+            assert_eq!(
+                error,
+                cli_presentation::message(locale, "shell.selectionMember", &[("index", "1")])
+            );
+        }
     }
 
     #[test]

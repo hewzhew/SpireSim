@@ -6,7 +6,13 @@ use sts_presentation::Locale;
 use crate::Cli;
 
 fn text(locale: Locale, key: &str) -> String {
-    locale.text("cli", key, &[]).expect("embedded CLI message")
+    message(locale, key, &[])
+}
+
+pub(super) fn message(locale: Locale, key: &str, parameters: &[(&str, &str)]) -> String {
+    locale
+        .text("cli", key, parameters)
+        .expect("embedded CLI message")
 }
 
 fn optional_text(locale: Locale, key: &str) -> Option<String> {

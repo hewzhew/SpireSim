@@ -11,6 +11,8 @@ Rust 拥有状态、来源检查、真实执行和提交；客户端只保存返
 
 Rust 可执行文件统一使用全局 `--locale`，可放在子命令之前或之后。例如 `run_play --locale zh-CN --help`、`run_play info --locale zh-CN --help` 显示中文帮助；地图、机制、库存和 agent-shell 的游戏读数也沿同一参数选择语言。
 
+交互 `shell` 的初始读数、`view`、`status` 和 `info` 使用同一语言，输入提示、帮助说明和 shell 自身的校验消息从 `cli.shell` 取词。显示的动作来自原生读数与候选身份；`Completed:` 回执、命令与已记录的原文保持原值。
+
 `workbench.mjs` 是命令行与 [dsh 玩家插件](../dsh_player/README.md) 共用的命令 owner。
 `openWorkbench` 固定绑定一个会话，`execute` 接收短命令并返回 `{ text }`，输出不写到全局 stdout。
 本次返回实际展示了当前读数时，结果另带 `currentReading: { control, summary, text }`：摘要来自 Rust，文字是本次返回中保留的最后一份实际局面读数，使用同样的命令前缀。私下预演和纯规则查询不生成它，失败调用也不借早先的读数生成当前边界。此数据用于日志与上下文压缩，不应重复渲染到模型消息。
