@@ -7,6 +7,8 @@ Rust 拥有状态、来源检查、真实执行和提交；客户端只保存返
 
 从源码使用 Node 工作台前，在 `tools/presentation` 与 `tools/run_play` 各执行一次 `npm ci`。工作台通过正式依赖消费共用语言资源；[分发构建](../../docs/runbooks/release.md)捆绑该依赖及其运行库，并用离线安装检查实际中英文读数；开发源码链接保持不动。
 
+命令行在会话或命令之前接受 `--locale en|zh-CN`，例如 `node scripts/p.mjs --locale zh-CN --help` 或 `node scripts/p.mjs --locale zh-CN <session> read`。默认英语；语言同时用于帮助、输入校验和游戏读数，不改变存档、命令 ID 或共享偏好。直接使用 `openWorkbench` 时仍传 `agentLocale`，直接连接 `openRunPlay` 时传 `locale`。模型玩家其余提示与底层协议诊断各由实际 owner 管理。
+
 `workbench.mjs` 是命令行与 [dsh 玩家插件](../dsh_player/README.md) 共用的命令 owner。
 `openWorkbench` 固定绑定一个会话，`execute` 接收短命令并返回 `{ text }`，输出不写到全局 stdout。
 本次返回实际展示了当前读数时，结果另带 `currentReading: { control, summary, text }`：摘要来自 Rust，文字是本次返回中保留的最后一份实际局面读数，使用同样的命令前缀。私下预演和纯规则查询不生成它，失败调用也不借早先的读数生成当前边界。此数据用于日志与上下文压缩，不应重复渲染到模型消息。

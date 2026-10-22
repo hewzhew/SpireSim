@@ -3,6 +3,7 @@
 // action strings. Anything the workbench knows about the current
 // decision beyond its rendered view comes from the simulator.
 import { mapGraphFromObservation } from './render.mjs';
+import { createPresentation } from '@sts-simulator/presentation';
 
 // ---------------------------------------------------------------------------
 // The board and potion skin consume the same typed shape as the executable's
@@ -30,7 +31,7 @@ export function decisionObservation(doc) {
   return doc?.decision?.observation?.observation ?? null;
 }
 
-export function assertCurrentDecision(reading, doc) {
+export function assertCurrentDecision(reading, doc, presentation = createPresentation()) {
   // Ordinary combat readings currently have no source/choice objects. Their
   // numbers and hints come from a fresh decision-json read; Rust resolves the
   // copied command again at execution. Choice pages must carry a snapshot.
@@ -38,7 +39,7 @@ export function assertCurrentDecision(reading, doc) {
       && !reading.options?.length && !reading.selections?.length) return;
   if (!reading.raw?.reading?.source?.public_snapshot_id
       || reading.raw.reading.source.public_snapshot_id !== doc?.decision?.information?.snapshot_id) {
-    throw new Error('current decision changed during choice resolution; read it again before choosing');
+    throw new Error(presentation.text('workbench:command.decisionChanged'));
   }
 }
 
@@ -52,8 +53,8 @@ export function isRewardReading(reading) {
 
 // The displayed rows may be reordered or filtered. Their original choices,
 // from this exact observation, bind them to Rust's semantic action strings.
-export function optionSemantics(reading, doc) {
-  assertCurrentDecision(reading, doc);
+export function optionSemantics(reading, doc, presentation = createPresentation()) {
+  assertCurrentDecision(reading, doc, presentation);
   const semantics = doc.semantic_actions ?? [];
   if (semantics.length !== doc.decision?.candidates?.length) {
     throw new Error('choice contract drifted: candidate and semantic action counts differ');
@@ -91,26 +92,26 @@ function cardCommandParts(command) {
   return { ...parts, level: parts.upgrade === undefined ? null : parts.upgrade === '+' ? 1 : Number(parts.upgrade.slice(1)) };
 }
 
-export function readingOptionCommands(reading, doc) {
-  const commands = optionSemantics(reading, doc);
+export function readingOptionCommands(reading, doc, presentation = createPresentation()) {
+  const commands = optionSemantics(reading, doc, presentation);
   return commands.map(command => strategicOptionCommand(command,
     { position: { kind: 'decision', observation: doc.decision.observation } }));
 }
 
-export function currentCommandHint(reading, doc, { preview = false } = {}) {
+export function currentCommandHint(reading, doc, { preview = false, presentation = createPresentation() } = {}) {
   const commands = preview
-    ? (reading.options?.length ? optionSemantics(reading, doc) : expandedCombatCommands(reading, doc))
+    ? (reading.options?.length ? optionSemantics(reading, doc, presentation) : expandedCombatCommands(reading, doc, presentation))
       .filter(Boolean).map(action => `preview ${conciseCardCommand(action)}`)
-    : reading.options?.length ? readingOptionCommands(reading, doc)
-      : expandedCombatCommands(reading, doc).map(command => `act ${command}`);
+    : reading.options?.length ? readingOptionCommands(reading, doc, presentation)
+      : expandedCombatCommands(reading, doc, presentation).map(command => `act ${command}`);
   return commands.length
-    ? `Submit one complete command verbatim:\n${commands.map(command => `  ${command}`).join('\n')}`
-    : 'Use options to inspect the current legal commands.';
+    ? presentation.text('workbench:command.completeCommand', { commands: commands.map(command => `  ${command}`).join('\n') })
+    : presentation.text('workbench:command.inspectOptions');
 }
 
-export function expandedCombatCommands(reading, doc) {
+export function expandedCombatCommands(reading, doc, presentation = createPresentation()) {
   if (reading.control !== 'combat' || reading.options?.length || reading.selections?.length) return [];
-  assertCurrentDecision(reading, doc);
+  assertCurrentDecision(reading, doc, presentation);
   const commands = doc.semantic_actions ?? [];
   if (commands.length !== doc.decision?.candidates?.length) {
     throw new Error('choice contract drifted: candidate and semantic action counts differ');
@@ -123,9 +124,9 @@ export function expandedCombatCommands(reading, doc) {
 // Repeated copies share a representative; options still exposes every occurrence
 // and auxiliary actions such as discarding a potion.
 // Bind each to the engine candidate: #occurrence differs from hand/potion slots.
-export function distinctCombatCommands(reading, doc) {
+export function distinctCombatCommands(reading, doc, presentation = createPresentation()) {
   if (reading.control !== 'combat' || reading.options?.length || reading.selections?.length) return [];
-  expandedCombatCommands(reading, doc); // Validate snapshot and parallel arrays.
+  expandedCombatCommands(reading, doc, presentation); // Validate snapshot and parallel arrays.
   const cards = decisionObservation(doc)?.cards?.hand?.cards ?? [];
   const seen = new Set();
   return doc.decision.candidates.flatMap((candidate, index) => {
@@ -166,10 +167,10 @@ export function cardDamageLabel(card, monsters, { targetIndex = null, suffix = '
   return targets.map(target => `M${target.slot}:${target.damage}${suffix}`).join(separator);
 }
 
-export function resolveOptionName(wanted, reading, doc) {
-  const aligned = optionSemantics(reading, doc);
+export function resolveOptionName(wanted, reading, doc, presentation = createPresentation()) {
+  const aligned = optionSemantics(reading, doc, presentation);
   if (wanted.includes('\uFF0B')) {
-    throw new Error(`invalid fullwidth plus in "${wanted}"; use ASCII '+' (U+002B) for upgrades: Card+ or Card+1 for one upgrade, Card+0 for base`);
+    throw new Error(presentation.text('workbench:command.fullwidthPlus', { wanted }));
   }
   // Explicit selectors must never fall back to a substring: a missing #0
   // must not select #01, another object, or an unrelated label.
@@ -193,9 +194,9 @@ export function resolveOptionName(wanted, reading, doc) {
         if (matches.length === 1) return matches[0].index;
       }
     }
-    throw new Error(`no exact current option matching "${wanted}". ${currentCommandHint(reading, doc)}`);
+    throw new Error(presentation.text('workbench:command.noExactOption', { wanted, hint: currentCommandHint(reading, doc, { presentation }) }));
   }
-  const norm = value => (value ?? '').toLowerCase().replaceAll(/[^a-z0-9]/g, '');
+  const norm = value => (value ?? '').toLowerCase().replaceAll(/[^\p{L}\p{N}]/gu, '');
   const key = norm(wanted);
   const options = reading.options ?? [];
   const entries = aligned.map((semantic, index) => ({ index, keys: semantic === null
@@ -203,20 +204,28 @@ export function resolveOptionName(wanted, reading, doc) {
     : [semantic, semantic.replace(/^[a-z-]+:/, ''),
       semantic.replace(/^[a-z-]+:/, '').replace(/[+#@]\S*$/, ''), options[index].label].map(norm),
   }));
-  const exact = entries.filter(entry => entry.keys.includes(key));
+  const exact = key ? entries.filter(entry => entry.keys.includes(key)) : [];
   if (exact.length === 1) return exact[0].index;
   const partial = entries.filter(entry => entry.keys.some(value => key.length > 0 && value.includes(key)));
   if (exact.length === 0 && partial.length === 1) return partial[0].index;
-  throw new Error(`no unique option matching "${wanted}". ${currentCommandHint(reading, doc)}`);
+  throw new Error(presentation.text('workbench:command.noUniqueOption', { wanted, hint: currentCommandHint(reading, doc, { presentation }) }));
 }
 
 export function parseDecisionPotions(doc) {
   const slots = [];
+  const strategic = doc?.decision?.observation?.domain === 'strategic';
   (decisionObservation(doc)?.potions ?? []).forEach((potion, index) => {
     if (potion === null || potion === undefined) return;
-    const stableId = typeof potion === 'string' ? potion : potion.potion_id ?? '';
-    slots.push({ index, stableId, key: stableId.replaceAll(/[^A-Za-z]/g, '').toLowerCase() });
+    if (strategic && potion.potion === null) return;
+    const stableId = strategic ? potion.potion?.potion
+      : typeof potion === 'string' ? potion : potion.potion_id;
+    const slot = strategic ? potion.slot : index;
+    if (typeof stableId !== 'string' || !stableId || !Number.isSafeInteger(slot) || slot < 0) {
+      throw new Error('potion contract drifted: missing stable identity or slot');
+    }
+    slots.push({ index: slot, stableId, key: stableId.replaceAll(/[^A-Za-z]/g, '').toLowerCase() });
   });
+  slots.sort((left, right) => left.index - right.index);
   // The executable's use-potion semantic strings carry #occurrence per
   // identical potion; map each form back to its slot so NAME resolves to
   // the ready-made string with no id guessing.
@@ -234,7 +243,7 @@ export function parseDecisionPotions(doc) {
   return { slots, useForms };
 }
 
-export function summarizeDecisionJson(doc) {
+export function summarizeDecisionJson(doc, presentation = createPresentation()) {
   const inner = decisionObservation(doc);
   if (inner === null) {
     throw new Error('decision JSON is missing its combat observation — contract drifted');
@@ -263,12 +272,12 @@ export function summarizeDecisionJson(doc) {
     if (!semantic) return;
     if (candidate?.action?.kind === 'play_card') {
       const card = handCards[candidate.action.hand_index] ?? {};
-      const bits = [`cost=${card.effective_cost ?? '?'}`];
+      const bits = [presentation.text('workbench:board.cost', { cost: card.effective_cost ?? '?' })];
       const damage = cardDamageLabel(card, inner.monsters ?? [], {
         targetIndex: candidate.action.target_monster_index ?? null, separator: ',',
       });
-      if (damage) bits.push(`dmg=${damage}`);
-      if ((card.current_block ?? 0) > 0) bits.push(`block=${card.current_block}`);
+      if (damage) bits.push(presentation.text('workbench:board.damage', { damage }));
+      if ((card.current_block ?? 0) > 0) bits.push(presentation.text('workbench:board.block', { block: card.current_block }));
       playableLines.push(`${semantic} ${bits.join(' ')}`);
     } else if (/^(?:end$|use-potion:)/.test(semantic)) {
       playableLines.push(semantic);
@@ -283,33 +292,33 @@ export function summarizeDecisionJson(doc) {
 // pick's: exact, then de-spaced contains, then a unique substring; real
 // ambiguity is refused with the candidate list. Identical potions in
 // several slots are not ambiguous (same effect).
-export function resolvePotionToken(token, doc) {
+export function resolvePotionToken(token, doc, presentation = createPresentation()) {
   const match = /^potion:(.+)$/.exec(token);
   if (!match) return null;
   const [, wantedRaw] = match;
   const wanted = wantedRaw.replaceAll(/\s+/g, '').toLowerCase();
   const { slots, useForms } = parseDecisionPotions(doc);
   if (slots.length === 0) {
-    throw new Error(`✗ no potion to use (decision JSON lists none)`);
+    throw new Error(presentation.text('workbench:command.noPotion'));
   }
   const byExact = slots.filter(s => s.key === wanted);
   const hits = byExact.length > 0 ? byExact : slots.filter(s => s.key.includes(wanted));
   if (hits.length === 0) {
-    throw new Error(`✗ no potion matching "${wantedRaw}" (have: ${slots.map(s => s.stableId).join(', ')})`);
+    throw new Error(presentation.text('workbench:command.noMatchingPotion', { wanted: wantedRaw, available: slots.map(s => s.stableId).join(', ') }));
   }
   if (new Set(hits.map(s => s.key)).size > 1) {
-    throw new Error(`✗ "${wantedRaw}" matches ${hits.map(s => s.stableId).join(', ')} — spell more of the name`);
+    throw new Error(presentation.text('workbench:command.ambiguousPotion', { wanted: wantedRaw, matches: hits.map(s => s.stableId).join(', ') }));
   }
   const chosen = hits[0];
   const action = useForms.get(chosen.index);
   if (!action) {
-    throw new Error(`✗ ${chosen.stableId} has no use-potion candidate in the decision (not usable, or needs a target); see ./p board`);
+    throw new Error(presentation.text('workbench:command.potionUnavailable', { potion: chosen.stableId }));
   }
   return { action, name: chosen.stableId };
 }
 
 // Resolve names only. The engine evaluates draws, hand limits and the other
 // effects after all preceding actions in the line have resolved.
-export function applyPotionSkin(tokens, doc) {
-  return tokens.map(token => resolvePotionToken(token, doc)?.action ?? token);
+export function applyPotionSkin(tokens, doc, presentation = createPresentation()) {
+  return tokens.map(token => resolvePotionToken(token, doc, presentation)?.action ?? token);
 }

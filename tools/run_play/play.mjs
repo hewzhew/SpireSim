@@ -39,6 +39,7 @@
 // render/contract/tokens modules carry their own behavior. Errors
 // print as one friendly block (P_DEBUG=1 keeps the stack).
 import { openRunPlay } from './client.mjs';
+import { createPresentation } from '@sts-simulator/presentation';
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -55,33 +56,8 @@ export * from './tokens.mjs';
 
 const binary = join(repository, 'target', 'dev-opt', 'run_play.exe');
 
-function usage(code = 1) {
-  const output = code === 0 ? process.stdout : process.stderr;
-  output.write(
-    'usage: node scripts/p.mjs                          reading (current session)\n' +
-    '       node scripts/p.mjs <session> [command...]    exact name, unique fragment, or path\n' +
-    '       node scripts/p.mjs <name> | <verb> <name> | <index>   choose what you see\n' +
-    '       node scripts/p.mjs claim:BagOfPreparation#0  reward by name; reward rows reject numbers\n' +
-    '       node scripts/p.mjs go [x,y]                  sole map exit, or coordinate\n' +
-    '       node scripts/p.mjs act <actions...>         combat line (play:X potion:X end)\n' +
-    '       node scripts/p.mjs preview <actions...>     try a line without moving the current position\n' +
-    '       node scripts/p.mjs piles                    public unordered draw, discard and exhaust piles\n' +
-    '       node scripts/p.mjs piles sl                 current exact combat piles (SL internal information)\n' +
-    '       node scripts/p.mjs board | map [full|flip|set flip|normal|elites|route X Y] | loot | options | cancel\n' +
-    '       node scripts/p.mjs read [brief|full] | back [steps | floor N | mark NAME | list]\n' +
-    '       node scripts/p.mjs mark [NAME | drop NAME]   save/list/release exact return points\n' +
-    '       node scripts/p.mjs info [power/enemy/card name | card <name> | M0 | player | powers | transition <HP> | help]\n' +
-    '       node scripts/p.mjs undo | exe <args...> | use <session>\n' +
-    '       node scripts/p.mjs player [status|next|accept [--continue]|replace [--continue] <command>|reject <guidance>|coach <guidance>]\n' +
-    '       node scripts/p.mjs player inspect [STEP[.ATTEMPT] [input]] [--run RUN_DIRECTORY_NAME]\n' +
-    '       node scripts/p.mjs observe [STEP [input] | live | list] [--home DSH_HOME] [--chat ID_FRAGMENT] [--turn N]\n' +
-    '       node scripts/p.mjs jump [nNODE | source:hN | target:hN]   show a return point, or jump to one\n' +
-    '       node scripts/p.mjs refresh <fresh-session>   verify old exact state into a new session and select it\n' +
-    '       node scripts/p.mjs research [ms] [work transitions] | research <effort> [ms] | plans [full] | review <plan ID> [turn] | commit <plan ID> [expected effort]\n' +
-    '       node scripts/p.mjs new <session> <seed> [--ascension N] [--goal heart-victory|act-three-victory]\n' +
-    '       act/preview actions: spaces or comma-space; an explicit command starts a new group\n' +
-    '       other command groups: comma-space, or \';\' to always start a new group\n');
-  process.exit(code);
+export function cliHelp(presentation = createPresentation()) {
+  return presentation.text('workbench:cli.usage');
 }
 
 export async function main() {
@@ -92,6 +68,18 @@ export async function main() {
   }
 
   const args = process.argv.slice(2);
+  let agentLocale = 'en';
+  if (args[0] === '--locale') {
+    if (!['en', 'zh-CN'].includes(args[1])) throw new Error(createPresentation().text('workbench:cli.localeUsage'));
+    agentLocale = args[1];
+    args.splice(0, 2);
+  }
+  const presentation = createPresentation({ locale: agentLocale });
+  const text = (key, params = {}) => presentation.text(`workbench:cli.${key}`, params);
+  const usage = (code = 1) => {
+    (code === 0 ? process.stdout : process.stderr).write(cliHelp(presentation));
+    process.exit(code);
+  };
   if (args.length === 1 && ['help', '--help', '-h'].includes(args[0])) usage(0);
   if (args[0] === 'observe') {
     const { observeNative } = await import('../dsh_player/native-inspection.mjs');
@@ -105,7 +93,7 @@ export async function main() {
     const [session, seed, ...rest] = args.slice(1);
     if (!session || !/^\d+$/.test(seed ?? '')) usage();
     const known = ['--ascension', '--goal'];
-    const resolvedSession = resolveNewSession(session);
+    const resolvedSession = resolveNewSession(session, repository, presentation);
     const cliArgs = ['new', '--session', resolvedSession, '--seed', seed];
     for (let i = 0; i < rest.length; i += 2) {
       if (!known.includes(rest[i]) || i + 1 >= rest.length) usage();
@@ -122,9 +110,9 @@ export async function main() {
     }
     const sessionLabel = resolvedSession.split(/[\\/]/).pop() ?? 'session';
     const recordDirectory = freshRecordDirectory(repository, sessionLabel, 'new');
-    const newGame = await openRunPlay({ repository, session: resolvedSession, recordDirectory });
+    const newGame = await openRunPlay({ repository, session: resolvedSession, recordDirectory, locale: agentLocale });
     try {
-      await printReading(await newGame.decision({ details: ['brief'] }));
+      await printReading(await newGame.decision({ details: ['brief'] }), { presentation });
     } finally {
       await newGame.close();
     }
@@ -136,7 +124,7 @@ export async function main() {
   }
 
   const currentSession = await readCurrentSession();
-  const { session, command, parameters } = resolveInvocation(args, currentSession);
+  const { session, command, parameters } = resolveInvocation(args, currentSession, repository, presentation);
   if (command === 'player') {
     if (currentSession !== session && parameters[0] !== 'inspect') {
       const { writeFile } = await import('node:fs/promises');
@@ -146,11 +134,11 @@ export async function main() {
     await controlPlayer({ repository, session, binary, parameters }, text => process.stdout.write(text + '\n'));
     return;
   }
-  const commands = commandGroups(command, parameters);
+  const commands = commandGroups(command, parameters, presentation);
   const { writeFile: writeFileAsync } = await import('node:fs/promises');
   if (command === 'refresh') {
     if (commands.length !== 1 || parameters.length !== 1) usage();
-    const target = resolveNewSession(parameters[0]);
+    const target = resolveNewSession(parameters[0], repository, presentation);
     const result = spawnSync(binary, ['reroot-current', '--session', session, '--target', target],
       { cwd: repository, encoding: 'utf8', windowsHide: true });
     if (result.error) throw result.error;
@@ -160,7 +148,7 @@ export async function main() {
     }
     const label = target.split(/[\\/]/).pop() ?? 'session';
     const recordDirectory = freshRecordDirectory(repository, label, 'refresh');
-    const refreshed = await openRunPlay({ repository, session: target, recordDirectory });
+    const refreshed = await openRunPlay({ repository, session: target, recordDirectory, locale: agentLocale });
     let reading;
     try {
       reading = await refreshed.decision({ details: ['brief'] });
@@ -168,8 +156,8 @@ export async function main() {
       await refreshed.close();
     }
     await writeFileAsync(stateFile, target);
-    process.stdout.write(`Verified current state in new session ${label}; source unchanged.\n`);
-    await printReading(reading);
+    process.stdout.write(`${text('refreshed', { label })}\n`);
+    await printReading(reading, { presentation });
     return;
   }
   if (currentSession !== session) {
@@ -180,7 +168,7 @@ export async function main() {
   // reading as other commands instead of the executable's diagnostic dump.
   if ((command === 'back' && parameters[0] === 'list') || command === 'mark') {
     process.stdout.write(await engineOutput({ binary, session, repository },
-      [command, ...navigationArguments(command, parameters)]));
+      [command, ...navigationArguments(command, parameters, presentation)]));
     return;
   }
   if (command === 'scout') {
@@ -189,7 +177,7 @@ export async function main() {
     // information level would allow it. The fork/probe implementation is
     // preserved in git history (dc33f509a^) for when a verdict-first mode
     // is wanted again.
-    process.stderr.write('scout is banned: room recon counts as spoilers for the choosing mind; use map/info on public state instead\n');
+    process.stderr.write(`${text('scoutRetired')}\n`);
     process.exit(1);
   }
   if (command === 'exe') {
@@ -197,7 +185,7 @@ export async function main() {
     runExecutable([parameters[0], '--session', session, ...parameters.slice(1)]);
   }
   if (command === 'pick') {
-    throw new Error('pick was retired — what you see is what you type: node scripts/p.mjs <name> (e.g. node scripts/p.mjs Disarm), node scripts/p.mjs <verb> <name>, or the row number');
+    throw new Error(text('pickRetired'));
   }
 
   // Named info queries run the read-only executable directly. Opening an unused
@@ -205,7 +193,7 @@ export async function main() {
   // when EOF shutdown begins, turning a successful query into a timeout.
   if (commands.every(([name, query]) => name === 'info' && query.length > 0)) {
     for (const [, query] of commands) {
-      await info({ binary, session, repository }, query);
+      await info({ binary, session, repository, agentLocale, presentation }, query);
     }
     return;
   }
@@ -218,7 +206,7 @@ export async function main() {
     appliedNavigation = `jump ${commands[0][1][0]}`;
   } else if (command === 'undo' || command === 'back') {
     await engineOutput({ binary, session, repository },
-      [command, ...navigationArguments(command, parameters)]);
+      [command, ...navigationArguments(command, parameters, presentation)]);
     appliedNavigation = [command, ...parameters].join(' ');
     commands[0] = ['read', []];
   }
@@ -230,19 +218,19 @@ export async function main() {
 
   let game;
   try {
-    game = await openRunPlay({ repository, session, recordDirectory });
+    game = await openRunPlay({ repository, session, recordDirectory, locale: agentLocale });
   } catch (error) {
-    if (appliedNavigation) error.message = `Applied before error:\n  ${appliedNavigation}\nError: ${error.message}`;
+    if (appliedNavigation) error.message = text('navigationError', { action: appliedNavigation, error: error.message });
     throw error;
   }
   const ctx = createWorkbenchContext({
     game, binary, session, repository, sessionLabel, stateFile, recordDirectory,
-    join, openRunPlay, usage,
+    join, openRunPlay, usage, agentLocale, presentation,
   });
   try {
     ctx.write(await executeWorkbenchCommands(ctx, commands));
   } catch (error) {
-    if (appliedNavigation) error.message = `Applied before error:\n  ${appliedNavigation}\nError: ${error.message}`;
+    if (appliedNavigation) error.message = text('navigationError', { action: appliedNavigation, error: error.message });
     throw error;
   } finally {
     await game.close();

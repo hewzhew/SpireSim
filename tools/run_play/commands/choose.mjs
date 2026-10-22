@@ -27,7 +27,7 @@ export async function choose(ctx, command, parameters) {
     if (isRewardReading(reading)) {
       throw new Error(text('rewardNumbers'));
     }
-    choices = tokens.filter(t => t !== '').map(value => parseChoiceToken(value));
+    choices = tokens.filter(t => t !== '').map(value => parseChoiceToken(value, presentation));
     if (choices.length > 1 && !reading.selections?.length) {
       throw new Error(text('multipleRows'));
     }

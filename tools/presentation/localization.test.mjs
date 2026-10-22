@@ -4,6 +4,16 @@ import { readFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { catalogs, createPresentation, preferredLocale, resolveLocale, validateCatalogs } from './index.mjs';
 
+test('local formatters are ready synchronously and remain independent across awaited consumers', async () => {
+  const zh = createPresentation({ locale: 'zh-CN' }), en = createPresentation();
+  assert.equal(zh.then, undefined);
+  assert.match(zh.text('workbench:command.decisionChanged'), /局面已改变/);
+  assert.equal(await zh, zh);
+  assert.match(en.text('workbench:command.decisionChanged'), /decision changed/);
+  await zh.setLocale('en');
+  assert.equal(zh.text('workbench:command.decisionChanged'), en.text('workbench:command.decisionChanged'));
+});
+
 test('shipped dictionaries have identical keys and named parameters', () => {
   assert.equal(validateCatalogs(), true);
   const missing = structuredClone(catalogs); delete missing['zh-CN'].replay.nav.previous;

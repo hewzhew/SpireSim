@@ -28,7 +28,7 @@ export async function go(ctx, parameters) {
       && option.candidate.action.site === 'reward') ?? -1;
     if (rewardProceed >= 0) {
       const doc = await ctx.decisionDocument(reading);
-      assertCurrentDecision(reading, doc);
+      assertCurrentDecision(reading, doc, presentation);
       const context = decisionObservation(doc)?.context;
       // Empty Vec fields are omitted by the observation producer. A reward
       // context is required: missing context must not imply empty rewards.
@@ -53,7 +53,7 @@ export async function go(ctx, parameters) {
     await (ctx.showSuccessor ?? printCurrentReading)(reading);
   }
   if (!parameters.length) {
-    const commands = readingOptionCommands(reading, await ctx.decisionDocument(reading));
+    const commands = readingOptionCommands(reading, await ctx.decisionDocument(reading), presentation);
     const routes = commands.filter(command => /^go \d+,\d+$/.test(command));
     if (routes.length > 1) {
       await (ctx.showSuccessor ?? printCurrentReading)(reading);
@@ -72,7 +72,7 @@ export async function go(ctx, parameters) {
   const coordinate = `${Number(match[1])},${Number(match[2])}`;
   const wanted = `(${coordinate})`;
   const resolveRoute = async reading => {
-    const commands = readingOptionCommands(reading, await ctx.decisionDocument(reading));
+    const commands = readingOptionCommands(reading, await ctx.decisionDocument(reading), presentation);
     const index = commands.indexOf(`go ${coordinate}`);
     return { option: reading.options?.[index], commands };
   };
@@ -85,7 +85,7 @@ export async function go(ctx, parameters) {
       option => option.candidate?.action?.kind === 'leave_shop') ?? -1;
     let rewardProceed = -1;
     const doc = await ctx.decisionDocument(reading);
-    const commands = readingOptionCommands(reading, doc);
+    const commands = readingOptionCommands(reading, doc, presentation);
     if (shopLeave === -1 && isRewardReading(reading)) {
       rewardProceed = commands.indexOf('proceed');
     }
@@ -157,13 +157,14 @@ export async function mapView(ctx, parameters) {
 
 export async function loot(ctx) {
   const { game, printCurrentReading } = ctx;
+  const presentation = await presentationFor(ctx);
   // Collect gold and potions that all fit. Competing potion rewards need
   // a player choice; reward order must not choose the last slot's occupant.
   let reading = await game.decision({ details: ['brief'] });
   for (let guard = 0; guard < 8; guard += 1) {
     if (!isRewardReading(reading)) break;
     const doc = await ctx.decisionDocument(reading);
-    assertCurrentDecision(reading, doc);
+    assertCurrentDecision(reading, doc, presentation);
     const actions = reading.raw.reading.options.map(o => o.candidate?.action);
     const context = decisionObservation(doc)?.context;
     if (context?.kind !== 'reward') throw new Error('reward reading lacks typed reward context');
@@ -246,7 +247,7 @@ export async function use(ctx, parameters) {
   // Switch the current session (the default target for every bare
   // command); short names resolve like session arguments do.
   if (parameters.length < 1) throw new Error((await presentationFor(ctx)).text('workbench:command.useUsage'));
-  const target = resolveSession(parameters[0]);
+  const target = resolveSession(parameters[0], ctx.repository, await presentationFor(ctx));
   const { writeFile: writeState } = await import('node:fs/promises');
   await writeState(stateFile, target).catch(() => {});
   process.stdout.write(`⇢ use ${target}\n`);

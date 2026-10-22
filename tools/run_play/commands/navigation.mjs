@@ -1,7 +1,8 @@
 // Retained decision navigation belongs to Rust. The workbench only exposes
 // its selectors and reopens the connection after a successful jump.
-import { writeText } from '../render.mjs';
+import { writeText, presentationFor } from '../render.mjs';
 import { spawn } from 'node:child_process';
+import { createPresentation } from '@sts-simulator/presentation';
 
 // Settle only on close, including cancellation: the session must not be reused
 // while its previous subprocess can still be running. Never retry an operation.
@@ -42,7 +43,7 @@ export async function jumpTo(ctx, selector) {
   await engineOutput(ctx, ['jump', selector]);
 }
 
-export function jumpPoint(reading, status) {
+export function jumpPoint(reading, status, presentation = createPresentation()) {
   if (reading.control === 'terminal') return null;
   // Normal combat readings intentionally omit the choice source. Use the
   // existing diagnostic show surface, then bind it to the typed snapshot in
@@ -56,10 +57,10 @@ export function jumpPoint(reading, status) {
   }
   const source = info.source;
   if (!observed.split(':').at(-1).endsWith(snapshot)) {
-    throw new Error('decision changed while reading the return point; read ./p jump again');
+    throw new Error(presentation.text('workbench:command.jumpChanged'));
   }
   if (source && (!source.archive_node_id.endsWith(node.slice(1)) || source.public_snapshot_id !== observed)) {
-    throw new Error('decision changed while reading the return point; read ./p jump again');
+    throw new Error(presentation.text('workbench:command.jumpChanged'));
   }
   // The short selector is issued by Rust itself; Rust also rejects an
   // absent or ambiguous selector on jump instead of choosing another node.
@@ -68,14 +69,14 @@ export function jumpPoint(reading, status) {
 
 export async function showJumpPoint(ctx) {
   const write = ctx.write ?? writeText;
+  const presentation = await presentationFor(ctx);
   const status = await engineOutput(ctx, ['show']);
   const reading = await ctx.game.decision({ details: ['brief', 'state'] });
-  const selector = jumpPoint(reading, status);
+  const selector = jumpPoint(reading, status, presentation);
   await ctx.printCurrentReading(reading);
   if (selector === null) {
-    write('No current decision at this terminal state. Earlier retained decisions do not require a prior jump call.\n'
-      + 'Use ./p back to restore the previous retained decision, or ./p jump <a previously returned node>.\n');
+    write(`${presentation.text('workbench:command.jumpTerminal')}\n`);
     return;
   }
-  write(`Return point (${ctx.sessionLabel}): ./p jump ${selector}\n`);
+  write(`${presentation.text('workbench:command.jumpPoint', { session: ctx.sessionLabel, selector })}\n`);
 }

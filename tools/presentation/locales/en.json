@@ -2209,7 +2209,10 @@
     "board": {
       "incoming": "incoming next enemy turn: {{incoming}} | current block {{block}}",
       "handBlock": "hand block sum: {{block}} (individual projections; ignores cost, order and play limits)",
-      "playable": "playable (damage per hit before block; adjusted for the listed target):"
+      "playable": "playable (damage per hit before block; adjusted for the listed target):",
+      "cost": "cost={{cost}}",
+      "damage": "dmg={{damage}}",
+      "block": "block={{block}}"
     },
     "piles": {
       "heading": "Combat piles (unordered; current combat, not the permanent deck)",
@@ -2272,7 +2275,48 @@
         "work": "search work",
         "candidate": "candidate index",
         "turn": "turn"
-      }
+      },
+      "selectSyntax": "select needs space-separated card names as the sole action, e.g. select Strike#0 Strike#1. No action taken.",
+      "lineCoordinates": "go inside act/preview needs explicit x,y, e.g. preview go 1,0. No action taken.",
+      "repeatRange": "repeat suffix on \"{{token}}\" must be *1..*12",
+      "repeatPlayOnly": "repeat suffix is only meaningful on play tokens: {{token}}",
+      "combatEndedTail": "(combat ended at step {{step}}; dropped trailing {{tail}})",
+      "choiceToken": "invalid choice token: {{value}} (expected a row index)",
+      "decisionChanged": "current decision changed during choice resolution; read it again before choosing",
+      "completeCommand": "Submit one complete command verbatim:\n{{commands}}",
+      "inspectOptions": "Use options to inspect the current legal commands.",
+      "fullwidthPlus": "invalid fullwidth plus in \"{{wanted}}\"; use ASCII '+' (U+002B) for upgrades: Card+ or Card+1 for one upgrade, Card+0 for base",
+      "noExactOption": "no exact current option matching \"{{wanted}}\". {{hint}}",
+      "noUniqueOption": "no unique option matching \"{{wanted}}\". {{hint}}",
+      "noPotion": "✗ no potion to use (decision JSON lists none)",
+      "noMatchingPotion": "✗ no potion matching \"{{wanted}}\" (have: {{available}})",
+      "ambiguousPotion": "✗ \"{{wanted}}\" matches {{matches}} — spell more of the name",
+      "potionUnavailable": "✗ {{potion}} has no use-potion candidate in the decision (not usable, or needs a target); see ./p board",
+      "undoArguments": "undo takes no arguments",
+      "markArguments": "mark [name | drop name]; quote names containing spaces",
+      "backArguments": "back [positive steps | floor number | mark name | list]; use back list for retained targets",
+      "jumpSeparate": "usage: ./p jump [nNODE | source:hN | target:hN]; run jump as a separate command",
+      "navigationSeparate": "run navigation or mark changes as a separate command",
+      "textRequired": "game command must be text",
+      "unclosedQuote": "unclosed quote in game command",
+      "jumpChanged": "decision changed while reading the return point; read ./p jump again",
+      "jumpTerminal": "No current decision at this terminal state. Earlier retained decisions do not require a prior jump call.\nUse ./p back to restore the previous retained decision, or ./p jump <a previously returned node>.",
+      "jumpPoint": "Return point ({{session}}): ./p jump {{selector}}",
+      "pilesCombat": "piles requires an active combat",
+      "pileUnavailable": "Public {{pile}} pile contents are unavailable"
+    },
+    "cli": {
+      "usage": "usage: node scripts/p.mjs                          reading (current session)\n       node scripts/p.mjs <session> [command...]    exact name, unique fragment, or path\n       node scripts/p.mjs <name> | <verb> <name> | <index>   choose what you see\n       node scripts/p.mjs claim:BagOfPreparation#0  reward by name; reward rows reject numbers\n       node scripts/p.mjs go [x,y]                  sole map exit, or coordinate\n       node scripts/p.mjs act <actions...>         combat line (play:X potion:X end)\n       node scripts/p.mjs preview <actions...>     try a line without moving the current position\n       node scripts/p.mjs piles                    public unordered draw, discard and exhaust piles\n       node scripts/p.mjs piles sl                 current exact combat piles (SL internal information)\n       node scripts/p.mjs board | map [full|flip|set flip|normal|elites|route X Y] | loot | options | cancel\n       node scripts/p.mjs read [brief|full] | back [steps | floor N | mark NAME | list]\n       node scripts/p.mjs mark [NAME | drop NAME]   save/list/release exact return points\n       node scripts/p.mjs info [power/enemy/card name | card <name> | M0 | player | powers | transition <HP> | help]\n       node scripts/p.mjs undo | exe <args...> | use <session>\n       node scripts/p.mjs player [status|next|accept [--continue]|replace [--continue] <command>|reject <guidance>|coach <guidance>]\n       node scripts/p.mjs player inspect [STEP[.ATTEMPT] [input]] [--run RUN_DIRECTORY_NAME]\n       node scripts/p.mjs observe [STEP [input] | live | list] [--home DSH_HOME] [--chat ID_FRAGMENT] [--turn N]\n       node scripts/p.mjs jump [nNODE | source:hN | target:hN]   show a return point, or jump to one\n       node scripts/p.mjs refresh <fresh-session>   verify old exact state into a new session and select it\n       node scripts/p.mjs research [ms] [work transitions] | research <effort> [ms] | plans [full] | review <plan ID> [turn] | commit <plan ID> [expected effort]\n       node scripts/p.mjs new <session> <seed> [--ascension N] [--goal heart-victory|act-three-victory]\n       act/preview actions: spaces or comma-space; an explicit command starts a new group\n       other command groups: comma-space, or ';' to always start a new group\n       global option: --locale en|zh-CN (before the session or command)\n",
+      "localeUsage": "Use --locale en|zh-CN before the session or command.",
+      "emptySession": "session must not be empty",
+      "ambiguousSession": "ambiguous session \"{{input}}\": {{matches}}; pass an explicit path instead",
+      "noSession": "no session under .oracle-lab/run-play matches \"{{input}}\"; pass an explicit path instead",
+      "newSessionName": "new session name must use letters, digits, dots, underscores, or hyphens",
+      "noCurrentSession": "no current session; pass a session name or an explicit path",
+      "refreshed": "Verified current state in new session {{label}}; source unchanged.",
+      "scoutRetired": "scout is banned: room recon counts as spoilers for the choosing mind; use map/info on public state instead",
+      "pickRetired": "pick was retired — what you see is what you type: node scripts/p.mjs <name> (e.g. node scripts/p.mjs Disarm), node scripts/p.mjs <verb> <name>, or the row number",
+      "navigationError": "Applied before error:\n  {{action}}\nError: {{error}}"
     }
   },
   "event": {

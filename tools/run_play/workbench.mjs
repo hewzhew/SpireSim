@@ -3,6 +3,7 @@
 import { mkdir, writeFile, appendFile } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 import { randomUUID } from 'node:crypto';
+import { createPresentation } from '@sts-simulator/presentation';
 import { openRunPlay } from './client.mjs';
 import { commandGroups, commandTokens, freshRecordDirectory } from './session.mjs';
 import { printReading, writeText, presentationFor } from './render.mjs';
@@ -19,24 +20,25 @@ export function createWorkbenchContext(options) {
   ctx.usage ??= async () => { throw new Error((await presentationFor(ctx)).text('workbench:command.actionsRequired')); };
   ctx.decisionDocument = async reading => decisionDocumentFromObservation(
     reading?.raw?.observation ?? await ctx.game.observe());
-  ctx.commandHint = async (reading, options) => currentCommandHint(reading, await ctx.decisionDocument(reading), options);
+  ctx.commandHint = async (reading, options) => currentCommandHint(reading, await ctx.decisionDocument(reading), { ...options, presentation: await presentationFor(ctx) });
   ctx.printCurrentReading = async (reading, { expanded = false, document } = {}) => {
     const doc = reading.control === 'combat'
       ? document ?? await ctx.decisionDocument(reading) : null;
-    if (doc) assertCurrentDecision(reading, doc);
+    const presentation = await presentationFor(ctx);
+    if (doc) assertCurrentDecision(reading, doc, presentation);
     const chunks = [];
     await printReading(reading, {
       write: text => chunks.push(text), expanded,
-      presentation: presentationFor(ctx),
-      combatCommands: doc ? (expanded ? expandedCombatCommands(reading, doc)
-        : distinctCombatCommands(reading, doc)) : [],
+      presentation,
+      combatCommands: doc ? (expanded ? expandedCombatCommands(reading, doc, presentation)
+        : distinctCombatCommands(reading, doc, presentation)) : [],
     });
     const text = chunks.join('');
     ctx.write(text);
     ctx.recordReading?.({ control: reading.control, summary: reading.summary, text });
   };
   ctx.resolveOptionByName = async (wanted, reading) => resolveOptionName(
-    wanted, reading, await ctx.decisionDocument(reading));
+    wanted, reading, await ctx.decisionDocument(reading), await presentationFor(ctx));
   return ctx;
 }
 
@@ -171,9 +173,9 @@ export async function executeWorkbenchCommands(ctx, groups, dispatch = dispatchW
   }
 }
 
-export function navigationArguments(command, parameters) {
+export function navigationArguments(command, parameters, presentation = createPresentation()) {
   if (command === 'undo') {
-    if (parameters.length) throw new Error('undo takes no arguments');
+    if (parameters.length) throw new Error(presentation.text('workbench:command.undoArguments'));
     return [];
   }
   if (command === 'jump') return parameters;
@@ -181,7 +183,7 @@ export function navigationArguments(command, parameters) {
     if (parameters.length === 0) return [];
     if (parameters[0] === 'drop' && parameters.length === 2 && parameters[1]) return ['--drop', parameters[1]];
     if (parameters.length === 1 && parameters[0] !== 'drop' && parameters[0]) return ['--name', parameters[0]];
-    throw new Error('mark [name | drop name]; quote names containing spaces');
+    throw new Error(presentation.text('workbench:command.markArguments'));
   }
   if (parameters[0] === 'list' && parameters.length === 1) return ['--list'];
   if (parameters[0] === 'floor' && parameters.length === 2 && /^\d+$/.test(parameters[1])
@@ -189,7 +191,7 @@ export function navigationArguments(command, parameters) {
   if (parameters[0] === 'mark' && parameters.length === 2 && parameters[1]) return ['--mark', parameters[1]];
   const steps = parameters[0] ?? '1';
   if (parameters.length > 1 || !/^\d+$/.test(steps) || !Number.isSafeInteger(Number(steps)) || Number(steps) < 1) {
-    throw new Error('back [positive steps | floor number | mark name | list]; use back list for retained targets');
+    throw new Error(presentation.text('workbench:command.backArguments'));
   }
   return ['--steps', steps];
 }
@@ -286,8 +288,8 @@ export async function openWorkbench({ repository, session, binary = join(reposit
       if (closing || closed) return Promise.reject(new Error(text('closed')));
       return serial(() => recorded('execute', line, async () => {
         signal?.throwIfAborted();
-        const tokens = Array.isArray(line) ? line : commandTokens(line);
-        const groups = commandGroups(tokens[0], tokens.slice(1));
+        const tokens = Array.isArray(line) ? line : commandTokens(line, presentation);
+        const groups = commandGroups(tokens[0], tokens.slice(1), presentation);
         // Reject session/process controls before any prefix command executes.
         for (const [command, args] of groups) {
           if (['preview', 'research', 'plans', 'review', 'commit', 'deck-lab'].includes(command)
@@ -296,7 +298,7 @@ export async function openWorkbench({ repository, session, binary = join(reposit
             throw new Error(text('boundCommand',{command}));
           }
           if (command === 'map' && args[0] === 'set') throw new Error(text('mapPreference'));
-          if (['back', 'undo', 'jump', 'mark'].includes(command)) navigationArguments(command, args);
+          if (['back', 'undo', 'jump', 'mark'].includes(command)) navigationArguments(command, args, presentation);
         }
         chunks = [];
         ctx.signal = signal;
@@ -308,10 +310,10 @@ export async function openWorkbench({ repository, session, binary = join(reposit
             signal?.throwIfAborted();
             if (!game) await reconnect();
             if ((command === 'back' && args[0] === 'list') || (command === 'mark' && !args.length)) {
-              ctx.write(await engineOutput(ctx, [command, ...navigationArguments(command, args)]));
+              ctx.write(await engineOutput(ctx, [command, ...navigationArguments(command, args, presentation)]));
             } else if (command === 'back' || command === 'undo' || command === 'mark' || (command === 'jump' && args.length)) {
               await navigate(async () => {
-                await engineOutput(ctx, [command, ...navigationArguments(command, args)]);
+                await engineOutput(ctx, [command, ...navigationArguments(command, args, presentation)]);
                 if (command !== 'mark') branchChanged = true;
                 ctx.recordAction(`${command}${args.length ? ` ${args.join(' ')}` : ''}`);
               });

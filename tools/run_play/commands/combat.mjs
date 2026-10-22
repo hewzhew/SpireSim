@@ -10,7 +10,7 @@ export async function actOrPreview(ctx, command, parameters) {
   if (parameters.length < 1) await usage();
   const presentation = await presentationFor(ctx);
   const text = (key, params = {}) => presentation.text(`workbench:command.${key}`, params);
-  let tokens = normalizeActionTokens(expandRepeatSugar(parameters));
+  let tokens = normalizeActionTokens(expandRepeatSugar(parameters, presentation), presentation);
   const before = await game.decision();
   if (command === 'preview' && typeof before.summary !== 'string') {
     throw new Error('Run-play reading has no public position summary; update the client and binary together');
@@ -20,12 +20,12 @@ export async function actOrPreview(ctx, command, parameters) {
   }
   const previewSource = command === 'preview' && before.control === 'strategic'
     ? await decisionDocument(before) : null;
-  if (previewSource) assertCurrentDecision(before, previewSource);
+  if (previewSource) assertCurrentDecision(before, previewSource, presentation);
   // The engine resolves the whole line, including draws and energy changes.
   // Potion skin tokens resolve against the typed decision contract
   // (one extra round trip, only when asked).
   if (tokens.some(t => /^potion:/.test(t))) {
-    tokens = applyPotionSkin(tokens, await decisionDocument(before));
+    tokens = applyPotionSkin(tokens, await decisionDocument(before), presentation);
   }
   tokens = tokens.map(t => (t === 'end!' ? 'end' : t));
   const executor = command === 'preview' ? { act: line => game.preview(line) } : game;
@@ -33,7 +33,7 @@ export async function actOrPreview(ctx, command, parameters) {
   let reading;
   try {
     reading = await actTrimmingEndedCombat(executor, tokens,
-      { write, onAccepted: line => { acceptedTokens = line; } });
+      { write, presentation, onAccepted: line => { acceptedTokens = line; } });
   } catch (error) {
     if (/^exact run-play (?:prepared line|probe) could not resolve step \d+:/.test(error.message)) {
       error.message += command === 'act'
@@ -76,8 +76,8 @@ export async function board(ctx) {
   // reading already says everything.
   if (reading.control === 'combat') {
     const presentation = await presentationFor(ctx);
-    assertCurrentDecision(reading, doc);
-    const { incoming, currentBlock, handBlock, playableLines } = summarizeDecisionJson(doc);
+    assertCurrentDecision(reading, doc, presentation);
+    const { incoming, currentBlock, handBlock, playableLines } = summarizeDecisionJson(doc, presentation);
     if (incoming > 0) {
       write(`${presentation.text('workbench:board.incoming', { incoming, block: currentBlock ?? '?' })}\n`);
       write(`${presentation.text('workbench:board.handBlock', { block: handBlock })}\n`);
@@ -92,14 +92,14 @@ export async function board(ctx) {
 // The ordinary game exposes pile contents, without revealing hidden draw order.
 // Use only the typed public observation; never call the exact-pile endpoint.
 export async function publicPiles(ctx) {
-  const state = decisionDocumentFromObservation(await ctx.game.observe()).decision.observation;
-  if (state.domain !== 'combat') throw new Error('piles requires an active combat');
   const presentation = await presentationFor(ctx);
+  const state = decisionDocumentFromObservation(await ctx.game.observe()).decision.observation;
+  if (state.domain !== 'combat') throw new Error(presentation.text('workbench:command.pilesCombat'));
   const lines = [presentation.text('workbench:piles.heading')];
   for (const key of ['draw', 'discard', 'exhaust']) {
     const pile = state.observation.cards[key];
     if (!['public_unordered_collection', 'public_ordered_collection'].includes(pile?.evidence)
-        || !Array.isArray(pile.cards)) throw new Error(`Public ${key} pile contents are unavailable`);
+        || !Array.isArray(pile.cards)) throw new Error(presentation.text('workbench:command.pileUnavailable', { pile: presentation.text(`workbench:piles.${key}`) }));
     const counts = new Map();
     const nameIds = new Map();
     for (const card of pile.cards) {

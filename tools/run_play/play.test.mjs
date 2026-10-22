@@ -5,6 +5,8 @@ import { mkdtemp, mkdir, readFile, realpath, rm, writeFile } from 'node:fs/promi
 import { tmpdir } from 'node:os';
 import { basename, join, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createPresentation } from '@sts-simulator/presentation';
+import { commandTokens, commandGroups, resolveNewSession } from './session.mjs';
 import { actTrimmingEndedCombat, applyPotionSkin, decisionDocumentFromObservation, expandRepeatSugar, freshRecordDirectory, mapGraphFromObservation, normalizeActionTokens, parseChoiceToken, parseDecisionPotions, resolvePotionToken, resolveSession, summarizeDecisionJson } from './play.mjs';
 
 test('CLI help prints usage without opening a game connection', () => {
@@ -20,6 +22,46 @@ test('CLI help prints usage without opening a game connection', () => {
     assert.match(result.stdout, /player inspect \[STEP/);
     assert.equal(result.stderr, '');
   }
+});
+
+test('CLI locale is selected before help and startup validation without opening a game', () => {
+  const entry = fileURLToPath(new URL('../../scripts/p.mjs', import.meta.url));
+  for (const flag of ['help', '--help', '-h']) {
+    const result = spawnSync(process.execPath, [entry, '--locale', 'zh-CN', flag], { encoding: 'utf8', windowsHide: true });
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stdout, /^用法：node scripts\/p\.mjs/);
+    assert.match(result.stdout, /research <effort> \[ms\]/);
+    assert.match(result.stdout, /回退|返回点/);
+    assert.equal(result.stderr, '');
+  }
+  const invalid = spawnSync(process.execPath, [entry, '--locale', 'zh-CN', 'new'], { encoding: 'utf8', windowsHide: true });
+  assert.equal(invalid.status, 1);
+  assert.match(invalid.stderr, /^用法：/);
+  const badLocale = spawnSync(process.execPath, [entry, '--locale', 'unknown', '--help'], { encoding: 'utf8', windowsHide: true });
+  assert.equal(badLocale.status, 1);
+  assert.match(badLocale.stderr, /Use --locale en\|zh-CN/);
+});
+
+test('localized token validation preserves semantic actions, literal arguments and potion identities', () => {
+  const zh = createPresentation({ locale: 'zh-CN' });
+  const line = 'act play:Strike#0@1*2, select:Strike#0,Defend#0; info "literal $(text)"';
+  assert.deepEqual(commandTokens(line, zh), commandTokens(line));
+  const [command, ...args] = commandTokens(line, zh);
+  assert.deepEqual(commandGroups(command, args, zh), commandGroups(command, args));
+  assert.deepEqual(normalizeActionTokens(expandRepeatSugar(['play:Strike#0@1*2', 'go', '1,0'], zh), zh),
+    ['play:Strike#0@1', 'play:Strike#0@1', 'route:1.0']);
+  assert.deepEqual(parseChoiceToken('12', zh), { index: 12 });
+  assert.deepEqual(resolvePotionToken('potion:Essence', POTION_DOC, zh), resolvePotionToken('potion:Essence', POTION_DOC));
+  for (const [run, error] of [
+    [() => normalizeActionTokens(['select', 'end'], zh), /未执行任何动作/],
+    [() => normalizeActionTokens(['go'], zh), /必须指定 x,y/],
+    [() => expandRepeatSugar(['play:Strike#0*13'], zh), /\*1 到 \*12/],
+    [() => parseChoiceToken('-1', zh), /需要行号/],
+    [() => commandTokens('info "unfinished', zh), /引号未闭合/],
+    [() => commandGroups('act', ['end', ';', 'back', '1'], zh), /必须单独执行/],
+    [() => resolvePotionToken('potion:Missing', POTION_DOC, zh), /持有：SwiftPotion, EssenceOfSteel/],
+    [() => resolveNewSession('', undefined, zh), /会话不能为空/],
+  ]) assert.throws(run, error);
 });
 
 test('parallel invocations get distinct transcript directories within one clock tick', t => {
@@ -183,6 +225,26 @@ test('potion skin resolves names through exact, de-spaced and unique-substring l
   }), /EssenceOfSteel has no use-potion candidate/);
 });
 
+test('strategic potion slots distinguish empty slots and bind physical slots to semantic occurrences', () => {
+  const doc = { decision: { observation: { domain: 'strategic', observation: { potions: [
+    { slot: 0, potion: null },
+    { slot: 3, potion: { potion: 'BloodPotion', can_use: true } },
+    { slot: 1, potion: { potion: 'BloodPotion', can_use: true } },
+  ] } } }, semantic_actions: ['use-potion:BloodPotion#0', 'use-potion:BloodPotion#1'] };
+  const { slots, useForms } = parseDecisionPotions(doc);
+  assert.deepEqual(slots.map(({ index, stableId }) => ({ index, stableId })), [
+    { index: 1, stableId: 'BloodPotion' }, { index: 3, stableId: 'BloodPotion' },
+  ]);
+  assert.equal(useForms.get(1), 'use-potion:BloodPotion#0');
+  assert.equal(useForms.get(3), 'use-potion:BloodPotion#1');
+  assert.equal(resolvePotionToken('potion:Blood', doc).action, 'use-potion:BloodPotion#0');
+  doc.decision.observation.observation.potions = [{ slot: 0, potion: null }];
+  assert.deepEqual(parseDecisionPotions(doc).slots, []);
+  assert.throws(() => resolvePotionToken('potion:Blood', doc, createPresentation({ locale: 'zh-CN' })), /当前没有可用药水/);
+  doc.decision.observation.observation.potions = [{ slot: 0, potion: {} }];
+  assert.throws(() => parseDecisionPotions(doc), /potion contract drifted/);
+});
+
 test('potion spelling leaves hand limits and preceding plays to the engine', () => {
   assert.deepEqual(applyPotionSkin(['potion:Swift'], POTION_DOC), ['use-potion:SwiftPotion#0']);
   assert.deepEqual(applyPotionSkin(['potion:Essence', 'play:Defend', 'end'], POTION_DOC),
@@ -202,6 +264,10 @@ test('real decision-json fixture summarizes and canaries on drift', async () => 
   assert.match(summary.playableLines[0], /^end$/);
   assert.match(summary.playableLines[1], /^play:Strike\+0#0@0 cost=1 dmg=6$/);
   assert.match(summary.playableLines[3], /^play:Defend\+0#0 cost=1 block=5$/);
+  const zh = summarizeDecisionJson(doc, createPresentation({ locale: 'zh-CN' }));
+  assert.deepEqual([zh.incoming, zh.currentBlock, zh.handBlock], [summary.incoming, summary.currentBlock, summary.handBlock]);
+  assert.match(zh.playableLines[1], /^play:Strike\+0#0@0 费用=1 伤害=6$/);
+  assert.match(zh.playableLines[3], /^play:Defend\+0#0 费用=1 格挡=5$/);
   // Multi-hit intents count hits from the structured intent.
   const multiHit = JSON.parse(JSON.stringify(doc));
   const monster = multiHit.decision.observation.observation.monsters[0];

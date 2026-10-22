@@ -45,7 +45,9 @@ dsh 地图使用宿主的语言偏好、订阅和 slot 翻译入口，离线演�
 
 逐回合复盘从 `combat.review` 取词，简版、展开回合、分页及动作标签使用同一连接语言。`combat_trace` 从实际选中的公开候选保留临时 typed 展示信息，明确记录卡牌、升级、目标、药水、姿态和有序选牌；`combat_reading` 只据这些信息呈现，不解析英文标签或命令来猜身份。该临时信息不写入原始轨迹，原轨迹的固定语言标签、动作、边界和数值保持独立于复盘语言。生命变化继续区分玩家动作与结束回合转换，避免把总变化重复计算；未知来袭伤害和复活状态保留原有含义。
 
-Node 工作台的共享路由、选项与搜索命令入口、旅行说明、手打权限提示和连接恢复消息从 `workbench.command` 取词。参数验证和执行顺序保留在原命令 owner，消息不参与动作或方案识别；方案引用直接读取原生候选的 `planId`。报错前已经执行的动作、此前输出和底层错误原文作为参数保留，错误代码、请求 ID 和连接记录路径继续传递。同步 token/协议校验及 CLI 启动帮助沿各自入口继续迁移。
+Node 工作台的共享路由、选项与搜索命令入口、旅行说明、手打权限提示和连接恢复消息从 `workbench.command` 取词。同步 token、当前选项和药水解析、导航参数校验也消费同一语言实例，保留原有验证和执行顺序；消息不参与动作或方案识别，方案引用直接读取原生候选的 `planId`。名称输入保留 Unicode 字母和数字，不能将中文或标点归一化成空串后误选当前选项。报错前已经执行的动作、此前输出和底层错误原文作为参数保留，错误代码、请求 ID 和连接记录路径继续传递；底层协议诊断仍由其真实 owner 提供。
+
+CLI 在会话或命令之前接受 `--locale en|zh-CN`，默认英语。该选择同时传给 `workbench.cli` 的帮助和会话参数提示、原生连接及命名机制查询，不写入存档或共享语言偏好。例如 `node scripts/p.mjs --locale zh-CN --help` 查看中文帮助。原生和脚本玩家的其他提示继续沿各自入口迁移。
 
 选项行、营火升级与奖励标签、单选和多选提示由 Rust `decision` 渲染；命令来自 typed choice 与 selector，说明文字不参与命令识别。Node 原样输出，战斗外显示不再补取观察。预演保留假设选择及规则，当前读数提供可复制命令。读数的 `summary` 与正文共用源端公开状态渲染器，预演直接展示执行前的摘要，不再按英文标题截取；`board` 的当前格挡、来袭伤害与合法命令使用同一份 typed 公开观察。
 
@@ -69,7 +71,7 @@ npm test
 ```javascript
 import { createPresentation } from './index.mjs';
 
-const view = await createPresentation({ locale: 'zh-CN' });
+const view = createPresentation({ locale: 'zh-CN' });
 view.entity('card', 'ShrugItOff'); // 耸肩无视
 view.text('game:effect.draw', { count: 2 }); // 抽 2 张牌
 await view.setLocale('en');
@@ -77,7 +79,7 @@ view.entity('card', 'ShrugItOff'); // Shrug It Off
 view.text('game:effect.draw', { count: 2 }); // Draw 2 cards.
 ```
 
-Node 工作台按连接建立独立语言实例，`printReading` 与预演库存格式化等待该实例完成。board 的数值直接使用现有 typed 公共投影；无序牌堆与库存差异先按稳定身份和升级分组，再取原版名称。同名不同 ID 保留区分，`cardName` 与原生端一致保留灼热攻击的实际升级次数。
+`createPresentation` 只使用本地资源并同步返回就绪实例，同步校验和异步读数因此共用同一个格式化入口；现有 `await createPresentation(...)` 调用仍可使用。`setLocale` 仍可等待，但不修改其他实例的语言。Node 工作台按连接建立独立实例。board 的数值直接使用现有 typed 公共投影；无序牌堆与库存差异先按稳定身份和升级分组，再取原版名称。同名不同 ID 保留区分，`cardName` 与原生端一致保留灼热攻击的实际升级次数。
 
 每个展示端创建独立实例。`setLocale` 只改变该实例的呈现语言，调用者拥有重绘和偏好保存。不要用它替换 dsh 的宿主 locale provider；插件应沿其公开 locale/slot API 接入，游戏名称使用这里的共用资源。
 

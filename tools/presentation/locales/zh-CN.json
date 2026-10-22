@@ -2209,7 +2209,10 @@
     "board": {
       "incoming": "下个敌方回合来袭伤害：{{incoming}} | 当前格挡 {{block}}",
       "handBlock": "手牌格挡合计：{{block}}（各牌独立投影，未计费用、顺序及出牌限制）",
-      "playable": "可打出（每段伤害未扣格挡，已按所列目标修正）："
+      "playable": "可打出（每段伤害未扣格挡，已按所列目标修正）：",
+      "cost": "费用={{cost}}",
+      "damage": "伤害={{damage}}",
+      "block": "格挡={{block}}"
     },
     "piles": {
       "heading": "战斗牌堆（无序；当前战斗中的牌）",
@@ -2272,7 +2275,48 @@
         "work": "搜索工作量",
         "candidate": "候选编号",
         "turn": "回合"
-      }
+      },
+      "selectSyntax": "select 必须单独使用，牌名以空格分隔，例如 select Strike#0 Strike#1。未执行任何动作。",
+      "lineCoordinates": "act/preview 中的 go 必须指定 x,y，例如 preview go 1,0。未执行任何动作。",
+      "repeatRange": "“{{token}}”的重复后缀必须为 *1 到 *12。",
+      "repeatPlayOnly": "重复后缀只适用于 play 动作：{{token}}",
+      "combatEndedTail": "（战斗在第 {{step}} 步结束；已去掉后续动作 {{tail}}）",
+      "choiceToken": "无效的选择：{{value}}（需要行号）。",
+      "decisionChanged": "解析选择时局面已改变；请重新读取当前局面后再选择。",
+      "completeCommand": "请原样提交一条完整命令：\n{{commands}}",
+      "inspectOptions": "使用 options 查看当前合法命令。",
+      "fullwidthPlus": "“{{wanted}}”含有全角加号；升级请使用 ASCII +（U+002B）：Card+ 或 Card+1 表示升级一次，Card+0 表示未升级。",
+      "noExactOption": "当前没有与“{{wanted}}”精确匹配的选项。{{hint}}",
+      "noUniqueOption": "无法唯一匹配选项“{{wanted}}”。{{hint}}",
+      "noPotion": "✗ 当前没有可用药水（局面未列出药水）。",
+      "noMatchingPotion": "✗ 没有匹配“{{wanted}}”的药水（持有：{{available}}）。",
+      "ambiguousPotion": "✗ “{{wanted}}”匹配到 {{matches}}；请填写更完整的名称。",
+      "potionUnavailable": "✗ 当前没有 {{potion}} 的 use-potion 选项（不可使用，或需要指定目标）；请查看 ./p board。",
+      "undoArguments": "undo 不接受参数。",
+      "markArguments": "用法：mark [name | drop name]；含空格的名称请加引号。",
+      "backArguments": "用法：back [正整数步数 | floor 层数 | mark 名称 | list]；使用 back list 查看保留的返回点。",
+      "jumpSeparate": "用法：./p jump [nNODE | source:hN | target:hN]；jump 必须单独执行。",
+      "navigationSeparate": "回退、跳转或修改具名返回点必须单独执行。",
+      "textRequired": "游戏命令必须是文本。",
+      "unclosedQuote": "游戏命令中的引号未闭合。",
+      "jumpChanged": "读取返回点时局面已改变；请重新执行 ./p jump。",
+      "jumpTerminal": "当前对局已结束，没有当前决策。使用已有返回点不需要预先调用 jump。\n使用 ./p back 返回上一个保留的决策，或 ./p jump <此前返回的节点>。",
+      "jumpPoint": "返回点（{{session}}）：./p jump {{selector}}",
+      "pilesCombat": "piles 需要处于战斗中。",
+      "pileUnavailable": "无法读取公开的{{pile}}内容。"
+    },
+    "cli": {
+      "usage": "用法：node scripts/p.mjs                          查看当前会话\n      node scripts/p.mjs <session> [command...]    会话全名、唯一片段或路径\n      node scripts/p.mjs <name> | <verb> <name> | <index>   按显示的名称或行号选择\n      node scripts/p.mjs claim:BagOfPreparation#0  按名称领取奖励；奖励不接受行号\n      node scripts/p.mjs go [x,y]                  走唯一出口，或指定地图坐标\n      node scripts/p.mjs act <actions...>         执行战斗动作（play:X potion:X end）\n      node scripts/p.mjs preview <actions...>     私下预演，不移动当前位置\n      node scripts/p.mjs piles                    查看公开的抽牌堆、弃牌堆与消耗堆，不显示隐藏顺序\n      node scripts/p.mjs piles sl                 查看本场精确牌序（SL 内部信息）\n      node scripts/p.mjs board | map [full|flip|set flip|normal|elites|route X Y] | loot | options | cancel\n      node scripts/p.mjs read [brief|full] | back [steps | floor N | mark NAME | list]\n      node scripts/p.mjs mark [NAME | drop NAME]   保留、列出或释放精确返回点\n      node scripts/p.mjs info [power/enemy/card name | card <name> | M0 | player | powers | transition <HP> | help]\n      node scripts/p.mjs undo | exe <args...> | use <session>\n      node scripts/p.mjs player [status|next|accept [--continue]|replace [--continue] <command>|reject <guidance>|coach <guidance>]\n      node scripts/p.mjs player inspect [STEP[.ATTEMPT] [input]] [--run RUN_DIRECTORY_NAME]\n      node scripts/p.mjs observe [STEP [input] | live | list] [--home DSH_HOME] [--chat ID_FRAGMENT] [--turn N]\n      node scripts/p.mjs jump [nNODE | source:hN | target:hN]   查看返回点，或返回指定位置\n      node scripts/p.mjs refresh <fresh-session>   将当前精确状态核验到新会话并选中它\n      node scripts/p.mjs research [ms] [work transitions] | research <effort> [ms] | plans [full] | review <plan ID> [turn] | commit <plan ID> [expected effort]\n      node scripts/p.mjs new <session> <seed> [--ascension N] [--goal heart-victory|act-three-victory]\n      act/preview 动作之间可用空格或逗号加空格；明确的命令开始新一组\n      其他命令组用逗号加空格分隔；分号 ; 总是开始新一组\n      全局选项：--locale en|zh-CN（放在会话或命令之前）\n",
+      "localeUsage": "请在会话或命令之前指定 --locale en|zh-CN。",
+      "emptySession": "会话不能为空。",
+      "ambiguousSession": "会话“{{input}}”匹配到多个目录：{{matches}}；请指定明确路径。",
+      "noSession": ".oracle-lab/run-play 下没有匹配“{{input}}”的会话；请指定明确路径。",
+      "newSessionName": "新会话名称只能使用字母、数字、点、下划线或连字符。",
+      "noCurrentSession": "当前未选择会话；请指定会话名称或明确路径。",
+      "refreshed": "已将当前精确状态核验到新会话 {{label}}；源会话保持原状。",
+      "scoutRetired": "scout 已停用：提前查看房间会泄露选择时尚未知的信息；请用 map/info 查询公开状态。",
+      "pickRetired": "pick 已停用；请按显示内容输入：node scripts/p.mjs <name>（例如 node scripts/p.mjs Disarm）、node scripts/p.mjs <verb> <name>，或行号。",
+      "navigationError": "报错前已执行：\n  {{action}}\n错误：{{error}}"
     }
   },
   "event": {

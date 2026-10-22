@@ -2,16 +2,17 @@ import i18next from 'i18next';
 import { catalogs, resolveLocale, supportedLocales } from './catalogs.mjs';
 export { catalogs, resolveLocale, supportedLocales, preferredLocale, validateCatalogs } from './catalogs.mjs';
 
-/** Each view owns an instance. No game, model, browser storage or global locale. */
-export async function createPresentation({ locale = 'en', resources = catalogs, onMissing = () => {} } = {}) {
+/** Local resources initialize synchronously. Each view owns its language. */
+export function createPresentation({ locale = 'en', resources = catalogs, onMissing = () => {} } = {}) {
   const instance = i18next.createInstance();
   const reported = new Set();
-  await instance.init({
+  instance.init({
     lng: resolveLocale(locale), supportedLngs: supportedLocales, fallbackLng: 'en',
     resources, defaultNS: 'replay', initAsync: false,
     interpolation: { escapeValue: false },
     missingInterpolationHandler(_text, match) { throw new Error(`Missing translation parameter: ${match[1]}`); },
   });
+  if (!instance.isInitialized) throw new Error('Local presentation resources did not initialize synchronously');
   function entity(kind, id) {
     const key = `${kind}.${id}`;
     const translated = instance.getResource(instance.language, 'game', key);

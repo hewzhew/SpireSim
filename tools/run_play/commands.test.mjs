@@ -204,6 +204,33 @@ test('reward names survive gold removal and cannot fall through to a key or simi
   assert.throws(() => resolveOptionName('claim:BagOfPreparation#0', old.reading, next.doc), /decision changed/);
 });
 
+test('localized choice errors keep exact command identities and reject stale snapshots', async () => {
+  const { createPresentation } = await import('@sts-simulator/presentation');
+  const zh = createPresentation({ locale: 'zh-CN' });
+  const { reading, doc } = rewardFixture(false);
+  assert.equal(resolveOptionName('claim:BagOfPreparation#0', reading, doc, zh), 0);
+  const commands = readingOptionCommands(reading, doc, zh);
+  assert.deepEqual(commands, readingOptionCommands(reading, doc));
+  assert.throws(() => resolveOptionName('claim:BagOfPreparation#9', reading, doc, zh), error => {
+    assert.match(error.message, /精确匹配/);
+    assert.ok(error.message.endsWith(commands.map(command => `  ${command}`).join('\n')));
+    return true;
+  });
+  assert.throws(() => resolveOptionName('missing', reading, doc, zh), /无法唯一匹配/);
+  assert.throws(() => resolveOptionName('card＋', reading, doc, zh), /全角加号/);
+  assert.throws(() => resolveOptionName('claim:BagOfPreparation#0', reading, rewardFixture(true).doc, zh), /局面已改变/);
+  for (const [index, label] of ['背包', '蓝钥匙', '离开'].entries()) reading.options[index].label = label;
+  assert.equal(resolveOptionName('背包', reading, doc, zh), 0);
+  assert.equal(resolveOptionName('离开', reading, doc, zh), 2);
+  assert.throws(() => resolveOptionName('另一件遗物', reading, doc, zh), /无法唯一匹配/);
+  assert.throws(() => resolveOptionName('!!!', reading, doc, zh), /无法唯一匹配/);
+  const single = rewardFixture(false);
+  single.reading.options = single.reading.options.slice(0, 1);
+  single.reading.raw.reading.options = single.reading.options;
+  single.reading.options[0].label = '背包';
+  assert.throws(() => resolveOptionName('任意中文', single.reading, single.doc, zh), /无法唯一匹配/);
+});
+
 test('numeric reward choices fail without executing even after rows shifted', async () => {
   for (const withGold of [true, false]) {
     const { reading } = rewardFixture(withGold);

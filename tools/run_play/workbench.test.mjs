@@ -143,6 +143,28 @@ async function fixture(t, connect, run = () => assert.fail('unexpected executabl
   return workbench;
 }
 
+test('bound localized synchronous errors reject navigation batches before actions and retain raw transport errors', async t => {
+  for (const agentLocale of ['en', 'zh-CN']) {
+    const calls = [];
+    const wb = await fixture(t, async () => ({
+      async decision() { calls.push('decision'); return { control: 'strategic', view: 'state\n' }; },
+      async act(actions) { calls.push(actions); throw new Error('raw engine diagnostic'); },
+      async close() {},
+    }), undefined, { agentLocale });
+    for (const [line, en, zh] of [
+      ['act end; back 1', /separate command/, /必须单独执行/],
+      ['undo 2', /takes no arguments/, /不接受参数/],
+      ['mark drop', /quote names/, /含空格/],
+      ['info "unfinished', /unclosed quote/, /引号未闭合/],
+      ['act go', /explicit x,y/, /必须指定 x,y/],
+      ['act play:Strike#0*13', /\*1\.\.\*12/, /\*1 到 \*12/],
+    ]) await assert.rejects(wb.execute(line), agentLocale === 'en' ? en : zh);
+    assert.deepEqual(calls, []);
+    await assert.rejects(wb.execute('act end'), /raw engine diagnostic/);
+    assert.deepEqual(calls, ['decision', ['end']]);
+  }
+});
+
 test('manual workbench blocks assistance before grouped actions and retains the mode across returns', async t => {
   let plays = 0, connections = 0;
   const wb = await fixture(t, async options => {
@@ -277,7 +299,7 @@ test('manual public piles use only public card sets and reveal neither pile orde
   assert.match(first, /Exhaust \[2\]: Defend, Impervious/);
   assert.doesNotMatch(first, /must-not-leak|next ->|shuffle input/);
   cards.draw.evidence = 'hidden';
-  await assert.rejects(wb.execute('piles'), /Public draw pile contents are unavailable/);
+  await assert.rejects(wb.execute('piles'), /Public Draw pile contents are unavailable/);
 });
 
 test('Chinese public piles preserve same-name identities upgrades and unordered contents', async t => {
