@@ -360,19 +360,7 @@ pub(crate) fn write_combat_rules(out: &mut String, state: &PublicCombatStateV1, 
     for monster in state.monsters.iter().filter(|m| m.alive || m.half_dead) {
         let CombatLearningEnemyIdentityV1::Known { enemy_id } = monster.enemy;
         if seen_enemies.insert(enemy_id) {
-            if locale != Locale::En {
-                writeln!(
-                    out,
-                    "{}",
-                    combat_rule_text(
-                        locale,
-                        "enemySupplement",
-                        &[("name", locale.entity("enemy", enemy_id.stable_id()))]
-                    )
-                )
-                .unwrap();
-            }
-            write_enemy(out, enemy_id, state.player.ascension_level);
+            write_enemy(out, enemy_id, state.player.ascension_level, locale);
         }
     }
 }
@@ -608,6 +596,11 @@ fn render_query(
     let query = query.trim();
     let lower = query.to_ascii_lowercase();
     let mut out = String::new();
+    let message = |key: &str, parameters: &[(&str, &str)]| {
+        locale
+            .text("mechanics", key, parameters)
+            .expect("mechanics query message")
+    };
     let run_keys = current_observation.and_then(|observation| match observation {
         TaskPublicObservationV1::Strategic { observation } => Some(observation.run.keys),
         TaskPublicObservationV1::Combat {
@@ -618,17 +611,29 @@ fn render_query(
     });
     if lower == "rules" || lower == "rules preparation" {
         let preparation = lower == "rules preparation";
-        let asc = ascension.ok_or("current ascension unavailable; read a bound run first")?;
+        let asc = ascension.ok_or_else(|| message("query.ascensionUnavailable", &[]))?;
         let healing = if asc >= 5 {
-            "heal 75% of missing HP, rounded to the nearest integer; final HP = HP + round((Max HP - HP) * 0.75)"
+            message("run.partialHeal", &[])
         } else {
-            "heal to Max HP"
+            message("run.fullHeal", &[])
         };
-        let exhaust_scope = combat_rule_text(locale, "exhaustScope", &[]);
-        let block_lifetime = combat_rule_text(locale, "blockLifetime", &[]);
-        let shop_removal = combat_rule_text(locale, "shopRemoval", &[]);
-        out.push_str(&format!("Run rules | A{asc}\nCombat hand: EndTurn normally discards unplayed cards. Retain or Runic Pyramid can prevent ordinary discard. Non-retained Ethereal cards exhaust before ordinary discard; Runic Pyramid alone does not prevent that exhaust.\nRemoving Ethereal does not add Retain: the unplayed card normally goes to discard at EndTurn rather than remaining in the next turn's hand.\nExhaust on play sends a played card to the exhaust pile instead of its usual discard destination. Ethereal is a separate end-turn rule for cards still in hand.\n{exhaust_scope}\n{block_lifetime}\nAct transition: {healing} when entering the next Act, including Act 4. This is a dungeon transition effect, not a relic proc.\n{shop_removal}\nAt A20, Act 3 has two consecutive bosses. Heart access also requires all three keys.\n"));
-        writeln!(out, "Use info transition <HP> to calculate recovery from an assumed surviving HP immediately before Act entry, using the bound Max HP and difficulty.").unwrap();
+        writeln!(
+            out,
+            "{}",
+            message("run.heading", &[("ascension", &asc.to_string())])
+        )
+        .unwrap();
+        for key in ["hand", "removeEthereal", "exhaustOnPlay"] {
+            writeln!(out, "{}", message(&format!("run.{key}"), &[])).unwrap();
+        }
+        for key in ["exhaustScope", "blockLifetime"] {
+            writeln!(out, "{}", combat_rule_text(locale, key, &[])).unwrap();
+        }
+        writeln!(out, "{}", message("run.actEntry", &[("healing", &healing)])).unwrap();
+        writeln!(out, "{}", combat_rule_text(locale, "shopRemoval", &[])).unwrap();
+        for key in ["a20Bosses", "transitionQuery"] {
+            writeln!(out, "{}", message(&format!("run.{key}"), &[])).unwrap();
+        }
         let goal = current_observation.and_then(|observation| match observation {
             TaskPublicObservationV1::Strategic { observation } => Some(observation.run_goal),
             TaskPublicObservationV1::Combat {
@@ -657,36 +662,55 @@ fn render_query(
             } => Some((*act, public_map.boss)),
             _ => None,
         });
-        let act_scope = match current_observation {
+        let pending_act_entry = matches!(current_observation,
             Some(TaskPublicObservationV1::Strategic { observation })
-                if observation.run.pending_act_entry.is_some() =>
-            {
-                "Preparation"
-            }
-            _ => "Current",
-        };
+                if observation.run.pending_act_entry.is_some());
         if let Some((act, boss)) = public_run {
-            if !preparation && act_scope == "Current" {
+            if !preparation && !pending_act_entry {
                 let catalogue = crate::deck_lab::available_for_public_run(act, boss)
                     .iter()
                     .map(|spec| spec.encounter.stable_id())
                     .collect::<Vec<_>>()
                     .join(", ");
-                writeln!(out, "\nCurrent Act {act} deck-lab encounters: {catalogue}. The catalogue updates with the Act and public Boss. Tests use current resources outside combat; use them while preparation choices remain.").unwrap();
+                writeln!(
+                    out,
+                    "\n{}",
+                    message(
+                        "run.catalogue",
+                        &[("act", &act.to_string()), ("catalogue", &catalogue)]
+                    )
+                )
+                .unwrap();
             } else if !preparation {
-                writeln!(out, "Use deck-lab list for the diagnostic encounters available with the present pre-entry resources.").unwrap();
+                writeln!(out, "{}", message("run.preEntryCatalogue", &[])).unwrap();
             }
             let elites = public_encounter_pool(act, EncounterPoolTier::Elite);
             if !elites.is_empty() {
                 if act == 4 {
-                    writeln!(out, "\nFixed Act 4 elite encounter:").unwrap();
+                    writeln!(out, "\n{}", message("run.fixedElite", &[])).unwrap();
                 } else {
                     let names = elites
                         .iter()
-                        .map(|entry| entry.encounter.stable_id())
+                        .map(|entry| {
+                            format!(
+                                "{} [{}]",
+                                locale.entity("encounter", entry.encounter.stable_id()),
+                                entry.encounter.stable_id()
+                            )
+                        })
                         .collect::<Vec<_>>()
                         .join(", ");
-                    writeln!(out, "\n{act_scope} Act {act} elite encounter pool (public content): {names}. Elite rooms reveal the encountered fight on entry; these definitions describe the eligible fights at the current difficulty.").unwrap();
+                    let key = if pending_act_entry {
+                        "run.preparationElites"
+                    } else {
+                        "run.currentElites"
+                    };
+                    writeln!(
+                        out,
+                        "\n{}",
+                        message(key, &[("act", &act.to_string()), ("names", &names)])
+                    )
+                    .unwrap();
                 }
                 write_encounter_preparation_links(
                     &mut out,
@@ -695,28 +719,35 @@ fn render_query(
                         .map(|entry| entry.encounter)
                         .collect::<Vec<_>>(),
                     asc,
+                    locale,
                 );
                 if !preparation {
                     for entry in elites {
-                        write_encounter(&mut out, entry.encounter, asc)?;
+                        write_encounter(&mut out, entry.encounter, asc, locale)?;
                     }
                 }
             }
             if let Some(boss) = boss {
                 writeln!(
                     out,
-                    "\nPublic map Boss definition | Act {act}: {}",
-                    label(boss)
+                    "\n{}",
+                    message(
+                        "run.publicBoss",
+                        &[
+                            ("act", &act.to_string()),
+                            ("boss", locale.entity("encounter", boss.stable_id()))
+                        ]
+                    )
                 )
                 .unwrap();
                 if preparation {
                     if boss != EncounterId::TheHeart || !heart_goal {
-                        write_encounter_preparation_links(&mut out, &[boss], asc);
+                        write_encounter_preparation_links(&mut out, &[boss], asc, locale);
                     }
                 } else if heart_goal && boss == EncounterId::TheHeart {
-                    writeln!(out, "Uses the objective encounter definition below.").unwrap();
+                    writeln!(out, "{}", message("run.objectiveReference", &[])).unwrap();
                 } else {
-                    write_encounter(&mut out, boss, asc)?;
+                    write_encounter(&mut out, boss, asc, locale)?;
                 }
             }
         }
@@ -739,26 +770,35 @@ fn render_query(
             }
             let route = sts_oracle_learning::state::map::generator::ENDING_ROOM_SEQUENCE
                 .iter()
-                .map(|room| match room {
-                    sts_oracle_learning::state::map::node::RoomType::RestRoom => "Rest site",
-                    sts_oracle_learning::state::map::node::RoomType::ShopRoom => "Shop",
-                    sts_oracle_learning::state::map::node::RoomType::MonsterRoomElite => "Elite",
-                    sts_oracle_learning::state::map::node::RoomType::MonsterRoomBoss => "Boss",
-                    sts_oracle_learning::state::map::node::RoomType::TrueVictoryRoom => "Victory",
-                    _ => "Other room",
+                .map(|room| {
+                    use sts_oracle_learning::state::map::node::RoomType;
+                    let key = match room {
+                        RoomType::RestRoom => "rest",
+                        RoomType::ShopRoom => "shop",
+                        RoomType::MonsterRoomElite => "elite",
+                        RoomType::MonsterRoomBoss => "boss",
+                        RoomType::TrueVictoryRoom => "victory",
+                        RoomType::EventRoom => "questionMark",
+                        RoomType::MonsterRoom => "monster",
+                        RoomType::TreasureRoom => "treasure",
+                    };
+                    locale
+                        .entry("decision", &format!("room.{key}"))
+                        .expect("room name")
                 })
                 .collect::<Vec<_>>()
                 .join(" -> ");
-            writeln!(out, "\nHeart access: after completing Act 3 with all three keys, Act 4 follows the fixed route {route}. The shop offers its own inventory for the Gold you carry into it. The rest site precedes that shop and the elite combat. Act 3 bosses advance without a normal reward screen; their room Gold, cards and potions are not claimed.").unwrap();
+            writeln!(
+                out,
+                "\n{}",
+                message("run.heartAccess", &[("route", &route)])
+            )
+            .unwrap();
             if preparation {
-                write_encounter_preparation_links(&mut out, &[EncounterId::TheHeart], asc);
+                write_encounter_preparation_links(&mut out, &[EncounterId::TheHeart], asc, locale);
             } else {
-                writeln!(
-                    out,
-                    "\nObjective encounter definition for preparation throughout this run:"
-                )
-                .unwrap();
-                write_encounter(&mut out, EncounterId::TheHeart, asc)?;
+                writeln!(out, "\n{}", message("run.objectiveHeading", &[])).unwrap();
+                write_encounter(&mut out, EncounterId::TheHeart, asc, locale)?;
             }
         }
         return Ok(out);
@@ -767,28 +807,42 @@ fn render_query(
         let hp = query["transition".len()..]
             .trim()
             .parse::<i32>()
-            .map_err(|_| "Use info transition <HP> with an integer surviving HP.")?;
+            .map_err(|_| message("query.transitionInteger", &[]))?;
         let max_hp = current_observation
             .map(|observation| match observation {
                 TaskPublicObservationV1::Strategic { observation } => observation.run.max_hp,
                 TaskPublicObservationV1::Combat { observation, .. } => observation.player.max_hp,
             })
-            .ok_or("current Max HP unavailable; read a bound run first")?;
-        let asc = ascension.ok_or("current ascension unavailable; read a bound run first")?;
+            .ok_or_else(|| message("query.maxHpUnavailable", &[]))?;
+        let asc = ascension.ok_or_else(|| message("query.ascensionUnavailable", &[]))?;
         if hp < 1 || hp > max_hp {
-            return Err(format!("Assumed surviving HP must be in 1..={max_hp}."));
+            return Err(message(
+                "query.transitionRange",
+                &[("maxHp", &max_hp.to_string())],
+            ));
         }
         let after =
             sts_oracle_learning::state::run::RunState::dungeon_transition_hp(hp, max_hp, asc);
-        writeln!(out, "Act transition | A{asc} | assumed surviving HP {hp}/{max_hp} immediately before Act entry").unwrap();
-        writeln!(out, "Missing HP: {max_hp} - {hp} = {}", max_hp - hp).unwrap();
-        writeln!(
-            out,
-            "Transition recovery: +{} HP -> {after}/{max_hp}",
-            after - hp
-        )
-        .unwrap();
-        writeln!(out, "This applies only the dungeon transition. Preceding combat and relic effects determine the assumed entry HP separately.").unwrap();
+        let parameters = [
+            ("ascension", asc.to_string()),
+            ("hp", hp.to_string()),
+            ("maxHp", max_hp.to_string()),
+            ("missing", (max_hp - hp).to_string()),
+            ("healed", (after - hp).to_string()),
+            ("after", after.to_string()),
+        ];
+        let parameters: Vec<_> = parameters
+            .iter()
+            .map(|(key, value)| (*key, value.as_str()))
+            .collect();
+        for key in ["heading", "missing", "recovery", "scope"] {
+            writeln!(
+                out,
+                "{}",
+                message(&format!("transition.{key}"), &parameters)
+            )
+            .unwrap();
+        }
         return Ok(out);
     }
     match lower.replace([' ', '_', '-'], "").as_str() {
@@ -843,60 +897,55 @@ fn render_query(
         _ => {}
     }
     if lower == "help" {
-        return Ok("Current event or decision option effects: info (no arguments).\nMechanics queries: info <power, enemy, card, relic, potion or encounter name>, info card <name>, info relic <name>, info potion <name>, info enemy <name>, info encounter <name>, info power <name>, info M0, info player, info powers, info rules, info rules preparation, info transition <HP>, info keys or info <key name>.\nNames match exactly, ignoring spaces and case; power names take precedence. Missing explanation coverage is reported as Unknown.\nEnemy definitions use the current run's ascension. Encounter definitions list fixed members and weighted random starting slots, then member mechanics. Card definitions honor an explicit + or +N upgrade suffix (no suffix means base); combat readings give current hand values.\n".into());
+        return Ok(message("query.help", &[]));
     }
     if lower == "event" || lower.starts_with("event ") {
-        return Err("To inspect the current event's options and effects, use info with no arguments; the bound event and phase determine them.".into());
+        return Err(message("query.currentEvent", &[]));
     }
     if lower.starts_with("encounter ") {
         let name = query[10..].trim();
         let encounter = resolve::<EncounterId>(name)
-            .ok_or_else(|| format!("Unknown encounter name: {name}. Use the stable encounter ID shown by deck-lab list."))?;
-        write_encounter(&mut out, encounter, ascension.unwrap_or(0))?;
+            .ok_or_else(|| message("query.unknownEncounter", &[("name", name)]))?;
+        write_encounter(&mut out, encounter, ascension.unwrap_or(0), locale)?;
         return Ok(out);
     }
     if lower.starts_with("enemy ") {
         let name = query[6..].trim();
         if resolve::<monsters::EnemyId>(name).is_none() {
             if let Some(encounter) = resolve::<EncounterId>(name) {
-                write_encounter(&mut out, encounter, ascension.unwrap_or(0))?;
+                write_encounter(&mut out, encounter, ascension.unwrap_or(0), locale)?;
                 return Ok(out);
             }
         }
-        let enemy = resolve::<monsters::EnemyId>(name).ok_or_else(|| {
-            format!("Unknown enemy name: {name}. Use the full displayed name (including size) or stable ID. During combat, info M0 queries the actual enemy in slot 0 without guessing its name.")
-        })?;
-        write_enemy(&mut out, enemy, ascension.unwrap_or(0));
+        let enemy = resolve::<monsters::EnemyId>(name)
+            .ok_or_else(|| message("query.unknownEnemy", &[("name", name)]))?;
+        write_enemy(&mut out, enemy, ascension.unwrap_or(0), locale);
         return Ok(out);
     }
     if lower.starts_with("power ") {
         let name = query[6..].trim();
         let matches = matching_powers(name);
         if matches.is_empty() {
-            return Err(format!(
-                "Unknown power name: {name}. Use the full displayed name or stable ID."
-            ));
+            return Err(message("query.unknownPower", &[("name", name)]));
         }
         write_power_matches(&mut out, &matches, None, locale);
         return Ok(out);
     }
     if lower.starts_with("card ") {
-        let (name, upgrades) = crate::selector::parse_card_upgrade(query[5..].trim(), query)?;
+        let (name, upgrades) = crate::selector::parse_card_upgrade(query[5..].trim(), query)
+            .map_err(|_| message("query.cardSyntax", &[("query", query)]))?;
         // Exact simulator IDs are explicit identities, even when another card
         // shares their display name (e.g. the four starter Strikes).
         let card = cards::CardId::from_stable_id(name)
             .or_else(|| resolve::<cards::CardId>(name))
-            .ok_or_else(|| {
-                format!("Unknown card name: {name}. Use the full displayed name or stable ID. If its kind is uncertain, query info {name} without a category, or info help.")
-            })?;
+            .ok_or_else(|| message("query.unknownCard", &[("name", name)]))?;
         write_card(&mut out, card, upgrades.unwrap_or(0), locale)?;
         return Ok(out);
     }
     if lower.starts_with("relic ") {
         let name = query[6..].trim();
-        let relic = resolve::<relics::RelicId>(name).ok_or_else(|| {
-            format!("Unknown relic name: {name}. Use the full displayed name or stable ID. If its kind is uncertain, query info {name} without a category, or info help.")
-        })?;
+        let relic = resolve::<relics::RelicId>(name)
+            .ok_or_else(|| message("query.unknownRelic", &[("name", name)]))?;
         write_relic(&mut out, relic, current_observation);
         return Ok(out);
     }
@@ -912,10 +961,7 @@ fn render_query(
     }
     if lower == "player" || lower == "powers" {
         let Some(state) = combat else {
-            return Err(
-                "current powers require an active combat; query a power name for its definition"
-                    .into(),
-            );
+            return Err(message("query.powersNeedCombat", &[]));
         };
         writeln!(out, "{}", combat_rule_text(locale, "playerPowers", &[])).unwrap();
         write_current_powers(&mut out, &state.player.powers, locale);
@@ -947,15 +993,13 @@ fn render_query(
         .strip_prefix('m')
         .filter(|s| !s.is_empty() && s.bytes().all(|c| c.is_ascii_digit()))
     {
-        let slot: u8 = slot.parse().map_err(|_| "enemy slot is out of range")?;
-        let state = combat.ok_or(
-            "enemy slots require an active combat; query an enemy name for its definition",
-        )?;
+        let slot: u8 = slot.parse().map_err(|_| message("query.slotRange", &[]))?;
+        let state = combat.ok_or_else(|| message("query.slotsNeedCombat", &[]))?;
         let monster = state
             .monsters
             .iter()
             .find(|m| m.slot == slot)
-            .ok_or("enemy slot is not on the current public reading")?;
+            .ok_or_else(|| message("query.slotAbsent", &[("slot", &slot.to_string())]))?;
         let CombatLearningEnemyIdentityV1::Known { enemy_id } = monster.enemy;
         writeln!(
             out,
@@ -991,28 +1035,17 @@ fn render_query(
             .unwrap();
         }
         write_current_powers(&mut out, &monster.powers, locale);
-        if locale != Locale::En {
-            writeln!(
-                out,
-                "{}",
-                combat_rule_text(
-                    locale,
-                    "enemySupplement",
-                    &[("name", locale.entity("enemy", enemy_id.stable_id()))]
-                )
-            )
-            .unwrap();
-        }
-        write_enemy(&mut out, enemy_id, state.player.ascension_level);
+        write_enemy(&mut out, enemy_id, state.player.ascension_level, locale);
         return Ok(out);
     }
     // An explicit card upgrade identifies a card definition even when the
     // unqualified name also denotes a Power, e.g. Corruption+.
     if query.contains(['+', '\u{ff0b}']) {
-        let (name, upgrades) = crate::selector::parse_card_upgrade(query, query)?;
+        let (name, upgrades) = crate::selector::parse_card_upgrade(query, query)
+            .map_err(|_| message("query.cardSyntax", &[("query", query)]))?;
         let card = cards::CardId::from_stable_id(name)
             .or_else(|| resolve::<cards::CardId>(name))
-            .ok_or_else(|| format!("Unknown card name: {name}."))?;
+            .ok_or_else(|| message("query.unknownCard", &[("name", name)]))?;
         write_card(&mut out, card, upgrades.unwrap_or(0), locale)?;
         return Ok(out);
     }
@@ -1025,7 +1058,8 @@ fn render_query(
         write_enemy(
             &mut out,
             enemy,
-            ascension.ok_or("current ascension unavailable; no enemy numbers inferred")?,
+            ascension.ok_or_else(|| message("query.enemyAscensionUnavailable", &[]))?,
+            locale,
         );
         return Ok(out);
     }
@@ -1042,10 +1076,10 @@ fn render_query(
         return Ok(out);
     }
     if let Some(encounter) = resolve::<EncounterId>(query) {
-        write_encounter(&mut out, encounter, ascension.unwrap_or(0))?;
+        write_encounter(&mut out, encounter, ascension.unwrap_or(0), locale)?;
         return Ok(out);
     }
-    Err(format!("Unknown power, enemy, card, relic or potion name: {query}. Use the full displayed name or stable ID; see info help. No fuzzy match was selected."))
+    Err(message("query.unknown", &[("query", query)]))
 }
 
 fn matching_powers(query: &str) -> Vec<powers::PowerId> {
@@ -1506,7 +1540,12 @@ fn card_addition(c: &sts_oracle_learning::runtime::monster_move::AddCardStep) ->
 
 /// A small index into the same public definitions expanded below. It is a
 /// pool reading, without choosing an encounter or forecasting a rolled move.
-fn write_encounter_preparation_links(out: &mut String, encounters: &[EncounterId], ascension: u8) {
+fn write_encounter_preparation_links(
+    out: &mut String,
+    encounters: &[EncounterId],
+    ascension: u8,
+    locale: Locale,
+) {
     let mut lines = Vec::new();
     for &encounter in encounters {
         let Some(lineup) = monsters::factory::encounter_lineup(encounter) else {
@@ -1542,35 +1581,71 @@ fn write_encounter_preparation_links(out: &mut String, encounters: &[EncounterId
     if !lines.is_empty() {
         writeln!(
             out,
-            "\nPreparation links from public encounters (possible moves and starting effects):"
+            "\n{}",
+            locale
+                .entry("mechanics", "run.preparationLinks")
+                .expect("preparation links heading")
         )
         .unwrap();
         for line in lines {
             writeln!(out, "  {line}").unwrap();
         }
-        writeln!(out, "Cards added to discard reach Hand through discard access or a later reshuffle and draw. A draw-trigger Power must be deployed before the triggering draw. Normal deployment uses a Hand slot and its current Energy cost.").unwrap();
+        writeln!(
+            out,
+            "{}",
+            locale
+                .entry("mechanics", "run.preparationTiming")
+                .expect("preparation timing rule")
+        )
+        .unwrap();
     }
 }
 
-fn write_encounter(out: &mut String, encounter: EncounterId, ascension: u8) -> Result<(), String> {
-    let lineup = monsters::factory::encounter_lineup(encounter).ok_or_else(|| {
-        format!("Starting-lineup explanation unavailable for {}. Query its individual enemies with info enemy <name>.", encounter.stable_id())
-    })?;
+fn write_encounter(
+    out: &mut String,
+    encounter: EncounterId,
+    ascension: u8,
+    locale: Locale,
+) -> Result<(), String> {
+    let message = |key: &str, parameters: &[(&str, &str)]| {
+        locale
+            .text("mechanics", &format!("encounter.{key}"), parameters)
+            .expect("encounter query message")
+    };
+    let lineup = monsters::factory::encounter_lineup(encounter)
+        .ok_or_else(|| message("unavailable", &[("id", encounter.stable_id())]))?;
     writeln!(
         out,
-        "Encounter definition: {} | A{ascension}",
-        encounter.stable_id()
+        "{}",
+        message(
+            "heading",
+            &[
+                ("id", encounter.stable_id()),
+                ("ascension", &ascension.to_string()),
+                ("name", locale.entity("encounter", encounter.stable_id()))
+            ]
+        )
     )
     .unwrap();
     writeln!(
         out,
-        "Fixed starting enemies: {}",
-        lineup
-            .fixed
-            .iter()
-            .map(|id| format!("{} [{}]", label(*id), id.stable_id()))
-            .collect::<Vec<_>>()
-            .join(", ")
+        "{}",
+        message(
+            "fixed",
+            &[(
+                "members",
+                &lineup
+                    .fixed
+                    .iter()
+                    .map(|id| format!(
+                        "{} [{}]",
+                        locale.entity("enemy", id.stable_id()),
+                        id.stable_id()
+                    ))
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            )]
+        )
     )
     .unwrap();
     let mut seen_members = HashSet::new();
@@ -1589,29 +1664,49 @@ fn write_encounter(out: &mut String, encounter: EncounterId, ascension: u8) -> R
                     members.push(enemy);
                 }
                 let weight = lineup.random_pool.iter().filter(|&&id| id == enemy).count();
-                pool.push(format!(
-                    "{} [{}]: {weight}/{} per slot",
-                    label(enemy),
-                    enemy.stable_id(),
-                    lineup.random_pool.len()
+                pool.push(message(
+                    "weightedMember",
+                    &[
+                        ("name", locale.entity("enemy", enemy.stable_id())),
+                        ("id", enemy.stable_id()),
+                        ("weight", &weight.to_string()),
+                        ("total", &lineup.random_pool.len().to_string()),
+                    ],
                 ));
             }
         }
         writeln!(
             out,
-            "Random starting slots: {} | {}",
-            lineup.random_slots,
-            pool.join(", ")
+            "{}",
+            message(
+                "random",
+                &[
+                    ("slots", &lineup.random_slots.to_string()),
+                    ("pool", &pool.join(", "))
+                ]
+            )
         )
         .unwrap();
     }
     for enemy in members {
-        write_enemy(out, enemy, ascension);
+        write_enemy(out, enemy, ascension, locale);
     }
     Ok(())
 }
 
-fn write_enemy(out: &mut String, enemy: monsters::EnemyId, ascension: u8) {
+fn write_enemy(out: &mut String, enemy: monsters::EnemyId, ascension: u8, locale: Locale) {
+    if locale != Locale::En {
+        writeln!(
+            out,
+            "{}",
+            combat_rule_text(
+                locale,
+                "enemySupplement",
+                &[("name", locale.entity("enemy", enemy.stable_id()))]
+            )
+        )
+        .unwrap();
+    }
     writeln!(out, "Enemy definition: {} | A{ascension}", label(enemy)).unwrap();
     let (min_hp, max_hp) = monsters::get_hp_range(enemy, ascension);
     writeln!(out, "  Base starting HP range: {min_hp}..{max_hp}").unwrap();
@@ -1779,6 +1874,7 @@ mod tests {
                 .map(|entry| entry.encounter)
                 .collect::<Vec<_>>(),
             20,
+            Locale::En,
         );
         assert!(act2.contains("possible moves and starting effects"));
         assert!(act2.contains("Taskmaster / Scouring Whip: add 3 Wound to discard pile"));
@@ -1793,6 +1889,7 @@ mod tests {
                 .map(|entry| entry.encounter)
                 .collect::<Vec<_>>(),
             0,
+            Locale::En,
         );
         assert!(low.contains("Scouring Whip: add 1 Wound to discard pile"));
         assert!(!low.contains("Scouring Whip: add 3 Wound"));
@@ -1804,6 +1901,7 @@ mod tests {
                 .map(|entry| entry.encounter)
                 .collect::<Vec<_>>(),
             20,
+            Locale::En,
         );
         assert!(act1.contains("Dazed to discard pile"));
         assert!(!act1.contains("Taskmaster"));
@@ -3217,6 +3315,45 @@ mod tests {
     }
 
     #[test]
+    fn encounter_locales_preserve_all_lineup_weights_and_full_enemy_definitions() {
+        for id in EncounterId::STABLE_IDS {
+            let encounter = EncounterId::from_stable_id(id).unwrap();
+            let Some(lineup) = monsters::factory::encounter_lineup(encounter) else {
+                continue;
+            };
+            for ascension in [4, 5, 20] {
+                let mut zh = String::new();
+                write_encounter(&mut zh, encounter, ascension, Locale::ZhCn).unwrap();
+                assert!(zh.contains(&format!("[{}] | 进阶 {ascension}", encounter.stable_id())));
+                for &enemy in lineup.fixed.iter().chain(lineup.random_pool.iter()) {
+                    let mut original = String::new();
+                    write_enemy(&mut original, enemy, ascension, Locale::En);
+                    assert!(
+                        zh.contains(&original),
+                        "{id}: localized headers must preserve the complete mechanism supplement"
+                    );
+                    if lineup.random_pool.contains(&enemy) {
+                        let weight = lineup
+                            .random_pool
+                            .iter()
+                            .filter(|&&member| member == enemy)
+                            .count();
+                        assert!(zh.contains(&format!(
+                            "{} [{}]：每个随机位置的权重 {weight}/{}",
+                            Locale::ZhCn.entity("enemy", enemy.stable_id()),
+                            enemy.stable_id(),
+                            lineup.random_pool.len()
+                        )));
+                    }
+                }
+                if lineup.random_slots > 0 {
+                    assert!(zh.contains(&format!("随机初始位置：{}", lineup.random_slots)));
+                }
+            }
+        }
+    }
+
+    #[test]
     fn run_rules_explain_the_observed_transition_and_persistent_shop_price() {
         let a20 = render_query(None, Some(20), "rules").unwrap();
         assert!(a20.contains("heal 75% of missing HP"));
@@ -3409,7 +3546,7 @@ mod tests {
                 .unwrap();
             assert!(view.contains("Objective encounter definition"));
             assert!(
-                view.contains("fixed route Rest site -> Shop -> Elite -> Boss -> Victory"),
+                view.contains("fixed route Campfire -> Shop -> Elite -> Boss -> Victory"),
                 "{view}"
             );
             assert!(view.contains("Gold you carry into it"));
@@ -3521,7 +3658,7 @@ mod tests {
                 observation: public_combat_state_v1(&state),
             };
             let mut expected = String::new();
-            write_encounter(&mut expected, boss, 20).unwrap();
+            write_encounter(&mut expected, boss, 20, Locale::En).unwrap();
             for observation in [&strategic, &combat] {
                 let view =
                     super::render_query(None, Some(20), Some(observation), "rules", Locale::En)
@@ -3531,7 +3668,8 @@ mod tests {
                 assert!(view.contains("The catalogue updates with the Act and public Boss"));
                 for entry in public_encounter_pool(act, EncounterPoolTier::Elite) {
                     let mut elite_definition = String::new();
-                    write_encounter(&mut elite_definition, entry.encounter, 20).unwrap();
+                    write_encounter(&mut elite_definition, entry.encounter, 20, Locale::En)
+                        .unwrap();
                     assert!(view.contains(&elite_definition));
                     assert_eq!(
                         view.matches(&format!(

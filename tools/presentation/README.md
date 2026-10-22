@@ -33,6 +33,8 @@ dsh 地图使用宿主的语言偏好、订阅和 slot 翻译入口，离线演�
 
 钥匙状态、定义查询和准备提示共享 `mechanics.key` 的完整句子。`KeyRuleV1` 决定各入口显示的规则，已持有钥匙只影响当前状态及自动准备提示，不删减显式查询的完整规则。蓝钥匙与关联宝箱遗物二选一，绿钥匙可以和其他精英奖励一并领取；语言选择不改变这些条件。
 
+完整 `info rules`、准备版 `info rules preparation`、`info transition <HP>`、`info help` 和机制查询错误也使用连接语言。`mechanics.run` 拥有对局规则，`transition` 拥有跨幕计算读数，`query` 拥有帮助与查询错误，`encounter` 拥有阵容标题、成员与权重。跨幕回血仍调用 `RunState::dungeon_transition_hp`；当前幕与待进入幕由公开状态区分，第四幕路线取实际 `ENDING_ROOM_SEQUENCE`。精英池、Boss 与阵容使用原版名称和稳定 ID，完整敌人机制及准备机制补充保留英文并标明。查询名称仍接受完整英文名或稳定 ID，命令和升级后缀不随显示语言变化。
+
 保存计划的完整 ID、比较引用和复盘分页命令由 Rust `combat_reading` 生成；Node 从候选的 `plan_id` 绑定 `planId`，直接展示报告原文。工作台不依赖保存计划的标题文字，也不在显示普通读数时追加计划查询。
 
 选项行、营火升级与奖励标签、单选和多选提示由 Rust `decision` 渲染；命令来自 typed choice 与 selector，说明文字不参与命令识别。Node 原样输出，战斗外显示不再补取观察。预演保留假设选择及规则，当前读数提供可复制命令。读数的 `summary` 与正文共用源端公开状态渲染器，预演直接展示执行前的摘要，不再按英文标题截取；`board` 的当前格挡、来袭伤害与合法命令使用同一份 typed 公开观察。

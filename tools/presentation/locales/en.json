@@ -1123,6 +1123,61 @@
       "enemyStatus": "M{{slot}} {{name}} | HP {{hp}}/{{maxHp}} | Block {{block}}",
       "inactive": "Inactive; no current action.",
       "intent": "Current visible intent: {{intent}}"
+    },
+    "run": {
+      "heading": "Run rules | A{{ascension}}",
+      "hand": "Combat hand: EndTurn normally discards unplayed cards. Retain or Runic Pyramid can prevent ordinary discard. Non-retained Ethereal cards exhaust before ordinary discard; Runic Pyramid alone does not prevent that exhaust.",
+      "removeEthereal": "Removing Ethereal does not add Retain: the unplayed card normally goes to discard at EndTurn rather than remaining in the next turn's hand.",
+      "exhaustOnPlay": "Exhaust on play sends a played card to the exhaust pile instead of its usual discard destination. Ethereal is a separate end-turn rule for cards still in hand.",
+      "partialHeal": "heal 75% of missing HP, rounded to the nearest integer; final HP = HP + round((Max HP - HP) * 0.75)",
+      "fullHeal": "heal to Max HP",
+      "actEntry": "Act transition: {{healing}} when entering the next Act, including Act 4. This is a dungeon transition effect, not a relic proc.",
+      "a20Bosses": "At A20, Act 3 has two consecutive bosses. Heart access also requires all three keys.",
+      "transitionQuery": "Use info transition <HP> to calculate recovery from an assumed surviving HP immediately before Act entry, using the bound Max HP and difficulty.",
+      "catalogue": "Current Act {{act}} deck-lab encounters: {{catalogue}}. The catalogue updates with the Act and public Boss. Tests use current resources outside combat; use them while preparation choices remain.",
+      "preEntryCatalogue": "Use deck-lab list for the diagnostic encounters available with the present pre-entry resources.",
+      "fixedElite": "Fixed Act 4 elite encounter:",
+      "currentElites": "Current Act {{act}} elite encounter pool (public content): {{names}}. Elite rooms reveal the encountered fight on entry; these definitions describe the eligible fights at the current difficulty.",
+      "preparationElites": "Preparation Act {{act}} elite encounter pool (public content): {{names}}. Elite rooms reveal the encountered fight on entry; these definitions describe the eligible fights at the current difficulty.",
+      "publicBoss": "Public map Boss definition | Act {{act}}: {{boss}}",
+      "objectiveReference": "Uses the objective encounter definition below.",
+      "heartAccess": "Heart access: after completing Act 3 with all three keys, Act 4 follows the fixed route {{route}}. The shop offers its own inventory for the Gold you carry into it. The rest site precedes that shop and the elite combat. Act 3 bosses advance without a normal reward screen; their room Gold, cards and potions are not claimed.",
+      "objectiveHeading": "Objective encounter definition for preparation throughout this run:",
+      "preparationLinks": "Preparation links from public encounters (possible moves and starting effects):",
+      "preparationTiming": "Cards added to discard reach Hand through discard access or a later reshuffle and draw. A draw-trigger Power must be deployed before the triggering draw. Normal deployment uses a Hand slot and its current Energy cost."
+    },
+    "transition": {
+      "heading": "Act transition | A{{ascension}} | assumed surviving HP {{hp}}/{{maxHp}} immediately before Act entry",
+      "missing": "Missing HP: {{maxHp}} - {{hp}} = {{missing}}",
+      "recovery": "Transition recovery: +{{healed}} HP -> {{after}}/{{maxHp}}",
+      "scope": "This applies only the dungeon transition. Preceding combat and relic effects determine the assumed entry HP separately."
+    },
+    "query": {
+      "help": "Current event or decision option effects: info (no arguments).\nMechanics queries: info <power, enemy, card, relic, potion or encounter name>, info card <name>, info relic <name>, info potion <name>, info enemy <name>, info encounter <name>, info power <name>, info M0, info player, info powers, info rules, info rules preparation, info transition <HP>, info keys or info <key name>.\nUse full English names or stable IDs. Names match exactly, ignoring spaces and case; power names take precedence. Missing explanation coverage is reported as Unknown.\nEnemy definitions use the current run's ascension. Encounter definitions list fixed members and weighted random starting slots, then member mechanics. Card definitions honor an explicit + or +N upgrade suffix (no suffix means base); combat readings give current hand values.\n",
+      "ascensionUnavailable": "current ascension unavailable; read a bound run first",
+      "maxHpUnavailable": "current Max HP unavailable; read a bound run first",
+      "transitionInteger": "Use info transition <HP> with an integer surviving HP.",
+      "transitionRange": "Assumed surviving HP must be in 1..={{maxHp}}.",
+      "currentEvent": "To inspect the current event's options and effects, use info with no arguments; the bound event and phase determine them.",
+      "unknownEncounter": "Unknown encounter name: {{name}}. Use the stable encounter ID shown by deck-lab list.",
+      "unknownEnemy": "Unknown enemy name: {{name}}. Use the full English name (including size) or stable ID. During combat, info M0 queries the actual enemy in slot 0 without guessing its name.",
+      "unknownPower": "Unknown power name: {{name}}. Use the full English name or stable ID.",
+      "unknownCard": "Unknown card name: {{name}}. Use the full English name or stable ID. If its kind is uncertain, query info {{name}} without a category, or info help.",
+      "unknownRelic": "Unknown relic name: {{name}}. Use the full English name or stable ID. If its kind is uncertain, query info {{name}} without a category, or info help.",
+      "cardSyntax": "Invalid card query: {{query}}. Use a card name or stable ID, with an ASCII '+' upgrade suffix: Card+ or Card+1 for one upgrade, Card+0 for base, or Card+N with an integer N in 0..=255.",
+      "powersNeedCombat": "current powers require an active combat; query a power name for its definition",
+      "slotRange": "enemy slot is out of range",
+      "slotsNeedCombat": "enemy slots require an active combat; query an enemy name for its definition",
+      "slotAbsent": "enemy slot M{{slot}} is not on the current public reading",
+      "enemyAscensionUnavailable": "current ascension unavailable; no enemy numbers inferred",
+      "unknown": "Unknown power, enemy, card, relic, potion or encounter name: {{query}}. Use the full English name or stable ID; see info help. No fuzzy match was selected."
+    },
+    "encounter": {
+      "unavailable": "Starting-lineup explanation unavailable for {{id}}. Query its individual enemies with info enemy <name>.",
+      "heading": "Encounter definition: {{id}} | A{{ascension}} | {{name}}",
+      "fixed": "Fixed starting enemies: {{members}}",
+      "weightedMember": "{{name}} [{{id}}]: {{weight}}/{{total}} per slot",
+      "random": "Random starting slots: {{slots}} | {{pool}}"
     }
   },
   "inventory": {

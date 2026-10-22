@@ -1123,6 +1123,61 @@
       "enemyStatus": "M{{slot}} {{name}} | 生命 {{hp}}/{{maxHp}} | 格挡 {{block}}",
       "inactive": "已离场，无当前行动。",
       "intent": "当前可见意图：{{intent}}"
+    },
+    "run": {
+      "heading": "对局规则 | 进阶 {{ascension}}",
+      "hand": "战斗手牌：回合结束时，未打出的牌通常进入弃牌堆。保留或符文金字塔可阻止普通弃牌。未保留的虚无牌会先消耗，再处理普通弃牌；单有符文金字塔不能阻止这种消耗。",
+      "removeEthereal": "移除虚无不会赋予保留：未打出的牌通常仍在回合结束时进入弃牌堆，不会留到下回合。",
+      "exhaustOnPlay": "打出后消耗会让该牌进入消耗堆，而非通常的弃牌堆。虚无则单独作用于回合结束时仍在手中的牌。",
+      "partialHeal": "回复已损失生命值的 75%，四舍五入取整；最终生命值 = 当前生命值 + round((生命上限 - 当前生命值) * 0.75)",
+      "fullHeal": "回复至生命上限",
+      "actEntry": "跨幕回血：进入下一幕时{{healing}}，进入第四幕也适用。这是跨幕效果，由幕切换触发。",
+      "a20Bosses": "进阶 20 的第三幕需要连续击败两名 Boss。进入心脏还需集齐三把钥匙。",
+      "transitionQuery": "使用 info transition <HP>，可按当前对局的生命上限和进阶，计算以指定存活生命值进入下一幕后的回血结果。",
+      "catalogue": "当前第 {{act}} 幕的 deck-lab 遭遇：{{catalogue}}。列表随幕数和公开 Boss 更新。测试使用当前战斗外资源，适合在仍有准备选择时使用。",
+      "preEntryCatalogue": "使用 deck-lab list，可查看当前跨幕前资源可用的诊断遭遇。",
+      "fixedElite": "第四幕固定精英遭遇：",
+      "currentElites": "当前第 {{act}} 幕的精英池：{{names}}。进入精英房间时才揭晓具体遭遇；以下是当前进阶下可能遇到的战斗定义。",
+      "preparationElites": "即将进入的第 {{act}} 幕精英池：{{names}}。进入精英房间时才揭晓具体遭遇；以下是当前进阶下可能遇到的战斗定义。",
+      "publicBoss": "第 {{act}} 幕地图公开的 Boss：{{boss}}",
+      "objectiveReference": "机制见下方的目标遭遇定义。",
+      "heartAccess": "心脏路线：集齐三把钥匙并完成第三幕后，第四幕按固定路线前进：{{route}}。商店有独立商品，使用带入商店的金币购买。营火位于商店和精英战之前。第三幕 Boss 战后直接前进，没有普通奖励页，也不领取该房间的金币、卡牌和药水。",
+      "objectiveHeading": "本局最终目标的遭遇定义，可在沿途准备时参考：",
+      "preparationLinks": "公开遭遇的准备机制（英文，包含可能招式与初始效果）：",
+      "preparationTiming": "加入弃牌堆的牌，需要通过取回弃牌，或之后洗牌再抽取，才能进入手牌。依靠抽牌触发的能力必须先打出，再进行对应的抽牌；正常打出仍需占用手牌位置并支付当前能量费用。"
+    },
+    "transition": {
+      "heading": "跨幕回血 | 进阶 {{ascension}} | 假设进入下一幕前存活生命值为 {{hp}}/{{maxHp}}",
+      "missing": "已损失生命值：{{maxHp}} - {{hp}} = {{missing}}",
+      "recovery": "跨幕回复：+{{healed}} 生命 -> {{after}}/{{maxHp}}",
+      "scope": "此处只计算跨幕回血。此前战斗及遗物效果应先结算，再将结算后的存活生命值代入。"
+    },
+    "query": {
+      "help": "查看当前事件或决策选项的效果：info（不带参数）。\n机制查询：info <名称>，或 info card <名称>、info relic <名称>、info potion <名称>、info enemy <名称>、info encounter <名称>、info power <名称>。\n战斗当前状态：info M0 查看敌人槽位 0；info player 查看玩家状态；info powers 查看双方状态。\n对局规则：info rules；准备要点：info rules preparation；跨幕回血计算：info transition <HP>；钥匙规则：info keys 或 info <钥匙英文名>。\n查询接受完整英文名或稳定 ID，精确匹配时忽略空格和大小写；状态名称优先。未覆盖的解释标为未知。\n敌人定义使用本局进阶。遭遇定义列出固定成员、随机初始位置的权重及成员机制。卡牌可用 + 或 +N 指定升级，不带后缀查询基础版；当前手牌数值以战斗读数为准。\n",
+      "ascensionUnavailable": "当前进阶不可用；请先读取已绑定的对局。",
+      "maxHpUnavailable": "当前生命上限不可用；请先读取已绑定的对局。",
+      "transitionInteger": "请使用 info transition <HP>，生命值须为存活时的整数。",
+      "transitionRange": "假设的存活生命值须在 1..={{maxHp}} 之间。",
+      "currentEvent": "请使用不带参数的 info，查看当前已绑定事件及阶段的选项与效果。",
+      "unknownEncounter": "未知遭遇名称：{{name}}。请使用完整英文名或稳定遭遇 ID；deck-lab list 列出可用的诊断遭遇 ID。",
+      "unknownEnemy": "未知敌人名称：{{name}}。请使用包含体型的完整英文名或稳定 ID。战斗中可用 info M0 直接查看槽位 0 的实际敌人。",
+      "unknownPower": "未知状态名称：{{name}}。请使用完整英文名或稳定 ID。",
+      "unknownCard": "未知卡牌名称：{{name}}。请使用完整英文名或稳定 ID。若不确定所属类别，可用 info {{name}} 不指定类别查询，或查看 info help。",
+      "unknownRelic": "未知遗物名称：{{name}}。请使用完整英文名或稳定 ID。若不确定所属类别，可用 info {{name}} 不指定类别查询，或查看 info help。",
+      "cardSyntax": "卡牌查询格式无效：{{query}}。请使用卡牌英文名或稳定 ID，升级后缀使用半角 '+'：Card+ 或 Card+1 表示一次升级，Card+0 表示基础版，Card+N 中的 N 为 0..=255 的整数。",
+      "powersNeedCombat": "查看当前状态需要正在进行的战斗；状态定义可按英文名或稳定 ID 查询。",
+      "slotRange": "敌人槽位超出范围。",
+      "slotsNeedCombat": "按槽位查看敌人需要正在进行的战斗；敌人定义可按英文名或稳定 ID 查询。",
+      "slotAbsent": "当前公开读数中没有敌人槽位 M{{slot}}。",
+      "enemyAscensionUnavailable": "当前进阶不可用，无法确定敌人数值。",
+      "unknown": "未知的状态、敌人、卡牌、遗物、药水或遭遇名称：{{query}}。请使用完整英文名或稳定 ID；可查看 info help。未自动选取模糊匹配结果。"
+    },
+    "encounter": {
+      "unavailable": "尚无 {{id}} 的初始阵容说明。可用 info enemy <名称> 分别查看敌人。",
+      "heading": "遭遇定义：{{name}} [{{id}}] | 进阶 {{ascension}}",
+      "fixed": "固定初始敌人：{{members}}",
+      "weightedMember": "{{name}} [{{id}}]：每个随机位置的权重 {{weight}}/{{total}}",
+      "random": "随机初始位置：{{slots}} | {{pool}}"
     }
   },
   "inventory": {

@@ -3,6 +3,201 @@ use crate::decision_tests::{controller_with_session, fixture, TestDirectory};
 use sts_presentation::Locale;
 
 #[test]
+fn run_query_languages_keep_bound_recovery_state_and_rng_unchanged() {
+    for kind in ["reward", "combat_multiturn"] {
+        let directory = TestDirectory::new();
+        let game = controller_with_session(&directory.0, "run-query-locale", &fixture(kind));
+        let head = game.head().clone();
+        let mut public = game
+            .head()
+            .current_decision
+            .as_ref()
+            .unwrap()
+            .public_decision_v1()
+            .unwrap();
+        for asc in [4, 5, 20] {
+            match &mut public.observation {
+                TaskPublicObservationV1::Strategic { observation } => {
+                    observation.run.ascension_level = asc;
+                    observation.run.max_hp = 82;
+                }
+                TaskPublicObservationV1::Combat {
+                    observation,
+                    run_context,
+                } => {
+                    observation.player.ascension_level = asc;
+                    observation.player.max_hp = 82;
+                    if let sts_oracle_learning::agent::information::run::PublicCombatRunContextV1::Available { ascension_level, .. } = run_context {
+                        *ascension_level = asc;
+                    }
+                }
+            }
+            let before = public.clone();
+            for locale in [Locale::En, Locale::ZhCn] {
+                for query in ["rules", "rules preparation"] {
+                    let text = crate::mechanics_info::render(Some(&public), query, locale).unwrap();
+                    let expected = match (locale, asc >= 5) {
+                        (Locale::En, true) => "heal 75% of missing HP",
+                        (Locale::En, false) => "heal to Max HP",
+                        (Locale::ZhCn, true) => "回复已损失生命值的 75%，四舍五入取整",
+                        (Locale::ZhCn, false) => "回复至生命上限",
+                    };
+                    assert!(text.contains(expected), "{kind} A{asc} {locale}: {text}");
+                    assert!(text.contains("info transition <HP>"));
+                }
+                for (hp, a5_recovery, a5_after) in
+                    [(25, 43, 68), (42, 30, 72), (80, 2, 82), (82, 0, 82)]
+                {
+                    let (recovered, after) = if asc < 5 {
+                        (82 - hp, 82)
+                    } else {
+                        (a5_recovery, a5_after)
+                    };
+                    let text = crate::mechanics_info::render(
+                        Some(&public),
+                        &format!("transition {hp}"),
+                        locale,
+                    )
+                    .unwrap();
+                    let expected = match locale {
+                        Locale::En => format!("Transition recovery: +{recovered} HP -> {after}/82"),
+                        Locale::ZhCn => format!("跨幕回复：+{recovered} 生命 -> {after}/82"),
+                    };
+                    assert!(text.contains(&expected), "{text}");
+                }
+            }
+            assert_eq!(public, before);
+            assert_eq!(
+                *game.head(),
+                head,
+                "queries cannot change state, candidates or RNG"
+            );
+        }
+    }
+}
+
+#[test]
+fn localized_rules_distinguish_current_act_from_pending_act_preparation() {
+    let directory = TestDirectory::new();
+    let game = controller_with_session(&directory.0, "pending-rules-locale", &fixture("reward"));
+    let mut public = game
+        .head()
+        .current_decision
+        .as_ref()
+        .unwrap()
+        .public_decision_v1()
+        .unwrap();
+    let TaskPublicObservationV1::Strategic { observation } = &mut public.observation else {
+        unreachable!()
+    };
+    observation.run_goal = sts_oracle_learning::ai::planner_core::PlannerRunGoal::HeartVictory;
+    observation.run.act = 1;
+    observation.run.ascension_level = 20;
+    observation.run.pending_act_entry = Some(2);
+    observation.run.keys = [true, false, true];
+    observation.public_map.boss =
+        Some(sts_oracle_learning::content::monsters::factory::EncounterId::Hexaghost);
+    let before = public.clone();
+    for query in ["rules", "rules preparation"] {
+        let en = crate::mechanics_info::render(Some(&public), query, Locale::En).unwrap();
+        let zh = crate::mechanics_info::render(Some(&public), query, Locale::ZhCn).unwrap();
+        assert!(en.contains("Preparation Act 2 elite encounter pool"));
+        assert!(zh.contains("即将进入的第 2 幕精英池"));
+        assert!(zh.contains("已击败第 1 幕 Boss：六火亡魂"), "{zh}");
+        assert!(!zh.contains("第 1 幕地图公开的 Boss"));
+        assert!(zh.contains("营火 -> 商店 -> 精英 -> Boss -> 胜利"));
+        assert!(zh.contains("第三幕 Boss 战后直接前进，没有普通奖励页"));
+        assert!(zh.contains("公开遭遇的准备机制（英文"));
+        assert!(en.contains("Scouring Whip: add 3 Wound to discard pile"));
+        assert!(zh.contains("Scouring Whip: add 3 Wound to discard pile"));
+        assert!(zh.contains("蓝宝石"));
+        assert!(
+            !zh.contains(crate::mechanics_info::KeyRuleV1::RubyOpportunities.text(Locale::ZhCn))
+        );
+        if query == "rules" {
+            assert!(zh.contains("使用 deck-lab list"));
+            assert!(!zh.contains("当前第 1 幕的 deck-lab"));
+            assert!(zh.contains("遭遇定义：腐化之心 [TheHeart]"), "{zh}");
+            assert!(zh.contains("Starting power: Beat of Death 2"));
+            assert!(zh.contains("Starting power: Invincible 200"));
+        }
+    }
+    assert_eq!(public, before);
+    let TaskPublicObservationV1::Strategic { observation } = &mut public.observation else {
+        unreachable!()
+    };
+    observation.run.pending_act_entry = None;
+    observation.run.act = 2;
+    observation.public_map.boss =
+        Some(sts_oracle_learning::content::monsters::factory::EncounterId::TheChamp);
+    let zh = crate::mechanics_info::render(Some(&public), "rules", Locale::ZhCn).unwrap();
+    assert!(zh.contains("当前第 2 幕的 deck-lab"));
+    assert!(zh.contains("第 2 幕地图公开的 Boss：第一勇士"));
+    assert!(zh.contains("当前第 2 幕的精英池"));
+    assert!(!zh.contains("即将进入的第 2 幕"));
+}
+
+#[test]
+fn localized_query_help_and_errors_preserve_usable_commands() {
+    let help = crate::mechanics_info::render(None, "help", Locale::ZhCn).unwrap();
+    assert!(help.contains("完整英文名或稳定 ID"));
+    for command in [
+        "info M0",
+        "info rules preparation",
+        "info transition <HP>",
+        "info keys",
+    ] {
+        assert!(help.contains(command));
+    }
+    for (query, expected) in [
+        ("rules", "当前进阶不可用"),
+        ("rules preparation", "当前进阶不可用"),
+        ("transition", "info transition <HP>"),
+        ("transition 3.5", "整数"),
+        ("transition 25", "当前生命上限不可用"),
+        ("enemy Louse", "info M0"),
+        ("encounter NotAnEncounter", "稳定遭遇 ID"),
+        ("power NotAPower", "未知状态名称"),
+        ("card RubyKey", "info RubyKey"),
+        ("relic SapphireKey", "info SapphireKey"),
+        ("NotACard+", "未知卡牌名称"),
+        ("card Bash＋", "半角 '+'"),
+        ("card Bash++", "Card+N"),
+        ("card Bash+256", "0..=255"),
+        ("card +", "卡牌查询格式无效"),
+        ("player", "需要正在进行的战斗"),
+        ("powers", "需要正在进行的战斗"),
+        ("M0", "按槽位查看敌人"),
+        ("M256", "槽位超出范围"),
+        ("event Neow", "不带参数的 info"),
+        ("NotAnEntity", "未自动选取模糊匹配结果"),
+    ] {
+        let error = crate::mechanics_info::render(None, query, Locale::ZhCn).unwrap_err();
+        assert!(error.contains(expected), "{query}: {error}");
+        assert!(!error.contains("{{"), "{query}: {error}");
+    }
+    let directory = TestDirectory::new();
+    let game = controller_with_session(
+        &directory.0,
+        "query-errors-locale",
+        &fixture("combat_multiturn"),
+    );
+    let public = game
+        .head()
+        .current_decision
+        .as_ref()
+        .unwrap()
+        .public_decision_v1()
+        .unwrap();
+    for query in ["transition 0", "transition -1", "transition 9999"] {
+        let error = crate::mechanics_info::render(Some(&public), query, Locale::ZhCn).unwrap_err();
+        assert!(error.contains("假设的存活生命值须在 1..="), "{error}");
+    }
+    let error = crate::mechanics_info::render(Some(&public), "M255", Locale::ZhCn).unwrap_err();
+    assert!(error.contains("没有敌人槽位 M255"));
+}
+
+#[test]
 fn event_locales_preserve_sources_raw_labels_effects_and_game_state() {
     use sts_oracle_learning::state::{
         core::EngineState,

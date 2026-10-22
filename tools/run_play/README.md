@@ -361,6 +361,8 @@ Rust 返回的命令错误以 `RunPlayCommandError` 保留 `code`、`command`、
 
 `game.info('potion SteroidPotion')` 默认使用连接语言，也可用 `{ locale: 'en' }` 单独覆盖这次定义查询。CLI 使用 `run_play info --session <path> --locale zh-CN potion SteroidPotion`。原生协议的 `info.locale` 接受 `en` / `zh-CN`，省略时继承连接设置；连接默认英语。上下文省略用的 `known_context` 引用按语言区分，英语资源的确认不会使中文读数漏掉同一批库存；游戏快照、动作身份与来源绑定不随语言变化。
 
+`info rules`、`info rules preparation`、`info transition <HP>`、`info help` 和机制查询错误均使用连接语言。回血查询按当前对局的生命上限和进阶调用实际跨幕计算；它是只读假设，不推进对局。规则页区分当前幕与待进入幕，精英池、Boss 和初始阵容显示原版名称并保留稳定 ID；随机成员权重来自同一阵容定义，敌人完整机制补充保留英文并标明。名称查询接受完整英文名或稳定 ID，卡牌升级继续使用半角 `+` 或 `+N`。
+
 当前药水机制查询支持全部 42 种药水的中英文名称、规则、基础药效、稀有度和目标要求；其他读数仍使用各自原有渲染。命令与查询中的稳定 ID 保持原样，语言不参与游戏状态、动作、RNG、训练词表或 parity 比较。记录保存实际查询时的语言和返回原文。
 
 ## 返回决策点与比较分支
