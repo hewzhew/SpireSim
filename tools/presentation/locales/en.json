@@ -3391,7 +3391,41 @@
       "noGame": "No game has been created for this chat. Begin with sts read to create this chat’s run."
     },
     "message": {
-      "feedbackRecorded": "Feedback recorded; the game was not advanced."
+      "feedbackRecorded": "Feedback recorded; the game was not advanced.",
+      "selectWorkspace": "Select the sts_simulator repository as this chat workspace.",
+      "invalidBinding": "This chat game binding is invalid; the existing game was not changed.",
+      "unsupportedLocale": "Unsupported agentLocale; use en or zh-CN",
+      "differentMode": "This chat has a different play mode. Create a new chat for the requested mode.",
+      "differentLocale": "This chat has a different agent language. Create a new chat for the requested language.",
+      "absoluteBinary": "Configured game binary must be an absolute path.",
+      "unownedDirectory": "A game directory exists without this chat binding; it was not overwritten.",
+      "noOwner": "This chat has no native game owner.",
+      "noArguments": "This command takes no arguments.",
+      "duplicateOwner": "This chat already has a game owner.",
+      "pauseBeforeBudget": "Pause the player before configuring its experiment budget.",
+      "meterRequired": "The official token meter is required for a reported-token budget.",
+      "budgetConfigured": "Experiment budget configured. It does not resume the player.",
+      "budgetCleared": "Experiment budget cleared. The player remains in its current pause state.",
+      "closed": "This chat game connection was closed.",
+      "noGame": "This chat has no game.",
+      "paused": "The game is paused in the workspace.",
+      "readChanged": "The game changed during the current-state read. Read it again before continuing.",
+      "commandsUnavailable": "The native workspace commands are unavailable.",
+      "unexpectedResult": "The workspace command returned an unexpected result.",
+      "experimentStopped": "Experiment stopped: {{reason}}",
+      "pausedNoGame": "Paused. No game has been created for this chat.",
+      "notPaused": "The game is not paused.",
+      "disabled": "The game plugin is disabled.",
+      "requiresAgent": "Game operations require an initiating chat."
+    },
+    "budget": {
+      "fields": "Budget expects maxRequests, maxReportedTokens, maxTokensPerRequest or deadlineAt; null clears it.",
+      "positiveInteger": "{{field}} must be a positive safe integer",
+      "timestamp": "deadlineAt requires an ISO timestamp with timezone",
+      "deadline": "deadline reached",
+      "requests": "request limit reached",
+      "usageMissing": "provider usage unavailable; token-limited experiment stopped",
+      "tokens": "reported uncached input plus output threshold reached"
     }
   }
 }

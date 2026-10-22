@@ -38,18 +38,22 @@ export const NATIVE_GUIDE = nativeGuide();
 const executeFile = promisify(execFile);
 const bindingSchema = 'sts-dsh-native-binding-v1';
 
+function nativeMessage(locale, key, parameters) {
+  return createPresentation({ locale: locale === 'zh-CN' ? 'zh-CN' : 'en' }).text(`native:message.${key}`, parameters);
+}
+
 async function bindingLocation(agent, config) {
   const root = config.repository ?? agent.session.header.cwd;
-  if (typeof root !== 'string' || !isAbsolute(root)) throw new Error('Select the sts_simulator repository as this chat workspace.');
+  if (typeof root !== 'string' || !isAbsolute(root)) throw new Error(nativeMessage(config.agentLocale, 'selectWorkspace'));
   const repository = await realpath(root);
   const id = String(agent.id);
   const digest = createHash('sha256').update(id).digest('hex').slice(0, 24);
   const session = join(repository, '.oracle-lab/run-play', `dsh-native-${digest}`);
   const file = join(session, 'dsh-native.json');
-  return { repository, id, session, file };
+  return { repository, id, session, file, agentLocale: config.agentLocale };
 }
 
-async function readBinding({ repository, id, session, file }) {
+async function readBinding({ repository, id, session, file, agentLocale }) {
   let saved;
   try { saved = JSON.parse(await readFile(file, 'utf8')); }
   catch (error) { if (error.code !== 'ENOENT') throw error; }
@@ -57,7 +61,7 @@ async function readBinding({ repository, id, session, file }) {
     if (saved.schema !== bindingSchema || saved.agent !== id || resolve(saved.repository) !== repository
         || resolve(saved.session) !== session || (saved.manual !== undefined && typeof saved.manual !== 'boolean')
         || (saved.agentLocale !== undefined && !['en', 'zh-CN'].includes(saved.agentLocale))) {
-      throw new Error('This chat game binding is invalid; the existing game was not changed.');
+      throw new Error(nativeMessage(agentLocale ?? saved.agentLocale, 'invalidBinding'));
     }
   }
   return saved ?? null;
@@ -69,21 +73,22 @@ export async function readNativeBinding(agent, config = {}) {
 }
 
 export async function nativeBinding(agent, config = {}, { run = executeFile, create = true } = {}) {
-  if (config.agentLocale !== undefined && !['en', 'zh-CN'].includes(config.agentLocale)) throw new Error('Unsupported agentLocale; use en or zh-CN');
+  if (config.agentLocale !== undefined && !['en', 'zh-CN'].includes(config.agentLocale)) throw new Error(nativeMessage(config.agentLocale, 'unsupportedLocale'));
   const location = await bindingLocation(agent, config);
   const { repository, id, session, file } = location;
   const saved = await readBinding(location);
+  const text = key => nativeMessage(config.agentLocale ?? saved?.agentLocale, key);
   if (saved && config.manual !== undefined && config.manual !== (saved.manual ?? false)) {
-    throw new Error('This chat has a different play mode. Create a new chat for the requested mode.');
+    throw new Error(text('differentMode'));
   }
   if (saved && config.agentLocale !== undefined && config.agentLocale !== (saved.agentLocale ?? 'en')) {
-    throw new Error('This chat has a different agent language. Create a new chat for the requested language.');
+    throw new Error(text('differentLocale'));
   }
   if (!saved && !create) return null;
-  if (config.binary && !isAbsolute(config.binary)) throw new Error('Configured game binary must be an absolute path.');
+  if (config.binary && !isAbsolute(config.binary)) throw new Error(text('absoluteBinary'));
   const binary = await realpath(config.binary ?? join(repository, 'target/dev-opt/run_play.exe'));
   if (saved) return { ...saved, binary };
-  try { await stat(session); throw new Error('A game directory exists without this chat binding; it was not overwritten.'); }
+  try { await stat(session); throw new Error(text('unownedDirectory')); }
   catch (error) { if (error.code !== 'ENOENT') throw error; }
   const seed = randomBytes(8).readBigUInt64LE().toString();
   await mkdir(join(repository, '.oracle-lab/run-play'), { recursive: true });
@@ -138,11 +143,11 @@ export function registerNativeCommands(ctx) {
     name, description,
     async handler({ agent, rawInput }) {
       const control = nativeGameControl(agent);
-      if (!control) throw new Error('This chat has no native game owner.');
+      if (!control) throw new Error(nativeMessage(undefined, 'noOwner'));
       let result;
       try {
         const request = method === 'restore' || method === 'budget' ? JSON.parse(rawInput) : undefined;
-        if (method !== 'restore' && method !== 'budget' && rawInput.trim()) throw new Error('This command takes no arguments.');
+        if (method !== 'restore' && method !== 'budget' && rawInput.trim()) throw new Error(control.text('message.noArguments'));
         result = await control['_' + method](request);
       } catch (error) { result = { status: 'error', message: error.message, control: control.status() }; }
       const kind = result.status === 'error' ? { pause: 'pause-failed', restore: 'return-failed', resume: 'resume-failed', budget: 'budget-failed' }[method]
@@ -165,7 +170,7 @@ export class NativeGameControl {
     this.admittedRequests = this.budget ? nativeBudgetUsage(agent.session.snapshotEvents(), this.budget).conservativeRequests : 0;
     this.tail = Promise.resolve();
     this.closed = false;
-    if (agent[controlKey]) throw new Error('This chat already has a game owner.');
+    if (agent[controlKey]) throw new Error(this.text('message.duplicateOwner'));
     // AgentLoop emits this synchronously before scheduling its driver. Cancel
     // before any inbox claim or model request, leaving queued input untouched.
     this.unlisten = agent.ctx.on('agent/status', ({ agent: subject, status }) => {
@@ -177,12 +182,12 @@ export class NativeGameControl {
     this.unrequest = agent.ctx.on('agent/request', async (payload, next) => {
       if (payload.agent !== agent || !this.budget) return next();
       const usage = this.budgetUsage();
-      const reason = nativeBudgetStopReason(this.budget, this.admittedRequests, usage);
+      const reason = nativeBudgetStopReason(this.budget, this.admittedRequests, usage, Date.now(), this.locale);
       if (reason) { this.stopForBudget(reason); payload.signal.throwIfAborted(); }
       const config = await next();
       payload.signal.throwIfAborted();
       // Request preparation may have awaited another hook past the deadline.
-      const lateReason = nativeBudgetStopReason(this.budget, this.admittedRequests, usage);
+      const lateReason = nativeBudgetStopReason(this.budget, this.admittedRequests, usage, Date.now(), this.locale);
       if (lateReason) { this.stopForBudget(lateReason); payload.signal.throwIfAborted(); }
       this.admittedRequests++;
       // dsh persists the resolved call config as the next request's proposal.
@@ -209,8 +214,9 @@ export class NativeGameControl {
     return nativeBudgetUsage(this.agent.session.snapshotEvents(), this.budget,
       this.agent.ctx.sessionProjections.checkpoint(this.agent.session).tokenUsage?.val);
   }
+  get locale() { return this.binding?.agentLocale ?? this.agentLocale ?? this.config.agentLocale ?? 'en'; }
   text(key, parameters) {
-    const locale = this.binding?.agentLocale ?? this.config.agentLocale ?? 'en';
+    const locale = this.locale;
     if (this.presentation?.locale !== locale) this.presentation = createPresentation({ locale });
     return this.presentation.text(`native:${key}`, parameters);
   }
@@ -220,7 +226,7 @@ export class NativeGameControl {
     const delay = Math.max(0, Date.parse(this.budget.deadlineAt) - Date.now());
     this.budgetTimer = setTimeout(() => {
       if (Date.now() < Date.parse(this.budget.deadlineAt)) this.scheduleBudgetDeadline();
-      else this.stopForBudget('deadline reached');
+      else this.stopForBudget(this.text('budget.deadline'));
     }, Math.min(delay, 2147483647));
     this.budgetTimer.unref?.();
   }
@@ -236,20 +242,20 @@ export class NativeGameControl {
     }).catch(error => { stop.pauseError = error.message; });
   }
   _budget(value) {
-    if (this.agent.status === 'running') throw new Error('Pause the player before configuring its experiment budget.');
-    const limits = validateNativeBudget(value);
+    if (this.agent.status === 'running') throw new Error(this.text('message.pauseBeforeBudget'));
+    const limits = validateNativeBudget(value, this.locale);
     const totals = this.agent.ctx.sessionProjections.checkpoint(this.agent.session).tokenUsage?.val?.totals;
-    if (limits?.maxReportedTokens && !totals) throw new Error('The official token meter is required for a reported-token budget.');
+    if (limits?.maxReportedTokens && !totals) throw new Error(this.text('message.meterRequired'));
     this.budget = limits ? { ...limits, baselineSeq: this.agent.session.snapshotEvents().at(-1)?.seq ?? -1,
       baselineTokens: totals ? totals.uncachedInputTokens + totals.outputTokens : 0 } : null;
     this.admittedRequests = 0;
     this.budgetStop = undefined;
     this.scheduleBudgetDeadline();
-    return { status: 'ready', budget: this.budget, message: limits ? 'Experiment budget configured. It does not resume the player.'
-      : 'Experiment budget cleared. The player remains in its current pause state.', control: this.status() };
+    return { status: 'ready', budget: this.budget, message: limits ? this.text('message.budgetConfigured')
+      : this.text('message.budgetCleared'), control: this.status() };
   }
   serial(operation) {
-    if (this.closed) return Promise.reject(new Error('This chat game connection was closed.'));
+    if (this.closed) return Promise.reject(new Error(this.text('message.closed')));
     const pending = this.tail.then(async () => {
       try { return await operation(); }
       finally {
@@ -270,7 +276,7 @@ export class NativeGameControl {
   async game(create = false) {
     this.opening ??= (async () => {
       this.binding = await this.bind(this.agent, this.config, { create });
-      if (!this.binding) throw new Error('This chat has no game.');
+      if (!this.binding) throw new Error(this.text('message.noGame'));
       const { repository, session, binary } = this.binding;
       this.workbench = await this.openWorkbench({ repository, session, binary, manual: this.binding.manual ?? this.config.manual ?? false,
         agentLocale: this.binding.agentLocale ?? this.config.agentLocale ?? 'en', commandPrefix: '' });
@@ -280,7 +286,7 @@ export class NativeGameControl {
     catch (error) { this.opening = undefined; throw error; }
   }
   stop() {
-    if (this.closed) throw new Error('This chat game connection was closed.');
+    if (this.closed) throw new Error(this.text('message.closed'));
     this.paused = true;
     this.agent.cancel({ kind: 'user' }, { keepInbox: true });
   }
@@ -304,10 +310,10 @@ export class NativeGameControl {
   execute(command, signal) {
     return this.serial(async () => {
       signal.throwIfAborted();
-      if (this.paused) throw new Error('The game is paused in the workspace.');
+      if (this.paused) throw new Error(this.text('message.paused'));
       const game = await this.game(true);
       signal.throwIfAborted();
-      if (this.paused) throw new Error('The game is paused in the workspace.');
+      if (this.paused) throw new Error(this.text('message.paused'));
       const result = await game.execute(command, { signal });
       return { text: result.text, game: { agent: this.binding.agent, session: this.binding.session, seed: this.binding.seed,
         ...(result.currentReading ? { currentReading: result.currentReading } : {}) } };
@@ -320,7 +326,7 @@ export class NativeGameControl {
     const after = await game.observe();
     if (before.head_revision !== after.head_revision || before.state_revision !== after.state_revision
         || before.position.public_snapshot_id !== after.position.public_snapshot_id) {
-      throw new Error('The game changed during the current-state read. Read it again before continuing.');
+      throw new Error(this.text('message.readChanged'));
     }
     return text;
   }
@@ -338,9 +344,9 @@ export class NativeGameControl {
   }
   async invoke(name, request) {
     const execution = await this.commands.execute(this.agent, '/' + name + (request ? ' ' + JSON.stringify(request) : ''), [], new AbortController().signal);
-    if (!execution) throw new Error('The native workspace commands are unavailable.');
+    if (!execution) throw new Error(this.text('message.commandsUnavailable'));
     const data = JSON.parse(execution.result.text);
-    if (data.schema !== workspaceSchema) throw new Error('The workspace command returned an unexpected result.');
+    if (data.schema !== workspaceSchema) throw new Error(this.text('message.unexpectedResult'));
     return data.result;
   }
   pause() { return this.invoke('sts-pause'); }
@@ -349,8 +355,8 @@ export class NativeGameControl {
   _pause() {
     return this.pausedOperation(async () => {
       const game = await this.existingGame();
-      const message = this.budgetStop ? { message: 'Experiment stopped: ' + this.budgetStop.reason } : {};
-      if (!game) return { status: 'ready', text: 'Paused. No game has been created for this chat.', ...message, control: this.status() };
+      const message = this.budgetStop ? { message: this.text('message.experimentStopped', { reason: this.budgetStop.reason }) } : {};
+      if (!game) return { status: 'ready', text: this.text('message.pausedNoGame'), ...message, control: this.status() };
       const text = await this.readCurrent(game);
       return { status: 'ready', text, ...message, points: await game.returnPoints(), control: this.status() };
     });
@@ -372,7 +378,7 @@ export class NativeGameControl {
   }
   _resume() {
     return this.serial(() => {
-      if (!this.paused) throw new Error('The game is not paused.');
+      if (!this.paused) throw new Error(this.text('message.notPaused'));
       return this.maintenance(async signal => {
         const game = await this.existingGame();
         const text = game ? await this.readCurrent(game) : this.text('resume.noGame');
@@ -420,8 +426,8 @@ export async function apply(ctx, config) {
   const controls = new Map();
   let disposed = false;
   function controlFor(agent, manual = config.manual) {
-    if (disposed) throw new Error('The game plugin is disabled.');
-    if (!agent) throw new Error('Game operations require an initiating chat.');
+    if (disposed) throw new Error(nativeMessage(config.agentLocale, 'disabled'));
+    if (!agent) throw new Error(nativeMessage(config.agentLocale, 'requiresAgent'));
     let control = controls.get(agent);
     if (!control) {
       control = new NativeGameControl(agent, { ...config, manual }, { commands: ctx.commands });
@@ -433,9 +439,9 @@ export async function apply(ctx, config) {
   ctx.on('agent/created', async ({ agent }) => {
     const binding = await readNativeBinding(agent, config);
     const manual = binding?.manual ?? config.manual ?? false;
-    controlFor(agent, manual);
     // Mask inherited host tools; each chat owns its localized game schemas.
     const locale = binding?.agentLocale ?? config.agentLocale ?? 'en';
+    controlFor(agent, manual).agentLocale = locale;
     const capability = await agent.ctx.plugin({ inject: ['tools', 'systemPrompt'], apply(child) {
       child.tools.restrict({ allow: [] });
       registerNativeTools(child, controlFor, locale);

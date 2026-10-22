@@ -2,6 +2,7 @@
 // Usage is folded by dsh's official meter; a settled-token threshold stops the
 // next request and is not a prediction of uncached input or a currency cap.
 import { expandAssistantStream, lastAssistantStreamChunk } from '@deepseek-ai/dsh-llm';
+import { createPresentation } from '@sts-simulator/presentation';
 
 function isPreResponseProviderError(event) {
   if (event.type !== 'assistant/attempt') return false;
@@ -14,18 +15,19 @@ function isPreResponseProviderError(event) {
     || code === 'RATE_LIMIT' && status === 429;
 }
 
-export function validateNativeBudget(value) {
+export function validateNativeBudget(value, locale = 'en') {
   if (value === null) return null;
+  const text = (key, parameters) => createPresentation({ locale }).text(`native:budget.${key}`, parameters);
   const keys = ['maxRequests', 'maxReportedTokens', 'maxTokensPerRequest', 'deadlineAt'];
   if (!value || typeof value !== 'object' || Array.isArray(value) || !Object.keys(value).length
-      || Object.keys(value).some(key => !keys.includes(key))) throw new Error('Budget expects maxRequests, maxReportedTokens, maxTokensPerRequest or deadlineAt; null clears it.');
+      || Object.keys(value).some(key => !keys.includes(key))) throw new Error(text('fields'));
   const budget = { ...value };
   for (const key of keys.slice(0, 3)) if (key in budget && (!Number.isSafeInteger(budget[key]) || budget[key] < 1)) {
-    throw new Error(key + ' must be a positive safe integer');
+    throw new Error(text('positiveInteger', { field: key }));
   }
   if ('deadlineAt' in budget) {
     if (typeof budget.deadlineAt !== 'string' || !/T.*(?:Z|[+-]\d{2}:\d{2})$/.test(budget.deadlineAt)
-        || !Number.isFinite(Date.parse(budget.deadlineAt))) throw new Error('deadlineAt requires an ISO timestamp with timezone');
+        || !Number.isFinite(Date.parse(budget.deadlineAt))) throw new Error(text('timestamp'));
     budget.deadlineAt = new Date(budget.deadlineAt).toISOString();
   }
   return budget;
@@ -72,12 +74,13 @@ export function nativeBudgetUsage(events, budget, usageState) {
     conservativeRequests };
 }
 
-export function nativeBudgetStopReason(budget, admittedRequests, usage, now = Date.now()) {
-  if (budget.deadlineAt && now >= Date.parse(budget.deadlineAt)) return 'deadline reached';
-  if (budget.maxRequests && admittedRequests >= budget.maxRequests) return 'request limit reached';
+export function nativeBudgetStopReason(budget, admittedRequests, usage, now = Date.now(), locale = 'en') {
+  const text = key => createPresentation({ locale }).text(`native:budget.${key}`);
+  if (budget.deadlineAt && now >= Date.parse(budget.deadlineAt)) return text('deadline');
+  if (budget.maxRequests && admittedRequests >= budget.maxRequests) return text('requests');
   if (budget.maxReportedTokens) {
-    if (usage.missingUsageResponses > 0 || admittedRequests > usage.settledAttempts) return 'provider usage unavailable; token-limited experiment stopped';
-    if (usage.reportedTokens >= budget.maxReportedTokens) return 'reported uncached input plus output threshold reached';
+    if (usage.missingUsageResponses > 0 || admittedRequests > usage.settledAttempts) return text('usageMissing');
+    if (usage.reportedTokens >= budget.maxReportedTokens) return text('tokens');
   }
   return null;
 }

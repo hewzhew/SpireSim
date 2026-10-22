@@ -54,7 +54,8 @@ test('chat binding creates once, survives reopen, and refuses another chat or an
   assert.equal((await Native.nativeBinding({ ...agent, id: 'chat-b' }, { binary }, { run })).agentLocale, 'zh-CN');
   await assert.rejects(Native.nativeBinding({ ...agent, id: 'chat-b' }, { binary, agentLocale: 'en' }, { run }), /different agent language/);
   await assert.rejects(Native.nativeBinding({ ...agent, id: 'invalid-locale' }, { binary, agentLocale: 'fr' }, { run }), /Unsupported agentLocale/);
-  await assert.rejects(Native.nativeBinding({ ...agent, id: 'chat-b' }, { binary, manual: false }, { run }), /different play mode/);
+  await assert.rejects(Native.nativeBinding(agent, { binary, manual: true }, { run }), /different play mode/);
+  await assert.rejects(Native.nativeBinding({ ...agent, id: 'chat-b' }, { binary, manual: false }, { run }), /另一种玩法/);
   assert.equal(calls.length, 2);
   const file = join(first.session, 'dsh-native.json');
   await writeFile(file, JSON.stringify({ ...first, agent: 'someone-else' }));
@@ -174,6 +175,25 @@ test('native preset capability is lazy and isolates real games for two agents sh
     await plugin.dispose();
     assert.ok(!ctx.tools.schemas(b.agent).some(tool => tool.name === 'sts'));
   });
+
+test('Chinese binding diagnostics retain the saved game and do not create or rewrite another run', async t => {
+  const repository = await workspace(t);
+  const binary = join(repository, 'game.exe'); await writeFile(binary, 'fixture');
+  const agent = { id: 'binding-zh', session: { header: { cwd: repository } } };
+  let calls = 0;
+  const run = async (_exe, args) => { calls++; await mkdir(args[2], { recursive: true }); };
+  const binding = await Native.nativeBinding(agent, { binary, manual: true, agentLocale: 'zh-CN' }, { run });
+  const file = join(binding.session, 'dsh-native.json');
+  const before = await readFile(file);
+  await assert.rejects(Native.nativeBinding(agent, { binary, manual: false }, { run }), /另一种玩法/);
+  await assert.rejects(Native.nativeBinding(agent, { binary: 'relative.exe' }, { run }), /绝对路径/);
+  await assert.rejects(Native.nativeBinding(agent, { binary, agentLocale: 'en' }, { run }), /different agent language/);
+  await assert.rejects(Native.readNativeBinding({ id: 'no-workspace', session: { header: { cwd: 'relative' } } },
+    { agentLocale: 'zh-CN' }), /工作区/);
+  assert.deepEqual(await readFile(file), before);
+  assert.equal(calls, 1);
+  assert.equal((await Native.nativeBinding(agent, { binary }, { run })).agentLocale, 'zh-CN');
+});
 
 test('bundle distribution declares native entry, localized metadata, icon, and no creation side effects', async () => {
   const packageDir = dirname(fileURLToPath(import.meta.url));

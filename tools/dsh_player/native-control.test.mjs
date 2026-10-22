@@ -127,6 +127,22 @@ test('Chinese manual resume keeps actual reading and return receipt verbatim', a
   assert.deepEqual(f.calls.filter(command => command === 'advance'), []);
 });
 
+test('Chinese request limits pause at the same next-request boundary with one actual action', async t => {
+  const f = await fixture(t, { agentLocale: 'zh-CN' });
+  const configured = f.control._budget({ maxRequests: 1, maxTokensPerRequest: 8192 });
+  assert.match(configured.message, /实验预算已配置/);
+  assert.equal(f.control.paused, false, 'budget configuration leaves the pause state unchanged');
+  f.handle.agent.send(message('Play'), 'next-turn', true);
+  await f.handle.agent.whenIdle();
+  await f.control.budgetPause;
+  assert.equal(f.requests.length, 1);
+  assert.equal(f.version, 3);
+  assert.equal(f.calls.filter(command => command === 'advance').length, 1);
+  assert.equal(f.control.paused, true);
+  assert.equal(f.control.status().budgetStop.reason, '已达到请求次数上限');
+  await assert.rejects(f.control.execute('advance', new AbortController().signal), /游戏已在工作台暂停/);
+});
+
 test('native experiment stops before a second model request and preserves pause across control reattachment', async t => {
   const f = await fixture(t);
   const budget = await f.ctx.commands.execute(f.handle.agent, '/sts-budget {"maxRequests":1,"maxTokensPerRequest":1234}', [], new AbortController().signal);

@@ -3391,7 +3391,41 @@
       "noGame": "当前聊天尚未创建游戏。先用 sts read 创建本聊天的对局。"
     },
     "message": {
-      "feedbackRecorded": "反馈已记录；游戏未推进。"
+      "feedbackRecorded": "反馈已记录；游戏未推进。",
+      "selectWorkspace": "请将 sts_simulator 仓库选作当前聊天的工作区。",
+      "invalidBinding": "当前聊天的游戏绑定无效；已有游戏未被修改。",
+      "unsupportedLocale": "agentLocale 不受支持；请使用 en 或 zh-CN",
+      "differentMode": "当前聊天已绑定另一种玩法。请新建聊天以使用所选玩法。",
+      "differentLocale": "当前聊天已绑定另一种模型语言。请新建聊天以使用所选语言。",
+      "absoluteBinary": "配置的游戏程序必须使用绝对路径。",
+      "unownedDirectory": "游戏目录已存在，但没有当前聊天的绑定；未覆盖该目录。",
+      "noOwner": "当前聊天没有原生游戏控制器。",
+      "noArguments": "此命令不接收参数。",
+      "duplicateOwner": "当前聊天已有游戏控制器。",
+      "pauseBeforeBudget": "请先暂停玩家，再配置实验预算。",
+      "meterRequired": "按已报告 token 用量设置预算，需要官方用量计量服务。",
+      "budgetConfigured": "实验预算已配置；不会继续玩家运行。",
+      "budgetCleared": "实验预算已清除；玩家原有的暂停状态保持不变。",
+      "closed": "当前聊天的游戏连接已关闭。",
+      "noGame": "当前聊天尚未创建游戏。",
+      "paused": "游戏已在工作台暂停。",
+      "readChanged": "读取当前状态期间，游戏发生了变化。请重新读取后再继续。",
+      "commandsUnavailable": "原生工作台命令不可用。",
+      "unexpectedResult": "工作台命令返回了非预期结果。",
+      "experimentStopped": "实验已停止：{{reason}}",
+      "pausedNoGame": "已暂停。当前聊天尚未创建游戏。",
+      "notPaused": "游戏尚未暂停。",
+      "disabled": "游戏插件已停用。",
+      "requiresAgent": "游戏操作需要发起操作的聊天。"
+    },
+    "budget": {
+      "fields": "预算字段为 maxRequests、maxReportedTokens、maxTokensPerRequest 或 deadlineAt；null 清除预算。",
+      "positiveInteger": "{{field}} 必须是安全范围内的正整数",
+      "timestamp": "deadlineAt 需要带时区的 ISO 时间戳",
+      "deadline": "已到截止时间",
+      "requests": "已达到请求次数上限",
+      "usageMissing": "服务商用量不可用；按 token 限制的实验已停止",
+      "tokens": "已报告的未缓存输入与输出总量达到阈值"
     }
   }
 }
