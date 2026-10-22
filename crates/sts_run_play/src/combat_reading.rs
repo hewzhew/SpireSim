@@ -581,7 +581,12 @@ fn render_persistent_counters_at_finish(out: &mut String, relics: &[RelicState])
         .iter()
         .filter(|relic| relic.counter >= 0 && !relic_counter_is_combat_local_v1(relic.id))
         .map(|relic| {
-            let label = crate::compact::relic_label_v1(relic.id, relic.counter, relic.used_up);
+            let label = crate::compact::relic_label_v1(
+                relic.id,
+                relic.counter,
+                relic.used_up,
+                sts_presentation::Locale::En,
+            );
             if relic.id == sts_oracle_learning::content::relics::RelicId::IncenseBurner {
                 if let Some(turn) =
                     sts_oracle_learning::content::relics::incense_burner::next_combat_trigger_turn(

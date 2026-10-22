@@ -138,7 +138,12 @@ pub(crate) fn reading(
         overview,
         selections,
         candidates,
-        inventory: crate::compact::inventory_reading_decision_v1(decision.clone(), true, None)?,
+        inventory: crate::compact::inventory_reading_decision_v1(
+            decision.clone(),
+            true,
+            None,
+            sts_presentation::Locale::En,
+        )?,
         stock,
         routes,
     }))
@@ -189,7 +194,13 @@ mod tests {
             );
             assert_eq!(
                 projection.inventory.view,
-                crate::compact::render_inventory_decision_v1(public.clone(), true, None).unwrap()
+                crate::compact::render_inventory_decision_v1(
+                    public.clone(),
+                    true,
+                    None,
+                    sts_presentation::Locale::En
+                )
+                .unwrap()
             );
             assert!(projection
                 .inventory

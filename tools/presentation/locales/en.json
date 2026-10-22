@@ -747,6 +747,18 @@
       "question_mark": "Unknown",
       "boss": "Boss"
     },
+    "relicState": {
+      "lowHpStrengthActive": "low-HP Strength bonus active",
+      "lowHpStrengthInactive": "low-HP Strength bonus inactive",
+      "openingEnergySpent": "opening Energy bonus spent this combat",
+      "openingEnergyChecked": "opening Energy check completed this combat",
+      "drawTriggerSpent": "draw trigger spent this combat",
+      "openingRedrawCompleted": "opening redraw completed this combat",
+      "attackReplaySpent": "Attack replay spent this turn",
+      "discardEnergySpent": "discard Energy trigger spent this turn",
+      "disabledUntilTurnEnd": "disabled until this turn ends",
+      "usedUp": "used up"
+    },
     "cardType": {
       "attack": "Attack",
       "skill": "Skill",
@@ -789,6 +801,10 @@
       "upgraded": "upgraded",
       "unplayable": "unplayable",
       "attributes": "  Cost: {{cost}} | Base damage: {{damage}} | Base Block: {{block}} | Exhaust: {{exhaust}} | Ethereal: {{ethereal}}",
+      "inventoryAttributes": "{{type}} | {{cost}} | tags: {{tags}}",
+      "paidCost": "{{cost}}c",
+      "fixedDraw": "Printed draw request at this upgrade: {{amount}} cards.",
+      "fixedBlock": "Printed Block request at this upgrade: {{amount}} Block, before instance and combat modifiers.",
       "tags": "  Tags: {{tags}}",
       "none": "none",
       "targets": "  Attack targets: {{targets}}",
@@ -801,6 +817,21 @@
       "yes": "true",
       "no": "false"
     }
+  },
+  "inventory": {
+    "deck": "Deck ({{count}}):",
+    "permanent": "Permanent deck; costs and card faces include permanent instance changes, before combat powers/relics. Mechanic supplements describe base/upgraded rules.",
+    "relics": "Relics ({{count}}):",
+    "potions": "Potions ({{count}} slots; availability comes from current legal options):",
+    "empty": "empty",
+    "misc": "misc {{amount}}",
+    "cost": "cost {{amount}}",
+    "damage": "damage {{amount}}",
+    "block": "block {{amount}}",
+    "supplement": "Mechanics: {{effect}}",
+    "unknown": "Effect explanation unavailable; this does not mean unsupported gameplay.",
+    "linksEnglish": "Mechanic links (English):",
+    "nextTurnEnergy": "+{{amount}} Energy next player turn"
   },
   "replay": {
     "nav": {

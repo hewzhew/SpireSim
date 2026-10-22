@@ -166,27 +166,67 @@ pub fn explanation(relic: RelicId) -> Option<&'static str> {
 /// The compact flag also stores several temporary trigger states. Keep its
 /// player-facing meaning with the relic rules rather than calling every flag
 /// permanent consumption.
-pub fn trigger_state_description(relic: RelicId, flag: bool) -> Option<&'static str> {
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RelicTriggerStateV1 {
+    LowHpStrengthActive,
+    LowHpStrengthInactive,
+    OpeningEnergySpent,
+    OpeningEnergyChecked,
+    DrawTriggerSpent,
+    OpeningRedrawCompleted,
+    AttackReplaySpent,
+    DiscardEnergySpent,
+    DisabledUntilTurnEnd,
+    UsedUp,
+}
+
+impl RelicTriggerStateV1 {
+    pub fn description(self, locale: sts_presentation::Locale) -> &'static str {
+        use RelicTriggerStateV1::*;
+        let key = match self {
+            LowHpStrengthActive => "lowHpStrengthActive",
+            LowHpStrengthInactive => "lowHpStrengthInactive",
+            OpeningEnergySpent => "openingEnergySpent",
+            OpeningEnergyChecked => "openingEnergyChecked",
+            DrawTriggerSpent => "drawTriggerSpent",
+            OpeningRedrawCompleted => "openingRedrawCompleted",
+            AttackReplaySpent => "attackReplaySpent",
+            DiscardEnergySpent => "discardEnergySpent",
+            DisabledUntilTurnEnd => "disabledUntilTurnEnd",
+            UsedUp => "usedUp",
+        };
+        locale
+            .entry("game", &format!("relicState.{key}"))
+            .expect("relic state message")
+    }
+}
+
+pub fn trigger_state_v1(relic: RelicId, flag: bool) -> Option<RelicTriggerStateV1> {
+    use RelicTriggerStateV1::*;
     if relic == RelicId::RedSkull {
         return Some(if flag {
-            "low-HP Strength bonus active"
+            LowHpStrengthActive
         } else {
-            "low-HP Strength bonus inactive"
+            LowHpStrengthInactive
         });
     }
     if !flag {
         return None;
     }
     Some(match relic {
-        RelicId::Lantern => "opening Energy bonus spent this combat",
-        RelicId::AncientTeaSet => "opening Energy check completed this combat",
-        RelicId::CentennialPuzzle => "draw trigger spent this combat",
-        RelicId::GamblingChip => "opening redraw completed this combat",
-        RelicId::Necronomicon => "Attack replay spent this turn",
-        RelicId::HoveringKite => "discard Energy trigger spent this turn",
-        RelicId::UnceasingTop => "disabled until this turn ends",
-        _ => "used up",
+        RelicId::Lantern => OpeningEnergySpent,
+        RelicId::AncientTeaSet => OpeningEnergyChecked,
+        RelicId::CentennialPuzzle => DrawTriggerSpent,
+        RelicId::GamblingChip => OpeningRedrawCompleted,
+        RelicId::Necronomicon => AttackReplaySpent,
+        RelicId::HoveringKite => DiscardEnergySpent,
+        RelicId::UnceasingTop => DisabledUntilTurnEnd,
+        _ => UsedUp,
     })
+}
+
+pub fn trigger_state_description(relic: RelicId, flag: bool) -> Option<&'static str> {
+    trigger_state_v1(relic, flag).map(|state| state.description(sts_presentation::Locale::En))
 }
 
 /// Applies to getRewardCards/getColorlessRewardCards, including callers such

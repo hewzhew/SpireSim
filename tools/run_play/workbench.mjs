@@ -62,7 +62,7 @@ export async function dispatchWorkbench(ctx, command, parameters) {
     if (parameters.length > 1 || (parameters.length && parameters[0] !== 'effects')) {
       throw new Error('inventory [effects] reads the permanent master deck and relics');
     }
-    return ctx.write(await engineOutput(ctx, ['inventory', ...(parameters.length ? ['--effects'] : [])]));
+    return ctx.write(await engineOutput(ctx, ['inventory', '--locale', ctx.agentLocale ?? 'en', ...(parameters.length ? ['--effects'] : [])]));
   }
   if (command === 'deck-lab') {
     const invocation = 'deck-lab ENCOUNTER [scenarios N] [work N] [ms N] [potions N] [full-hp] [details] [after <preparation actions>]';

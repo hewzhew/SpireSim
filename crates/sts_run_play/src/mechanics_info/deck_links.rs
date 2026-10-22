@@ -22,7 +22,7 @@ pub(crate) fn write_owned_card_links(
         let source = format!(
             "{count}x {} | {}",
             crate::render::format_card(id, upgrades),
-            super::card_attributes(id, upgrades, modifier)
+            super::card_attributes(id, upgrades, modifier, sts_presentation::Locale::En)
         );
         let rule = m::explanation(id).unwrap_or("See info card for the effect rule.");
         let row = |effect: String| format!("{source}: {effect}");

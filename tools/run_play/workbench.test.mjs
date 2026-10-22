@@ -338,13 +338,30 @@ test('inventory and route analysis expose existing Rust owners without changing 
     assert.equal(result.branchChanged, undefined);
   }
   assert.deepEqual(calls, [
-    ['inventory', '--session'], ['inventory', '--session', '--effects'],
+    ['inventory', '--session', '--locale', 'en'], ['inventory', '--session', '--locale', 'en', '--effects'],
     ['map', '--session'], ['map', '--session', 'elites'], ['map', '--session', 'route', '2', '4'],
   ]);
   for (const command of ['inventory unknown', 'map route', 'map route 2 4 extra', 'map elites extra', 'map unknown']) {
     await assert.rejects(wb.execute(command), /inventory \[effects\]|map \[/);
   }
   assert.equal(calls.length, 5, 'invalid parameters must not execute or silently display the grid');
+});
+
+test('inventory forwards the bound agent language to the native renderer', async t => {
+  const calls = [];
+  const wb = await fixture(t, async () => ({ async close() {} }), (_binary, args) => {
+    calls.push(args.filter((arg, index) => index !== 2));
+    return { status: 0, stdout: '永久卡组（11）：\n' };
+  }, { agentLocale: 'zh-CN' });
+  for (const command of ['inventory', 'inventory effects']) {
+    const result = await wb.execute(command);
+    assert.equal(result.text, '永久卡组（11）：\n');
+    assert.equal(result.branchChanged, undefined);
+  }
+  assert.deepEqual(calls, [
+    ['inventory', '--session', '--locale', 'zh-CN'],
+    ['inventory', '--session', '--locale', 'zh-CN', '--effects'],
+  ]);
 });
 
 test('resident commands serialize, isolate outputs and recover after a query failure', async t => {

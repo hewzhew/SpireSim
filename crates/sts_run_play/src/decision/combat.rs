@@ -395,7 +395,12 @@ fn state_reading_with_rules(state: &PublicCombatStateV1, include_rules: bool) ->
             .player
             .relics
             .iter()
-            .map(|relic| crate::compact::relic_label_v1(relic.id, relic.counter, relic.used_up))
+            .map(|relic| crate::compact::relic_label_v1(
+                relic.id,
+                relic.counter,
+                relic.used_up,
+                sts_presentation::Locale::En
+            ))
             .collect::<Vec<_>>()
             .join(", ")
     )

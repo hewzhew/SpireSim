@@ -561,6 +561,8 @@ enum Command {
         /// Include printed card rules and upgrade-sensitive costs.
         #[arg(long)]
         effects: bool,
+        #[arg(long, default_value = "en")]
+        locale: sts_presentation::Locale,
     },
     /// Read exact persistent run-level RNG streams for scoped Java/Rust parity work.
     ParityRng {
@@ -2291,6 +2293,7 @@ fn run(cli: Cli) -> Result<(), String> {
                     after.clone(),
                     false,
                     None,
+                    sts_presentation::Locale::En,
                 )?);
                 if let TaskPublicObservationV1::Strategic { observation } = &after.observation {
                     preparation_text.push_str(&format!("Base energy/turn {} | Potions: {}\n",
@@ -2407,10 +2410,14 @@ fn run(cli: Cli) -> Result<(), String> {
             };
             print!("{}", render_status_v1(&head)?);
         }
-        Command::Inventory { session, effects } => {
+        Command::Inventory {
+            session,
+            effects,
+            locale,
+        } => {
             let mut controller =
                 RunPlayControllerV1::open_for_read_only_snapshot_v1(RunPlayPathsV1::new(session))?;
-            print!("{}", render_inventory_v1(&mut controller, effects)?);
+            print!("{}", render_inventory_v1(&mut controller, effects, locale)?);
         }
         Command::ParityRng { session, at } => {
             let paths = RunPlayPathsV1::new(session);

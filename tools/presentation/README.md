@@ -19,7 +19,7 @@
 
 ## 展示语言与模型语言
 
-展示语言决定用户看到的名称和界面。模型语言决定后续请求中的工具读数、规则说明和相关提示。二者分别由对应边界拥有：中文界面可以查看英文模型对局，界面切换只重绘，不改写已运行会话的输入或历史。工作台的 `agentLocale` 默认 `en`，支持 `zh-CN`，原生聊天在绑定中保存该选择，重连时保持。当前接通药水机制查询，以及卡牌定义查询的原版牌面与基础属性；卡牌机制详解仍保留英文，其他读数按实际 owner 迁移。Python 的文字语言参数还未接入。
+展示语言决定用户看到的名称和界面。模型语言决定后续请求中的工具读数、规则说明和相关提示。二者分别由对应边界拥有：中文界面可以查看英文模型对局，界面切换只重绘，不改写已运行会话的输入或历史。工作台的 `agentLocale` 默认 `en`，支持 `zh-CN`，原生聊天在绑定中保存该选择，重连时保持。当前接通药水机制查询、卡牌定义查询，以及 `inventory` / `inventory effects` 的名称、原版牌面、属性、永久改值、遗物计数和触发状态、药水规则。卡牌和遗物的完整机制详解仍保留英文，中文库存明确标注；其他读数按实际 owner 迁移。Python 的文字语言参数还未接入。
 
 dsh 地图使用宿主的语言偏好、订阅和 slot 翻译入口，离线演示使用自己的语言选择。宿主内置 `zh` 在资源边界映射到 `zh-CN`。宿主的 `{name}` 模板与 i18next 的 `{{name}}` 及复数规则不同：地图的界面资源使用宿主格式，领域资源只抽取无模板的名称，效果模板保留在对应格式化入口。
 
@@ -67,7 +67,7 @@ view.text('game:effect.draw', { count: 2 }); // Draw 2 cards.
 
 ## 资源职责
 
-共用内容位于 `locales/en.json` 和 `zh-CN.json`：`game` 拥有名称、术语和规则，`mechanics` 拥有机制查询消息，`replay` 拥有离线演示的导航、场景和原始记录入口文案。dsh 地图和工作台自己的界面消息位于其 `locale/` 资源中，不在其中复制游戏名称。
+共用内容位于 `locales/en.json` 和 `zh-CN.json`：`game` 拥有名称、术语、遗物触发状态和规则，`mechanics` 拥有机制查询和卡牌属性消息，`inventory` 拥有永久库存消息，`replay` 拥有离线演示的导航、场景和原始记录入口文案。dsh 地图和工作台自己的界面消息位于其 `locale/` 资源中，不在其中复制游戏名称。
 
 `game.card`、`relic`、`potion`、`enemy`、`character`、`event`、`power`、`encounter` 是原版资源导入的名称区段，由 [import_original.py](import_original.py) 更新，不手工翻译。其中卡牌、遗物、药水和敌人按当前模拟器词表导入；角色覆盖四名可玩角色，事件目前取 Neow，状态目前取易伤、虚弱、脆弱，遭遇取地图使用的具名遭遇。多敌人遭遇 `DonuAndDeca` 用原版的两个敌人名与本项目的连接词组合。房间类型、界面消息和补充规则说明由项目维护。
 
@@ -86,7 +86,9 @@ view.text('game:effect.draw', { count: 2 }); // Draw 2 cards.
 
 [original-card-text.json](original-card-text.json) 保存同一次导入的卡牌 `DESCRIPTION`、`UPGRADE_DESCRIPTION` 与 `EXTENDED_DESCRIPTION` 原文和来源摘要，通过 `@sts-simulator/presentation/original-card-text` 导出，并嵌入 Rust crate。字段名不决定其用途：全身撞击的 `UPGRADE_DESCRIPTION` 是战斗伤害附加行，终结技用它显示不可打出的提示。`cards::mechanics::original_printed_card_text` 按原版实际升级方法选择定义牌面，使用同一份永久基础数值 owner 处理伤害、格挡和多次升级；`!M!` 使用当前升级态的定义数值。它不查询隐藏状态或计算当前战斗伤害。
 
-共享格式化入口只替换已提供的数值、处理换行与关键字标记，将能量图标显示为 `[Energy]` 或 `[能量]`，保留原图标数量和 X 表达式。未知变量或缺失的已选模板返回错误。原版未收录的卡牌返回 `None`，由查询保留稳定 ID 和已有机制资料。当前 `info card <ID>[+N]` 使用这份牌面，按工具语言显示名称、类型、属性与目标，并保留完整的英文机制补充。`read/options`、准备文字块和战斗实例文本仍沿各自 owner 继续接入，不在每次读取时重复追加原版牌面。
+共享格式化入口只替换已提供的数值、处理换行与关键字标记，将能量图标显示为 `[Energy]` 或 `[能量]`，保留原图标数量和 X 表达式。未知变量或缺失的已选模板返回错误。原版未收录的卡牌返回 `None`，由查询保留稳定 ID 和已有机制资料。`info card <ID>[+N]` 使用定义牌面，按工具语言显示名称、类型、属性与目标，并保留完整的英文机制补充。`inventory effects` 使用同一 owner 的 `original_card_blueprint_text`，传入永久实例的升级、附加值及伤害/格挡改值；战斗中读取 master-deck snapshot，不以手牌的临时改值替代。基础抽牌与格挡请求另行标明其定义范围。`read/options`、准备文字块和战斗手牌文本仍沿各自 owner 继续接入。
+
+库存全文和结构化卡牌/遗物块从同一次渲染生成。卡牌按稳定 ID、升级和全部永久实例字段分组，不按名称合并；多个稳定 ID 共享同一显示名时附 ID 以便辨认。瓶装标记只经遗物 owner 的 typed lineage 绑定。遗物触发状态由规则 owner 提供枚举，再从共用消息取词；语言选择不反查英文状态文字。CLI 的 `inventory --locale en|zh-CN` 和工作台的库存命令共用该 renderer；准备投影当前显式选择英语。
 
 名称按领域和**现有稳定 ID**取值，例如 `game.card.StrikeG`、`game.encounter.TheHeart`。同名的 `Strike`、`StrikeG`、`StrikeB`、`StrikeP` 保持四个条目，不能按翻译文字反查动作。名称资源的具体覆盖见来源摘要，新增消费者沿稳定 ID 使用已有原版名称，再补所需消息。缺项先回退英语，再显示原稳定 ID；`onMissing` 提供开发检查信息，不向页面增加提示条。
 

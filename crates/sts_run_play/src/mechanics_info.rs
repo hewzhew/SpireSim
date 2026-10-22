@@ -230,7 +230,7 @@ pub(crate) fn write_printed_card_rule(out: &mut String, card: cards::CardId, upg
         out,
         "  Card {} | {} | printed, {}",
         crate::render::format_card(card, upgrades),
-        card_attributes(card, upgrades, 0),
+        card_attributes(card, upgrades, 0, Locale::En),
         if upgrades == 0 {
             "unupgraded"
         } else {
@@ -245,7 +245,7 @@ pub(crate) fn write_printed_card_rule(out: &mut String, card: cards::CardId, upg
             .unwrap_or("Effect explanation unavailable; this does not mean unsupported gameplay.")
     )
     .unwrap();
-    write_card_fixed_requests(out, card, upgrades);
+    write_card_fixed_requests(out, card, upgrades, Locale::En);
 }
 
 pub(crate) fn write_card_rule(out: &mut String, card: cards::CardId, upgrades: u8) {
@@ -268,13 +268,25 @@ pub(crate) fn write_card_rule(out: &mut String, card: cards::CardId, upgrades: u
     writeln!(out, "    At this upgrade, printed lifecycle: when played, {play}; when unplayed, {unused}. Combat powers, relics and instance overrides apply their actual rules.").unwrap();
 }
 
-pub(crate) fn write_card_fixed_requests(out: &mut String, card: cards::CardId, upgrades: u8) {
+pub(crate) fn write_card_fixed_requests(
+    out: &mut String,
+    card: cards::CardId,
+    upgrades: u8,
+    locale: Locale,
+) {
     let definition = cards::get_card_definition(card);
     let magic = definition.base_magic + i32::from(upgrades > 0) * definition.upgrade_magic;
     if let Some(draw) = cards::mechanics::unconditional_card_draw_request_v1(card, magic) {
         writeln!(
             out,
-            "    Printed draw request at this upgrade: {draw} cards."
+            "    {}",
+            locale
+                .text(
+                    "mechanics",
+                    "card.fixedDraw",
+                    &[("amount", &draw.to_string())]
+                )
+                .expect("fixed draw message")
         )
         .unwrap();
     }
@@ -285,7 +297,18 @@ pub(crate) fn write_card_fixed_requests(out: &mut String, card: cards::CardId, u
             &sts_oracle_learning::state::rewards::RewardCard::new(card, upgrades),
         );
         if facts.block > 0 {
-            writeln!(out, "    Printed Block request at this upgrade: {} Block, before instance and combat modifiers.", facts.block).unwrap();
+            writeln!(
+                out,
+                "    {}",
+                locale
+                    .text(
+                        "mechanics",
+                        "card.fixedBlock",
+                        &[("amount", &facts.block.to_string())]
+                    )
+                    .expect("fixed block message")
+            )
+            .unwrap();
         }
     }
 }
@@ -815,17 +838,34 @@ fn write_relic(
 
 /// Printed card facts shared by inventory and strategic choices. Costs include
 /// the actual upgrade and permanent modifier, never hypothetical combat powers.
-pub(crate) fn card_attributes(card: cards::CardId, upgrades: u8, cost_modifier: i8) -> String {
+pub(crate) fn card_attributes(
+    card: cards::CardId,
+    upgrades: u8,
+    cost_modifier: i8,
+    locale: Locale,
+) -> String {
     let definition = cards::get_card_definition(card);
     let base_cost =
         cards::upgraded_base_cost_override_for(card, upgrades).unwrap_or(definition.cost);
     let cost = match base_cost {
-        -2 => "unplayable".to_owned(),
+        -2 => locale
+            .entry("mechanics", "card.unplayable")
+            .unwrap()
+            .to_owned(),
         -1 => "X".to_owned(),
-        n => format!("{}c", (i32::from(n) + i32::from(cost_modifier)).max(0)),
+        n => locale
+            .text(
+                "mechanics",
+                "card.paidCost",
+                &[(
+                    "cost",
+                    &(i32::from(n) + i32::from(cost_modifier)).max(0).to_string(),
+                )],
+            )
+            .expect("card cost message"),
     };
     let tags = if definition.tags.is_empty() {
-        "none".to_owned()
+        locale.entry("mechanics", "card.none").unwrap().to_owned()
     } else {
         definition
             .tags
@@ -834,7 +874,27 @@ pub(crate) fn card_attributes(card: cards::CardId, upgrades: u8, cost_modifier: 
             .collect::<Vec<_>>()
             .join(", ")
     };
-    format!("{:?} | {cost} | tags: {tags}", definition.card_type)
+    let kind = match definition.card_type {
+        cards::CardType::Attack => "attack",
+        cards::CardType::Skill => "skill",
+        cards::CardType::Power => "power",
+        cards::CardType::Status => "status",
+        cards::CardType::Curse => "curse",
+    };
+    locale
+        .text(
+            "mechanics",
+            "card.inventoryAttributes",
+            &[
+                (
+                    "type",
+                    locale.entry("game", &format!("cardType.{kind}")).unwrap(),
+                ),
+                ("cost", &cost),
+                ("tags", &tags),
+            ],
+        )
+        .expect("card attribute message")
 }
 
 fn write_card(
@@ -850,12 +910,7 @@ fn write_card(
             .text("mechanics", key, parameters)
             .expect("card query message")
     };
-    let mut name = locale.entity("card", card.stable_id()).to_owned();
-    if upgrades == 1 {
-        name.push('+');
-    } else if upgrades > 1 {
-        write!(name, "+{upgrades}").unwrap();
-    }
+    let name = locale.card_name(card.stable_id(), upgrades);
     let kind = match definition.card_type {
         cards::CardType::Attack => "attack",
         cards::CardType::Skill => "skill",

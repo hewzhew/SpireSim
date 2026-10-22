@@ -64,6 +64,15 @@ impl Locale {
         self.entry("game", &format!("{kind}.{id}")).unwrap_or(id)
     }
 
+    pub fn card_name(self, id: &str, upgrades: u8) -> String {
+        let name = self.entity("card", id);
+        match upgrades {
+            0 => name.to_owned(),
+            1 => format!("{name}+"),
+            _ => format!("{name}+{upgrades}"),
+        }
+    }
+
     pub fn text(
         self,
         namespace: &str,

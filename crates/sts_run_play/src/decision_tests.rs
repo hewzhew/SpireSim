@@ -2967,7 +2967,8 @@ fn choice_readings_expose_typed_items_and_rules_without_changing_choices() {
         .view
         .contains("including upgraded Skills that normally do not Exhaust"));
     assert!(expanded.view.contains("  Card Dark Embrace | Power"));
-    let inventory = crate::compact::render_inventory_v1(&mut game, true).unwrap();
+    let inventory =
+        crate::compact::render_inventory_v1(&mut game, true, sts_presentation::Locale::En).unwrap();
     assert!(inventory.contains("including upgraded Skills that normally do not Exhaust"));
     assert!(inventory.contains("Dark Embrace"));
     assert!(reading.options.iter().any(|option| matches!(
@@ -3035,7 +3036,9 @@ fn compact_shop_shows_executable_offers_and_curse_removal() {
     assert!(!status.contains("buy:PowerPotion"));
     assert!(status.contains("buy:ShrugItOff"));
     assert!(!status.contains("Deck ("));
-    let inventory = crate::compact::render_inventory_v1(&mut game, false).unwrap();
+    let inventory =
+        crate::compact::render_inventory_v1(&mut game, false, sts_presentation::Locale::En)
+            .unwrap();
     assert!(inventory.contains("Deck ("));
     assert!(inventory.lines().any(|line| line.trim() == "Doubt"));
     assert!(inventory.contains("Relics ("));
@@ -3090,12 +3093,15 @@ fn compact_inventory_reads_combat_master_deck_without_advancing() {
     let dir = TestDirectory::new();
     let mut game = controller(&dir.0, "combat_finish");
     let head = game.head().clone();
-    let inventory = crate::compact::render_inventory_v1(&mut game, false).unwrap();
+    let inventory =
+        crate::compact::render_inventory_v1(&mut game, false, sts_presentation::Locale::En)
+            .unwrap();
     assert!(inventory.contains("Deck ("));
     assert!(inventory.contains("Relics ("));
     assert!(inventory.contains("Strike"));
-    let explained = crate::compact::render_inventory_v1(&mut game, true).unwrap();
-    assert!(explained.contains("Permanent deck; costs before combat powers/relics."));
+    let explained =
+        crate::compact::render_inventory_v1(&mut game, true, sts_presentation::Locale::En).unwrap();
+    assert!(explained.contains("Permanent deck; costs and card faces include permanent instance changes, before combat powers/relics."));
     assert!(explained.contains("Strike | Attack | 1c"));
     assert_eq!(*game.head(), head);
 }
@@ -3122,7 +3128,8 @@ fn fixed_block_requests_reach_inventory_and_acquisition_readings() {
     session.engine_state = EngineState::RewardScreen(rewards);
     let mut game = controller_with_session(&dir.0, "fixed-block-readings", &session);
     let before = game.head().clone();
-    let inventory = crate::compact::render_inventory_v1(&mut game, true).unwrap();
+    let inventory =
+        crate::compact::render_inventory_v1(&mut game, true, sts_presentation::Locale::En).unwrap();
     let candidates = game.decision_reading_v1(&[], None).unwrap().view;
     for text in [inventory, candidates] {
         for block in [15, 20] {
@@ -3177,7 +3184,8 @@ fn inventory_effects_reports_real_upgrades_and_conditional_engine_rules() {
     let expected_size = session.run_state.master_deck.len();
     let mut game = controller_with_session(&dir.0, "inventory-engine", &session);
     let before = game.head().clone();
-    let explained = crate::compact::render_inventory_v1(&mut game, true).unwrap();
+    let explained =
+        crate::compact::render_inventory_v1(&mut game, true, sts_presentation::Locale::En).unwrap();
     assert!(explained.contains(&format!("Deck ({expected_size}):")));
     assert!(explained.contains("Corruption+ | Power | 2c"));
     assert!(explained.contains("2× Sentinel+ | Skill | 1c"));
@@ -3216,7 +3224,8 @@ fn deck_rules_distinguish_strike_tags_and_missing_key_sources() {
     session.run_state.keys = [false, true, true];
     let mut game = controller_with_session(&dir.0, "deck-key-facts", &session);
     let before = game.head().clone();
-    let explained = crate::compact::render_inventory_v1(&mut game, true).unwrap();
+    let explained =
+        crate::compact::render_inventory_v1(&mut game, true, sts_presentation::Locale::En).unwrap();
     assert!(explained.contains("Anger | Attack | 0c | tags: none"));
     assert!(explained.contains("Perfected Strike | Attack | 2c | tags: Strike"));
     assert!(explained.contains("Pommel Strike | Attack | 1c | tags: Strike"));

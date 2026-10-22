@@ -579,7 +579,12 @@ fn read_public_decision_v1(
             observation
                 .relics
                 .iter()
-                .map(|r| crate::compact::relic_label_v1(r.relic, r.counter, r.used_up))
+                .map(|r| crate::compact::relic_label_v1(
+                    r.relic,
+                    r.counter,
+                    r.used_up,
+                    sts_presentation::Locale::En
+                ))
                 .collect::<Vec<_>>()
                 .join(", ")
         )
@@ -1373,7 +1378,12 @@ fn write_choice_mechanics(out: &mut String, action: &TaskStrategicActionV1, brie
             writeln!(
                 out,
                 "  Card: {}",
-                crate::mechanics_info::card_attributes(*card, *upgrades, 0)
+                crate::mechanics_info::card_attributes(
+                    *card,
+                    *upgrades,
+                    0,
+                    sts_presentation::Locale::En
+                )
             )
             .unwrap();
             let mut blueprint = sts_oracle_learning::runtime::combat::CardBlueprint::fresh(*card);
@@ -1419,7 +1429,12 @@ fn write_choice_mechanics(out: &mut String, action: &TaskStrategicActionV1, brie
     if let TaskStrategicActionV1::TakeCard { card, upgrades, .. }
     | TaskStrategicActionV1::BuyCard { card, upgrades, .. } = action
     {
-        crate::mechanics_info::write_card_fixed_requests(out, *card, *upgrades);
+        crate::mechanics_info::write_card_fixed_requests(
+            out,
+            *card,
+            *upgrades,
+            sts_presentation::Locale::En,
+        );
     }
 }
 

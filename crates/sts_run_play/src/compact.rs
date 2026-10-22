@@ -1,6 +1,7 @@
 use serde::Serialize;
 use std::collections::BTreeMap;
 use std::fmt::Write as _;
+use sts_presentation::Locale;
 
 use sts_oracle_learning::agent::information::action::PublicCombatAtomicActionV1;
 use sts_oracle_learning::agent::information::state::{
@@ -8,7 +9,7 @@ use sts_oracle_learning::agent::information::state::{
 };
 use sts_oracle_learning::agent::task::{
     GameOutcomeV1, TaskEpisodeFailureV1, TaskEpisodeOutcomeV1, TaskPublicCandidateV1,
-    TaskPublicDecisionV1, TaskPublicObservationV1, TaskStrategicActionV1,
+    TaskPublicDecisionV1, TaskPublicObservationV1, TaskStrategicActionV1, TaskStrategicCardV1,
 };
 use sts_oracle_learning::ai::planner_core::{
     PlannerDecisionContext, PlannerShopInventoryV1, PlannerShopPurchaseStatusV1,
@@ -26,6 +27,10 @@ use crate::render::{
     render_monster_block_v1, render_player_block_v1, render_powers, render_route_options_v1,
     render_shop_inventory_v1, render_single_route_v1, render_strategic_run_header_v1, short_id,
 };
+
+#[cfg(test)]
+#[path = "compact/inventory_tests.rs"]
+mod inventory_tests;
 /// Compact, typed resume context for humans and task handoffs. `show` remains
 /// the full evidence surface; this projection deliberately favors one-screen
 /// orientation without reading archive JSON or reconstructing private state.
@@ -269,6 +274,7 @@ mod return_point_tests {
 pub fn render_inventory_v1(
     controller: &mut RunPlayControllerV1,
     effects: bool,
+    locale: Locale,
 ) -> Result<String, String> {
     let decision = controller
         .head()
@@ -284,7 +290,7 @@ pub fn render_inventory_v1(
     } else {
         None
     };
-    render_inventory_decision_v1(decision, effects, combat)
+    render_inventory_decision_v1(decision, effects, combat, locale)
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize)]
@@ -313,14 +319,16 @@ pub(crate) fn render_inventory_decision_v1(
     decision: TaskPublicDecisionV1,
     effects: bool,
     combat: Option<sts_oracle_learning::sim::combat::CombatPosition>,
+    locale: Locale,
 ) -> Result<String, String> {
-    Ok(inventory_reading_decision_v1(decision, effects, combat)?.view)
+    Ok(inventory_reading_decision_v1(decision, effects, combat, locale)?.view)
 }
 
 pub(crate) fn inventory_reading_decision_v1(
     decision: TaskPublicDecisionV1,
     effects: bool,
     combat: Option<sts_oracle_learning::sim::combat::CombatPosition>,
+    locale: Locale,
 ) -> Result<InventoryReadingV1, String> {
     let potion_slots: Vec<_> = match &decision.observation {
         TaskPublicObservationV1::Strategic { observation } => observation
@@ -337,24 +345,13 @@ pub(crate) fn inventory_reading_decision_v1(
     };
     let (cards, relics) = match decision.observation {
         TaskPublicObservationV1::Strategic { observation } => (
-            observation
-                .cards
-                .iter()
-                .map(|card| {
-                    (
-                        crate::decision::deck_card_label(card),
-                        card.card,
-                        card.upgrades,
-                        card.cost_modifier,
-                    )
-                })
-                .collect::<Vec<_>>(),
+            observation.cards,
             observation
                 .relics
                 .iter()
                 .map(|relic| {
                     (
-                        relic_label_v1(relic.relic, relic.counter, relic.used_up),
+                        relic_label_v1(relic.relic, relic.counter, relic.used_up, locale),
                         relic.relic,
                     )
                 })
@@ -362,19 +359,43 @@ pub(crate) fn inventory_reading_decision_v1(
         ),
         TaskPublicObservationV1::Combat { .. } => {
             let position = combat.ok_or("combat inventory requires its exact position")?;
+            let bottle_bindings = position
+                .combat
+                .entities
+                .player
+                .relics
+                .iter()
+                .filter(|relic| {
+                    matches!(
+                        relic.id,
+                        relics::RelicId::BottledFlame
+                            | relics::RelicId::BottledLightning
+                            | relics::RelicId::BottledTornado
+                    )
+                })
+                .map(|relic| {
+                    relics::persistent_state::persistent_relic_bound_card_lineage_v1(relic)
+                        .map(|lineage| (relic.id, lineage))
+                })
+                .collect::<Result<Vec<_>, String>>()?;
             (
                 position
                     .combat
                     .meta
                     .master_deck_snapshot
                     .iter()
-                    .map(|card| {
-                        (
-                            combat_deck_card_label_v1(card),
-                            card.id,
-                            card.upgrades,
-                            card.cost_modifier,
-                        )
+                    .enumerate()
+                    .map(|(ordinal, card)| TaskStrategicCardV1 {
+                        ordinal,
+                        card: card.id,
+                        upgrades: card.upgrades,
+                        misc_value: card.misc_value,
+                        base_damage_override: card.base_damage_override,
+                        base_block_override: card.base_block_override,
+                        cost_modifier: card.cost_modifier,
+                        bottled_by: bottle_bindings.iter().find_map(|(relic, lineage)| {
+                            (*lineage == Some(card.lineage)).then_some(*relic)
+                        }),
                     })
                     .collect::<Vec<_>>(),
                 position
@@ -385,7 +406,7 @@ pub(crate) fn inventory_reading_decision_v1(
                     .iter()
                     .map(|relic| {
                         (
-                            relic_label_v1(relic.id, relic.counter, relic.used_up),
+                            relic_label_v1(relic.id, relic.counter, relic.used_up, locale),
                             relic.id,
                         )
                     })
@@ -393,45 +414,101 @@ pub(crate) fn inventory_reading_decision_v1(
             )
         }
     };
+    let message = |key, parameters: &[(&str, &str)]| {
+        locale
+            .text("inventory", key, parameters)
+            .expect("inventory message")
+    };
     let mut output = String::new();
-    writeln!(output, "Deck ({}):", cards.len()).expect("string write");
+    writeln!(
+        output,
+        "{}",
+        message("deck", &[("count", &cards.len().to_string())])
+    )
+    .expect("string write");
     if effects {
-        writeln!(output, "Permanent deck; costs before combat powers/relics. Printed rules give base and upgraded effects; these are not a combat-value score.").expect("string write");
+        writeln!(output, "{}", message("permanent", &[])).expect("string write");
     }
     let mut counts = BTreeMap::new();
-    for (label, card, upgrades, cost_modifier) in cards {
-        counts
-            .entry(label)
-            .or_insert((0, card, upgrades, cost_modifier))
-            .0 += 1;
+    let mut name_ids = BTreeMap::<_, std::collections::BTreeSet<_>>::new();
+    for card in cards {
+        name_ids
+            .entry(locale.entity("card", card.card.stable_id()))
+            .or_default()
+            .insert(card.card.stable_id());
+        // Display names are neither identity nor instance grouping keys.
+        let key = (
+            card.card.stable_id(),
+            card.upgrades,
+            card.misc_value,
+            card.base_damage_override,
+            card.base_block_override,
+            card.cost_modifier,
+            card.bottled_by.map(|relic| relic.stable_id()),
+        );
+        counts.entry(key).or_insert((0, card)).0 += 1;
     }
+    let mut groups = counts.values().collect::<Vec<_>>();
+    // Keep a stable order across locales; sorting never merges identities.
+    groups.sort_by_key(|(_, card)| {
+        (
+            gameplay_display_label_v1(card.card),
+            card.card.stable_id(),
+            card.upgrades,
+        )
+    });
     let mut card_readings = Vec::new();
-    for (card, &(count, id, upgrades, cost_modifier)) in &counts {
+    for &&(count, card) in &groups {
+        let id = card.card;
+        let upgrades = card.upgrades;
         let start = output.len();
+        let mut label = inventory_card_label_v1(&card, locale);
+        if name_ids[locale.entity("card", id.stable_id())].len() > 1 {
+            write!(label, " [{}]", id.stable_id()).expect("string write");
+        }
         if count == 1 {
-            write!(output, "  {card}").expect("string write");
+            write!(output, "  {label}").expect("string write");
         } else {
-            write!(output, "  {count}× {card}").expect("string write");
+            write!(output, "  {count}× {label}").expect("string write");
         }
         if effects {
             write!(
                 output,
                 " | {}",
-                crate::mechanics_info::card_attributes(id, upgrades, cost_modifier)
+                crate::mechanics_info::card_attributes(id, upgrades, card.cost_modifier, locale)
             )
             .expect("string write");
         }
         writeln!(output).expect("string write");
         if effects {
+            let blueprint = sts_oracle_learning::runtime::combat::CardBlueprint {
+                id,
+                upgrades,
+                misc_value: card.misc_value,
+                base_damage_override: card.base_damage_override,
+                base_block_override: card.base_block_override,
+                cost_modifier: card.cost_modifier,
+                cost_for_turn: None,
+                free_to_play_once: false,
+            };
+            if let Some(text) = cards::mechanics::original_card_blueprint_text(&blueprint, locale)?
+            {
+                for line in text.lines() {
+                    writeln!(output, "    {line}").expect("string write");
+                }
+            }
             writeln!(
                 output,
                 "    {}",
-                cards::mechanics::explanation(id).unwrap_or(
-                    "Effect explanation unavailable; this does not mean unsupported gameplay."
-                )
+                match cards::mechanics::explanation(id) {
+                    Some(effect) => message("supplement", &[("effect", effect)]),
+                    None => message("unknown", &[]),
+                }
             )
             .expect("string write");
-            crate::mechanics_info::write_card_fixed_requests(&mut output, id, upgrades);
+            // These are definition-level requests, distinct from the permanent
+            // instance face above. Keep the complete existing rules together.
+            crate::mechanics_info::write_card_fixed_requests(&mut output, id, upgrades, locale);
         }
         card_readings.push(InventoryCardReadingV1 {
             card: id,
@@ -441,16 +518,28 @@ pub(crate) fn inventory_reading_decision_v1(
         });
     }
     if effects {
+        let mut links = String::new();
         crate::mechanics_info::write_owned_card_links(
-            &mut output,
-            counts
-                .values()
-                .map(|&(count, id, upgrades, modifier)| (id, upgrades, modifier, count)),
+            &mut links,
+            groups
+                .iter()
+                .map(|&&(count, card)| (card.card, card.upgrades, card.cost_modifier, count)),
         );
+        if !links.is_empty() {
+            if locale != Locale::En {
+                writeln!(output, "{}", message("linksEnglish", &[])).expect("string write");
+            }
+            output.push_str(&links);
+        }
     }
     let resources_start = output.len();
     let mut relic_readings = Vec::new();
-    writeln!(output, "Relics ({}):", relics.len()).expect("string write");
+    writeln!(
+        output,
+        "{}",
+        message("relics", &[("count", &relics.len().to_string())])
+    )
+    .expect("string write");
     for (relic, id) in relics {
         let start = output.len();
         writeln!(output, "  {relic}").expect("string write");
@@ -458,9 +547,10 @@ pub(crate) fn inventory_reading_decision_v1(
             writeln!(
                 output,
                 "    {}",
-                relics::mechanics::explanation(id).unwrap_or(
-                    "Effect explanation unavailable; this does not mean unsupported gameplay."
-                )
+                match relics::mechanics::explanation(id) {
+                    Some(effect) => message("supplement", &[("effect", effect)]),
+                    None => message("unknown", &[]),
+                }
             )
             .expect("string write");
         }
@@ -472,24 +562,28 @@ pub(crate) fn inventory_reading_decision_v1(
     if effects {
         writeln!(
             output,
-            "Potions ({} slots; availability comes from current legal options):",
-            potion_slots.len()
+            "{}",
+            message("potions", &[("count", &potion_slots.len().to_string())])
         )
         .expect("string write");
         for (slot, potion) in potion_slots {
             if let Some(id) = potion {
-                writeln!(output, "  P{slot} {}", gameplay_display_label_v1(id))
-                    .expect("string write");
+                writeln!(
+                    output,
+                    "  P{slot} {}",
+                    locale.entity("potion", id.stable_id())
+                )
+                .expect("string write");
                 writeln!(
                     output,
                     "    {}",
-                    potions::mechanics::explanation(id).unwrap_or(
-                        "Effect explanation unavailable; this does not mean unsupported gameplay."
-                    )
+                    locale
+                        .entry("game", &format!("potionRule.{}", id.stable_id()))
+                        .unwrap_or_else(|| locale.entry("inventory", "unknown").unwrap())
                 )
                 .expect("string write");
             } else {
-                writeln!(output, "  P{slot} empty").expect("string write");
+                writeln!(output, "  P{slot} {}", message("empty", &[])).expect("string write");
             }
         }
     }
@@ -501,26 +595,50 @@ pub(crate) fn inventory_reading_decision_v1(
     })
 }
 
-fn combat_deck_card_label_v1(card: &sts_oracle_learning::runtime::combat::CombatCard) -> String {
-    let mut label = format_card(card.id, card.upgrades);
+fn inventory_card_label_v1(card: &TaskStrategicCardV1, locale: Locale) -> String {
+    let mut label = locale.card_name(card.card.stable_id(), card.upgrades);
+    let modifier = |key, amount: String| {
+        locale
+            .text("inventory", key, &[("amount", &amount)])
+            .expect("card modifier message")
+    };
     if card.misc_value != 0 {
-        write!(label, " (misc {})", card.misc_value).expect("string write");
+        write!(
+            label,
+            " ({})",
+            modifier("misc", card.misc_value.to_string())
+        )
+        .expect("string write");
     }
     if card.cost_modifier != 0 {
-        write!(label, " (cost {:+})", card.cost_modifier).expect("string write");
+        write!(
+            label,
+            " ({})",
+            modifier("cost", format!("{:+}", card.cost_modifier))
+        )
+        .expect("string write");
     }
     if let Some(damage) = card.base_damage_override {
-        write!(label, " (damage {damage})").expect("string write");
+        write!(label, " ({})", modifier("damage", damage.to_string())).expect("string write");
     }
     if let Some(block) = card.base_block_override {
-        write!(label, " (block {block})").expect("string write");
+        write!(label, " ({})", modifier("block", block.to_string())).expect("string write");
+    }
+    if let Some(relic) = card.bottled_by {
+        write!(label, " [{}]", locale.entity("relic", relic.stable_id())).expect("string write");
     }
     label
 }
 
-pub(crate) fn relic_label_v1(relic: relics::RelicId, counter: i32, used_up: bool) -> String {
-    let mut label = gameplay_display_label_v1(relic).to_string();
-    if let Some(status) = relics::mechanics::trigger_state_description(relic, used_up) {
+pub(crate) fn relic_label_v1(
+    relic: relics::RelicId,
+    counter: i32,
+    used_up: bool,
+    locale: Locale,
+) -> String {
+    let mut label = locale.entity("relic", relic.stable_id()).to_string();
+    if let Some(state) = relics::mechanics::trigger_state_v1(relic, used_up) {
+        let status = state.description(locale);
         write!(label, " ({status})").expect("string write");
     }
     if counter >= 0 {
@@ -537,7 +655,14 @@ pub(crate) fn relic_label_v1(relic: relics::RelicId, counter: i32, used_up: bool
             })
             .sum();
         if bonus > 0 {
-            write!(label, " (+{bonus} Energy next player turn)").expect("string write");
+            let status = locale
+                .text(
+                    "inventory",
+                    "nextTurnEnergy",
+                    &[("amount", &bonus.to_string())],
+                )
+                .expect("relic energy message");
+            write!(label, " ({status})").expect("string write");
         }
     }
     label
@@ -667,7 +792,7 @@ fn render_shop_status_v1(
     let held_relics = observation
         .relics
         .iter()
-        .map(|relic| relic_label_v1(relic.relic, relic.counter, relic.used_up))
+        .map(|relic| relic_label_v1(relic.relic, relic.counter, relic.used_up, Locale::En))
         .collect::<Vec<_>>();
     writeln!(output, "{}", relic_summary_v1(&held_relics)).expect("string write");
     if let Some(boss) = observation.public_map.boss {

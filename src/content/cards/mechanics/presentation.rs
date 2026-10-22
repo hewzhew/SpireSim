@@ -11,7 +11,18 @@ pub fn original_printed_card_text(
 ) -> Result<Option<String>, String> {
     let mut blueprint = CardBlueprint::fresh(card);
     blueprint.upgrades = upgrades;
-    let numbers = card_blueprint_persistent_base_numbers_v1(&blueprint);
+    original_card_blueprint_text(&blueprint, locale)
+}
+
+/// Permanent instance face, before combat powers and temporary card changes.
+/// The caller supplies the master-deck fields, not a fresh definition copy.
+pub fn original_card_blueprint_text(
+    blueprint: &CardBlueprint,
+    locale: Locale,
+) -> Result<Option<String>, String> {
+    let card = blueprint.id;
+    let upgrades = blueprint.upgrades;
+    let numbers = card_blueprint_persistent_base_numbers_v1(blueprint);
     let definition = get_card_definition(card);
     let field = if upgrades > 0 && uses_original_upgrade_description(card) {
         CardTextField::UpgradeDescription
@@ -117,6 +128,33 @@ fn uses_original_upgrade_description(card: CardId) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn permanent_faces_use_growth_overrides_and_upgrade_precedence() {
+        for locale in [Locale::En, Locale::ZhCn] {
+            for (id, upgrades, misc, damage, block, expected) in [
+                (CardId::RitualDagger, 1, 75, Some(999), None, "75"),
+                (CardId::GeneticAlgorithm, 0, 32, None, Some(999), "32"),
+                (CardId::Bash, 1, 0, Some(23), None, "23"),
+                (CardId::Defend, 1, 0, None, Some(17), "17"),
+                (CardId::SearingBlow, 3, 0, Some(999), None, "27"),
+            ] {
+                let blueprint = CardBlueprint {
+                    id,
+                    upgrades,
+                    misc_value: misc,
+                    base_damage_override: damage,
+                    base_block_override: block,
+                    ..CardBlueprint::fresh(id)
+                };
+                let face = original_card_blueprint_text(&blueprint, locale)
+                    .unwrap()
+                    .unwrap();
+                assert!(face.contains(expected), "{id:?}/{locale}: {face}");
+                assert!(!face.contains("999"), "{id:?}/{locale}: {face}");
+            }
+        }
+    }
 
     #[test]
     fn original_printed_faces_select_real_upgrade_text_and_current_printed_numbers() {
