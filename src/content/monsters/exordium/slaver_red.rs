@@ -117,17 +117,18 @@ fn plan_for(move_id: u8, asc: u8) -> MonsterTurnPlan {
 }
 
 pub fn mechanics(asc: u8) -> super::super::mechanics::MonsterMechanics {
+    use crate::content::monsters::mechanics::MonsterText as Text;
     super::super::mechanics::MonsterMechanics {
         moves: vec![
-            ("Stab", stab_plan(asc)),
-            ("Entangle", entangle_plan()),
-            ("Scrape", scrape_plan(asc)),
+            (Text::new("slaver_red.stab"), stab_plan(asc)),
+            (Text::new("slaver_red.entangle"), entangle_plan()),
+            (Text::new("slaver_red.scrape"), scrape_plan(asc)),
         ],
         special_moves: vec![],
         notes: if asc >= 17 {
-            "Starts with Stab. Entangle is used at most once and prevents playing Attack cards for its duration. Later moves are random with history restrictions: Stab cannot occur three times consecutively; Scrape cannot repeat immediately. Scrape deals damage before applying Vulnerable."
+            Text::new("slaver_red.notesHigh")
         } else {
-            "Starts with Stab. Entangle is used at most once and prevents playing Attack cards for its duration. Later moves are random with history restrictions: Stab and Scrape cannot occur three times consecutively. Scrape deals damage before applying Vulnerable."
+            Text::new("slaver_red.notesLow")
         },
     }
 }

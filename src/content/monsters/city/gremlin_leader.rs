@@ -430,13 +430,27 @@ fn encourage_plan(ascension_level: u8) -> MonsterTurnPlan {
 }
 
 pub fn mechanics(asc: u8) -> crate::content::monsters::mechanics::MonsterMechanics {
+    use crate::content::monsters::mechanics::MonsterText as Text;
     crate::content::monsters::mechanics::MonsterMechanics {
-        moves: vec![("Stab", stab_plan())],
+        moves: vec![(Text::new("gremlin_leader.stab"), stab_plan())],
         special_moves: vec![
-            ("Encourage", format!("Gain {} Strength for self. At execution, also give every other non-dying ally {} Strength and {} Block. The leader receives the Strength; Block goes to the allies. Visible icon: DefendBuff.", encourage_strength(asc), encourage_strength(asc), encourage_block(asc))),
-            ("Rally", format!("Summon up to 2 gremlins into vacant minion slots, with at most 3 occupied slots. Each identity is sampled at execution from {} equally weighted pool entries: {}. Repeated entries carry repeated weight. Visible icon: Unknown.", SUMMON_POOL.len(), SUMMON_POOL.iter().map(|id| crate::content::identity::gameplay_display_label_v1(*id)).collect::<Vec<_>>().join(", "))),
+            (
+                Text::new("gremlin_leader.encourage"),
+                Text::new("gremlin_leader.encourageRule")
+                    .with("strength", encourage_strength(asc))
+                    .with("block", encourage_block(asc)),
+            ),
+            (
+                Text::new("gremlin_leader.rally"),
+                Text::new("gremlin_leader.rallyRule")
+                    .with("count", SUMMON_POOL.len() as i32)
+                    .with(
+                        "pool",
+                        Text::List(SUMMON_POOL.iter().copied().map(Text::EnemyName).collect()),
+                    ),
+            ),
         ],
-        notes: "Starts with two random minions. With zero living allies, selection chooses Rally or Stab; with one, Rally/Encourage/Stab; with at least two, Encourage/Stab. Selection depends on living allies and the previous move, with rerolls when a repeated move is excluded. Allies present when Encourage executes receive its effects. When the leader dies, other non-dying allies escape.",
+        notes: Text::new("gremlin_leader.notes"),
     }
 }
 

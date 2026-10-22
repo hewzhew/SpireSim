@@ -16,24 +16,25 @@ const COUNT: u8 = 3;
 pub const STARTING_POWERS: [(PowerId, i32); 1] = [(PowerId::Slow, 0)];
 
 pub fn mechanics(asc: u8) -> crate::content::monsters::mechanics::MonsterMechanics {
+    use crate::content::monsters::mechanics::MonsterText as Text;
     crate::content::monsters::mechanics::MonsterMechanics {
         moves: vec![
-            ("Glare", glare_plan()),
-            ("Count", count_plan()),
+            (Text::new("giant_head.glare"), glare_plan()),
+            (Text::new("giant_head.count"), count_plan()),
             (
-                "It Is Time (first heavy attack)",
+                Text::new("giant_head.itIsTimeFirstHeavyAttack"),
                 it_is_time_plan_for_count(0, asc),
             ),
             (
-                "It Is Time (maximum base attack)",
+                Text::new("giant_head.itIsTimeMaximumBaseAttack"),
                 it_is_time_plan_for_count(-6, asc),
             ),
         ],
         special_moves: vec![],
         notes: if asc >= 18 {
-            "Starts with Slow at counter 0; see its per-card damage amplification and round reset. Before the heavy phase, chooses Glare or Count and cannot use either three times consecutively. At A18+, the first It Is Time is on enemy turn 4, then repeats every turn, adding 5 base damage per turn until the displayed maximum. Current Strength and Weak modify these base attacks; use the visible intent for actual damage."
+            Text::new("giant_head.notesHigh")
         } else {
-            "Starts with Slow at counter 0; see its per-card damage amplification and round reset. Before the heavy phase, chooses Glare or Count and cannot use either three times consecutively. The first It Is Time is on enemy turn 5, then repeats every turn, adding 5 base damage per turn until the displayed maximum. Current Strength and Weak modify these base attacks; use the visible intent for actual damage."
+            Text::new("giant_head.notesLow")
         },
     }
 }

@@ -166,22 +166,50 @@ fn large_plan_for(move_id: u8, asc: u8) -> MonsterTurnPlan {
 }
 
 pub fn mechanics(enemy: EnemyId, asc: u8) -> super::super::mechanics::MonsterMechanics {
+    use crate::content::monsters::mechanics::MonsterText as Text;
     let (moves, notes) = match enemy {
-        EnemyId::AcidSlimeL => (vec![
-            ("Corrosive Spit", large_plan_for(WOUND_TACKLE, asc)),
-            ("Tackle", large_plan_for(NORMAL_TACKLE, asc)),
-            ("Lick", large_plan_for(WEAK_LICK, asc)),
-            ("Split", split_plan(EnemyId::AcidSlimeM)),
-        ], "Random moves with history restrictions. While alive, reaching half Max HP or below replaces its current intent with Split. Each child uses the parent's remaining HP at split execution as both current and Max HP; further damage before splitting reduces both children. Killing the parent prevents splitting."),
-        EnemyId::AcidSlimeM => (vec![
-            ("Corrosive Spit", medium_plan_for(WOUND_TACKLE, asc)),
-            ("Tackle", medium_plan_for(NORMAL_TACKLE, asc)),
-            ("Lick", medium_plan_for(WEAK_LICK, asc)),
-        ], "Random moves with history restrictions. Medium Acid Slimes do not split."),
-        EnemyId::AcidSlimeS => (vec![
-            ("Tackle", small_tackle_plan(asc)),
-            ("Lick", small_debuff_plan()),
-        ], "Alternates Tackle and Lick after the opening move. Small Acid Slimes do not split."),
+        EnemyId::AcidSlimeL => (
+            vec![
+                (
+                    Text::new("acid_slime.corrosiveSpit"),
+                    large_plan_for(WOUND_TACKLE, asc),
+                ),
+                (
+                    Text::new("acid_slime.tackle"),
+                    large_plan_for(NORMAL_TACKLE, asc),
+                ),
+                (Text::new("acid_slime.lick"), large_plan_for(WEAK_LICK, asc)),
+                (
+                    Text::new("acid_slime.split"),
+                    split_plan(EnemyId::AcidSlimeM),
+                ),
+            ],
+            Text::new("acid_slime.notesLarge"),
+        ),
+        EnemyId::AcidSlimeM => (
+            vec![
+                (
+                    Text::new("acid_slime.corrosiveSpit"),
+                    medium_plan_for(WOUND_TACKLE, asc),
+                ),
+                (
+                    Text::new("acid_slime.tackle"),
+                    medium_plan_for(NORMAL_TACKLE, asc),
+                ),
+                (
+                    Text::new("acid_slime.lick"),
+                    medium_plan_for(WEAK_LICK, asc),
+                ),
+            ],
+            Text::new("acid_slime.notesMedium"),
+        ),
+        EnemyId::AcidSlimeS => (
+            vec![
+                (Text::new("acid_slime.tackle"), small_tackle_plan(asc)),
+                (Text::new("acid_slime.lick"), small_debuff_plan()),
+            ],
+            Text::new("acid_slime.notesSmall"),
+        ),
         _ => unreachable!("not an Acid Slime"),
     };
     super::super::mechanics::MonsterMechanics {

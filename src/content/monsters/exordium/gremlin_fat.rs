@@ -89,10 +89,14 @@ fn plan_for(move_id: u8, asc: u8) -> MonsterTurnPlan {
 }
 
 pub fn mechanics(asc: u8) -> super::super::mechanics::MonsterMechanics {
+    use crate::content::monsters::mechanics::MonsterText as Text;
     super::super::mechanics::MonsterMechanics {
-        moves: vec![("Smash", blunt_plan(asc)), ("Escape", escape_plan())],
+        moves: vec![
+            (Text::new("gremlin_fat.smash"), blunt_plan(asc)),
+            (Text::new("gremlin_fat.escape"), escape_plan()),
+        ],
         special_moves: vec![],
-        notes: "Normally repeats Smash. Damage happens before Weak and, at A17+, Frail. Escape is a separately assigned move, not part of the normal attack cycle.",
+        notes: Text::new("gremlin_fat.notes"),
     }
 }
 

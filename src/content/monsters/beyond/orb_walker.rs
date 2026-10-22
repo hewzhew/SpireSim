@@ -40,10 +40,17 @@ fn strength_per_round(ascension_level: u8) -> i32 {
 }
 
 pub fn mechanics(ascension_level: u8) -> crate::content::monsters::mechanics::MonsterMechanics {
+    use crate::content::monsters::mechanics::MonsterText as Text;
     crate::content::monsters::mechanics::MonsterMechanics {
-        moves: vec![("Laser", laser_plan(ascension_level)), ("Claw", claw_plan(ascension_level))],
-        special_moves: vec![("Startup", format!("Starts with Generic Strength Up {}: gain that much permanent Strength at the end of every round, after its attack. This does not grant Strength immediately on spawn.", strength_per_round(ascension_level)))],
-        notes: "Each move roll chooses Claw below 40 (40%) or Laser otherwise (60%); if the selected move has occurred twice consecutively, use the other move. Neither move can occur three times consecutively. Laser adds one Burn to discard and one Burn at a random draw-pile position. These are possible move rules, not a prediction of the next roll.",
+        moves: vec![
+            (Text::new("orb_walker.laser"), laser_plan(ascension_level)),
+            (Text::new("orb_walker.claw"), claw_plan(ascension_level)),
+        ],
+        special_moves: vec![(
+            Text::new("orb_walker.startup"),
+            Text::new("orb_walker.startupRule").with("amount", strength_per_round(ascension_level)),
+        )],
+        notes: Text::new("orb_walker.notes"),
     }
 }
 

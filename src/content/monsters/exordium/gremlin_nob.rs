@@ -117,10 +117,15 @@ fn plan_for(move_id: u8, asc: u8) -> MonsterTurnPlan {
 }
 
 pub fn mechanics(asc: u8) -> super::super::mechanics::MonsterMechanics {
+    use crate::content::monsters::mechanics::MonsterText as Text;
     super::super::mechanics::MonsterMechanics {
         special_moves: vec![],
-        moves: vec![("Bellow", bellow_plan(asc)), ("Skull Bash", skull_bash_plan(asc)), ("Bull Rush", bull_rush_plan(asc))],
-        notes: "Bellow activates the Anger power (Enrage): subsequent Skill plays grant it Strength. At A18+, after Bellow it repeats Skull Bash, Bull Rush, Bull Rush. Below A18 the attack choice is random with history restrictions.",
+        moves: vec![
+            (Text::new("gremlin_nob.bellow"), bellow_plan(asc)),
+            (Text::new("gremlin_nob.skullBash"), skull_bash_plan(asc)),
+            (Text::new("gremlin_nob.bullRush"), bull_rush_plan(asc)),
+        ],
+        notes: Text::new("gremlin_nob.notes"),
     }
 }
 

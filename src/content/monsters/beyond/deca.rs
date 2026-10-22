@@ -263,10 +263,14 @@ fn plan_for(move_id: u8, ascension_level: u8) -> MonsterTurnPlan {
 }
 
 pub fn mechanics(asc: u8) -> super::super::mechanics::MonsterMechanics {
+    use crate::content::monsters::mechanics::MonsterText as Text;
     super::super::mechanics::MonsterMechanics {
-        moves: vec![("Beam", beam_plan(asc)), ("Square of Protection", square_plan(asc))],
+        moves: vec![
+            (Text::new("deca.beam"), beam_plan(asc)),
+            (Text::new("deca.squareOfProtection"), square_plan(asc)),
+        ],
         special_moves: vec![],
-        notes: "Starts with 2 Artifact (3 at A19+). Opens with Beam, then alternates Beam and Square of Protection. Square gives Block to all monsters; at A19+ it also gives each 3 Plated Armor.",
+        notes: Text::new("deca.notes"),
     }
 }
 

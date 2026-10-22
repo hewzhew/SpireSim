@@ -73,10 +73,14 @@ fn plan_for(move_id: u8, asc: u8) -> MonsterTurnPlan {
 }
 
 pub fn mechanics(asc: u8) -> super::super::mechanics::MonsterMechanics {
+    use crate::content::monsters::mechanics::MonsterText as Text;
     super::super::mechanics::MonsterMechanics {
         special_moves: vec![],
-        moves: vec![("Beam", beam_plan(asc)), ("Bolt", bolt_plan(asc))],
-        notes: "Each Sentry alternates Beam and Bolt. In the standard three-Sentry encounter, the outer slots open with Bolt and the middle opens with Beam; these are opening phases, not permanent roles. Bolt adds Dazed to the discard pile. Each Sentry starts with 1 Artifact; inspect current powers for remaining charges.",
+        moves: vec![
+            (Text::new("sentry.beam"), beam_plan(asc)),
+            (Text::new("sentry.bolt"), bolt_plan(asc)),
+        ],
+        notes: Text::new("sentry.notes"),
     }
 }
 

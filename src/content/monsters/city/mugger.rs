@@ -223,15 +223,16 @@ fn plan_for(move_id: u8, asc: u8) -> MonsterTurnPlan {
 }
 
 pub fn mechanics(asc: u8) -> super::super::mechanics::MonsterMechanics {
+    use crate::content::monsters::mechanics::MonsterText as Text;
     super::super::mechanics::MonsterMechanics {
         moves: vec![
-            ("Mug", mug_plan(asc)),
-            ("Big Swipe", big_swipe_plan(asc)),
-            ("Smoke Bomb", smoke_bomb_plan(asc)),
-            ("Escape", escape_plan()),
+            (Text::new("mugger.mug"), mug_plan(asc)),
+            (Text::new("mugger.bigSwipe"), big_swipe_plan(asc)),
+            (Text::new("mugger.smokeBomb"), smoke_bomb_plan(asc)),
+            (Text::new("mugger.escape"), escape_plan()),
         ],
         special_moves: vec![],
-        notes: "Starts with two Mugs, then has a 50% chance of Big Swipe before Smoke Bomb, otherwise immediately Smoke Bomb. Smoke Bomb is followed by Escape. Gold theft occurs before attack damage, even if Block prevents HP loss. Killing the Mugger recovers its stolen Gold as a reward; Escape does not recover it.",
+        notes: Text::new("mugger.notes"),
     }
 }
 

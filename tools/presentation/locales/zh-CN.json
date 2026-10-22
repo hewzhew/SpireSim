@@ -1702,6 +1702,530 @@
       "WhiteBeastStatue": "战斗药水掉落概率为 100%，仍受奖励页数量上限限制：已有至少 4 个奖励条目时，不再添加药水。领取仍需要空槽或替换已有药水，{{entity_relic_Sozu}}仍会阻止获取。",
       "WingBoots": "本局提供 3 次飞行。每次可以不沿当前节点的出口连线，选择下一个可达行中的可见地图节点。普通连线行走不消耗次数；飞行不会跳过行。",
       "Circlet": "用于兜底的遗物，没有资源或战斗效果。"
+    },
+    "enemyRule": {
+      "awakened_one": {
+        "slashPhase1": "斩击（第一阶段）",
+        "soulStrikePhase1": "{{entity_enemyMove_AwakenedOne_SoulStrike}}（第一阶段）",
+        "darkEchoPhase2Opening": "{{entity_enemyMove_AwakenedOne_DarkEcho}}（第二阶段开场）",
+        "sludgePhase2": "{{entity_enemyMove_AwakenedOne_Sludge}}（第二阶段）",
+        "tacklePhase2": "冲撞（第二阶段）",
+        "rebirth": "重生",
+        "rebirthRule": "复活并恢复到生命上限；本敌人回合不攻击",
+        "notes1": "初始具有 10 层{{entity_power_Regen}}（A19+ 为 15）、1 层{{entity_power_Curiosity}}（A19+ 为 2）、{{entity_power_Unawakened}}，以及 A4+ 时的 2 点{{entity_power_Strength}}。第一阶段以斩击开场；{{entity_enemyMove_AwakenedOne_SoulStrike}}不能连续使用，斩击不能连续三次。{{entity_power_Curiosity}}存在时，玩家每打出一张能力牌，使其获得等于{{entity_power_Curiosity}}层数的永久{{entity_power_Strength}}。首次受到致命伤害时，立即移除减益、{{entity_power_Curiosity}}、{{entity_power_Unawakened}}和{{entity_power_Shackled}}；正{{entity_power_Strength}}与{{entity_power_Regen}}保留。在重生前无法被选中；重生后以{{entity_enemyMove_AwakenedOne_DarkEcho}}开始第二阶段。此后{{entity_enemyMove_AwakenedOne_Sludge}}和冲撞都不能连续三次。最终死亡时，存活的邪教徒逃跑。"
+      },
+      "darkling": {
+        "nipRule": "攻击玩家一次。基础伤害在生成时从 {{min}}..{{max}}（含两端）抽取，此后对这只{{entity_enemy_Darkling}}保持不变；修正后的实际伤害见当前可见意图。",
+        "chomp": "{{entity_enemyMove_Darkling_ChompChomp}}",
+        "harden": "硬化",
+        "nip": "轻咬",
+        "count": "倒数",
+        "countRule": "半死亡期间空过自身一个回合，然后计划再生。",
+        "reincarnate": "再生",
+        "reincarnateRule": "自身恢复 floor(生命上限 / 2) 点生命，复活，再重新获得{{entity_power_Regrow}}。新怪物相关的遗物触发也会执行。",
+        "notes": "初始有{{entity_power_Regrow}}。以硬化或轻咬开场。只有偶数位置的黑暗爬虫能用{{entity_enemyMove_Darkling_ChompChomp}}；{{entity_enemyMove_Darkling_ChompChomp}}和硬化不能连续使用，轻咬不能连续三次。协同半死亡与复活规则见 info power Regrow。"
+      },
+      "deca": {
+        "beam": "光束",
+        "squareOfProtection": "防护之方",
+        "notes": "初始有 2 层{{entity_power_Artifact}}（A19+ 为 3）。以光束开场，此后交替使用光束和防护之方。防护之方给予所有怪物格挡；A19+ 时还各给予 3 层{{entity_power_PlatedArmor}}。"
+      },
+      "donu": {
+        "beam": "光束",
+        "circleOfPower": "{{entity_enemyMove_Donu_CircleOfPower}}",
+        "notes": "初始有 2 层{{entity_power_Artifact}}（A19+ 为 3）。以{{entity_enemyMove_Donu_CircleOfPower}}开场，此后交替使用{{entity_enemyMove_Donu_CircleOfPower}}和光束。{{entity_enemyMove_Donu_CircleOfPower}}给予所有存活敌人 3 点永久{{entity_power_Strength}}，包括{{entity_enemy_Deca}}。"
+      },
+      "exploder": {
+        "explosionRule": "初始有 {{count}} 层{{entity_power_Explosive}}。使用两次攻击后，下一次行动不攻击也不获得格挡；随后{{entity_power_Explosive}}使其死亡，并对玩家造成 {{damage}} 点{{entity_power_Thorns}}类伤害。玩家格挡可以吸收该伤害；{{entity_power_Strength}}、{{entity_power_Weak}}和{{entity_power_Vulnerable}}不修正该伤害。",
+        "attack": "攻击",
+        "explosion": "爆炸",
+        "notes": "{{entity_power_Explosive}}由其自身回合中的{{entity_power_Explosive}}状态执行，不是普通攻击意图。倒计时结束前将其击杀可阻止{{entity_power_Explosive}}。倒计时时点见 info power Explosive。"
+      },
+      "giant_head": {
+        "glare": "瞪视",
+        "count": "倒数",
+        "itIsTimeFirstHeavyAttack": "时间到了（首次重击）",
+        "itIsTimeMaximumBaseAttack": "时间到了（最大基础攻击）",
+        "notesHigh": "初始有{{entity_power_Slow}}，计数为 0；每张牌的伤害放大和每轮重置见该状态说明。重击阶段前在瞪视和倒数中选招，两招都不能连续三次。A18+ 时，首次时间到了在敌人第 4 回合，此后每回合重复，每回合增加 5 点基础伤害，直至所列上限。当前{{entity_power_Strength}}和{{entity_power_Weak}}修正这些基础攻击；实际伤害见可见意图。",
+        "notesLow": "初始有{{entity_power_Slow}}，计数为 0；每张牌的伤害放大和每轮重置见该状态说明。重击阶段前在瞪视和倒数中选招，两招都不能连续三次。首次时间到了在敌人第 5 回合，此后每回合重复，每回合增加 5 点基础伤害，直至所列上限。当前{{entity_power_Strength}}和{{entity_power_Weak}}修正这些基础攻击；实际伤害见可见意图。"
+      },
+      "maw": {
+        "nomRule": "攻击玩家，每段基础伤害 {{damage}}。段数随敌人回合数增长：max(1, floor((敌人回合数 + 1) / 2))，开场咆哮计为第 1 回合。当前可见意图给出实际段数和修正后伤害。",
+        "roar": "咆哮",
+        "slam": "猛撞",
+        "drool": "垂涎",
+        "nomNomNom": "啊呜啊呜啊呜",
+        "notes": "以一次咆哮开场，施加{{entity_power_Weak}}和{{entity_power_Frail}}。此后，随机条件允许且上一招不是啊呜啊呜啊呜时选择该招；否则在猛撞或啊呜啊呜啊呜后使用垂涎，其他招式后使用猛撞。垂涎给予持续{{entity_power_Strength}}，增强之后普通攻击的每一段。"
+      },
+      "nemesis": {
+        "triAttack": "三重攻击",
+        "scythe": "镰刀",
+        "triBurn": "三重{{entity_card_Burn}}",
+        "intangibleAfterMove": "行动后的{{entity_power_Intangible}}",
+        "intangibleRule": "招式动作后，若自身没有{{entity_power_Intangible}}，则获得 1 层{{entity_power_Intangible}}。怪物{{entity_power_Intangible}}跳过刚施加时的回合结束递减，在下次自身回合结束时递减；因此通常交替出现受保护和未受保护的玩家回合。每段伤害上限见 info power Intangible。",
+        "notes": "以三重攻击或三重{{entity_card_Burn}}开场，不会以镰刀开场。三重攻击不能连续三次，三重{{entity_card_Burn}}不能连续使用。选择镰刀时设置冷却 2；选招时递减冷却，递减后不大于 0 才允许镰刀。应读取当前可见意图和{{entity_power_Intangible}}，不假定未来随机招式固定。"
+      },
+      "orb_walker": {
+        "startupRule": "初始具有 GenericStrengthUp {{amount}}：每轮结束时，在攻击后获得等量的永久{{entity_power_Strength}}。生成时不会立即获得{{entity_power_Strength}}。",
+        "laser": "激光",
+        "claw": "爪击",
+        "startup": "初始状态",
+        "notes": "每次选招，随机值低于 40 时选择爪击（40%），否则选择激光（60%）；若选中的招式已连续使用两次，则改用另一招。两招都不能连续三次。激光向弃牌堆加入一张{{entity_card_Burn}}，并向抽牌堆随机位置加入一张{{entity_card_Burn}}。这些是可选招式规则，不是对下一次随机结果的预测。"
+      },
+      "reptomancer": {
+        "summonRule": "向空{{entity_enemy_SnakeDagger}}槽位召唤至多 {{count}} 只{{entity_enemy_SnakeDagger}}（最多四只）。每只先使用带{{entity_card_Wound}}的攻击，随后使用爆炸。{{entity_enemy_SnakeDagger}}随{{entity_enemy_Reptomancer}}死亡。",
+        "snakeStrike": "蛇击",
+        "bigBite": "猛咬",
+        "summon": "召唤",
+        "notes": "初始有两只{{entity_enemy_SnakeDagger}}，以继续召唤开场。蛇击和猛咬不能连续使用，召唤不能连续三次。没有可用召唤位置时，召唤随机结果改为蛇击。"
+      },
+      "repulsor": {
+        "selectionRule": "招式随机值低于 {{cutoff}} 且上一招不是攻击时选择攻击，否则选择眩晕。攻击不能连续使用。",
+        "attack": "攻击",
+        "daze": "眩晕",
+        "moveSelection": "招式选择",
+        "notes": "眩晕将牌加入抽牌堆的随机位置，而不是弃牌堆。可选招式不预测下一次随机结果。"
+      },
+      "snake_dagger": {
+        "explodeRule": "攻击玩家，每段基础伤害 {{damage}}（1 段），随后通过正常伤害与死亡流程失去自身当前全部生命。",
+        "wound": "{{entity_card_Wound}}",
+        "explode": "爆炸",
+        "notes": "自身第一个敌人回合攻击，并向玩家弃牌堆加入一张{{entity_card_Wound}}。下一回合以 25 点基础伤害攻击，再失去自身当前全部生命。新召唤的匕首也使用相同顺序。随从随{{entity_enemy_Reptomancer}}死亡。"
+      },
+      "spiker": {
+        "attack": "攻击",
+        "spike": "增刺",
+        "notes": "初始有持续保留的{{entity_power_Thorns}}，并可用增刺增加{{entity_power_Thorns}}。增刺仍可用时，攻击不能连续两次。完成六次增刺后总是攻击。{{entity_power_Thorns}}对每次符合条件的受击反伤，可被格挡吸收；伤害类型和触发见该状态定义。"
+      },
+      "spire_growth": {
+        "quickTackle": "快速冲撞",
+        "constrict": "缠绕",
+        "smash": "粉碎",
+        "notesHigh": "玩家没有{{entity_power_Constricted}}且上一招不是{{entity_power_Constricted}}时，优先使用{{entity_power_Constricted}}，包括开场。否则在快速冲撞和粉碎中选择，每种攻击最多连续两次。{{entity_power_Constricted}}持续保留，在玩家回合结束时造成可格挡的伤害；其施加可被{{entity_power_Artifact}}抵消，也可通过移除减益清除。",
+        "notesLow": "在快速冲撞、{{entity_power_Constricted}}和粉碎中选择。{{entity_power_Constricted}}要求玩家没有{{entity_power_Constricted}}且上一招不是{{entity_power_Constricted}}。每种攻击最多连续两次。{{entity_power_Constricted}}持续保留，在玩家回合结束时造成可格挡的伤害；其施加可被{{entity_power_Artifact}}抵消，也可通过移除减益清除。"
+      },
+      "time_eater": {
+        "reverberate": "连击",
+        "ripple": "涟漪",
+        "headSlam": "头槌",
+        "haste": "加速",
+        "hasteHigh": "移除自身所有减益和{{entity_power_Shackled}}；按执行时的生命值治疗至生命上限的 50%；获得 32 点格挡",
+        "hasteLow": "移除自身所有减益和{{entity_power_Shackled}}；按执行时的生命值治疗至生命上限的 50%",
+        "notes": "初始{{entity_power_TimeWarp}}计数为 0。计数跨回合保留；第 12 张计数牌强制结束回合，重置计数，并给予存活敌人 2 点{{entity_power_Strength}}。每场战斗一次：生命低于上限一半时选招，加速替换随机招式。加速清除负{{entity_power_Strength}}，保留正{{entity_power_Strength}}和{{entity_power_TimeWarp}}。连击不能连续三次；头槌和涟漪不能连续使用。{{entity_power_DrawReduction}}降低下一次正常回合抽牌，不影响卡牌效果抽牌。"
+      },
+      "transient": {
+        "laterRule": "每完成一次攻击，下一次攻击的未修正基础伤害增加 10（起始 {{damage}}）。初始有 {{fading}} 层{{entity_power_Fading}}和{{entity_power_Shifting}}。{{entity_power_Shifting}}按损失生命暂时降低{{entity_power_Strength}}，因此当前可见攻击伤害可能远低于基础值。",
+        "openingAttack": "开场攻击",
+        "laterAttacks": "后续攻击",
+        "notes": "每回合总是攻击一次，然后在已排队招式之后执行{{entity_power_Fading}}倒计时。{{entity_power_Fading}}为 1 时，在该回合攻击后死亡；可以存活到这时，无需削完其 999 点生命。完整效果和时点见 info power Fading 与 info power Shifting。"
+      },
+      "writhing_mass": {
+        "implantRule": "向玩家永久牌组加入一张诅咒牌{{entity_card_Parasite}}；这既不是可被格挡吸收的攻击，也不是可被{{entity_power_Artifact}}抵消的状态施加。每场战斗可执行一次；仅随机到该意图不会消耗次数。",
+        "strongStrike": "强力打击",
+        "multiStrike": "多重打击",
+        "flail": "挥击",
+        "wither": "凋萎",
+        "implant": "植入",
+        "notes": "初始有{{entity_power_Reactive}}和{{entity_power_Malleable}}。开场为多重打击、挥击或凋萎。后续选招还可选择强力打击或植入，并受重复招式限制。符合条件的非致命受击触发{{entity_power_Reactive}}，重新随机其意图，因此攻击后应查看实际意图。{{entity_power_Malleable}}也在符合条件的受击后获得格挡；详见两种状态定义。"
+      },
+      "bandit_bear": {
+        "bearHug": "熊抱",
+        "lunge": "突刺",
+        "maul": "撕打",
+        "notes": "以熊抱开场，然后从突刺开始，交替使用突刺和撕打。熊抱降低的{{entity_power_Dexterity}}持续整场战斗；之后击杀熊也不会清除。负{{entity_power_Dexterity}}降低卡牌提供的格挡。{{entity_power_Artifact}}可抵消{{entity_power_Dexterity}}减益。"
+      },
+      "bandit_leader": {
+        "agonizingSlash": "痛苦斩击",
+        "crossSlash": "十字斩",
+        "mock": "嘲弄",
+        "mockRule": "本回合无动作；下一招为痛苦斩击。",
+        "notes1": "以嘲弄开场，接痛苦斩击，再连续两次十字斩。之后重复一次痛苦斩击接两次十字斩。{{entity_power_Weak}}在剩余持续回合内降低玩家攻击牌伤害。",
+        "notes2": "以嘲弄开场，然后交替使用痛苦斩击和十字斩。{{entity_power_Weak}}在剩余持续回合内降低玩家攻击牌伤害。"
+      },
+      "bandit_pointy": {
+        "pointySpecial": "尖尖特技",
+        "notes": "每回合都使用尖尖特技，包括开场回合。"
+      },
+      "book_of_stabbing": {
+        "multiRule": "攻击玩家，每段基础伤害 {{damage}}，段数等于持续保留的刺击计数。计数从 1 开始，每次选择多重刺击前增加；因此开场多重刺击为 2 段。当前难度下，{{counterRule}}",
+        "bigIncreases": "选择重刺也使计数增加 1。",
+        "bigUnchanged": "选择重刺不改变计数。",
+        "bigStab": "重刺",
+        "multiStab": "多重刺击",
+        "preBattlePainfulStabs": "初始{{entity_power_PainfulStabs}}",
+        "notes": "选招使用 15% 的重刺分支，否则为多重刺击，同时受历史限制：重刺后必为多重刺击，连续两次多重刺击后必为重刺。每次选中的多重刺击使用为该招锁定的计数。伤害修正分别作用于每一段。"
+      },
+      "bronze_automaton": {
+        "flail": "挥击",
+        "boost": "强化",
+        "hyperBeam": "{{entity_enemyMove_BronzeAutomaton_HyperBeam}}",
+        "stunned": "晕眩",
+        "spawnOrbs": "召唤铜球",
+        "spawnRule": "召唤两只{{entity_enemy_BronzeOrb}}随从。它们随{{entity_enemy_BronzeAutomaton}}死亡。",
+        "notes1": "以召唤两只{{entity_enemy_BronzeOrb}}开场，然后交替使用挥击和强化。第一次{{entity_enemyMove_BronzeAutomaton_HyperBeam}}在敌人第 6 回合。低于 A19 时下一招为晕眩；A19+ 时为强化，然后继续攻击与强化循环，直到再次{{entity_enemyMove_BronzeAutomaton_HyperBeam}}。初始{{entity_power_Artifact}}逐次抵消减益施加。"
+      },
+      "bronze_orb": {
+        "supportRule": "给予{{entity_enemy_BronzeAutomaton}} {{block}} 点格挡。",
+        "beam": "光束",
+        "supportBeam": "支援光束",
+        "stasis": "停滞",
+        "stasisRule": "从抽牌堆随机移走一张牌（抽牌堆为空时改用弃牌堆），优先稀有牌，其次罕见牌，再其次普通牌；均不存在时从该牌堆全部牌中选择。保管至此铜球死亡，再返回手牌；手牌满时改入弃牌堆。",
+        "notes": "每只铜球最多使用一次停滞。此后在光束和支援光束中选择，两者都不能连续三次。随{{entity_enemy_BronzeAutomaton}}死亡。"
+      },
+      "byrd": {
+        "flightRule": "初始处于{{entity_power_Flight}}状态，具有 {{amount}} 层{{entity_power_Flight}}；减伤与受击触发见 info power Flight。",
+        "peck": "啄击",
+        "swoop": "俯冲",
+        "caw": "鸣叫",
+        "stunned": "晕眩",
+        "headbutt": "头撞",
+        "goAirborne": "起飞",
+        "startingFlight": "初始{{entity_power_Flight}}",
+        "notes": "随机以鸣叫或啄击开场。{{entity_power_Flight}}期间，啄击不能连续三次，俯冲和鸣叫不能连续两次。失去全部{{entity_power_Flight}}时，立即将当前招式替换为晕眩。空过该回合后使用头撞，再用起飞恢复{{entity_power_Flight}}。起飞的意图图标隐藏或显示未知；其已定义效果仍是{{entity_power_Flight}}，不是攻击。"
+      },
+      "centurion": {
+        "slash": "斩击",
+        "protect": "保护",
+        "fury": "狂怒",
+        "notes": "选招时仍有友方，选择斩击或保护；独自存在时选择斩击或狂怒。相同招式不能连续三次。保护随机给予符合条件的其他怪物格挡；执行时已无其他目标则给予自身。击杀友方不会将已经选定的保护改成狂怒；狂怒在后续选招时才可用。"
+      },
+      "champ": {
+        "heavySlash": "重斩",
+        "defensiveStance": "{{entity_enemyMove_Champ_DefensiveStance}}",
+        "execute": "{{entity_enemyMove_Champ_Execute}}",
+        "faceSlap": "{{entity_enemyMove_Champ_FaceSlap}}",
+        "gloat": "得意",
+        "taunt": "挑衅",
+        "anger": "愤怒",
+        "angerBeforeStrength": "获得{{entity_power_Strength}}前的愤怒",
+        "angerRule": "获得{{entity_power_Strength}}前移除所有减益和{{entity_power_Shackled}}。负{{entity_power_Strength}}属于减益，因此此前的{{entity_power_Strength}}降低可在此清除。",
+        "notes": "每场战斗一次：选下一招时检查当前生命 < floor(生命上限 / 2)，满足则计划愤怒；受伤不会立即打断已选招式。越过此阈值后，若前一招和前两招都不是{{entity_enemyMove_Champ_Execute}}，则计划{{entity_enemyMove_Champ_Execute}}。阈值前，每第四次选招强制挑衅。{{entity_enemyMove_Champ_DefensiveStance}}最多两次，且不能连续使用；得意不能紧接得意或{{entity_enemyMove_Champ_DefensiveStance}}。可选基础招式不预测隐藏意图。"
+      },
+      "chosen": {
+        "zap": "电击",
+        "drain": "汲取",
+        "debilitate": "衰弱",
+        "hex": "{{entity_power_Hex}}",
+        "poke": "戳刺",
+        "notesHigh": "每场战斗以一次{{entity_power_Hex}}开场。{{entity_power_Hex}}后，交替进行一次衰弱或汲取选择、一次电击或戳刺选择。{{entity_power_Hex}}在玩家打出非攻击牌时向抽牌堆加入{{entity_card_Dazed}}，包括技能和能力牌；数量与持续性见{{entity_power_Hex}}定义。",
+        "notesLow": "以戳刺开场，然后使用每场战斗一次的{{entity_power_Hex}}。{{entity_power_Hex}}后，交替进行一次衰弱或汲取选择、一次电击或戳刺选择。{{entity_power_Hex}}在玩家打出非攻击牌时向抽牌堆加入{{entity_card_Dazed}}，包括技能和能力牌；数量与持续性见{{entity_power_Hex}}定义。"
+      },
+      "gremlin_leader": {
+        "encourageRule": "自身获得 {{strength}} 点{{entity_power_Strength}}。执行时，其他尚未进入死亡过程的友方各获得 {{strength}} 点{{entity_power_Strength}}和 {{block}} 点格挡。首领获得{{entity_power_Strength}}，格挡只给友方。可见图标：防御增益。",
+        "rallyRule": "向空随从槽位召唤至多 2 只地精，最多占用 3 个槽位。每只在执行时从 {{count}} 个等权池条目中抽取身份：{{pool}}。重复条目具有重复权重。可见图标：未知。",
+        "stab": "刺击",
+        "encourage": "鼓舞",
+        "rally": "{{entity_enemyMove_GremlinLeader_Rally}}",
+        "notes": "初始有两只随机随从。没有存活友方时，在{{entity_enemyMove_GremlinLeader_Rally}}或刺击中选招；一个友方时，在{{entity_enemyMove_GremlinLeader_Rally}}、鼓舞、刺击中选择；至少两个时，在鼓舞或刺击中选择。选择取决于存活友方与上一招；排除重复招式时会重新随机。鼓舞执行时存在的友方获得效果。首领死亡时，其他尚未进入死亡过程的友方逃跑。"
+      },
+      "healer": {
+        "selectionRule": "存活怪物损失的生命总和大于 {{threshold}} 时选择治疗，除非前两招都是治疗。否则选择攻击并{{entity_power_Frail}}或强化。治疗和强化均不能连续使用三次；A17+ 时攻击并{{entity_power_Frail}}也不能连续使用。这些条件在选招时判断，已选招式执行时不会重新判断。",
+        "attackAndFrail": "攻击并{{entity_power_Frail}}",
+        "heal": "治疗",
+        "strengthen": "强化",
+        "moveSelection": "招式选择",
+        "notes": "治疗为每只存活怪物恢复所列生命，包括{{entity_enemy_Healer}}自身，至各自生命上限为止。强化给予每只存活怪物持续{{entity_power_Strength}}，包括{{entity_enemy_Healer}}自身。治疗和强化都显示增益意图图标，单凭图标无法区分。攻击并{{entity_power_Frail}}在命中后施加{{entity_power_Frail}}，即使格挡吸收了全部伤害。"
+      },
+      "mugger": {
+        "mug": "{{entity_enemyMove_Mugger_Mug}}",
+        "bigSwipe": "猛挥",
+        "smokeBomb": "烟雾弹",
+        "escape": "逃跑",
+        "notes": "先使用两次抢劫，随后有 50% 概率在烟雾弹前使用猛挥，否则直接使用烟雾弹。烟雾弹后逃跑。偷取金币发生在攻击伤害前，即使格挡避免了生命损失。击杀{{entity_enemy_Mugger}}会以奖励返还其偷走的金币；逃跑不会返还。"
+      },
+      "shelled_parasite": {
+        "protectionRule": "初始有 {{amount}} 层{{entity_power_PlatedArmor}}和 {{amount}} 点格挡。失去最后一层{{entity_power_PlatedArmor}}时，已选招式被替换为晕眩；受击与回合结束触发见{{entity_power_PlatedArmor}}说明。",
+        "fell": "重击",
+        "doubleStrike": "双击",
+        "lifeSuck": "吸血",
+        "stunned": "晕眩",
+        "startingProtection": "初始防护",
+        "lifeSuckHealing": "吸血治疗",
+        "lifeSuckRule": "按本次命中使玩家实际损失的生命治疗自身，数值已扣除格挡和伤害防止效果。可见意图为攻击增益。",
+        "notes": "A17+ 时以重击开场；低于 A17 时以双击或吸血开场。重击不能连续使用；双击和吸血各最多连续两次。晕眩跳过攻击，然后正常随机下一招。可选基础招式不预测隐藏意图。"
+      },
+      "snake_plant": {
+        "malleableRule": "初始有 {{amount}} 层{{entity_power_Malleable}}；每次受击的格挡增长与重置见 info power Malleable。",
+        "chompyChomps": "连续啃咬",
+        "spores": "{{entity_enemyMove_SnakePlant_EnfeeblingSpores}}",
+        "startingMalleable": "初始{{entity_power_Malleable}}",
+        "notesHigh": "连续啃咬不能连续三次。A17+ 时，{{entity_enemyMove_SnakePlant_EnfeeblingSpores}}再次可用前必须间隔两次连续啃咬。{{entity_enemyMove_SnakePlant_EnfeeblingSpores}}依次单独施加{{entity_power_Frail}}和{{entity_power_Weak}}，各自可消耗一层{{entity_power_Artifact}}。这些规则描述可选招式，不预测隐藏意图。",
+        "notesLow": "连续啃咬不能连续三次，{{entity_enemyMove_SnakePlant_EnfeeblingSpores}}不能连续两次。{{entity_enemyMove_SnakePlant_EnfeeblingSpores}}依次单独施加{{entity_power_Frail}}和{{entity_power_Weak}}，各自可消耗一层{{entity_power_Artifact}}。这些规则描述可选招式，不预测隐藏意图。"
+      },
+      "snecko": {
+        "perplexingGlare": "{{entity_enemyMove_Snecko_PerplexingGlare}}",
+        "bite": "{{entity_enemyMove_Snecko_Bite}}",
+        "tailWhip": "{{entity_enemyMove_Snecko_TailWhip}}",
+        "notes": "以{{entity_enemyMove_Snecko_PerplexingGlare}}开场，施加持续的{{entity_power_Confusion}}。此后随机选择{{entity_enemyMove_Snecko_Bite}}或{{entity_enemyMove_Snecko_TailWhip}}；连续两次{{entity_enemyMove_Snecko_Bite}}后强制{{entity_enemyMove_Snecko_TailWhip}}。{{entity_power_Confusion}}在抽到符合条件的牌时随机其费用。支付时使用当前手牌的实际费用。"
+      },
+      "spheric_guardian": {
+        "harden": "硬化",
+        "bashAndFrail": "痛击并{{entity_power_Frail}}",
+        "slam": "猛撞",
+        "bashAndBlock": "痛击并格挡",
+        "notes": "初始有 20 点生命、40 点格挡、3 层{{entity_power_Artifact}}和{{entity_power_Barricade}}。{{entity_power_Barricade}}在回合之间保留格挡。以硬化开场，接痛击并{{entity_power_Frail}}；此后交替使用猛撞和痛击并格挡。{{entity_power_Artifact}}逐次抵消传入的减益。"
+      },
+      "taskmaster": {
+        "followupRule": "攻击并加入伤口后，自身获得 {{amount}} 点{{entity_power_Strength}}。该{{entity_power_Strength}}持续保留，增强之后的攻击。",
+        "scouringWhip": "鞭挞",
+        "scouringWhipFollowUp": "鞭挞后续效果",
+        "notes": "每回合使用鞭挞。即使攻击被完全格挡，伤口仍加入弃牌堆。A18+ 时，每次鞭挞后还获得{{entity_power_Strength}}；这是可见攻击加牌意图之外的执行效果。"
+      },
+      "the_collector": {
+        "fireball": "火球",
+        "buff": "强化",
+        "megaDebuff": "超级减益",
+        "notes": "第一回合召唤两只{{entity_enemy_TorchHead}}。第四个敌人回合使用一次超级减益。之后可能复活死亡的{{entity_enemy_TorchHead}}。强化只给予{{entity_enemy_TheCollector}}格挡，并给予所有存活敌人{{entity_power_Strength}}。火球不能连续三次；强化和复活不能连续使用。击杀{{entity_enemy_TheCollector}}会移除其随从。"
+      },
+      "torch_head": {
+        "tackle": "冲撞",
+        "notes": "每回合攻击。它是{{entity_enemy_TheCollector}}的随从，{{entity_enemy_TheCollector}}死亡时被移除。"
+      },
+      "corrupt_heart": {
+        "buffRule": "每次强化先将负{{entity_power_Strength}}恢复到 0，再获得 2 点{{entity_power_Strength}}。从第一次强化起的额外效果：{{followups}}。",
+        "debilitate": "衰弱",
+        "bloodShots": "血弹连击",
+        "echo": "回响",
+        "buff": "强化",
+        "notes": "以衰弱开场，此后循环两次攻击（一次血弹连击、一次回响，顺序随机）接一次强化。上列初始状态层数使用本遭遇的进阶等级。{{entity_power_Invincible}}在心脏回合开始时重置承伤额度。{{entity_power_BeatOfDeath}}对每张计数牌造成伤害，发生在该牌自身效果之后、最终消耗触发{{entity_card_FeelNoPain}}之前。",
+        "gainPower": "获得{{power}}",
+        "gainAmount": "获得 {{amount}} 层{{power}}",
+        "numberedBuff": "第 {{number}} 次强化：{{effect}}",
+        "laterBuff": "第 {{number}} 次及之后每次强化：{{effect}}"
+      },
+      "spire_shield": {
+        "fortify": "巩固",
+        "smash": "粉碎",
+        "bash": "痛击",
+        "notesHigh": "攻击玩家，基础伤害 14 × 1，随后施加 -1 {{entity_power_Strength}}；若玩家有充能球，有 50% 概率改为施加 -1 {{entity_power_Focus}}",
+        "notesLow": "攻击玩家，基础伤害 12 × 1，随后施加 -1 {{entity_power_Strength}}；若玩家有充能球，有 50% 概率改为施加 -1 {{entity_power_Focus}}",
+        "notes3": "初始有 1 层{{entity_power_Artifact}}（A18+ 为 2），并给予玩家{{entity_power_Surrounded}}。先以随机顺序使用痛击和巩固，再使用粉碎，重复此循环。双方敌人都存活时，有目标的卡牌改变玩家朝向；从背后攻击的敌人造成额外 50% 伤害。无目标卡牌不改变朝向。"
+      },
+      "spire_spear": {
+        "burnStrike": "{{entity_card_Burn}}打击",
+        "piercer": "穿刺",
+        "skewer": "串刺",
+        "notes": "初始有 1 层{{entity_power_Artifact}}（A18+ 为 2）。以{{entity_card_Burn}}打击开场，接串刺。此后以随机顺序使用{{entity_card_Burn}}打击和穿刺，再串刺，重复此循环。A18+ 时，{{entity_card_Burn}}打击将 2 张{{entity_card_Burn}}放在抽牌堆顶，而不是弃牌堆。穿刺给予所有怪物 2 点永久{{entity_power_Strength}}。双方敌人都存活时，{{entity_power_Surrounded}}使背后攻击造成额外 50% 伤害。"
+      },
+      "acid_slime": {
+        "corrosiveSpit": "{{entity_enemyMove_AcidSlimeL_CorrosiveSpit}}",
+        "tackle": "冲撞",
+        "lick": "{{entity_enemyMove_AcidSlimeL_Lick}}",
+        "split": "{{entity_enemyMove_AcidSlimeL_Split}}",
+        "notesLarge": "按带历史限制的规则随机选招。存活时，生命达到上限一半或更低会将当前意图替换为{{entity_enemyMove_AcidSlimeL_Split}}。{{entity_enemyMove_AcidSlimeL_Split}}执行时，每个子体的当前生命和生命上限都等于母体剩余生命；{{entity_enemyMove_AcidSlimeL_Split}}前继续伤害母体会降低两个子体的生命。击杀母体可阻止{{entity_enemyMove_AcidSlimeL_Split}}。",
+        "notesMedium": "按带历史限制的规则随机选招。中型酸液史莱姆不分裂。",
+        "notesSmall": "开场招式后交替使用冲撞和{{entity_enemyMove_AcidSlimeL_Lick}}。小型酸液史莱姆不分裂。"
+      },
+      "cultist": {
+        "incantation": "{{entity_enemyMove_Cultist_Incantation}}",
+        "darkStrike": "黑暗打击",
+        "notes": "先获得{{entity_power_Ritual}}，然后攻击。怪物{{entity_power_Ritual}}跳过首次轮末触发；之后反复触发并获得{{entity_power_Strength}}。"
+      },
+      "fungi_beast": {
+        "bite": "噬咬",
+        "grow": "{{entity_enemyMove_FungiBeast_Grow}}",
+        "notes": "每只{{entity_enemy_FungiBeast}}都能{{entity_enemyMove_FungiBeast_Grow}}。{{entity_enemyMove_FungiBeast_Grow}}不能连续两次，噬咬不能连续三次。{{entity_power_SporeCloud}}是单独的死亡触发；当前层数见怪物状态。"
+      },
+      "gremlin_fat": {
+        "smash": "{{entity_enemyMove_GremlinFat_Smash}}",
+        "escape": "逃跑",
+        "notes": "通常反复使用{{entity_enemyMove_GremlinFat_Smash}}。伤害先于{{entity_power_Weak}}，以及 A17+ 的{{entity_power_Frail}}。逃跑是单独指定的招式，不属于正常攻击循环。"
+      },
+      "gremlin_nob": {
+        "bellow": "咆哮",
+        "skullBash": "{{entity_enemyMove_GremlinNob_SkullBash}}",
+        "bullRush": "{{entity_enemyMove_GremlinNob_BullRush}}",
+        "notes": "咆哮启用激怒状态：此后玩家打出技能牌会使其获得{{entity_power_Strength}}。A18+ 时，咆哮后重复{{entity_enemyMove_GremlinNob_SkullBash}}、{{entity_enemyMove_GremlinNob_BullRush}}、{{entity_enemyMove_GremlinNob_BullRush}}。低于 A18 时，按带历史限制的规则随机选择攻击。"
+      },
+      "gremlin_thief": {
+        "puncture": "穿刺",
+        "escape": "逃跑",
+        "notes": "通常每回合攻击。虽然模拟器 ID 是 GremlinThief，{{entity_enemy_GremlinThief}}不会偷金币。逃跑是单独指定的招式，不属于正常攻击循环。"
+      },
+      "gremlin_tsundere": {
+        "protect": "{{entity_enemyMove_GremlinTsundere_Protect}}",
+        "shieldBash": "{{entity_enemyMove_GremlinTsundere_ShieldBash}}",
+        "escape": "逃跑",
+        "notes": "以{{entity_enemyMove_GremlinTsundere_Protect}}开场，其他未死亡、未逃跑的怪物存在时持续{{entity_enemyMove_GremlinTsundere_Protect}}。独自存在时，{{entity_enemyMove_GremlinTsundere_Protect}}会计划下一回合使用{{entity_enemyMove_GremlinTsundere_ShieldBash}}，此后反复攻击。{{entity_enemyMove_GremlinTsundere_Protect}}随机选择符合条件的其他怪物；没有其他目标时选择自身。逃跑是单独指定的招式。"
+      },
+      "gremlin_warrior": {
+        "angryRule": "层数 {{amount}}。{{effect}}",
+        "scratch": "{{entity_enemyMove_GremlinWarrior_Claw}}",
+        "escape": "逃跑",
+        "startingAngry": "初始{{entity_power_Angry}}",
+        "notes": "通常每回合攻击。{{entity_power_Angry}}提供的{{entity_power_Strength}}增强后续攻击。逃跑是单独指定的招式，不属于正常攻击循环。"
+      },
+      "gremlin_wizard": {
+        "charging": "{{entity_enemyMove_GremlinWizard_Charging}}",
+        "ultimateBlast": "{{entity_enemyMove_GremlinWizard_UltimateBlast}}",
+        "escape": "逃跑",
+        "notesHigh": "先有两个不攻击的蓄能回合，然后每回合使用{{entity_enemyMove_GremlinWizard_UltimateBlast}}，不再蓄能。逃跑是单独指定的招式。",
+        "notesLow": "先有两个不攻击的蓄能回合，然后使用{{entity_enemyMove_GremlinWizard_UltimateBlast}}。此后每次大爆炸后蓄能三个回合，再次大爆炸。逃跑是单独指定的招式。"
+      },
+      "hexaghost": {
+        "tackle": "冲撞",
+        "inflame": "{{entity_enemyMove_Hexaghost_Inflame}}",
+        "searBeforeFirstInferno": "灼烧（首次{{entity_enemyMove_Hexaghost_Inferno}}前）",
+        "searAfterFirstInferno": "灼烧（首次{{entity_enemyMove_Hexaghost_Inferno}}后）",
+        "inferno": "{{entity_enemyMove_Hexaghost_Inferno}}",
+        "activate": "激活",
+        "activateRule": "本敌人回合不攻击；在激活执行时，将分割的每段基础伤害锁定为 floor(玩家当前生命 / 12) + 1，然后计划分割",
+        "divider": "分割",
+        "dividerRule": "以先前锁定的每段基础伤害攻击玩家（6 段），再应用{{entity_power_Strength}}等伤害修正。不会在分割回合按玩家生命重新计算。",
+        "notes": "先激活，再分割，然后重复灼烧、冲撞、灼烧、{{entity_enemyMove_Hexaghost_Inflame}}、冲撞、灼烧、{{entity_enemyMove_Hexaghost_Inferno}}。{{entity_enemyMove_Hexaghost_Inferno}}升级抽牌堆和弃牌堆中的灼伤，再加入三张升级灼伤；之后所有灼烧都加入升级灼伤。{{entity_enemyMove_Hexaghost_Inflame}}的{{entity_power_Strength}}持续保留并作用于每一段。"
+      },
+      "jaw_worm": {
+        "chomp": "啃咬",
+        "bellow": "{{entity_enemyMove_JawWorm_Bellow}}",
+        "thrash": "{{entity_enemyMove_JawWorm_Thrash}}",
+        "notes": "{{entity_enemyMove_JawWorm_Bellow}}同时给予持续{{entity_power_Strength}}和格挡。招式列表不预测下一次随机选择；本回合以可见意图为准。"
+      },
+      "lagavulin": {
+        "sleepingRule": "初始有 {{armor}} 点格挡和 {{armor}} 层{{entity_power_Metallicize}}。实际失去生命会将其唤醒，移除 {{armor}} 层{{entity_power_Metallicize}}，并将当前意图替换为晕眩，得到一个不攻击的醒来回合。被格挡吸收的伤害不会将其唤醒。否则睡眠三个敌人回合，再移除 {{armor}} 层{{entity_power_Metallicize}}并计划攻击。",
+        "attack": "攻击",
+        "siphonSoul": "{{entity_enemyMove_Lagavulin_SiphonSoul}}",
+        "sleep": "睡眠",
+        "wakeFromDamage": "受伤唤醒",
+        "sleepingStart": "睡眠开场",
+        "naturalWake": "自然醒来",
+        "naturalWakeRule": "本敌人回合醒来但不攻击；移除睡眠{{entity_power_Metallicize}}，并计划攻击",
+        "notes": "从睡眠醒来后，循环两次攻击接{{entity_enemyMove_Lagavulin_SiphonSoul}}。{{entity_power_Strength}}和{{entity_power_Dexterity}}降低持续保留，不是临时{{entity_power_Shackled}}。以清醒状态开始的遭遇改为{{entity_enemyMove_Lagavulin_SiphonSoul}}开场。睡眠是意图，不是名为 Asleep 的状态。"
+      },
+      "looter": {
+        "mug": "{{entity_enemyMove_Looter_Mug}}",
+        "lunge": "{{entity_enemyMove_Looter_Lunge}}",
+        "smokeBomb": "烟雾弹",
+        "escape": "逃跑",
+        "notes": "先使用两次打劫，随后有 50% 概率在烟雾弹前使用{{entity_enemyMove_Looter_Lunge}}，否则直接使用烟雾弹。烟雾弹后逃跑。偷取金币发生在攻击伤害前，即使格挡避免了生命损失。击杀{{entity_enemy_Looter}}会以奖励返还偷走的金币；逃跑不会返还。"
+      },
+      "louse_defensive": {
+        "spitWeb": "{{entity_enemyMove_LouseDefensive_SpitWeb}}"
+      },
+      "louse_normal": {
+        "grow": "{{entity_enemyMove_LouseNormal_Grow}}"
+      },
+      "sentry": {
+        "beam": "光束",
+        "bolt": "电矢",
+        "notes": "每只哨卫交替使用光束和电矢。标准三哨卫遭遇中，两侧以电矢开场，中间以光束开场；这是开场相位，不是固定职责。电矢向弃牌堆加入{{entity_card_Dazed}}。每只哨卫初始有 1 层{{entity_power_Artifact}}；剩余层数见当前状态。"
+      },
+      "slaver_blue": {
+        "stab": "刺击",
+        "rake": "{{entity_enemyMove_SlaverBlue_Rake}}",
+        "notesHigh": "随机选招；刺击不能连续三次，{{entity_enemyMove_SlaverBlue_Rake}}不能连续使用。{{entity_enemyMove_SlaverBlue_Rake}}先造成伤害，再施加{{entity_power_Weak}}。",
+        "notesLow": "随机选招；两招都不能连续三次。{{entity_enemyMove_SlaverBlue_Rake}}先造成伤害，再施加{{entity_power_Weak}}。"
+      },
+      "slaver_red": {
+        "stab": "刺击",
+        "entangle": "{{entity_enemyMove_SlaverRed_Entangle}}",
+        "scrape": "{{entity_enemyMove_SlaverRed_Scrape}}",
+        "notesHigh": "以刺击开场。{{entity_enemyMove_SlaverRed_Entangle}}最多使用一次，在持续期间阻止打出攻击牌。后续招式按带历史限制的规则随机：刺击不能连续三次，{{entity_enemyMove_SlaverRed_Scrape}}不能连续使用。{{entity_enemyMove_SlaverRed_Scrape}}先造成伤害，再施加{{entity_power_Vulnerable}}。",
+        "notesLow": "以刺击开场。{{entity_enemyMove_SlaverRed_Entangle}}最多使用一次，在持续期间阻止打出攻击牌。后续招式按带历史限制的规则随机：刺击和{{entity_enemyMove_SlaverRed_Scrape}}都不能连续三次。{{entity_enemyMove_SlaverRed_Scrape}}先造成伤害，再施加{{entity_power_Vulnerable}}。"
+      },
+      "slime_boss": {
+        "goopSpray": "{{entity_enemyMove_SlimeBoss_GoopSpray}}",
+        "slam": "{{entity_enemyMove_SlimeBoss_Slam}}",
+        "split": "{{entity_enemyMove_SlimeBoss_Split}}",
+        "preparing": "{{entity_enemyMove_SlimeBoss_Preparing}}",
+        "preparingRule": "本敌人回合不攻击也不施加减益；下一招为{{entity_enemyMove_SlimeBoss_Slam}}",
+        "notes1": "先{{entity_enemyMove_SlimeBoss_GoopSpray}}，再{{entity_enemyMove_SlimeBoss_Preparing}}，再{{entity_enemyMove_SlimeBoss_Slam}}；未被打断时重复此循环。存活时，生命达到上限一半或更低会将当前意图替换为{{entity_enemyMove_SlimeBoss_Split}}。{{entity_enemyMove_SlimeBoss_Split}}为一只大型尖刺史莱姆和一只大型酸液史莱姆。每个子体的当前生命和生命上限都等于{{entity_enemyMove_SlimeBoss_Split}}执行时母体的剩余生命。{{entity_enemyMove_SlimeBoss_Split}}前继续伤害母体会降低两个子体的生命；击杀母体可阻止{{entity_enemyMove_SlimeBoss_Split}}。"
+      },
+      "spike_slime": {
+        "flameTackle": "烈焰冲撞",
+        "lick": "{{entity_enemyMove_SpikeSlimeL_Lick}}",
+        "split": "{{entity_enemyMove_SpikeSlimeL_Split}}",
+        "notesLarge": "按带历史限制的规则随机选招。存活时，生命达到上限一半或更低会将当前意图替换为{{entity_enemyMove_SpikeSlimeL_Split}}。{{entity_enemyMove_SpikeSlimeL_Split}}执行时，每个子体的当前生命和生命上限都等于母体剩余生命；{{entity_enemyMove_SpikeSlimeL_Split}}前继续伤害母体会降低两个子体的生命。击杀母体可阻止{{entity_enemyMove_SpikeSlimeL_Split}}。",
+        "notesMedium": "按带历史限制的规则随机选招。中型尖刺史莱姆不分裂。",
+        "tackle": "冲撞",
+        "notesSmall": "每回合都攻击。小型尖刺史莱姆不分裂。"
+      },
+      "the_guardian": {
+        "shiftRule": "初始需要受到 {{threshold}} 点生命伤害；实际生命损失减少剩余计数，被格挡吸收的伤害不减少。达到阈值时，将当前意图替换为{{entity_enemyMove_TheGuardian_DefensiveMode}}，并获得 {{block}} 点格挡。每次触发使下次阈值增加 {{increase}}。",
+        "twinRule": "返回攻击模式；攻击玩家，每段基础伤害 {{damage}}（{{hits}} 段）；随后移除{{entity_power_SharpHide}}，将{{entity_power_ModeShift}}恢复为增加后的阈值，并失去自身剩余格挡。下一招为{{entity_enemyMove_TheGuardian_Whirlwind}}。",
+        "chargeUp": "{{entity_enemyMove_TheGuardian_ChargingUp}}",
+        "fierceBash": "{{entity_enemyMove_TheGuardian_FierceBash}}",
+        "ventSteam": "{{entity_enemyMove_TheGuardian_VentSteam}}",
+        "whirlwind": "{{entity_enemyMove_TheGuardian_Whirlwind}}",
+        "closeUp": "{{entity_enemyMove_TheGuardian_DefensiveMode}}",
+        "rollAttack": "{{entity_enemyMove_TheGuardian_Roll}}",
+        "modeShift": "{{entity_power_ModeShift}}",
+        "twinSlam": "{{entity_enemyMove_TheGuardian_TwinSlam}}",
+        "sharpHide": "{{entity_power_SharpHide}}",
+        "notes": "以攻击模式开始：{{entity_enemyMove_TheGuardian_ChargingUp}}、{{entity_enemyMove_TheGuardian_FierceBash}}、{{entity_enemyMove_TheGuardian_VentSteam}}、{{entity_enemyMove_TheGuardian_Whirlwind}}，然后重复。{{entity_power_ModeShift}}打断该循环，依次使用{{entity_enemyMove_TheGuardian_DefensiveMode}}、{{entity_enemyMove_TheGuardian_Roll}}、{{entity_enemyMove_TheGuardian_TwinSlam}}，然后回到攻击模式的{{entity_enemyMove_TheGuardian_Whirlwind}}。{{entity_enemyMove_TheGuardian_DefensiveMode}}给予{{entity_power_SharpHide}}，持续至{{entity_enemyMove_TheGuardian_TwinSlam}}结束。本回合以当前{{entity_power_ModeShift}}层数和可见意图为准。"
+      },
+      "louse": {
+        "biteRule": "攻击玩家一次；基础伤害在生成时从 {{min}}..{{max}}（含两端）抽取，此后对这只怪物保持不变，再应用{{entity_power_Strength}}等伤害修正。实际修正后伤害见当前可见意图。",
+        "curlRule": "从 {{min}}..{{max}}（含两端）抽取一次。{{effect}}",
+        "bite": "噬咬",
+        "startingCurlUp": "初始蜷身",
+        "notesHigh": "随机选择噬咬或非攻击招式，受历史限制：噬咬不能连续三次，非攻击招式不能连续使用。",
+        "notesLow": "随机选择噬咬或非攻击招式，受历史限制：两招都不能连续三次。"
+      },
+      "separator": "；",
+      "listSeparator": "、"
+    },
+    "enemyMove": {
+      "AcidSlimeL_CorrosiveSpit": "腐蚀喷吐",
+      "AcidSlimeL_Lick": "舔舔",
+      "AcidSlimeL_Split": "分裂",
+      "AcidSlimeM_CorrosiveSpit": "腐蚀喷吐",
+      "AcidSlimeM_Lick": "舔舔",
+      "AwakenedOne_Cleanse": "净化",
+      "AwakenedOne_DarkEcho": "黑暗回音",
+      "AwakenedOne_Sludge": "污泥",
+      "AwakenedOne_SoulStrike": "灵魂攻击",
+      "BronzeAutomaton_HyperBeam": "超能光束",
+      "Champ_DefensiveStance": "防御态势",
+      "Champ_Execute": "处决",
+      "Champ_FaceSlap": "打脸",
+      "Cultist_Incantation": "念咒",
+      "Darkling_ChompChomp": "啊呜！啊呜！",
+      "Donu_CircleOfPower": "力量之环",
+      "FungiBeast_Grow": "生长",
+      "GremlinFat_Smash": "粉碎",
+      "GremlinLeader_Rally": "集合！",
+      "GremlinNob_BullRush": "蛮牛冲撞",
+      "GremlinNob_SkullBash": "颅骨重击",
+      "GremlinTsundere_Protect": "保护",
+      "GremlinTsundere_ShieldBash": "盾击",
+      "GremlinWarrior_Claw": "爪挠",
+      "GremlinWizard_Charging": "蓄能",
+      "GremlinWizard_UltimateBlast": "终极大爆炸",
+      "Hexaghost_Inferno": "地狱火",
+      "Hexaghost_Inflame": "高热",
+      "Hexaghost_Sear": "灼烧",
+      "JawWorm_Bellow": "咆哮",
+      "JawWorm_Thrash": "抽打",
+      "Lagavulin_SiphonSoul": "灵魂吸取",
+      "Looter_Lunge": "突刺",
+      "Looter_Mug": "打劫",
+      "LouseDefensive_SpitWeb": "吐网",
+      "LouseNormal_Grow": "成长",
+      "Mugger_Lunge": "猛冲",
+      "Mugger_Mug": "抢劫",
+      "OrbWalker_StrengthUp": "强化",
+      "Sentry_Disintegrate": "粉碎",
+      "SlaverBlue_Rake": "耙伤",
+      "SlaverRed_Entangle": "丢网",
+      "SlaverRed_Scrape": "刮伤",
+      "SlimeBoss_GoopSpray": "黏液喷射",
+      "SlimeBoss_Preparing": "准备",
+      "SlimeBoss_Slam": "猛撞",
+      "SlimeBoss_Split": "分裂",
+      "SnakePlant_EnfeeblingSpores": "虚弱孢子",
+      "Snecko_Bite": "噬咬",
+      "Snecko_PerplexingGlare": "困惑瞪视",
+      "Snecko_TailWhip": "扫尾",
+      "SpikeSlimeL_Lick": "舔舔",
+      "SpikeSlimeL_Split": "分裂",
+      "SpikeSlimeM_Lick": "舔舔",
+      "TheGuardian_ChargingUp": "蓄能",
+      "TheGuardian_DefensiveMode": "防御模式",
+      "TheGuardian_FierceBash": "猛烈痛击",
+      "TheGuardian_Roll": "滚动",
+      "TheGuardian_TwinSlam": "双斩",
+      "TheGuardian_VentSteam": "蒸汽喷射",
+      "TheGuardian_Whirlwind": "旋风"
     }
   },
   "mechanics": {
@@ -1783,7 +2307,6 @@
       "unknownEffect": "暂无效果说明。",
       "potion": "药水 P{{slot}} {{name}} | 可使用 {{usable}} | 可丢弃 {{discardable}} | 需要目标 {{target}}",
       "potionRule": "  基础规则：{{effect}}",
-      "enemySupplement": "{{name}}的机制补充（英文）：",
       "multiplePowers": "这个名称对应多个状态定义，请按稳定 ID 和生效时点区分。",
       "power": "状态：{{name}} | ID：{{id}}",
       "powerSupplement": "  机制补充\n  数值含义：{{unit}}\n  效果：{{effect}}\n  时点：{{timing}}",
@@ -1820,7 +2343,7 @@
       "objectiveReference": "机制见下方的目标遭遇定义。",
       "heartAccess": "心脏路线：集齐三把钥匙并完成第三幕后，第四幕按固定路线前进：{{route}}。商店有独立商品，使用带入商店的金币购买。营火位于商店和精英战之前。第三幕 Boss 战后直接前进，没有普通奖励页，也不领取该房间的金币、卡牌和药水。",
       "objectiveHeading": "本局最终目标的遭遇定义，可在沿途准备时参考：",
-      "preparationLinks": "公开遭遇的准备机制（英文，包含可能招式与初始效果）：",
+      "preparationLinks": "公开遭遇的准备机制（可能招式与初始效果）：",
       "preparationTiming": "加入弃牌堆的牌，需要通过取回弃牌，或之后洗牌再抽取，才能进入手牌。依靠抽牌触发的能力必须先打出，再进行对应的抽牌；正常打出仍需占用手牌位置并支付当前能量费用。"
     },
     "transition": {
@@ -1907,6 +2430,43 @@
         "special": "特殊",
         "deprecated": "已弃用"
       }
+    },
+    "enemy": {
+      "heading": "敌人定义：{{name}} [{{id}}] | A{{ascension}}",
+      "hp": "初始基础生命范围：{{min}}..{{max}}",
+      "unavailable": "未知：尚未提供招式说明。当前以可见意图和状态为准。",
+      "startingPower": "初始状态：{{power}} {{amount}}",
+      "moves": "可用招式（状态修正前的基础值，不预测下一招）：",
+      "rules": "规则：{{rules}}",
+      "referenced": "关联效果定义（不表示当前已生效）：",
+      "targetPlayer": "玩家",
+      "targetSelf": "自身",
+      "targetAllMonsters": "所有怪物",
+      "spawnRolled": "生成时随机生命",
+      "spawnCurrent": "分裂执行时母体的剩余生命",
+      "spawnMax": "母体生命上限",
+      "hand": "手牌",
+      "discard": "弃牌堆",
+      "drawTop": "抽牌堆顶",
+      "drawRandom": "抽牌堆随机位置",
+      "addCard": "将 {{amount}} 张{{card}}加入{{destination}}",
+      "attack": "攻击{{target}}，每段基础伤害 {{damage}}（{{hits}} 段）",
+      "applyPower": "对{{target}}施加 {{amount}} 层{{power}}",
+      "block": "给予{{target}} {{amount}} 点格挡",
+      "heal": "为{{target}}恢复 {{amount}} 点生命，不超过生命上限",
+      "randomBlock": "给予随机一个符合条件的其他怪物 {{amount}} 点格挡；没有其他目标时给予自身",
+      "steal": "偷取玩家至多 {{amount}} 金币",
+      "upgrade": "升级抽牌堆和弃牌堆中已有的{{card}}",
+      "spawn": "生成{{name}}（当前生命：{{current}}；生命上限：{{max}}）",
+      "suicide": "移除母体，不触发死亡相关遗物",
+      "sleep": "睡眠；本敌人回合不攻击（唤醒条件见后文）",
+      "stun": "晕眩；本敌人回合不攻击",
+      "charge": "蓄能；本敌人回合不攻击（蓄能循环见后文）",
+      "escape": "逃离战斗",
+      "removePower": "移除{{target}}的{{power}}",
+      "removeDebuffs": "移除{{target}}的所有减益",
+      "unknownEffect": "未知：此效果尚无说明",
+      "preparationPower": "{{source}} / 初始{{power}} {{amount}}：{{effect}} {{timing}}"
     }
   },
   "inventory": {

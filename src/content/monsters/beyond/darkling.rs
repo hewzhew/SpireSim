@@ -39,15 +39,27 @@ pub const LIFE_LINK_MECHANICS: crate::content::powers::mechanics::PowerMechanics
     };
 
 pub fn mechanics(asc: u8) -> crate::content::monsters::mechanics::MonsterMechanics {
+    use crate::content::monsters::mechanics::MonsterText as Text;
     let (min, max) = nip_damage_range(asc);
     crate::content::monsters::mechanics::MonsterMechanics {
-        moves: vec![("Chomp", chomp_plan(asc)), ("Harden", harden_plan(asc))],
-        special_moves: vec![
-            ("Nip", format!("Attack player once. Base damage is rolled {min}..{max} inclusive at spawn and remains fixed for that Darkling; see its visible intent for the current modified damage.")),
-            ("Count", "Idle for one own turn while half-dead, then plan Reincarnate.".into()),
-            ("Reincarnate", "Heal self for floor(Max HP / 2), revive, then reapply Life Link. New-monster relic hooks also run.".into()),
+        moves: vec![
+            (Text::new("darkling.chomp"), chomp_plan(asc)),
+            (Text::new("darkling.harden"), harden_plan(asc)),
         ],
-        notes: "Starts with Life Link. Opens with Harden or Nip. Only even-positioned Darklings can use Chomp; Chomp and Harden cannot repeat consecutively, and Nip cannot occur three times in a row. See info power Life Link for the coordinated half-death and revival rules.",
+        special_moves: vec![
+            (
+                Text::new("darkling.nip"),
+                Text::new("darkling.nipRule")
+                    .with("min", min)
+                    .with("max", max),
+            ),
+            (Text::new("darkling.count"), Text::new("darkling.countRule")),
+            (
+                Text::new("darkling.reincarnate"),
+                Text::new("darkling.reincarnateRule"),
+            ),
+        ],
+        notes: Text::new("darkling.notes"),
     }
 }
 

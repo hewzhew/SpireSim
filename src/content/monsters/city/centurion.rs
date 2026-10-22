@@ -139,10 +139,15 @@ fn plan_for(move_id: u8, ascension_level: u8) -> MonsterTurnPlan {
 }
 
 pub fn mechanics(asc: u8) -> crate::content::monsters::mechanics::MonsterMechanics {
+    use crate::content::monsters::mechanics::MonsterText as Text;
     crate::content::monsters::mechanics::MonsterMechanics {
-        moves: vec![("Slash", slash_plan(asc)), ("Protect", protect_plan(asc)), ("Fury", fury_plan(asc))],
+        moves: vec![
+            (Text::new("centurion.slash"), slash_plan(asc)),
+            (Text::new("centurion.protect"), protect_plan(asc)),
+            (Text::new("centurion.fury"), fury_plan(asc)),
+        ],
         special_moves: vec![],
-        notes: "While an ally remains at move selection, chooses Slash or Protect; when alone, chooses Slash or Fury. Does not use the same move three times consecutively. Protect gives Block to a randomly chosen eligible other monster, or self if none remains when it executes. Killing an ally does not turn an already selected Protect into Fury; Fury becomes available on a subsequent move selection.",
+        notes: Text::new("centurion.notes"),
     }
 }
 

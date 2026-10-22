@@ -83,19 +83,26 @@ fn plan_for(move_id: u8, ascension_level: u8) -> MonsterTurnPlan {
 }
 
 pub fn mechanics(ascension_level: u8) -> crate::content::monsters::mechanics::MonsterMechanics {
+    use crate::content::monsters::mechanics::MonsterText as Text;
     crate::content::monsters::mechanics::MonsterMechanics {
         moves: vec![
-            ("Agonizing Slash", agonizing_slash_plan(ascension_level)),
-            ("Cross Slash", cross_slash_plan(ascension_level)),
+            (
+                Text::new("bandit_leader.agonizingSlash"),
+                agonizing_slash_plan(ascension_level),
+            ),
+            (
+                Text::new("bandit_leader.crossSlash"),
+                cross_slash_plan(ascension_level),
+            ),
         ],
         special_moves: vec![(
-            "Mock",
-            "Does nothing this turn; plans Agonizing Slash next.".into(),
+            Text::new("bandit_leader.mock"),
+            Text::new("bandit_leader.mockRule"),
         )],
         notes: if ascension_level >= 17 {
-            "Opens with Mock, then Agonizing Slash, then two consecutive Cross Slashes. Repeats Agonizing Slash followed by two Cross Slashes. Weak reduces the player's Attack damage for its remaining turns."
+            Text::new("bandit_leader.notes1")
         } else {
-            "Opens with Mock, then alternates Agonizing Slash and Cross Slash. Weak reduces the player's Attack damage for its remaining turns."
+            Text::new("bandit_leader.notes2")
         },
     }
 }

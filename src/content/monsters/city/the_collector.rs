@@ -567,14 +567,15 @@ fn plan_for(move_id: u8, ascension_level: u8) -> MonsterTurnPlan {
 }
 
 pub fn mechanics(asc: u8) -> crate::content::monsters::mechanics::MonsterMechanics {
+    use crate::content::monsters::mechanics::MonsterText as Text;
     crate::content::monsters::mechanics::MonsterMechanics {
         special_moves: vec![],
         moves: vec![
-            ("Fireball", fireball_plan(asc)),
-            ("Buff", buff_plan(asc)),
-            ("Mega Debuff", mega_debuff_plan(asc)),
+            (Text::new("the_collector.fireball"), fireball_plan(asc)),
+            (Text::new("the_collector.buff"), buff_plan(asc)),
+            (Text::new("the_collector.megaDebuff"), mega_debuff_plan(asc)),
         ],
-        notes: "The first turn summons two Torch Heads. The fourth enemy turn uses Mega Debuff once. Later it may revive dead Torch Heads. Buff grants Block only to the Collector and Strength to all living enemies. Fireball cannot occur three times consecutively; Buff and Revive cannot repeat consecutively. Killing the Collector removes its minions.",
+        notes: Text::new("the_collector.notes"),
     }
 }
 

@@ -51,10 +51,14 @@ fn plan_for(move_id: u8, asc: u8) -> MonsterTurnPlan {
 }
 
 pub fn mechanics(asc: u8) -> super::super::mechanics::MonsterMechanics {
+    use crate::content::monsters::mechanics::MonsterText as Text;
     super::super::mechanics::MonsterMechanics {
-        moves: vec![("Puncture", puncture_plan(asc)), ("Escape", escape_plan())],
+        moves: vec![
+            (Text::new("gremlin_thief.puncture"), puncture_plan(asc)),
+            (Text::new("gremlin_thief.escape"), escape_plan()),
+        ],
         special_moves: vec![],
-        notes: "Normally attacks every turn. Despite its simulator ID GremlinThief, Sneaky Gremlin does not steal Gold. Escape is a separately assigned move, not part of the normal attack cycle.",
+        notes: Text::new("gremlin_thief.notes"),
     }
 }
 

@@ -413,13 +413,20 @@ fn plan_for(move_id: u8, ascension_level: u8) -> MonsterTurnPlan {
 }
 
 pub fn mechanics(ascension: u8) -> super::super::mechanics::MonsterMechanics {
+    use crate::content::monsters::mechanics::MonsterText as Text;
     super::super::mechanics::MonsterMechanics {
         moves: vec![
-            ("Snake Strike", snake_strike_plan(ascension)),
-            ("Big Bite", big_bite_plan(ascension)),
+            (
+                Text::new("reptomancer.snakeStrike"),
+                snake_strike_plan(ascension),
+            ),
+            (Text::new("reptomancer.bigBite"), big_bite_plan(ascension)),
         ],
-        special_moves: vec![("Summon", format!("Summon up to {} Snake Daggers into empty dagger slots (maximum four daggers). Each starts with its Wound attack and next uses Explode. Daggers die when Reptomancer dies.", daggers_per_spawn(ascension)))],
-        notes: "Starts with two Snake Daggers and opens by summoning more. Snake Strike and Big Bite cannot repeat immediately; Summon cannot occur three times in a row. When there is no room to summon, the summon roll becomes Snake Strike.",
+        special_moves: vec![(
+            Text::new("reptomancer.summon"),
+            Text::new("reptomancer.summonRule").with("count", daggers_per_spawn(ascension) as i32),
+        )],
+        notes: Text::new("reptomancer.notes"),
     }
 }
 

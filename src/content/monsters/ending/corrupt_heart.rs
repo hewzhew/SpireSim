@@ -423,34 +423,45 @@ fn plan_for(state: &CombatState, entity: &MonsterEntity, move_id: u8) -> Monster
 }
 
 pub fn mechanics(asc: u8) -> super::super::mechanics::MonsterMechanics {
-    let followups = (0..=4)
-        .map(|count| {
-            let MoveStep::ApplyPower(step) = buff_followup_step(count) else {
-                unreachable!("Heart Buff followup must apply a power");
-            };
-            let name = crate::content::powers::get_power_definition(step.power_id).name;
-            let effect = if step.power_id == PowerId::PainfulStabs {
-                format!("gain {name}")
-            } else {
-                format!("gain {} {name}", step.amount)
-            };
-            let later = if count == 4 {
-                " and every later Buff"
-            } else {
-                ""
-            };
-            format!("Buff {}{later}: {effect}", count + 1)
-        })
-        .collect::<Vec<_>>()
-        .join("; ");
+    use crate::content::monsters::mechanics::MonsterText as Text;
+    let followups = Text::Sequence(
+        (0..=4)
+            .map(|count| {
+                let MoveStep::ApplyPower(step) = buff_followup_step(count) else {
+                    unreachable!("Heart Buff followup must apply a power");
+                };
+                let effect = if step.power_id == PowerId::PainfulStabs {
+                    Text::new("corrupt_heart.gainPower")
+                        .with("power", Text::PowerName(step.power_id))
+                } else {
+                    Text::new("corrupt_heart.gainAmount")
+                        .with("amount", step.amount)
+                        .with("power", Text::PowerName(step.power_id))
+                };
+                Text::new(if count == 4 {
+                    "corrupt_heart.laterBuff"
+                } else {
+                    "corrupt_heart.numberedBuff"
+                })
+                .with("number", count + 1)
+                .with("effect", effect)
+            })
+            .collect(),
+    );
     super::super::mechanics::MonsterMechanics {
         moves: vec![
-            ("Debilitate", debilitate_plan()),
-            ("Blood Shots", blood_shots_plan(initial_blood_hit_count(asc))),
-            ("Echo", echo_attack_plan(asc)),
+            (Text::new("corrupt_heart.debilitate"), debilitate_plan()),
+            (
+                Text::new("corrupt_heart.bloodShots"),
+                blood_shots_plan(initial_blood_hit_count(asc)),
+            ),
+            (Text::new("corrupt_heart.echo"), echo_attack_plan(asc)),
         ],
-        special_moves: vec![("Buff", format!("Every Buff removes negative Strength by restoring it to 0, then gains 2 Strength. Additional effects from the first Buff onward: {followups}."))],
-        notes: "Opens with Debilitate, then repeats two attacks (one Blood Shots and one Echo, random order) followed by Buff. Starting power amounts above use this encounter's Ascension. Invincible resets its damage allowance at the Heart's turn start. Beat of Death damages the player for every counted card after that card's own effects but before its final exhaust triggers Feel No Pain.",
+        special_moves: vec![(
+            Text::new("corrupt_heart.buff"),
+            Text::new("corrupt_heart.buffRule").with("followups", followups),
+        )],
+        notes: Text::new("corrupt_heart.notes"),
     }
 }
 

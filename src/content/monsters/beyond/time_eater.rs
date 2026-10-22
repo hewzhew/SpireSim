@@ -570,18 +570,22 @@ fn recursive_plan(
 }
 
 pub fn mechanics(asc: u8) -> super::super::mechanics::MonsterMechanics {
+    use crate::content::monsters::mechanics::MonsterText as Text;
     super::super::mechanics::MonsterMechanics {
         moves: vec![
-            ("Reverberate", reverberate_plan(asc)),
-            ("Ripple", ripple_plan(asc)),
-            ("Head Slam", head_slam_plan(asc)),
+            (Text::new("time_eater.reverberate"), reverberate_plan(asc)),
+            (Text::new("time_eater.ripple"), ripple_plan(asc)),
+            (Text::new("time_eater.headSlam"), head_slam_plan(asc)),
         ],
-        special_moves: vec![("Haste", (if asc >= 19 {
-            "remove all debuffs and Shackled from self; heal up to 50% of Max HP using HP at execution; gain 32 Block"
-        } else {
-            "remove all debuffs and Shackled from self; heal up to 50% of Max HP using HP at execution"
-        }).into())],
-        notes: "Starts with Time Warp counter 0. The counter persists across turns; the 12th counted card forces turn end, resets the counter and gives living enemies 2 Strength. Once per combat, when a move is selected below half Max HP, Haste replaces the random move. Haste clears negative Strength but preserves positive Strength and Time Warp. Reverberate cannot occur three times consecutively; Head Slam and Ripple cannot repeat immediately. Draw Reduction reduces the next normal turn draw, not card-effect draws.",
+        special_moves: vec![(
+            Text::new("time_eater.haste"),
+            (if asc >= 19 {
+                Text::new("time_eater.hasteHigh")
+            } else {
+                Text::new("time_eater.hasteLow")
+            }),
+        )],
+        notes: Text::new("time_eater.notes"),
     }
 }
 

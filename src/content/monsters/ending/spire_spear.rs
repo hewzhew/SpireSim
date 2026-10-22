@@ -312,14 +312,18 @@ fn plan_for(entity: &MonsterEntity, move_id: u8, ascension_level: u8) -> Monster
 }
 
 pub fn mechanics(asc: u8) -> super::super::mechanics::MonsterMechanics {
+    use crate::content::monsters::mechanics::MonsterText as Text;
     super::super::mechanics::MonsterMechanics {
         moves: vec![
-            ("Burn Strike", burn_strike_plan(asc)),
-            ("Piercer", piercer_plan()),
-            ("Skewer", skewer_plan(initial_skewer_count(asc))),
+            (Text::new("spire_spear.burnStrike"), burn_strike_plan(asc)),
+            (Text::new("spire_spear.piercer"), piercer_plan()),
+            (
+                Text::new("spire_spear.skewer"),
+                skewer_plan(initial_skewer_count(asc)),
+            ),
         ],
         special_moves: vec![],
-        notes: "Starts with 1 Artifact (2 at A18+). Opens with Burn Strike, then Skewer. Afterward, repeats Burn Strike and Piercer in random order, then Skewer. At A18+, Burn Strike puts 2 Burns on TOP of the draw pile rather than in discard. Piercer gives all monsters 2 permanent Strength. Surrounded makes attacks from behind deal 50% more damage while both enemies remain.",
+        notes: Text::new("spire_spear.notes"),
     }
 }
 

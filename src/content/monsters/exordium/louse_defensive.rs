@@ -24,7 +24,11 @@ fn curl_up_amount(hp_rng: &mut crate::runtime::rng::StsRng, asc: u8) -> i32 {
 }
 
 pub fn mechanics(asc: u8) -> super::super::mechanics::MonsterMechanics {
-    super::louse_mechanics(asc, vec![("Spit Web", weaken_plan())])
+    use crate::content::monsters::mechanics::MonsterText as Text;
+    super::louse_mechanics(
+        asc,
+        vec![(Text::new("louse_defensive.spitWeb"), weaken_plan())],
+    )
 }
 
 fn bite_damage(entity: &MonsterEntity) -> i32 {

@@ -303,19 +303,20 @@ fn plan_for(move_id: u8, ascension_level: u8) -> MonsterTurnPlan {
 }
 
 pub fn mechanics(asc: u8) -> crate::content::monsters::mechanics::MonsterMechanics {
+    use crate::content::monsters::mechanics::MonsterText as Text;
     crate::content::monsters::mechanics::MonsterMechanics {
         moves: vec![
-            ("Zap", zap_plan(asc)),
-            ("Drain", drain_plan()),
-            ("Debilitate", debilitate_plan(asc)),
-            ("Hex", hex_plan()),
-            ("Poke", poke_plan(asc)),
+            (Text::new("chosen.zap"), zap_plan(asc)),
+            (Text::new("chosen.drain"), drain_plan()),
+            (Text::new("chosen.debilitate"), debilitate_plan(asc)),
+            (Text::new("chosen.hex"), hex_plan()),
+            (Text::new("chosen.poke"), poke_plan(asc)),
         ],
         special_moves: vec![],
         notes: if asc >= 17 {
-            "Opens with Hex once per combat. After Hex, alternates a Debilitate/Drain choice with a Zap/Poke choice. Hex adds Dazed to the draw pile when the player plays a non-Attack card, including both Skills and Powers; see the Hex definition for its amount and persistence."
+            Text::new("chosen.notesHigh")
         } else {
-            "Opens with Poke, then uses Hex once per combat. After Hex, alternates a Debilitate/Drain choice with a Zap/Poke choice. Hex adds Dazed to the draw pile when the player plays a non-Attack card, including both Skills and Powers; see the Hex definition for its amount and persistence."
+            Text::new("chosen.notesLow")
         },
     }
 }

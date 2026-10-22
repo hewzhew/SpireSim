@@ -28,10 +28,19 @@ fn starting_fading(asc: u8) -> i32 {
 }
 
 pub fn mechanics(asc: u8) -> crate::content::monsters::mechanics::MonsterMechanics {
+    use crate::content::monsters::mechanics::MonsterText as Text;
     crate::content::monsters::mechanics::MonsterMechanics {
-        moves: vec![("Opening attack", attack_plan_for_count(asc, 0))],
-        special_moves: vec![("Later attacks", format!("Each completed attack increases the next attack's unmodified base damage by 10 (starting at {}). Starts with {} Fading and Shifting. Shifting temporarily reduces Strength by HP lost, so current visible attack damage can be much lower than the base.", starting_damage(asc), starting_fading(asc)))],
-        notes: "Always attacks once per turn, then the Fading countdown runs after its queued move. At 1 Fading it dies after that turn's attack; you can survive until this happens instead of reducing all 999 HP. See info power Fading and info power Shifting for their exact effects and timing.",
+        moves: vec![(
+            Text::new("transient.openingAttack"),
+            attack_plan_for_count(asc, 0),
+        )],
+        special_moves: vec![(
+            Text::new("transient.laterAttacks"),
+            Text::new("transient.laterRule")
+                .with("damage", starting_damage(asc))
+                .with("fading", starting_fading(asc)),
+        )],
+        notes: Text::new("transient.notes"),
     }
 }
 

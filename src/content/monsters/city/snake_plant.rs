@@ -16,13 +16,20 @@ const SPORES: u8 = 2;
 const STARTING_MALLEABLE: i32 = 3;
 
 pub fn mechanics(asc: u8) -> crate::content::monsters::mechanics::MonsterMechanics {
+    use crate::content::monsters::mechanics::MonsterText as Text;
     crate::content::monsters::mechanics::MonsterMechanics {
-        moves: vec![("Chompy Chomps", chomp_plan(asc)), ("Spores", spores_plan())],
-        special_moves: vec![("Starting Malleable", format!("Starts with {STARTING_MALLEABLE} Malleable; see info power Malleable for its per-hit Block gain and reset."))],
+        moves: vec![
+            (Text::new("snake_plant.chompyChomps"), chomp_plan(asc)),
+            (Text::new("snake_plant.spores"), spores_plan()),
+        ],
+        special_moves: vec![(
+            Text::new("snake_plant.startingMalleable"),
+            Text::new("snake_plant.malleableRule").with("amount", STARTING_MALLEABLE),
+        )],
         notes: if asc >= 17 {
-            "Cannot use Chompy Chomps three times in a row. At A17+, Spores requires two intervening Chompy Chomps before it can be used again. Spores applies Frail then Weak separately; each can consume an Artifact charge. These rules describe possible moves, not a prediction of a hidden intent."
+            Text::new("snake_plant.notesHigh")
         } else {
-            "Cannot use Chompy Chomps three times in a row or Spores twice in a row. Spores applies Frail then Weak separately; each can consume an Artifact charge. These rules describe possible moves, not a prediction of a hidden intent."
+            Text::new("snake_plant.notesLow")
         },
     }
 }

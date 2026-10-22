@@ -67,17 +67,21 @@ fn plan_for(move_id: u8, asc: u8) -> MonsterTurnPlan {
 }
 
 pub fn mechanics(asc: u8) -> super::super::mechanics::MonsterMechanics {
+    use crate::content::monsters::mechanics::MonsterText as Text;
     super::super::mechanics::MonsterMechanics {
         moves: vec![
-            ("Charging", charge_plan()),
-            ("Ultimate Blast", dope_magic_plan(asc)),
-            ("Escape", escape_plan()),
+            (Text::new("gremlin_wizard.charging"), charge_plan()),
+            (
+                Text::new("gremlin_wizard.ultimateBlast"),
+                dope_magic_plan(asc),
+            ),
+            (Text::new("gremlin_wizard.escape"), escape_plan()),
         ],
         special_moves: vec![],
         notes: if asc >= 17 {
-            "Starts with two non-attacking Charge turns, then Ultimate Blast every turn without recharging. Escape is a separately assigned move."
+            Text::new("gremlin_wizard.notesHigh")
         } else {
-            "Starts with two non-attacking Charge turns, then Ultimate Blast. After each Blast it charges for three turns before the next Blast. Escape is a separately assigned move."
+            Text::new("gremlin_wizard.notesLow")
         },
     }
 }

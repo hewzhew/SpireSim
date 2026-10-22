@@ -37,6 +37,12 @@ def sources():
         result[f"localization/{language}/ui.json"] = {"RunHistoryMonsterNames": {"TEXT": [f"{language}:encounter {index}" for index in range(29)]}}
         for key in ["FuzzyLouseNormal", "FuzzyLouseDefensive"]:
             result[f"localization/{language}/monsters.json"][key]["NAME"] = f"{language}:Louse"
+        for enemy, (count, moves) in owner.ENEMY_MOVES.items():
+            key = owner.KEYS["enemy"].get(enemy, enemy)
+            values = [""] * count
+            for move, index in moves.items():
+                values[index] = f"{language}:{enemy}:{move}"
+            result[f"localization/{language}/monsters.json"][key]["MOVES"] = values
     return result
 
 
@@ -85,6 +91,27 @@ def test_exact_source_keys_preserve_identity_and_skip_deprecated_names(tmp_path,
     assert manifest["name_counts"]["en"]["encounter"] == 65
     assert bindings["zh-CN"]["encounter.ShieldAndSpear"] == {"entry": "localization/zhs/ui.json", "key": "RunHistoryMonsterNames", "field": "TEXT", "index": 28}
     assert bindings["en"]["encounter.MysteriousSphere"] == {"alias": "event.MysteriousSphere"}
+    assert names["zh-CN"]["enemyMove"]["Lagavulin_SiphonSoul"] == "zhs:Lagavulin:SiphonSoul"
+    assert names["en"]["enemyMove"]["Looter_Mug"] != names["en"]["enemyMove"]["Mugger_Mug"]
+    assert bindings["zh-CN"]["enemyMove.Lagavulin_SiphonSoul"] == {
+        "entry": "localization/zhs/monsters.json", "key": "Lagavulin", "field": "MOVES", "index": 0}
+
+
+@pytest.mark.parametrize("change", ["added", "missing", "empty", "new_nonempty", "nontext"])
+def test_enemy_move_source_layout_requires_review(tmp_path, sources, change):
+    values = sources["localization/zhs/monsters.json"]["Cultist"]["MOVES"]
+    if change == "added":
+        values.append("new move")
+    elif change == "missing":
+        values.pop()
+    elif change == "empty":
+        values[2] = ""
+    elif change == "new_nonempty":
+        values[0] = "newly supplied move"
+    else:
+        values[2] = None
+    with pytest.raises(ValueError, match="enemy MOVES layout requires review"):
+        owner.names_from_archive(archive(tmp_path, sources))
 
 
 def test_encounter_source_layout_and_variant_names_require_review(tmp_path, sources):

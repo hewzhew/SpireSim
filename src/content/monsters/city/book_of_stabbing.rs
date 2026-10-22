@@ -61,13 +61,29 @@ fn big_stab_plan(ascension_level: u8) -> MonsterTurnPlan {
 }
 
 pub fn mechanics(asc: u8) -> crate::content::monsters::mechanics::MonsterMechanics {
+    use crate::content::monsters::mechanics::MonsterText as Text;
     crate::content::monsters::mechanics::MonsterMechanics {
-        moves: vec![("Big Stab", big_stab_plan(asc))],
+        moves: vec![(Text::new("book_of_stabbing.bigStab"), big_stab_plan(asc))],
         special_moves: vec![
-            ("Multi-Stab", format!("Attack the player for {} base damage per hit, with hits equal to the persistent stab counter. The counter starts at 1 and increases before each Multi-Stab is selected; an opening Multi-Stab therefore has 2 hits. At this difficulty, {}", stab_damage(asc), if asc >= 18 { "selecting Big Stab also increases the counter by 1." } else { "selecting Big Stab leaves the counter unchanged." })),
-            ("Pre-battle Painful Stabs", crate::content::powers::core::painful_stabs::MECHANICS.effect(sts_presentation::Locale::En)),
+            (
+                Text::new("book_of_stabbing.multiStab"),
+                Text::new("book_of_stabbing.multiRule")
+                    .with("damage", stab_damage(asc))
+                    .with(
+                        "counterRule",
+                        if asc >= 18 {
+                            Text::new("book_of_stabbing.bigIncreases")
+                        } else {
+                            Text::new("book_of_stabbing.bigUnchanged")
+                        },
+                    ),
+            ),
+            (
+                Text::new("book_of_stabbing.preBattlePainfulStabs"),
+                Text::PowerEffect(crate::content::powers::PowerId::PainfulStabs),
+            ),
         ],
-        notes: "Move selection uses a 15% Big Stab branch, otherwise Multi-Stab, with history constraints: Big Stab is followed by Multi-Stab, and two consecutive Multi-Stabs are followed by Big Stab. Each selected Multi-Stab uses the counter locked for that move. Damage modifiers apply separately to every hit.",
+        notes: Text::new("book_of_stabbing.notes"),
     }
 }
 

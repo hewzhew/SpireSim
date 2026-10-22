@@ -180,13 +180,20 @@ fn plan_for(move_id: u8) -> MonsterTurnPlan {
 }
 
 pub fn mechanics() -> super::super::mechanics::MonsterMechanics {
+    use crate::content::monsters::mechanics::MonsterText as Text;
     super::super::mechanics::MonsterMechanics {
-        moves: vec![("Beam", beam_plan())],
+        moves: vec![(Text::new("bronze_orb.beam"), beam_plan())],
         special_moves: vec![
-            ("Support Beam", format!("Give Bronze Automaton {BLOCK_AMOUNT} Block.")),
-            ("Stasis", "Remove one random card from the draw pile (or discard pile if the draw pile is empty), preferring Rare, then Uncommon, then Common; if none exist, choose from all cards in that pile. Hold it until this Orb dies, then return it to Hand, or discard if Hand is full.".into()),
+            (
+                Text::new("bronze_orb.supportBeam"),
+                Text::new("bronze_orb.supportRule").with("block", BLOCK_AMOUNT),
+            ),
+            (
+                Text::new("bronze_orb.stasis"),
+                Text::new("bronze_orb.stasisRule"),
+            ),
         ],
-        notes: "Uses Stasis at most once per Orb. Thereafter Beam or Support Beam is chosen with neither repeating three times consecutively. Dies when Bronze Automaton dies.",
+        notes: Text::new("bronze_orb.notes"),
     }
 }
 

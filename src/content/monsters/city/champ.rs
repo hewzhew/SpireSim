@@ -262,18 +262,25 @@ fn strength_amount(ascension_level: u8) -> i32 {
 }
 
 pub fn mechanics(asc: u8) -> crate::content::monsters::mechanics::MonsterMechanics {
+    use crate::content::monsters::mechanics::MonsterText as Text;
     crate::content::monsters::mechanics::MonsterMechanics {
         moves: vec![
-            ("Heavy Slash", heavy_slash_plan(asc)),
-            ("Defensive Stance", defensive_stance_plan(asc)),
-            ("Execute", execute_plan()),
-            ("Face Slap", face_slap_plan(asc)),
-            ("Gloat", gloat_plan(asc)),
-            ("Taunt", taunt_plan()),
-            ("Anger", anger_plan(asc)),
+            (Text::new("champ.heavySlash"), heavy_slash_plan(asc)),
+            (
+                Text::new("champ.defensiveStance"),
+                defensive_stance_plan(asc),
+            ),
+            (Text::new("champ.execute"), execute_plan()),
+            (Text::new("champ.faceSlap"), face_slap_plan(asc)),
+            (Text::new("champ.gloat"), gloat_plan(asc)),
+            (Text::new("champ.taunt"), taunt_plan()),
+            (Text::new("champ.anger"), anger_plan(asc)),
         ],
-        special_moves: vec![("Anger before Strength", "Remove all debuffs and remove Shackled before gaining Strength. Negative Strength is a debuff, so prior Strength reduction can be cleared here.".into())],
-        notes: "Checks current HP < floor(Max HP / 2) when rolling the next move, once per combat, to plan Anger; damage does not immediately interrupt an already planned move. After this threshold, plans Execute whenever neither the last nor penultimate move was Execute. Before the threshold, every fourth move roll forces Taunt. Defensive Stance can be used at most twice and cannot repeat consecutively; Gloat cannot immediately follow Gloat or Defensive Stance. Possible base moves are not a prediction of a hidden intention.",
+        special_moves: vec![(
+            Text::new("champ.angerBeforeStrength"),
+            Text::new("champ.angerRule"),
+        )],
+        notes: Text::new("champ.notes"),
     }
 }
 

@@ -12,10 +12,19 @@ const BLOCK: u8 = 2;
 const STARTING_EXPLOSIVE: i32 = 3;
 
 pub fn mechanics(asc: u8) -> crate::content::monsters::mechanics::MonsterMechanics {
+    use crate::content::monsters::mechanics::MonsterText as Text;
     crate::content::monsters::mechanics::MonsterMechanics {
-        moves: vec![("Attack", attack_plan(asc))],
-        special_moves: vec![("Explosion", format!("Starts with {STARTING_EXPLOSIVE} Explosive. After two Attack moves, its move has no attack or Block gain; Explosive then kills it and deals {} Thorns damage to the player. Player Block can absorb this damage; Strength, Weak and Vulnerable do not modify it.", crate::content::powers::core::explosive::EXPLOSION_DAMAGE))],
-        notes: "The explosion is executed by the Explosive power during its turn, not by an ordinary attack intent. Kill it before the countdown completes to prevent the explosion. See info power Explosive for countdown timing.",
+        moves: vec![(Text::new("exploder.attack"), attack_plan(asc))],
+        special_moves: vec![(
+            Text::new("exploder.explosion"),
+            Text::new("exploder.explosionRule")
+                .with("count", STARTING_EXPLOSIVE)
+                .with(
+                    "damage",
+                    crate::content::powers::core::explosive::EXPLOSION_DAMAGE,
+                ),
+        )],
+        notes: Text::new("exploder.notes"),
     }
 }
 

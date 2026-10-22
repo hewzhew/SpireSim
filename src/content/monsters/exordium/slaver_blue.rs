@@ -101,13 +101,17 @@ fn plan_for(move_id: u8, asc: u8) -> MonsterTurnPlan {
 }
 
 pub fn mechanics(asc: u8) -> super::super::mechanics::MonsterMechanics {
+    use crate::content::monsters::mechanics::MonsterText as Text;
     super::super::mechanics::MonsterMechanics {
-        moves: vec![("Stab", stab_plan(asc)), ("Rake", rake_plan(asc))],
+        moves: vec![
+            (Text::new("slaver_blue.stab"), stab_plan(asc)),
+            (Text::new("slaver_blue.rake"), rake_plan(asc)),
+        ],
         special_moves: vec![],
         notes: if asc >= 17 {
-            "Random moves; Stab cannot occur three times consecutively and Rake cannot repeat immediately. Rake deals damage before applying Weak."
+            Text::new("slaver_blue.notesHigh")
         } else {
-            "Random moves; neither move can occur three times consecutively. Rake deals damage before applying Weak."
+            Text::new("slaver_blue.notesLow")
         },
     }
 }

@@ -400,9 +400,9 @@ fn localized_rules_distinguish_current_act_from_pending_act_preparation() {
         assert!(!zh.contains("第 1 幕地图公开的 Boss"));
         assert!(zh.contains("营火 -> 商店 -> 精英 -> Boss -> 胜利"));
         assert!(zh.contains("第三幕 Boss 战后直接前进，没有普通奖励页"));
-        assert!(zh.contains("公开遭遇的准备机制（英文"));
+        assert!(zh.contains("公开遭遇的准备机制（可能招式与初始效果）"));
         assert!(en.contains("Scouring Whip: add 3 Wound to discard pile"));
-        assert!(zh.contains("Scouring Whip: add 3 Wound to discard pile"));
+        assert!(zh.contains("鞭挞: 将 3 张伤口加入弃牌堆"));
         assert!(zh.contains("蓝宝石"));
         assert!(
             !zh.contains(crate::mechanics_info::KeyRuleV1::RubyOpportunities.text(Locale::ZhCn))
@@ -411,8 +411,8 @@ fn localized_rules_distinguish_current_act_from_pending_act_preparation() {
             assert!(zh.contains("使用 deck-lab list"));
             assert!(!zh.contains("当前第 1 幕的 deck-lab"));
             assert!(zh.contains("遭遇定义：腐化之心 [TheHeart]"), "{zh}");
-            assert!(zh.contains("Starting power: Beat of Death 2"));
-            assert!(zh.contains("Starting power: Invincible 200"));
+            assert!(zh.contains("初始状态：死亡律动 2"));
+            assert!(zh.contains("初始状态：坚不可摧 200"));
         }
     }
     assert_eq!(public, before);

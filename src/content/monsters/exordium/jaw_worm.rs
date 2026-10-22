@@ -133,10 +133,15 @@ fn plan_for(move_id: u8, asc: u8) -> MonsterTurnPlan {
 }
 
 pub fn mechanics(asc: u8) -> super::super::mechanics::MonsterMechanics {
+    use crate::content::monsters::mechanics::MonsterText as Text;
     super::super::mechanics::MonsterMechanics {
         special_moves: vec![],
-        moves: vec![("Chomp", chomp_plan(asc)), ("Bellow", bellow_plan(asc)), ("Thrash", thrash_plan())],
-        notes: "Bellow grants lasting Strength as well as Block. The move list does not predict the next random choice; use the visible intent for the current turn.",
+        moves: vec![
+            (Text::new("jaw_worm.chomp"), chomp_plan(asc)),
+            (Text::new("jaw_worm.bellow"), bellow_plan(asc)),
+            (Text::new("jaw_worm.thrash"), thrash_plan()),
+        ],
+        notes: Text::new("jaw_worm.notes"),
     }
 }
 

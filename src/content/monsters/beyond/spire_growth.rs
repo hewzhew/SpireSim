@@ -113,17 +113,18 @@ fn plan_for(move_id: u8, ascension_level: u8) -> MonsterTurnPlan {
 }
 
 pub fn mechanics(asc: u8) -> crate::content::monsters::mechanics::MonsterMechanics {
+    use crate::content::monsters::mechanics::MonsterText as Text;
     crate::content::monsters::mechanics::MonsterMechanics {
         moves: vec![
-            ("Quick Tackle", tackle_plan(asc)),
-            ("Constrict", constrict_plan(asc)),
-            ("Smash", smash_plan(asc)),
+            (Text::new("spire_growth.quickTackle"), tackle_plan(asc)),
+            (Text::new("spire_growth.constrict"), constrict_plan(asc)),
+            (Text::new("spire_growth.smash"), smash_plan(asc)),
         ],
         special_moves: vec![],
         notes: if asc >= 17 {
-            "Prioritizes Constrict when the player lacks Constricted and the previous move was not Constrict, including its opening. Otherwise chooses Quick Tackle or Smash, with at most two consecutive uses of either attack. Constricted persists and deals blockable damage at the player's turn end; its application can be blocked by Artifact and it can be removed by debuff removal."
+            Text::new("spire_growth.notesHigh")
         } else {
-            "Chooses Quick Tackle, Constrict or Smash. Constrict requires the player to lack Constricted and the previous move to differ from Constrict. Either attack can occur at most twice consecutively. Constricted persists and deals blockable damage at the player's turn end; its application can be blocked by Artifact and it can be removed by debuff removal."
+            Text::new("spire_growth.notesLow")
         },
     }
 }

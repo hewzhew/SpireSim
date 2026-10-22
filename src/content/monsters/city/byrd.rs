@@ -115,20 +115,21 @@ fn flight_amount(ascension_level: u8) -> i32 {
 }
 
 pub fn mechanics(asc: u8) -> crate::content::monsters::mechanics::MonsterMechanics {
+    use crate::content::monsters::mechanics::MonsterText as Text;
     crate::content::monsters::mechanics::MonsterMechanics {
         moves: vec![
-            ("Peck", peck_plan(asc)),
-            ("Swoop", swoop_plan(asc)),
-            ("Caw", caw_plan()),
-            ("Stunned", stunned_plan()),
-            ("Headbutt", headbutt_plan()),
-            ("Go Airborne", go_airborne_plan(asc)),
+            (Text::new("byrd.peck"), peck_plan(asc)),
+            (Text::new("byrd.swoop"), swoop_plan(asc)),
+            (Text::new("byrd.caw"), caw_plan()),
+            (Text::new("byrd.stunned"), stunned_plan()),
+            (Text::new("byrd.headbutt"), headbutt_plan()),
+            (Text::new("byrd.goAirborne"), go_airborne_plan(asc)),
         ],
         special_moves: vec![(
-            "Starting Flight",
-            format!("Starts flying with {} Flight; see info power Flight for damage reduction and hit triggers.", flight_amount(asc)),
+            Text::new("byrd.startingFlight"),
+            Text::new("byrd.flightRule").with("amount", flight_amount(asc)),
         )],
-        notes: "Opens randomly with Caw or Peck. While flying, it cannot use Peck three times in a row, Swoop twice in a row, or Caw twice in a row. Losing all Flight immediately replaces the current move with Stunned. After that skipped turn it uses Headbutt, then Go Airborne restores Flight. Go Airborne has a hidden/Unknown intent icon; its defined effect is still Flight, not an attack.",
+        notes: Text::new("byrd.notes"),
     }
 }
 

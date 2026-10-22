@@ -92,14 +92,18 @@ fn plan_for(move_id: u8, ascension_level: u8) -> MonsterTurnPlan {
 }
 
 pub fn mechanics(ascension_level: u8) -> crate::content::monsters::mechanics::MonsterMechanics {
+    use crate::content::monsters::mechanics::MonsterText as Text;
     crate::content::monsters::mechanics::MonsterMechanics {
         moves: vec![
-            ("Bear Hug", bear_hug_plan(ascension_level)),
-            ("Lunge", lunge_plan(ascension_level)),
-            ("Maul", maul_plan(ascension_level)),
+            (
+                Text::new("bandit_bear.bearHug"),
+                bear_hug_plan(ascension_level),
+            ),
+            (Text::new("bandit_bear.lunge"), lunge_plan(ascension_level)),
+            (Text::new("bandit_bear.maul"), maul_plan(ascension_level)),
         ],
         special_moves: vec![],
-        notes: "Opens with Bear Hug, then alternates Lunge and Maul starting with Lunge. Bear Hug's Dexterity reduction lasts for the rest of combat; killing Bear afterward does not remove it. Negative Dexterity reduces Block from cards. Artifact can block the Dexterity debuff.",
+        notes: Text::new("bandit_bear.notes"),
     }
 }
 

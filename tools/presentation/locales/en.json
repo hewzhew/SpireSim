@@ -1702,6 +1702,530 @@
       "WhiteBeastStatue": "Combat potion drops have a 100% chance, subject to the reward-screen size limit: a potion is not added when 4 or more reward entries already exist. Collecting it still requires a free slot or replacing a held potion, and {{entity_relic_Sozu}} still prevents obtaining it.",
       "WingBoots": "Provides 3 flights for the run. Each flight can select a visible map node on the next reachable row without following the current node's outgoing connection. Ordinary connected travel spends no charge; a flight does not skip rows.",
       "Circlet": "Fallback relic with no resource or combat effect."
+    },
+    "enemyRule": {
+      "awakened_one": {
+        "slashPhase1": "Slash (phase 1)",
+        "soulStrikePhase1": "{{entity_enemyMove_AwakenedOne_SoulStrike}} (phase 1)",
+        "darkEchoPhase2Opening": "{{entity_enemyMove_AwakenedOne_DarkEcho}} (phase 2 opening)",
+        "sludgePhase2": "{{entity_enemyMove_AwakenedOne_Sludge}} (phase 2)",
+        "tacklePhase2": "Tackle (phase 2)",
+        "rebirth": "Rebirth",
+        "rebirthRule": "revive self and heal to full Max HP; no attack on this enemy turn",
+        "notes1": "Starts with {{entity_power_Regen}} 10 (15 at A19+), {{entity_power_Curiosity}} 1 (2 at A19+), {{entity_power_Unawakened}}, and 2 {{entity_power_Strength}} at A4+. Phase 1 opens with Slash; {{entity_enemyMove_AwakenedOne_SoulStrike}} cannot repeat immediately and Slash cannot occur three times consecutively. Each Power played while {{entity_power_Curiosity}} is present grants this enemy permanent {{entity_power_Strength}} equal to {{entity_power_Curiosity}}. First lethal damage immediately removes debuffs, {{entity_power_Curiosity}}, {{entity_power_Unawakened}} and {{entity_power_Shackled}}; positive {{entity_power_Strength}} and {{entity_power_Regen}} remain. It becomes untargetable until Rebirth, then opens phase 2 with {{entity_enemyMove_AwakenedOne_DarkEcho}}. Later {{entity_enemyMove_AwakenedOne_Sludge}} and Tackle each cannot occur three times consecutively. Final death makes surviving Cultists escape."
+      },
+      "darkling": {
+        "nipRule": "Attack player once. Base damage is rolled {{min}}..{{max}} inclusive at spawn and remains fixed for that {{entity_enemy_Darkling}}; see its visible intent for the current modified damage.",
+        "chomp": "{{entity_enemyMove_Darkling_ChompChomp}}",
+        "harden": "Harden",
+        "nip": "Nip",
+        "count": "Count",
+        "countRule": "Idle for one own turn while half-dead, then plan Reincarnate.",
+        "reincarnate": "Reincarnate",
+        "reincarnateRule": "Heal self for floor(Max HP / 2), revive, then reapply {{entity_power_Regrow}}. New-monster relic hooks also run.",
+        "notes": "Starts with {{entity_power_Regrow}}. Opens with Harden or Nip. Only even-positioned Darklings can use {{entity_enemyMove_Darkling_ChompChomp}}; {{entity_enemyMove_Darkling_ChompChomp}} and Harden cannot repeat consecutively, and Nip cannot occur three times in a row. See info power Regrow for the coordinated half-death and revival rules."
+      },
+      "deca": {
+        "beam": "Beam",
+        "squareOfProtection": "Square of Protection",
+        "notes": "Starts with 2 {{entity_power_Artifact}} (3 at A19+). Opens with Beam, then alternates Beam and Square of Protection. Square gives Block to all monsters; at A19+ it also gives each 3 {{entity_power_PlatedArmor}}."
+      },
+      "donu": {
+        "beam": "Beam",
+        "circleOfPower": "{{entity_enemyMove_Donu_CircleOfPower}}",
+        "notes": "Starts with 2 {{entity_power_Artifact}} (3 at A19+). Opens with {{entity_enemyMove_Donu_CircleOfPower}}, then alternates {{entity_enemyMove_Donu_CircleOfPower}} and Beam. Circle grants 3 permanent {{entity_power_Strength}} to all living enemies, including {{entity_enemy_Deca}}."
+      },
+      "exploder": {
+        "explosionRule": "Starts with {{count}} {{entity_power_Explosive}}. After two Attack moves, its move has no attack or Block gain; {{entity_power_Explosive}} then kills it and deals {{damage}} {{entity_power_Thorns}} damage to the player. Player Block can absorb this damage; {{entity_power_Strength}}, {{entity_power_Weak}} and {{entity_power_Vulnerable}} do not modify it.",
+        "attack": "Attack",
+        "explosion": "Explosion",
+        "notes": "The explosion is executed by the {{entity_power_Explosive}} power during its turn, not by an ordinary attack intent. Kill it before the countdown completes to prevent the explosion. See info power Explosive for countdown timing."
+      },
+      "giant_head": {
+        "glare": "Glare",
+        "count": "Count",
+        "itIsTimeFirstHeavyAttack": "It Is Time (first heavy attack)",
+        "itIsTimeMaximumBaseAttack": "It Is Time (maximum base attack)",
+        "notesHigh": "Starts with {{entity_power_Slow}} at counter 0; see its per-card damage amplification and round reset. Before the heavy phase, chooses Glare or Count and cannot use either three times consecutively. At A18+, the first It Is Time is on enemy turn 4, then repeats every turn, adding 5 base damage per turn until the displayed maximum. Current {{entity_power_Strength}} and {{entity_power_Weak}} modify these base attacks; use the visible intent for actual damage.",
+        "notesLow": "Starts with {{entity_power_Slow}} at counter 0; see its per-card damage amplification and round reset. Before the heavy phase, chooses Glare or Count and cannot use either three times consecutively. The first It Is Time is on enemy turn 5, then repeats every turn, adding 5 base damage per turn until the displayed maximum. Current {{entity_power_Strength}} and {{entity_power_Weak}} modify these base attacks; use the visible intent for actual damage."
+      },
+      "maw": {
+        "nomRule": "Attack player for {{damage}} base damage/hit. Hits grow with the enemy turn count: max(1, floor((enemy turn number + 1) / 2)), counting opening Roar as turn 1. Current visible intent gives the actual hit count and modified damage.",
+        "roar": "Roar",
+        "slam": "Slam",
+        "drool": "Drool",
+        "nomNomNom": "Nom Nom Nom",
+        "notes": "Opens with Roar once, applying {{entity_power_Weak}} and {{entity_power_Frail}}. Afterward chooses Nom Nom Nom when its roll allows and that was not its previous move; otherwise uses Drool after Slam/Nom Nom Nom, or Slam after other moves. Drool grants persistent {{entity_power_Strength}}, increasing every later normal attack hit."
+      },
+      "nemesis": {
+        "triAttack": "Tri Attack",
+        "scythe": "Scythe",
+        "triBurn": "Tri {{entity_card_Burn}}",
+        "intangibleAfterMove": "{{entity_power_Intangible}} after move",
+        "intangibleRule": "After its move actions, apply 1 {{entity_power_Intangible}} to self if {{entity_power_Intangible}} is absent. Monster {{entity_power_Intangible}} skips its fresh turn-end decrement, then decrements at its next own turn end; this normally alternates protected and unprotected player turns. See info power Intangible for per-hit damage caps.",
+        "notes": "Opens with Tri Attack or Tri {{entity_card_Burn}}, never Scythe. Tri Attack cannot occur three times in a row, and Tri {{entity_card_Burn}} cannot repeat consecutively. Choosing Scythe sets a cooldown of 2; move rolls decrement it and only allow Scythe when the decremented value is non-positive. Read current visible intention and {{entity_power_Intangible}} rather than assuming a fixed future random move."
+      },
+      "orb_walker": {
+        "startupRule": "Starts with Generic {{entity_power_Strength}} Up {{amount}}: gain that much permanent {{entity_power_Strength}} at the end of every round, after its attack. This does not grant {{entity_power_Strength}} immediately on spawn.",
+        "laser": "Laser",
+        "claw": "Claw",
+        "startup": "Startup",
+        "notes": "Each move roll chooses Claw below 40 (40%) or Laser otherwise (60%); if the selected move has occurred twice consecutively, use the other move. Neither move can occur three times consecutively. Laser adds one {{entity_card_Burn}} to discard and one {{entity_card_Burn}} at a random draw-pile position. These are possible move rules, not a prediction of the next roll."
+      },
+      "reptomancer": {
+        "summonRule": "Summon {{entity_enemy_SnakeDagger}} minions into empty dagger slots (summon limit: {{count}}; maximum four daggers). Each starts with its {{entity_card_Wound}} attack and next uses Explode. Daggers die when {{entity_enemy_Reptomancer}} dies.",
+        "snakeStrike": "Snake Strike",
+        "bigBite": "Big Bite",
+        "summon": "Summon",
+        "notes": "Starts with two {{entity_enemy_SnakeDagger}} minions and opens by summoning more. Snake Strike and Big Bite cannot repeat immediately; Summon cannot occur three times in a row. When there is no room to summon, the summon roll becomes Snake Strike."
+      },
+      "repulsor": {
+        "selectionRule": "A move roll below {{cutoff}} selects Attack unless the previous move was Attack; otherwise it selects Daze. Attack cannot repeat immediately.",
+        "attack": "Attack",
+        "daze": "Daze",
+        "moveSelection": "Move selection",
+        "notes": "Daze inserts cards into random positions in the draw pile, not the discard pile. Possible moves are not a prediction of the next roll."
+      },
+      "snake_dagger": {
+        "explodeRule": "Attack player for {{damage}} base damage/hit (hits: 1), then lose own current HP through the normal damage/death pipeline.",
+        "wound": "{{entity_card_Wound}}",
+        "explode": "Explode",
+        "notes": "On its first enemy turn, attacks and adds a {{entity_card_Wound}} to the player's discard pile. On its next turn, attacks for 25 base damage and then loses its own current HP. A newly summoned dagger starts with the same sequence. Minions die when {{entity_enemy_Reptomancer}} dies."
+      },
+      "spiker": {
+        "attack": "Attack",
+        "spike": "Spike",
+        "notes": "Starts with persistent {{entity_power_Thorns}}; it can increase {{entity_power_Thorns}} by using Spike. Attack cannot occur twice consecutively while Spike remains available. After six completed Spike moves, always attacks. {{entity_power_Thorns}} retaliates against each qualifying hit and can be blocked; see its definition for the damage type and trigger."
+      },
+      "spire_growth": {
+        "quickTackle": "Quick Tackle",
+        "constrict": "Constrict",
+        "smash": "Smash",
+        "notesHigh": "Prioritizes Constrict when the player lacks {{entity_power_Constricted}} and the previous move was not Constrict, including its opening. Otherwise chooses Quick Tackle or Smash, with at most two consecutive uses of either attack. {{entity_power_Constricted}} persists and deals blockable damage at the player's turn end; its application can be blocked by {{entity_power_Artifact}} and it can be removed by debuff removal.",
+        "notesLow": "Chooses Quick Tackle, Constrict or Smash. Constrict requires the player to lack {{entity_power_Constricted}} and the previous move to differ from Constrict. Either attack can occur at most twice consecutively. {{entity_power_Constricted}} persists and deals blockable damage at the player's turn end; its application can be blocked by {{entity_power_Artifact}} and it can be removed by debuff removal."
+      },
+      "time_eater": {
+        "reverberate": "Reverberate",
+        "ripple": "Ripple",
+        "headSlam": "Head Slam",
+        "haste": "Haste",
+        "hasteHigh": "remove all debuffs and {{entity_power_Shackled}} from self; heal up to 50% of Max HP using HP at execution; gain 32 Block",
+        "hasteLow": "remove all debuffs and {{entity_power_Shackled}} from self; heal up to 50% of Max HP using HP at execution",
+        "notes": "Starts with {{entity_power_TimeWarp}} counter 0. The counter persists across turns; the 12th counted card forces turn end, resets the counter and gives living enemies 2 {{entity_power_Strength}}. Once per combat, when a move is selected below half Max HP, Haste replaces the random move. Haste clears negative {{entity_power_Strength}} but preserves positive {{entity_power_Strength}} and {{entity_power_TimeWarp}}. Reverberate cannot occur three times consecutively; Head Slam and Ripple cannot repeat immediately. {{entity_power_DrawReduction}} reduces the next normal turn draw, not card-effect draws."
+      },
+      "transient": {
+        "laterRule": "Each completed attack increases the next attack's unmodified base damage by 10 (starting at {{damage}}). Starts with {{fading}} {{entity_power_Fading}} and {{entity_power_Shifting}}. {{entity_power_Shifting}} temporarily reduces {{entity_power_Strength}} by HP lost, so current visible attack damage can be much lower than the base.",
+        "openingAttack": "Opening attack",
+        "laterAttacks": "Later attacks",
+        "notes": "Always attacks once per turn, then the {{entity_power_Fading}} countdown runs after its queued move. At 1 {{entity_power_Fading}} it dies after that turn's attack; you can survive until this happens instead of reducing all 999 HP. See info power Fading and info power Shifting for their exact effects and timing."
+      },
+      "writhing_mass": {
+        "implantRule": "Add one {{entity_card_Parasite}} Curse to the player's permanent master deck; this is not a blockable attack or an {{entity_power_Artifact}}-blockable power application. Can execute once per combat; merely rolling this intent does not consume that use.",
+        "strongStrike": "Strong Strike",
+        "multiStrike": "Multi Strike",
+        "flail": "Flail",
+        "wither": "Wither",
+        "implant": "Implant",
+        "notes": "Starts with {{entity_power_Reactive}} and {{entity_power_Malleable}}. Its opening is Multi Strike, Flail or Wither. Later rolls can also choose Strong Strike or Implant, with restrictions against repeated moves. Qualifying nonlethal hits trigger {{entity_power_Reactive}} to reroll its intention, so inspect the actual intention after attacking. {{entity_power_Malleable}} also gains Block after qualifying hits; see both power definitions."
+      },
+      "bandit_bear": {
+        "bearHug": "Bear Hug",
+        "lunge": "Lunge",
+        "maul": "Maul",
+        "notes": "Opens with Bear Hug, then alternates Lunge and Maul starting with Lunge. Bear Hug's {{entity_power_Dexterity}} reduction lasts for the rest of combat; killing Bear afterward does not remove it. Negative {{entity_power_Dexterity}} reduces Block from cards. {{entity_power_Artifact}} can block the {{entity_power_Dexterity}} debuff."
+      },
+      "bandit_leader": {
+        "agonizingSlash": "Agonizing Slash",
+        "crossSlash": "Cross Slash",
+        "mock": "Mock",
+        "mockRule": "Does nothing this turn; plans Agonizing Slash next.",
+        "notes1": "Opens with Mock, then Agonizing Slash, then two consecutive Cross Slashes. Repeats Agonizing Slash followed by two Cross Slashes. {{entity_power_Weak}} reduces the player's Attack damage for its remaining turns.",
+        "notes2": "Opens with Mock, then alternates Agonizing Slash and Cross Slash. {{entity_power_Weak}} reduces the player's Attack damage for its remaining turns."
+      },
+      "bandit_pointy": {
+        "pointySpecial": "Pointy Special",
+        "notes": "Uses Pointy Special every turn, including the opening turn."
+      },
+      "book_of_stabbing": {
+        "multiRule": "Attack the player for {{damage}} base damage per hit, with hits equal to the persistent stab counter. The counter starts at 1 and increases before each Multi-Stab is selected; an opening Multi-Stab therefore has 2 hits. At this difficulty, {{counterRule}}",
+        "bigIncreases": "selecting Big Stab also increases the counter by 1.",
+        "bigUnchanged": "selecting Big Stab leaves the counter unchanged.",
+        "bigStab": "Big Stab",
+        "multiStab": "Multi-Stab",
+        "preBattlePainfulStabs": "Pre-battle {{entity_power_PainfulStabs}}",
+        "notes": "Move selection uses a 15% Big Stab branch, otherwise Multi-Stab, with history constraints: Big Stab is followed by Multi-Stab, and two consecutive Multi-Stabs are followed by Big Stab. Each selected Multi-Stab uses the counter locked for that move. Damage modifiers apply separately to every hit."
+      },
+      "bronze_automaton": {
+        "flail": "Flail",
+        "boost": "Boost",
+        "hyperBeam": "{{entity_enemyMove_BronzeAutomaton_HyperBeam}}",
+        "stunned": "Stunned",
+        "spawnOrbs": "Spawn Orbs",
+        "spawnRule": "Summon two {{entity_enemy_BronzeOrb}}s as Minions. They die when {{entity_enemy_BronzeAutomaton}} dies.",
+        "notes1": "Opens by summoning two {{entity_enemy_BronzeOrb}}s, then alternates Flail and Boost. The first {{entity_enemyMove_BronzeAutomaton_HyperBeam}} occurs on enemy turn 6. Below A19 the next move is Stunned; at A19+ it is Boost, then the attack/buff cycle continues toward another {{entity_enemyMove_BronzeAutomaton_HyperBeam}}. Starting {{entity_power_Artifact}} blocks debuff applications individually."
+      },
+      "bronze_orb": {
+        "supportRule": "Give {{entity_enemy_BronzeAutomaton}} {{block}} Block.",
+        "beam": "Beam",
+        "supportBeam": "Support Beam",
+        "stasis": "Stasis",
+        "stasisRule": "Remove one random card from the draw pile (or discard pile if the draw pile is empty), preferring Rare, then Uncommon, then Common; if none exist, choose from all cards in that pile. Hold it until this Orb dies, then return it to Hand, or discard if Hand is full.",
+        "notes": "Uses Stasis at most once per Orb. Thereafter Beam or Support Beam is chosen with neither repeating three times consecutively. Dies when {{entity_enemy_BronzeAutomaton}} dies."
+      },
+      "byrd": {
+        "flightRule": "Starts flying with {{amount}} {{entity_power_Flight}}; see info power Flight for damage reduction and hit triggers.",
+        "peck": "Peck",
+        "swoop": "Swoop",
+        "caw": "Caw",
+        "stunned": "Stunned",
+        "headbutt": "Headbutt",
+        "goAirborne": "Go Airborne",
+        "startingFlight": "Starting {{entity_power_Flight}}",
+        "notes": "Opens randomly with Caw or Peck. While flying, it cannot use Peck three times in a row, Swoop twice in a row, or Caw twice in a row. Losing all {{entity_power_Flight}} immediately replaces the current move with Stunned. After that skipped turn it uses Headbutt, then Go Airborne restores {{entity_power_Flight}}. Go Airborne has a hidden/Unknown intent icon; its defined effect is still {{entity_power_Flight}}, not an attack."
+      },
+      "centurion": {
+        "slash": "Slash",
+        "protect": "Protect",
+        "fury": "Fury",
+        "notes": "While an ally remains at move selection, chooses Slash or Protect; when alone, chooses Slash or Fury. Does not use the same move three times consecutively. Protect gives Block to a randomly chosen eligible other monster, or self if none remains when it executes. Killing an ally does not turn an already selected Protect into Fury; Fury becomes available on a subsequent move selection."
+      },
+      "champ": {
+        "heavySlash": "Heavy Slash",
+        "defensiveStance": "{{entity_enemyMove_Champ_DefensiveStance}}",
+        "execute": "{{entity_enemyMove_Champ_Execute}}",
+        "faceSlap": "{{entity_enemyMove_Champ_FaceSlap}}",
+        "gloat": "Gloat",
+        "taunt": "Taunt",
+        "anger": "Anger",
+        "angerBeforeStrength": "Anger before {{entity_power_Strength}}",
+        "angerRule": "Remove all debuffs and remove {{entity_power_Shackled}} before gaining {{entity_power_Strength}}. Negative {{entity_power_Strength}} is a debuff, so prior {{entity_power_Strength}} reduction can be cleared here.",
+        "notes": "Checks current HP < floor(Max HP / 2) when rolling the next move, once per combat, to plan Anger; damage does not immediately interrupt an already planned move. After this threshold, plans {{entity_enemyMove_Champ_Execute}} whenever neither the last nor penultimate move was {{entity_enemyMove_Champ_Execute}}. Before the threshold, every fourth move roll forces Taunt. {{entity_enemyMove_Champ_DefensiveStance}} can be used at most twice and cannot repeat consecutively; Gloat cannot immediately follow Gloat or {{entity_enemyMove_Champ_DefensiveStance}}. Possible base moves are not a prediction of a hidden intention."
+      },
+      "chosen": {
+        "zap": "Zap",
+        "drain": "Drain",
+        "debilitate": "Debilitate",
+        "hex": "{{entity_power_Hex}}",
+        "poke": "Poke",
+        "notesHigh": "Opens with {{entity_power_Hex}} once per combat. After {{entity_power_Hex}}, alternates a Debilitate/Drain choice with a Zap/Poke choice. {{entity_power_Hex}} adds {{entity_card_Dazed}} to the draw pile when the player plays a non-Attack card, including both Skills and Powers; see the {{entity_power_Hex}} definition for its amount and persistence.",
+        "notesLow": "Opens with Poke, then uses {{entity_power_Hex}} once per combat. After {{entity_power_Hex}}, alternates a Debilitate/Drain choice with a Zap/Poke choice. {{entity_power_Hex}} adds {{entity_card_Dazed}} to the draw pile when the player plays a non-Attack card, including both Skills and Powers; see the {{entity_power_Hex}} definition for its amount and persistence."
+      },
+      "gremlin_leader": {
+        "encourageRule": "Gain {{strength}} {{entity_power_Strength}} for self. At execution, also give every other non-dying ally {{strength}} {{entity_power_Strength}} and {{block}} Block. The leader receives the {{entity_power_Strength}}; Block goes to the allies. Visible icon: DefendBuff.",
+        "rallyRule": "Summon up to 2 gremlins into vacant minion slots, with at most 3 occupied slots. Each identity is sampled at execution from {{count}} equally weighted pool entries: {{pool}}. Repeated entries carry repeated weight. Visible icon: Unknown.",
+        "stab": "Stab",
+        "encourage": "Encourage",
+        "rally": "{{entity_enemyMove_GremlinLeader_Rally}}",
+        "notes": "Starts with two random minions. With zero living allies, selection chooses {{entity_enemyMove_GremlinLeader_Rally}} or Stab; with one, {{entity_enemyMove_GremlinLeader_Rally}}/Encourage/Stab; with at least two, Encourage/Stab. Selection depends on living allies and the previous move, with rerolls when a repeated move is excluded. Allies present when Encourage executes receive its effects. When the leader dies, other non-dying allies escape."
+      },
+      "healer": {
+        "selectionRule": "When living monsters' total missing HP is greater than {{threshold}}, chooses Heal unless the last two moves were Heal. Otherwise chooses Attack and {{entity_power_Frail}} or Strengthen. Heal and Strengthen cannot each repeat three times consecutively; at A17+ Attack and {{entity_power_Frail}} cannot repeat on consecutive turns. These conditions are checked when selecting a move, not reevaluated when an already selected move executes.",
+        "attackAndFrail": "Attack and {{entity_power_Frail}}",
+        "heal": "Heal",
+        "strengthen": "Strengthen",
+        "moveSelection": "Move selection",
+        "notes": "Heal restores the listed HP to each living monster, including {{entity_enemy_Healer}}, up to each monster's Max HP. Strengthen grants persistent {{entity_power_Strength}} to each living monster, including {{entity_enemy_Healer}}. Both Heal and Strengthen have a Buff intent icon: that icon alone does not distinguish them. Attack and {{entity_power_Frail}} applies {{entity_power_Frail}} after its hit, even if Block absorbs all damage."
+      },
+      "mugger": {
+        "mug": "{{entity_enemyMove_Mugger_Mug}}",
+        "bigSwipe": "Big Swipe",
+        "smokeBomb": "Smoke Bomb",
+        "escape": "Escape",
+        "notes": "Starts with two Mugs, then has a 50% chance of Big Swipe before Smoke Bomb, otherwise immediately Smoke Bomb. Smoke Bomb is followed by Escape. Gold theft occurs before attack damage, even if Block prevents HP loss. Killing the {{entity_enemy_Mugger}} recovers its stolen Gold as a reward; Escape does not recover it."
+      },
+      "shelled_parasite": {
+        "protectionRule": "Starts with {{amount}} {{entity_power_PlatedArmor}} and {{amount}} Block. Losing the last {{entity_power_PlatedArmor}} replaces the planned move with Stunned; inspect {{entity_power_PlatedArmor}} for its hit and turn-end triggers.",
+        "fell": "Fell",
+        "doubleStrike": "Double Strike",
+        "lifeSuck": "Life Suck",
+        "stunned": "Stunned",
+        "startingProtection": "Starting protection",
+        "lifeSuckHealing": "Life Suck healing",
+        "lifeSuckRule": "Heal self for the player's actual HP lost to this hit, after Block and damage prevention. The visible intent is Attack Buff.",
+        "notes": "At A17+, the opening move is Fell; below A17 it is Double Strike or Life Suck. Fell cannot repeat consecutively; Double Strike and Life Suck can each repeat at most twice. Stunned skips its attack, then the next move is rolled normally. Possible base moves are not a prediction of a hidden intention."
+      },
+      "snake_plant": {
+        "malleableRule": "Starts with {{amount}} {{entity_power_Malleable}}; see info power Malleable for its per-hit Block gain and reset.",
+        "chompyChomps": "Chompy Chomps",
+        "spores": "{{entity_enemyMove_SnakePlant_EnfeeblingSpores}}",
+        "startingMalleable": "Starting {{entity_power_Malleable}}",
+        "notesHigh": "Cannot use Chompy Chomps three times in a row. At A17+, {{entity_enemyMove_SnakePlant_EnfeeblingSpores}} requires two intervening Chompy Chomps before it can be used again. {{entity_enemyMove_SnakePlant_EnfeeblingSpores}} applies {{entity_power_Frail}} then {{entity_power_Weak}} separately; each can consume an {{entity_power_Artifact}} charge. These rules describe possible moves, not a prediction of a hidden intent.",
+        "notesLow": "Cannot use Chompy Chomps three times in a row or {{entity_enemyMove_SnakePlant_EnfeeblingSpores}} twice in a row. {{entity_enemyMove_SnakePlant_EnfeeblingSpores}} applies {{entity_power_Frail}} then {{entity_power_Weak}} separately; each can consume an {{entity_power_Artifact}} charge. These rules describe possible moves, not a prediction of a hidden intent."
+      },
+      "snecko": {
+        "perplexingGlare": "{{entity_enemyMove_Snecko_PerplexingGlare}}",
+        "bite": "{{entity_enemyMove_Snecko_Bite}}",
+        "tailWhip": "{{entity_enemyMove_Snecko_TailWhip}}",
+        "notes": "Opens with {{entity_enemyMove_Snecko_PerplexingGlare}}, applying persistent {{entity_power_Confusion}}. Afterward randomly chooses {{entity_enemyMove_Snecko_Bite}} or {{entity_enemyMove_Snecko_TailWhip}}; two consecutive Bites force {{entity_enemyMove_Snecko_TailWhip}} next. {{entity_power_Confusion}} randomizes eligible card costs as they are drawn. Use the current hand's actual costs for payment."
+      },
+      "spheric_guardian": {
+        "harden": "Harden",
+        "bashAndFrail": "Bash and {{entity_power_Frail}}",
+        "slam": "Slam",
+        "bashAndBlock": "Bash and Block",
+        "notes": "Starts with 20 HP, 40 Block, 3 {{entity_power_Artifact}} and {{entity_power_Barricade}}. {{entity_power_Barricade}} preserves its Block between turns. Opens with Harden, then Bash and {{entity_power_Frail}}; afterward alternates Slam and Bash and Block. {{entity_power_Artifact}} blocks incoming debuffs one at a time."
+      },
+      "taskmaster": {
+        "followupRule": "After attacking and adding Wounds, gain {{amount}} {{entity_power_Strength}} on self. This {{entity_power_Strength}} persists and increases later attacks.",
+        "scouringWhip": "Scouring Whip",
+        "scouringWhipFollowUp": "Scouring Whip follow-up",
+        "notes": "Uses Scouring Whip every turn. Wounds go to the discard pile even if the attack is fully blocked. At A18+, also gains {{entity_power_Strength}} after each Whip; this is an execution effect beyond the visible attack-and-card intent."
+      },
+      "the_collector": {
+        "fireball": "Fireball",
+        "buff": "Buff",
+        "megaDebuff": "Mega Debuff",
+        "notes": "The first turn summons two {{entity_enemy_TorchHead}}s. The fourth enemy turn uses Mega Debuff once. Later it may revive dead {{entity_enemy_TorchHead}}s. Buff grants Block only to {{entity_enemy_TheCollector}} and {{entity_power_Strength}} to all living enemies. Fireball cannot occur three times consecutively; Buff and Revive cannot repeat consecutively. Killing {{entity_enemy_TheCollector}} removes its minions."
+      },
+      "torch_head": {
+        "tackle": "Tackle",
+        "notes": "Attacks every turn. It is a Minion of {{entity_enemy_TheCollector}} and is removed when {{entity_enemy_TheCollector}} dies."
+      },
+      "corrupt_heart": {
+        "buffRule": "Every Buff removes negative {{entity_power_Strength}} by restoring it to 0, then gains 2 {{entity_power_Strength}}. Additional effects from the first Buff onward: {{followups}}.",
+        "debilitate": "Debilitate",
+        "bloodShots": "Blood Shots",
+        "echo": "Echo",
+        "buff": "Buff",
+        "notes": "Opens with Debilitate, then repeats two attacks (one Blood Shots and one Echo, random order) followed by Buff. Starting power amounts above use this encounter's Ascension. {{entity_power_Invincible}} resets its damage allowance at the Heart's turn start. {{entity_power_BeatOfDeath}} damages the player for every counted card after that card's own effects but before its final exhaust triggers {{entity_card_FeelNoPain}}.",
+        "gainPower": "gain {{power}}",
+        "gainAmount": "gain {{amount}} {{power}}",
+        "numberedBuff": "Buff {{number}}: {{effect}}",
+        "laterBuff": "Buff {{number}} and every later Buff: {{effect}}"
+      },
+      "spire_shield": {
+        "fortify": "Fortify",
+        "smash": "Smash",
+        "bash": "Bash",
+        "notesHigh": "attack player for 14 x 1 base damage, then apply -1 {{entity_power_Strength}}; with any player orbs, randomly apply -1 {{entity_power_Focus}} instead with 50% probability",
+        "notesLow": "attack player for 12 x 1 base damage, then apply -1 {{entity_power_Strength}}; with any player orbs, randomly apply -1 {{entity_power_Focus}} instead with 50% probability",
+        "notes3": "Starts with 1 {{entity_power_Artifact}} (2 at A18+) and applies {{entity_power_Surrounded}} to the player. Repeats Bash and Fortify in random order, then Smash. While both enemies remain, targeted cards change which one the player faces; an enemy attacking from behind deals 50% more damage. Untargeted cards do not change facing."
+      },
+      "spire_spear": {
+        "burnStrike": "{{entity_card_Burn}} Strike",
+        "piercer": "Piercer",
+        "skewer": "Skewer",
+        "notes": "Starts with 1 {{entity_power_Artifact}} (2 at A18+). Opens with {{entity_card_Burn}} Strike, then Skewer. Afterward, repeats {{entity_card_Burn}} Strike and Piercer in random order, then Skewer. At A18+, {{entity_card_Burn}} Strike puts 2 Burns on TOP of the draw pile rather than in discard. Piercer gives all monsters 2 permanent {{entity_power_Strength}}. {{entity_power_Surrounded}} makes attacks from behind deal 50% more damage while both enemies remain."
+      },
+      "acid_slime": {
+        "corrosiveSpit": "{{entity_enemyMove_AcidSlimeL_CorrosiveSpit}}",
+        "tackle": "Tackle",
+        "lick": "{{entity_enemyMove_AcidSlimeL_Lick}}",
+        "split": "{{entity_enemyMove_AcidSlimeL_Split}}",
+        "notesLarge": "Random moves with history restrictions. While alive, reaching half Max HP or below replaces its current intent with {{entity_enemyMove_AcidSlimeL_Split}}. Each child uses the parent's remaining HP at split execution as both current and Max HP; further damage before splitting reduces both children. Killing the parent prevents splitting.",
+        "notesMedium": "Random moves with history restrictions. Medium Acid Slimes do not split.",
+        "notesSmall": "Alternates Tackle and {{entity_enemyMove_AcidSlimeL_Lick}} after the opening move. Small Acid Slimes do not split."
+      },
+      "cultist": {
+        "incantation": "{{entity_enemyMove_Cultist_Incantation}}",
+        "darkStrike": "Dark Strike",
+        "notes": "Starts by gaining {{entity_power_Ritual}}, then attacks. Monster {{entity_power_Ritual}} skips its first end-of-round trigger; later triggers grant {{entity_power_Strength}} repeatedly."
+      },
+      "fungi_beast": {
+        "bite": "Bite",
+        "grow": "{{entity_enemyMove_FungiBeast_Grow}}",
+        "notes": "Each {{entity_enemy_FungiBeast}} can {{entity_enemyMove_FungiBeast_Grow}}. It cannot {{entity_enemyMove_FungiBeast_Grow}} twice consecutively or Bite three times consecutively. {{entity_power_SporeCloud}} is a separate death trigger; inspect its current amount on the monster."
+      },
+      "gremlin_fat": {
+        "smash": "{{entity_enemyMove_GremlinFat_Smash}}",
+        "escape": "Escape",
+        "notes": "Normally repeats {{entity_enemyMove_GremlinFat_Smash}}. Damage happens before {{entity_power_Weak}} and, at A17+, {{entity_power_Frail}}. Escape is a separately assigned move, not part of the normal attack cycle."
+      },
+      "gremlin_nob": {
+        "bellow": "Bellow",
+        "skullBash": "{{entity_enemyMove_GremlinNob_SkullBash}}",
+        "bullRush": "{{entity_enemyMove_GremlinNob_BullRush}}",
+        "notes": "Bellow activates the Anger power (Enrage): subsequent Skill plays grant it {{entity_power_Strength}}. At A18+, after Bellow it repeats {{entity_enemyMove_GremlinNob_SkullBash}}, {{entity_enemyMove_GremlinNob_BullRush}}, {{entity_enemyMove_GremlinNob_BullRush}}. Below A18 the attack choice is random with history restrictions."
+      },
+      "gremlin_thief": {
+        "puncture": "Puncture",
+        "escape": "Escape",
+        "notes": "Normally attacks every turn. Despite its simulator ID GremlinThief, {{entity_enemy_GremlinThief}} does not steal Gold. Escape is a separately assigned move, not part of the normal attack cycle."
+      },
+      "gremlin_tsundere": {
+        "protect": "{{entity_enemyMove_GremlinTsundere_Protect}}",
+        "shieldBash": "{{entity_enemyMove_GremlinTsundere_ShieldBash}}",
+        "escape": "Escape",
+        "notes": "Starts with {{entity_enemyMove_GremlinTsundere_Protect}} and keeps protecting while other non-dying, non-escaped monsters remain. When alone, {{entity_enemyMove_GremlinTsundere_Protect}} plans {{entity_enemyMove_GremlinTsundere_ShieldBash}} for the next turn, then it attacks repeatedly. {{entity_enemyMove_GremlinTsundere_Protect}} targets a random eligible other monster, or self if none remains. Escape is a separately assigned move."
+      },
+      "gremlin_warrior": {
+        "angryRule": "amount {{amount}}. {{effect}}",
+        "scratch": "{{entity_enemyMove_GremlinWarrior_Claw}}",
+        "escape": "Escape",
+        "startingAngry": "Starting {{entity_power_Angry}}",
+        "notes": "Normally attacks every turn. {{entity_power_Angry}} {{entity_power_Strength}} increases the damage of later attacks. Escape is a separately assigned move, not part of the normal attack cycle."
+      },
+      "gremlin_wizard": {
+        "charging": "{{entity_enemyMove_GremlinWizard_Charging}}",
+        "ultimateBlast": "{{entity_enemyMove_GremlinWizard_UltimateBlast}}",
+        "escape": "Escape",
+        "notesHigh": "Starts with two non-attacking Charge turns, then {{entity_enemyMove_GremlinWizard_UltimateBlast}} every turn without recharging. Escape is a separately assigned move.",
+        "notesLow": "Starts with two non-attacking Charge turns, then {{entity_enemyMove_GremlinWizard_UltimateBlast}}. After each Blast it charges for three turns before the next Blast. Escape is a separately assigned move."
+      },
+      "hexaghost": {
+        "tackle": "Tackle",
+        "inflame": "{{entity_enemyMove_Hexaghost_Inflame}}",
+        "searBeforeFirstInferno": "Sear before first {{entity_enemyMove_Hexaghost_Inferno}}",
+        "searAfterFirstInferno": "Sear after first {{entity_enemyMove_Hexaghost_Inferno}}",
+        "inferno": "{{entity_enemyMove_Hexaghost_Inferno}}",
+        "activate": "Activate",
+        "activateRule": "no attack on this enemy turn; locks Divider's base damage per hit to floor(player current HP / 12) + 1 at Activate execution, then plans Divider",
+        "divider": "Divider",
+        "dividerRule": "attack player with the previously locked base damage/hit (hits: 6), before {{entity_power_Strength}} and other damage modifiers. It does not recalculate from player HP on the Divider turn.",
+        "notes": "Starts Activate, then Divider, then repeats Sear, Tackle, Sear, {{entity_enemyMove_Hexaghost_Inflame}}, Tackle, Sear, {{entity_enemyMove_Hexaghost_Inferno}}. {{entity_enemyMove_Hexaghost_Inferno}} upgrades Burns in draw and discard piles and adds three upgraded Burns; all later Sears add upgraded Burns. {{entity_enemyMove_Hexaghost_Inflame}} {{entity_power_Strength}} persists and affects every hit."
+      },
+      "jaw_worm": {
+        "chomp": "Chomp",
+        "bellow": "{{entity_enemyMove_JawWorm_Bellow}}",
+        "thrash": "{{entity_enemyMove_JawWorm_Thrash}}",
+        "notes": "{{entity_enemyMove_JawWorm_Bellow}} grants lasting {{entity_power_Strength}} as well as Block. The move list does not predict the next random choice; use the visible intent for the current turn."
+      },
+      "lagavulin": {
+        "sleepingRule": "starts with {{armor}} Block and {{armor}} {{entity_power_Metallicize}}. Positive HP loss wakes it, removes {{armor}} {{entity_power_Metallicize}} and replaces its current intent with Stun, giving a non-attacking wake turn. Blocked damage does not wake it. Otherwise it sleeps for three enemy turns, then removes {{armor}} {{entity_power_Metallicize}} and plans Attack.",
+        "attack": "Attack",
+        "siphonSoul": "{{entity_enemyMove_Lagavulin_SiphonSoul}}",
+        "sleep": "Sleep",
+        "wakeFromDamage": "Wake from damage",
+        "sleepingStart": "Sleeping start",
+        "naturalWake": "Natural wake",
+        "naturalWakeRule": "wake without attacking on this enemy turn; remove sleeping {{entity_power_Metallicize}} and plan Attack",
+        "notes": "After waking from sleep, cycles two Attacks then {{entity_enemyMove_Lagavulin_SiphonSoul}}. The {{entity_power_Strength}} and {{entity_power_Dexterity}} losses persist; they are not temporary {{entity_power_Shackled}}. An encounter that starts awake begins with {{entity_enemyMove_Lagavulin_SiphonSoul}} instead. Sleep is an intent, not an Asleep power."
+      },
+      "looter": {
+        "mug": "{{entity_enemyMove_Looter_Mug}}",
+        "lunge": "{{entity_enemyMove_Looter_Lunge}}",
+        "smokeBomb": "Smoke Bomb",
+        "escape": "Escape",
+        "notes": "Starts with two Mugs, then has a 50% chance of {{entity_enemyMove_Looter_Lunge}} before Smoke Bomb, otherwise immediately Smoke Bomb. Smoke Bomb is followed by Escape. Gold theft occurs before attack damage, even if Block prevents HP loss. Killing the {{entity_enemy_Looter}} recovers stolen Gold as a reward; Escape does not recover it."
+      },
+      "louse_defensive": {
+        "spitWeb": "{{entity_enemyMove_LouseDefensive_SpitWeb}}"
+      },
+      "louse_normal": {
+        "grow": "{{entity_enemyMove_LouseNormal_Grow}}"
+      },
+      "sentry": {
+        "beam": "Beam",
+        "bolt": "Bolt",
+        "notes": "Each Sentry alternates Beam and Bolt. In the standard three-Sentry encounter, the outer slots open with Bolt and the middle opens with Beam; these are opening phases, not permanent roles. Bolt adds {{entity_card_Dazed}} to the discard pile. Each Sentry starts with 1 {{entity_power_Artifact}}; inspect current powers for remaining charges."
+      },
+      "slaver_blue": {
+        "stab": "Stab",
+        "rake": "{{entity_enemyMove_SlaverBlue_Rake}}",
+        "notesHigh": "Random moves; Stab cannot occur three times consecutively and {{entity_enemyMove_SlaverBlue_Rake}} cannot repeat immediately. {{entity_enemyMove_SlaverBlue_Rake}} deals damage before applying {{entity_power_Weak}}.",
+        "notesLow": "Random moves; neither move can occur three times consecutively. {{entity_enemyMove_SlaverBlue_Rake}} deals damage before applying {{entity_power_Weak}}."
+      },
+      "slaver_red": {
+        "stab": "Stab",
+        "entangle": "{{entity_enemyMove_SlaverRed_Entangle}}",
+        "scrape": "{{entity_enemyMove_SlaverRed_Scrape}}",
+        "notesHigh": "Starts with Stab. {{entity_enemyMove_SlaverRed_Entangle}} is used at most once and prevents playing Attack cards for its duration. Later moves are random with history restrictions: Stab cannot occur three times consecutively; {{entity_enemyMove_SlaverRed_Scrape}} cannot repeat immediately. {{entity_enemyMove_SlaverRed_Scrape}} deals damage before applying {{entity_power_Vulnerable}}.",
+        "notesLow": "Starts with Stab. {{entity_enemyMove_SlaverRed_Entangle}} is used at most once and prevents playing Attack cards for its duration. Later moves are random with history restrictions: Stab and {{entity_enemyMove_SlaverRed_Scrape}} cannot occur three times consecutively. {{entity_enemyMove_SlaverRed_Scrape}} deals damage before applying {{entity_power_Vulnerable}}."
+      },
+      "slime_boss": {
+        "goopSpray": "{{entity_enemyMove_SlimeBoss_GoopSpray}}",
+        "slam": "{{entity_enemyMove_SlimeBoss_Slam}}",
+        "split": "{{entity_enemyMove_SlimeBoss_Split}}",
+        "preparing": "{{entity_enemyMove_SlimeBoss_Preparing}}",
+        "preparingRule": "no attack or debuff on this enemy turn; plans {{entity_enemyMove_SlimeBoss_Slam}} next",
+        "notes1": "Starts with {{entity_enemyMove_SlimeBoss_GoopSpray}}, then {{entity_enemyMove_SlimeBoss_Preparing}}, then {{entity_enemyMove_SlimeBoss_Slam}}; repeats this cycle unless interrupted. While alive, reaching half Max HP or below replaces its current intent with {{entity_enemyMove_SlimeBoss_Split}}. Splits into one Large Spike Slime and one Large Acid Slime. Each child's current and Max HP equal the parent's remaining HP at split execution. Further damage before splitting reduces both children; killing the parent prevents splitting."
+      },
+      "spike_slime": {
+        "flameTackle": "Flame Tackle",
+        "lick": "{{entity_enemyMove_SpikeSlimeL_Lick}}",
+        "split": "{{entity_enemyMove_SpikeSlimeL_Split}}",
+        "notesLarge": "Random moves with history restrictions. While alive, reaching half Max HP or below replaces its current intent with {{entity_enemyMove_SpikeSlimeL_Split}}. Each child uses the parent's remaining HP at split execution as both current and Max HP; further damage before splitting reduces both children. Killing the parent prevents splitting.",
+        "notesMedium": "Random moves with history restrictions. Medium Spike Slimes do not split.",
+        "tackle": "Tackle",
+        "notesSmall": "Attacks every turn. Small Spike Slimes do not split."
+      },
+      "the_guardian": {
+        "shiftRule": "starts at {{threshold}} HP damage; actual HP loss reduces the remaining counter, Blocked damage does not. At the threshold, replaces its current intent with {{entity_enemyMove_TheGuardian_DefensiveMode}} and gains {{block}} Block. Each trigger raises the next threshold by {{increase}}.",
+        "twinRule": "return to Offensive Mode; attack player for {{damage}} base damage/hit (hits: {{hits}}); then remove {{entity_power_SharpHide}}, restore {{entity_power_ModeShift}} to the increased threshold, and lose remaining own Block. Plans {{entity_enemyMove_TheGuardian_Whirlwind}} next.",
+        "chargeUp": "{{entity_enemyMove_TheGuardian_ChargingUp}}",
+        "fierceBash": "{{entity_enemyMove_TheGuardian_FierceBash}}",
+        "ventSteam": "{{entity_enemyMove_TheGuardian_VentSteam}}",
+        "whirlwind": "{{entity_enemyMove_TheGuardian_Whirlwind}}",
+        "closeUp": "{{entity_enemyMove_TheGuardian_DefensiveMode}}",
+        "rollAttack": "{{entity_enemyMove_TheGuardian_Roll}}",
+        "modeShift": "{{entity_power_ModeShift}}",
+        "twinSlam": "{{entity_enemyMove_TheGuardian_TwinSlam}}",
+        "sharpHide": "{{entity_power_SharpHide}}",
+        "notes": "Starts in Offensive Mode: {{entity_enemyMove_TheGuardian_ChargingUp}}, {{entity_enemyMove_TheGuardian_FierceBash}}, {{entity_enemyMove_TheGuardian_VentSteam}}, {{entity_enemyMove_TheGuardian_Whirlwind}}, then repeat. A {{entity_power_ModeShift}} interrupts that cycle with this sequence: {{entity_enemyMove_TheGuardian_DefensiveMode}}, {{entity_enemyMove_TheGuardian_Roll}}, {{entity_enemyMove_TheGuardian_TwinSlam}}, then Offensive {{entity_enemyMove_TheGuardian_Whirlwind}}. {{entity_enemyMove_TheGuardian_DefensiveMode}} grants {{entity_power_SharpHide}}; it stays active until {{entity_enemyMove_TheGuardian_TwinSlam}} finishes. Current {{entity_power_ModeShift}} amount and visible intent are authoritative for this turn."
+      },
+      "louse": {
+        "biteRule": "attack player once; base damage is sampled once at spawn from {{min}}..{{max}} inclusive and stays fixed for this monster, before {{entity_power_Strength}} and other damage modifiers. Use the current visible intent for the actual modified damage.",
+        "curlRule": "sampled once from {{min}}..{{max}} inclusive. {{effect}}",
+        "bite": "Bite",
+        "startingCurlUp": "Starting Curl Up",
+        "notesHigh": "Randomly rolls Bite or its non-attack move, subject to history: cannot Bite three times consecutively; the non-attack move cannot repeat immediately.",
+        "notesLow": "Randomly rolls Bite or its non-attack move, subject to history: neither move can occur three times consecutively."
+      },
+      "separator": "; ",
+      "listSeparator": ", "
+    },
+    "enemyMove": {
+      "AcidSlimeL_CorrosiveSpit": "Corrosive Spit",
+      "AcidSlimeL_Lick": "Lick",
+      "AcidSlimeL_Split": "Split",
+      "AcidSlimeM_CorrosiveSpit": "Corrosive Spit",
+      "AcidSlimeM_Lick": "Lick",
+      "AwakenedOne_Cleanse": "Cleanse",
+      "AwakenedOne_DarkEcho": "Dark Echo",
+      "AwakenedOne_Sludge": "Sludge",
+      "AwakenedOne_SoulStrike": "Soul Strike",
+      "BronzeAutomaton_HyperBeam": "HYPER BEAM",
+      "Champ_DefensiveStance": "Defensive Stance",
+      "Champ_Execute": "Execute",
+      "Champ_FaceSlap": "Face Slap",
+      "Cultist_Incantation": "Incantation",
+      "Darkling_ChompChomp": "Chomp! Chomp!",
+      "Donu_CircleOfPower": "Circle of Power",
+      "FungiBeast_Grow": "Grow",
+      "GremlinFat_Smash": "Smash",
+      "GremlinLeader_Rally": "Rally!",
+      "GremlinNob_BullRush": "Bull Rush",
+      "GremlinNob_SkullBash": "Skull Bash",
+      "GremlinTsundere_Protect": "Protect",
+      "GremlinTsundere_ShieldBash": "Shield Bash",
+      "GremlinWarrior_Claw": "Claw",
+      "GremlinWizard_Charging": "Charging",
+      "GremlinWizard_UltimateBlast": "Ultimate Blast",
+      "Hexaghost_Inferno": "Inferno",
+      "Hexaghost_Inflame": "Inflame",
+      "Hexaghost_Sear": "Sear",
+      "JawWorm_Bellow": "Bellow",
+      "JawWorm_Thrash": "Thrash",
+      "Lagavulin_SiphonSoul": "Siphon Soul",
+      "Looter_Lunge": "Lunge",
+      "Looter_Mug": "Mug",
+      "LouseDefensive_SpitWeb": "Spit Web",
+      "LouseNormal_Grow": "Grow",
+      "Mugger_Lunge": "Lunge",
+      "Mugger_Mug": "Mug",
+      "OrbWalker_StrengthUp": "Strength Up",
+      "Sentry_Disintegrate": "Disintegrate",
+      "SlaverBlue_Rake": "Rake",
+      "SlaverRed_Entangle": "Entangle",
+      "SlaverRed_Scrape": "Scrape",
+      "SlimeBoss_GoopSpray": "Goop Spray",
+      "SlimeBoss_Preparing": "Preparing",
+      "SlimeBoss_Slam": "Slam",
+      "SlimeBoss_Split": "Split",
+      "SnakePlant_EnfeeblingSpores": "Enfeebling Spores",
+      "Snecko_Bite": "Bite",
+      "Snecko_PerplexingGlare": "Perplexing Glare",
+      "Snecko_TailWhip": "Tail Whip",
+      "SpikeSlimeL_Lick": "Lick",
+      "SpikeSlimeL_Split": "Split",
+      "SpikeSlimeM_Lick": "Lick",
+      "TheGuardian_ChargingUp": "Charging Up",
+      "TheGuardian_DefensiveMode": "Defensive Mode",
+      "TheGuardian_FierceBash": "Fierce Bash",
+      "TheGuardian_Roll": "Roll",
+      "TheGuardian_TwinSlam": "Twin Slam",
+      "TheGuardian_VentSteam": "Vent Steam",
+      "TheGuardian_Whirlwind": "Whirlwind"
     }
   },
   "mechanics": {
@@ -1783,7 +2307,6 @@
       "unknownEffect": "Effect explanation unavailable; this does not mean unsupported gameplay.",
       "potion": "Potion P{{slot}} {{name}} | usable {{usable}} | discardable {{discardable}} | target required {{target}}",
       "potionRule": "  Base rule: {{effect}}",
-      "enemySupplement": "Enemy mechanics: {{name}}",
       "multiplePowers": "This name matches multiple power definitions; their stable IDs and timing distinguish them.",
       "power": "Power: {{name}} | ID: {{id}}",
       "powerSupplement": "  Amount means: {{unit}}\n  Effect: {{effect}}\n  Timing: {{timing}}",
@@ -1907,6 +2430,43 @@
         "special": "Special",
         "deprecated": "Deprecated"
       }
+    },
+    "enemy": {
+      "heading": "Enemy definition: {{name}} [{{id}}] | A{{ascension}}",
+      "hp": "Base starting HP range: {{min}}..{{max}}",
+      "unavailable": "Unknown: move explanations not yet covered. Current visible intent and powers remain authoritative.",
+      "startingPower": "Starting power: {{power}} {{amount}}",
+      "moves": "Possible moves (base values before powers; not a prediction):",
+      "rules": "Rules: {{rules}}",
+      "referenced": "Referenced effect definitions (not evidence that they are currently active):",
+      "targetPlayer": "player",
+      "targetSelf": "self",
+      "targetAllMonsters": "all monsters",
+      "spawnRolled": "rolled spawn HP",
+      "spawnCurrent": "parent's remaining HP at split execution",
+      "spawnMax": "parent's Max HP",
+      "hand": "hand",
+      "discard": "discard pile",
+      "drawTop": "top of draw pile",
+      "drawRandom": "draw pile at random positions",
+      "addCard": "add {{amount}} {{card}} to {{destination}}",
+      "attack": "attack {{target}} for {{damage}} base damage/hit (hits: {{hits}})",
+      "applyPower": "apply {{amount}} {{power}} to {{target}}",
+      "block": "gain {{amount}} Block for {{target}}",
+      "heal": "heal {{target}} for {{amount}} HP, up to Max HP",
+      "randomBlock": "give {{amount}} Block to a random eligible other monster, or self if none remains",
+      "steal": "steal up to {{amount}} player Gold",
+      "upgrade": "upgrade existing {{card}} cards in draw and discard piles",
+      "spawn": "spawn {{name}} (current HP: {{current}}; Max HP: {{max}})",
+      "suicide": "remove parent without death relic triggers",
+      "sleep": "sleep; no attack on this enemy turn (wake conditions below)",
+      "stun": "stunned; no attack on this enemy turn",
+      "charge": "charge; no attack on this enemy turn (charge cycle below)",
+      "escape": "escape from combat",
+      "removePower": "remove {{power}} from {{target}}",
+      "removeDebuffs": "remove all debuffs from {{target}}",
+      "unknownEffect": "Unknown: this effect has no explanation yet",
+      "preparationPower": "{{source}} / starting {{power}} {{amount}}: {{effect}} {{timing}}"
     }
   },
   "inventory": {

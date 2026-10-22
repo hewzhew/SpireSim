@@ -1,14 +1,107 @@
 //! Public move definitions, not a prediction of the next rolled move. These
 //! constructors take difficulty only: no entity, hidden state or RNG access.
 use super::{beyond, city, ending, exordium, EnemyId};
+use crate::content::powers::{self, PowerId};
 use crate::runtime::monster_move::MonsterTurnPlan;
+use sts_presentation::Locale;
+
+/// Display-only rules and owner-provided values. Constructing this tree reads
+/// no monster instance or RNG; rendering it does not alter an executable plan.
+#[derive(Clone, Debug)]
+pub enum MonsterText {
+    Rule {
+        key: &'static str,
+        parameters: Vec<(&'static str, MonsterText)>,
+    },
+    Number(i32),
+    PowerEffect(PowerId),
+    PowerName(PowerId),
+    EnemyName(EnemyId),
+    Sequence(Vec<MonsterText>),
+    List(Vec<MonsterText>),
+}
+
+impl MonsterText {
+    pub fn new(key: &'static str) -> Self {
+        Self::Rule {
+            key,
+            parameters: vec![],
+        }
+    }
+
+    pub fn with(mut self, name: &'static str, value: impl Into<Self>) -> Self {
+        let Self::Rule { parameters, .. } = &mut self else {
+            panic!("only rule messages accept parameters")
+        };
+        assert!(
+            !parameters.iter().any(|(key, _)| *key == name),
+            "duplicate rule parameter"
+        );
+        parameters.push((name, value.into()));
+        self
+    }
+
+    pub fn render(&self, locale: Locale) -> String {
+        match self {
+            Self::Rule { key, parameters } => {
+                let values: Vec<_> = parameters
+                    .iter()
+                    .map(|(name, value)| (*name, value.render(locale)))
+                    .collect();
+                let values: Vec<_> = values
+                    .iter()
+                    .map(|(name, value)| (*name, value.as_str()))
+                    .collect();
+                locale
+                    .definition_text_with("game", &format!("enemyRule.{key}"), &values)
+                    .expect("enemy mechanism message")
+            }
+            Self::Number(value) => value.to_string(),
+            Self::PowerEffect(power) => powers::mechanics::get(*power)
+                .expect("referenced power mechanism")
+                .effect(locale),
+            Self::PowerName(power) => locale.entity("power", power.stable_id()).to_owned(),
+            Self::EnemyName(enemy) => locale.entity("enemy", enemy.stable_id()).to_owned(),
+            Self::Sequence(values) => values
+                .iter()
+                .map(|value| value.render(locale))
+                .collect::<Vec<_>>()
+                .join(
+                    locale
+                        .entry("game", "enemyRule.separator")
+                        .expect("enemy rule separator"),
+                ),
+            Self::List(values) => values
+                .iter()
+                .map(|value| value.render(locale))
+                .collect::<Vec<_>>()
+                .join(
+                    locale
+                        .entry("game", "enemyRule.listSeparator")
+                        .expect("enemy list separator"),
+                ),
+        }
+    }
+}
+
+impl From<i32> for MonsterText {
+    fn from(value: i32) -> Self {
+        Self::Number(value)
+    }
+}
+
+impl From<u8> for MonsterText {
+    fn from(value: u8) -> Self {
+        Self::Number(i32::from(value))
+    }
+}
 
 pub struct MonsterMechanics {
-    pub moves: Vec<(&'static str, MonsterTurnPlan)>,
+    pub moves: Vec<(MonsterText, MonsterTurnPlan)>,
     /// Full execution rules for moves whose effects cannot be expressed by a
     /// difficulty-only plan (for example, healing based on HP at execution).
-    pub special_moves: Vec<(&'static str, String)>,
-    pub notes: &'static str,
+    pub special_moves: Vec<(MonsterText, MonsterText)>,
+    pub notes: MonsterText,
 }
 
 /// Reviewed fixed starting effects shared with the encounter's runtime owner.
@@ -112,12 +205,32 @@ mod tests {
 
     #[test]
     fn every_implemented_enemy_has_a_public_move_catalog() {
-        for asc in [0, 2, 7, 17, 20] {
+        for asc in 0..=20 {
             for id in EnemyId::STABLE_IDS {
                 let enemy = EnemyId::from_stable_id(id).unwrap();
                 let info = get(enemy, asc).unwrap_or_else(|| panic!("missing {id} A{asc}"));
                 assert!(!info.moves.is_empty(), "{id} A{asc}");
-                assert!(!info.notes.is_empty(), "{id} A{asc}");
+                for locale in [Locale::En, Locale::ZhCn] {
+                    let mut texts = vec![info.notes.render(locale)];
+                    texts.extend(info.moves.iter().map(|(name, _)| name.render(locale)));
+                    for (name, rule) in &info.special_moves {
+                        texts.push(name.render(locale));
+                        texts.push(rule.render(locale));
+                    }
+                    for text in texts {
+                        assert!(
+                            !text.is_empty() && !text.contains("{{"),
+                            "{id} A{asc} {locale}: {text}"
+                        );
+                        if locale == Locale::ZhCn {
+                            assert!(
+                                text.chars()
+                                    .any(|ch| ('\u{4e00}'..='\u{9fff}').contains(&ch)),
+                                "{id} A{asc}: {text}"
+                            );
+                        }
+                    }
+                }
             }
         }
     }
@@ -140,7 +253,7 @@ mod tests {
                     assert_eq!(
                         plan,
                         super::super::resolve_monster_turn_plan(&state, &monster),
-                        "{enemy:?} A{asc} {name}"
+                        "{enemy:?} A{asc} {name:?}"
                     );
                 }
             }
@@ -213,7 +326,10 @@ mod tests {
                     crate::runtime::combat::Intent::Buff
                 );
             }
-            assert!(fact.notes.contains("icon alone does not distinguish them"));
+            assert!(fact
+                .notes
+                .render(Locale::En)
+                .contains("icon alone does not distinguish them"));
         }
     }
 
@@ -229,7 +345,7 @@ mod tests {
                 assert_eq!(
                     plan,
                     super::super::resolve_monster_turn_plan(&state, &monster),
-                    "A{asc} {name}"
+                    "A{asc} {name:?}"
                 );
             }
             let actions = beyond::orb_walker::OrbWalker::use_pre_battle_actions(
@@ -247,6 +363,7 @@ mod tests {
             };
             assert!(info.special_moves[0]
                 .1
+                .render(Locale::En)
                 .contains(&format!("Generic Strength Up {amount}")));
         }
     }
@@ -275,7 +392,7 @@ mod tests {
                     assert_eq!(
                         plan,
                         super::super::resolve_monster_turn_plan(&state, &monster),
-                        "{enemy:?} A{asc} {name}"
+                        "{enemy:?} A{asc} {name:?}"
                     );
                 }
             }
@@ -289,6 +406,7 @@ mod tests {
             }
             assert!(get(EnemyId::Darkling, asc).unwrap().special_moves[0]
                 .1
+                .render(Locale::En)
                 .contains(&format!("{min}..{max}")));
         }
     }
@@ -306,7 +424,7 @@ mod tests {
                     assert_eq!(
                         plan,
                         super::super::resolve_monster_turn_plan(&state, &monster),
-                        "{enemy:?} A{asc} {name}"
+                        "{enemy:?} A{asc} {name:?}"
                     );
                 }
                 if enemy == EnemyId::Taskmaster {
@@ -330,7 +448,10 @@ mod tests {
                     let Action::ApplyPower { amount, .. } = actions[0] else {
                         panic!("missing initial power")
                     };
-                    assert!(info.special_moves[0].1.contains(&format!("{amount}")));
+                    assert!(info.special_moves[0]
+                        .1
+                        .render(Locale::En)
+                        .contains(&format!("{amount}")));
                 }
             }
         }
@@ -387,7 +508,7 @@ mod tests {
                             assert_eq!(
                                 plan,
                                 super::super::resolve_monster_turn_plan(&state, &monster),
-                                "{enemy:?} A{asc} {name}"
+                                "{enemy:?} A{asc} {name:?}"
                             );
                         }
                     }
@@ -448,13 +569,15 @@ mod tests {
                     assert!(info
                         .special_moves
                         .iter()
-                        .any(|(name, text)| *name == "Bite"
-                            && text.contains(&format!("{min}..{max}"))));
+                        .any(|(name, text)| name.render(Locale::En) == "Bite"
+                            && text.render(Locale::En).contains(&format!("{min}..{max}"))));
                     assert!(info
                         .special_moves
                         .iter()
-                        .any(|(name, text)| *name == "Starting Curl Up"
-                            && text.contains(&format!("{curl_min}..{curl_max}"))));
+                        .any(|(name, text)| name.render(Locale::En) == "Starting Curl Up"
+                            && text
+                                .render(Locale::En)
+                                .contains(&format!("{curl_min}..{curl_max}"))));
                 }
             }
         }
@@ -489,7 +612,7 @@ mod tests {
                     assert_eq!(
                         plan,
                         super::super::resolve_monster_turn_plan(&state, &monster),
-                        "{enemy:?} A{asc} {name}"
+                        "{enemy:?} A{asc} {name:?}"
                     );
                 }
             }
@@ -528,7 +651,11 @@ mod tests {
         monster.id = 1;
         for (asc, expected) in [(0, 3), (1, 3), (2, 4), (16, 4), (17, 5), (20, 5)] {
             let info = get(EnemyId::FungiBeast, asc).unwrap();
-            let grow = info.moves.iter().find(|(name, _)| *name == "Grow").unwrap();
+            let grow = info
+                .moves
+                .iter()
+                .find(|(name, _)| name.render(Locale::En) == "Grow")
+                .unwrap();
             let actions =
                 exordium::fungi_beast::FungiBeast::take_turn_plan(&mut state, &monster, &grow.1);
             assert!(

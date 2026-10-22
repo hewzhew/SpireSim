@@ -373,16 +373,26 @@ fn plan_for(move_id: u8) -> MonsterTurnPlan {
 }
 
 pub fn mechanics() -> super::super::mechanics::MonsterMechanics {
+    use crate::content::monsters::mechanics::MonsterText as Text;
     super::super::mechanics::MonsterMechanics {
         moves: vec![
-            ("Slash (phase 1)", slash_plan()),
-            ("Soul Strike (phase 1)", soul_strike_plan()),
-            ("Dark Echo (phase 2 opening)", dark_echo_plan()),
-            ("Sludge (phase 2)", sludge_plan()),
-            ("Tackle (phase 2)", tackle_plan()),
+            (Text::new("awakened_one.slashPhase1"), slash_plan()),
+            (
+                Text::new("awakened_one.soulStrikePhase1"),
+                soul_strike_plan(),
+            ),
+            (
+                Text::new("awakened_one.darkEchoPhase2Opening"),
+                dark_echo_plan(),
+            ),
+            (Text::new("awakened_one.sludgePhase2"), sludge_plan()),
+            (Text::new("awakened_one.tacklePhase2"), tackle_plan()),
         ],
-        special_moves: vec![("Rebirth", "revive self and heal to full Max HP; no attack on this enemy turn".into())],
-        notes: "Starts with Regenerate 10 (15 at A19+), Curiosity 1 (2 at A19+), Unawakened, and 2 Strength at A4+. Phase 1 opens with Slash; Soul Strike cannot repeat immediately and Slash cannot occur three times consecutively. Each Power played while Curiosity is present grants this enemy permanent Strength equal to Curiosity. First lethal damage immediately removes debuffs, Curiosity, Unawakened and Shackled; positive Strength and Regenerate remain. It becomes untargetable until Rebirth, then opens phase 2 with Dark Echo. Later Sludge and Tackle each cannot occur three times consecutively. Final death makes surviving Cultists escape.",
+        special_moves: vec![(
+            Text::new("awakened_one.rebirth"),
+            Text::new("awakened_one.rebirthRule"),
+        )],
+        notes: Text::new("awakened_one.notes1"),
     }
 }
 

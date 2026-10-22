@@ -77,10 +77,14 @@ fn plan_for(move_id: u8, ascension_level: u8) -> MonsterTurnPlan {
 }
 
 pub fn mechanics(asc: u8) -> crate::content::monsters::mechanics::MonsterMechanics {
+    use crate::content::monsters::mechanics::MonsterText as Text;
     crate::content::monsters::mechanics::MonsterMechanics {
-        moves: vec![("Attack", attack_plan(asc)), ("Spike", buff_plan())],
+        moves: vec![
+            (Text::new("spiker.attack"), attack_plan(asc)),
+            (Text::new("spiker.spike"), buff_plan()),
+        ],
         special_moves: vec![],
-        notes: "Starts with persistent Thorns; it can increase Thorns by using Spike. Attack cannot occur twice consecutively while Spike remains available. After six completed Spike moves, always attacks. Thorns retaliates against each qualifying hit and can be blocked; see its definition for the damage type and trigger.",
+        notes: Text::new("spiker.notes"),
     }
 }
 

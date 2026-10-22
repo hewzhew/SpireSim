@@ -283,14 +283,21 @@ fn plan_for(move_id: u8, ascension_level: u8) -> MonsterTurnPlan {
 }
 
 pub fn mechanics(asc: u8) -> super::super::mechanics::MonsterMechanics {
+    use crate::content::monsters::mechanics::MonsterText as Text;
     super::super::mechanics::MonsterMechanics {
-        moves: vec![("Fortify", fortify_plan()), ("Smash", smash_plan(asc))],
-        special_moves: vec![("Bash", (if asc >= 3 {
-            "attack player for 14 x 1 base damage, then apply -1 Strength; with any player orbs, randomly apply -1 Focus instead with 50% probability"
-        } else {
-            "attack player for 12 x 1 base damage, then apply -1 Strength; with any player orbs, randomly apply -1 Focus instead with 50% probability"
-        }).into())],
-        notes: "Starts with 1 Artifact (2 at A18+) and applies Surrounded to the player. Repeats Bash and Fortify in random order, then Smash. While both enemies remain, targeted cards change which one the player faces; an enemy attacking from behind deals 50% more damage. Untargeted cards do not change facing.",
+        moves: vec![
+            (Text::new("spire_shield.fortify"), fortify_plan()),
+            (Text::new("spire_shield.smash"), smash_plan(asc)),
+        ],
+        special_moves: vec![(
+            Text::new("spire_shield.bash"),
+            (if asc >= 3 {
+                Text::new("spire_shield.notesHigh")
+            } else {
+                Text::new("spire_shield.notesLow")
+            }),
+        )],
+        notes: Text::new("spire_shield.notes3"),
     }
 }
 

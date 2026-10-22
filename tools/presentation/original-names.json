@@ -35,12 +35,12 @@
     "src/content/relics/mod.rs": "f349c8108e8b3dc86f7f553e8b90454e76c2ebff3d8db82b06aaf8239d5ce83a",
     "src/state/events/identity.rs": "7a5c5dcf219c9d682ae6a59062915a3084ed21662278448619d228b13123a372",
     "src/state/events/mod.rs": "b30c45a451028cc689c6ea6400b8752d496fdcc9672e90c190951a6a211b2993",
-    "src/content/powers/mod.rs": "d1411e321d82a25ff5dc7bf68fab66c5cc062b32543c26c426fbf927c53852b1",
+    "src/content/powers/mod.rs": "1a0698e744734529e2bc4f6397190165d63b119c83f3dac91c2e993611f85158",
     "src/runtime/combat/orbs.rs": "304e8fadd9404a9308abf27665d1b0b2048ade00e41a53cc5947df4f4b95b688"
   },
   "bindings_sha256": {
-    "en": "f1ea4fe3bcf9e18c4597693293fb360b8526e42d1edf9ab5a17e1de66f6e0bb0",
-    "zh-CN": "63b8872236bda453dbdcb35ea15bbe7a9832e9646f75d77a817f7027766ccb88"
+    "en": "0ffa3f59c7016c196798e9d9fbbb8d942a885cbcdc51bee69fa7570142225c21",
+    "zh-CN": "16f63391474b83166447e708358e945f7f3771ab8da0ff73204368f636c578d5"
   },
   "name_counts": {
     "en": {
@@ -48,6 +48,7 @@
       "relic": 182,
       "potion": 42,
       "enemy": 65,
+      "enemyMove": 61,
       "character": 4,
       "event": 53,
       "power": 134,
@@ -59,6 +60,7 @@
       "relic": 182,
       "potion": 42,
       "enemy": 65,
+      "enemyMove": 61,
       "character": 4,
       "event": 53,
       "power": 134,
@@ -67,8 +69,8 @@
     }
   },
   "generated_names_sha256": {
-    "en": "5cc3cd0e218ed7b9460fbf86baa2f1041d6bc5c2b85aef3a0b7d635ef7f02ea1",
-    "zh-CN": "8dbc0f6b62a2c5a9586847826c229f257099bb4fead4a4085855f3162e31400d"
+    "en": "f4184ee4d0a0c7c76d109adb08c16f54c2094791838db4d131ae570fd0b9059a",
+    "zh-CN": "783fd9b2289cafcf263f4834d88a52ea772b0601562b788951e12d4e963a1148"
   },
   "omitted": {
     "card.Impulse": "No corresponding card localization entry in the installed release; retain stable-ID fallback.",

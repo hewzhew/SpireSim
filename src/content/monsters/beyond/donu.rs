@@ -208,10 +208,14 @@ fn plan_for(move_id: u8, ascension_level: u8) -> MonsterTurnPlan {
 }
 
 pub fn mechanics(asc: u8) -> super::super::mechanics::MonsterMechanics {
+    use crate::content::monsters::mechanics::MonsterText as Text;
     super::super::mechanics::MonsterMechanics {
-        moves: vec![("Beam", beam_plan(asc)), ("Circle of Power", circle_plan())],
+        moves: vec![
+            (Text::new("donu.beam"), beam_plan(asc)),
+            (Text::new("donu.circleOfPower"), circle_plan()),
+        ],
         special_moves: vec![],
-        notes: "Starts with 2 Artifact (3 at A19+). Opens with Circle of Power, then alternates Circle of Power and Beam. Circle grants 3 permanent Strength to all living enemies, including Deca.",
+        notes: Text::new("donu.notes"),
     }
 }
 

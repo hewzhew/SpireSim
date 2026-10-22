@@ -1556,36 +1556,134 @@ fn write_current_powers(out: &mut String, entries: &[CombatLearningPowerV1], loc
     }
 }
 
-fn target(target: MoveTarget) -> &'static str {
-    match target {
-        MoveTarget::Player => "player",
-        MoveTarget::SelfTarget => "self",
-        MoveTarget::AllMonsters => "all monsters",
-    }
+fn enemy_text(locale: Locale, key: &str, parameters: &[(&str, &str)]) -> String {
+    locale
+        .text("mechanics", &format!("enemy.{key}"), parameters)
+        .expect("enemy query message")
 }
 
-fn spawn_hp(value: SpawnHpValue) -> String {
+fn target(target: MoveTarget, locale: Locale) -> String {
+    enemy_text(
+        locale,
+        match target {
+            MoveTarget::Player => "targetPlayer",
+            MoveTarget::SelfTarget => "targetSelf",
+            MoveTarget::AllMonsters => "targetAllMonsters",
+        },
+        &[],
+    )
+}
+
+fn spawn_hp(value: SpawnHpValue, locale: Locale) -> String {
     match value {
-        SpawnHpValue::Rolled => "rolled spawn HP".into(),
+        SpawnHpValue::Rolled => enemy_text(locale, "spawnRolled", &[]),
         SpawnHpValue::Fixed(hp) => hp.to_string(),
-        SpawnHpValue::SourceCurrentHp => "parent's remaining HP at split execution".into(),
-        SpawnHpValue::SourceMaxHp => "parent's Max HP".into(),
+        SpawnHpValue::SourceCurrentHp => enemy_text(locale, "spawnCurrent", &[]),
+        SpawnHpValue::SourceMaxHp => enemy_text(locale, "spawnMax", &[]),
     }
 }
 
-fn card_addition(c: &sts_oracle_learning::runtime::monster_move::AddCardStep) -> String {
-    format!(
-        "add {} {}{} to {}",
-        c.amount,
-        label(c.card_id),
-        if c.upgraded { "+" } else { "" },
+fn card_addition(
+    c: &sts_oracle_learning::runtime::monster_move::AddCardStep,
+    locale: Locale,
+) -> String {
+    let destination = enemy_text(
+        locale,
         match c.destination {
             CardDestination::Hand => "hand",
-            CardDestination::Discard => "discard pile",
-            CardDestination::DrawPileTop => "top of draw pile",
-            CardDestination::DrawPileRandom => "draw pile at random positions",
-        }
+            CardDestination::Discard => "discard",
+            CardDestination::DrawPileTop => "drawTop",
+            CardDestination::DrawPileRandom => "drawRandom",
+        },
+        &[],
+    );
+    enemy_text(
+        locale,
+        "addCard",
+        &[
+            ("amount", &c.amount.to_string()),
+            (
+                "card",
+                &locale.card_name(c.card_id.stable_id(), u8::from(c.upgraded)),
+            ),
+            ("destination", &destination),
+        ],
     )
+}
+
+fn enemy_step(step: &MoveStep, locale: Locale) -> String {
+    match step {
+        MoveStep::Attack(a) => enemy_text(
+            locale,
+            "attack",
+            &[
+                ("target", &target(a.target, locale)),
+                ("damage", &a.attack.base_damage.to_string()),
+                ("hits", &a.attack.hits.to_string()),
+            ],
+        ),
+        MoveStep::ApplyPower(p) => enemy_text(
+            locale,
+            "applyPower",
+            &[
+                ("amount", &p.amount.to_string()),
+                ("power", locale.entity("power", p.power_id.stable_id())),
+                ("target", &target(p.target, locale)),
+            ],
+        ),
+        MoveStep::GainBlock(b) => enemy_text(
+            locale,
+            "block",
+            &[
+                ("amount", &b.amount.to_string()),
+                ("target", &target(b.target, locale)),
+            ],
+        ),
+        MoveStep::Heal(h) => enemy_text(
+            locale,
+            "heal",
+            &[
+                ("amount", &h.amount.to_string()),
+                ("target", &target(h.target, locale)),
+            ],
+        ),
+        MoveStep::GainBlockRandomMonster(b) => {
+            enemy_text(locale, "randomBlock", &[("amount", &b.amount.to_string())])
+        }
+        MoveStep::StealGold(s) => enemy_text(locale, "steal", &[("amount", &s.amount.to_string())]),
+        MoveStep::UpgradeCards(c) => enemy_text(
+            locale,
+            "upgrade",
+            &[("card", locale.entity("card", c.card_id.stable_id()))],
+        ),
+        MoveStep::SpawnMonster(s) => enemy_text(
+            locale,
+            "spawn",
+            &[
+                ("name", locale.entity("enemy", s.enemy_id.stable_id())),
+                ("current", &spawn_hp(s.hp.current, locale)),
+                ("max", &spawn_hp(s.hp.max, locale)),
+            ],
+        ),
+        MoveStep::Suicide => enemy_text(locale, "suicide", &[]),
+        MoveStep::Sleep => enemy_text(locale, "sleep", &[]),
+        MoveStep::Stun => enemy_text(locale, "stun", &[]),
+        MoveStep::Charge => enemy_text(locale, "charge", &[]),
+        MoveStep::Escape => enemy_text(locale, "escape", &[]),
+        MoveStep::RemovePower(p) => enemy_text(
+            locale,
+            "removePower",
+            &[
+                ("power", locale.entity("power", p.power_id.stable_id())),
+                ("target", &target(p.target, locale)),
+            ],
+        ),
+        MoveStep::Utility(UtilityStep::RemoveAllDebuffs { target: t }) => {
+            enemy_text(locale, "removeDebuffs", &[("target", &target(*t, locale))])
+        }
+        MoveStep::AddCard(c) => card_addition(c, locale),
+        _ => enemy_text(locale, "unknownEffect", &[]),
+    }
 }
 
 /// A small index into the same public definitions expanded below. It is a
@@ -1606,23 +1704,36 @@ fn write_encounter_preparation_links(
             if !seen.insert(enemy) {
                 continue;
             }
-            let source = format!("{} / {}", encounter.stable_id(), label(enemy));
+            let source = format!(
+                "{} / {}",
+                encounter.stable_id(),
+                locale.entity("enemy", enemy.stable_id())
+            );
             if let Some(fact) = monsters::mechanics::get(enemy, ascension) {
                 for (name, plan) in fact.moves {
                     for step in plan.steps {
                         if let MoveStep::AddCard(c) = step {
-                            lines.push(format!("{source} / {name}: {}", card_addition(&c)));
+                            lines.push(format!(
+                                "{source} / {}: {}",
+                                name.render(locale),
+                                card_addition(&c, locale)
+                            ));
                         }
                     }
                 }
             }
             for (power, amount) in monsters::mechanics::starting_powers(enemy, ascension) {
                 if let Some(rule) = powers::mechanics::get(power) {
-                    lines.push(format!(
-                        "{source} / starting {} {amount}: {} {}",
-                        label(power),
-                        rule.effect(Locale::En),
-                        rule.timing(Locale::En)
+                    lines.push(enemy_text(
+                        locale,
+                        "preparationPower",
+                        &[
+                            ("source", &source),
+                            ("power", locale.entity("power", power.stable_id())),
+                            ("amount", &amount.to_string()),
+                            ("effect", &rule.effect(locale)),
+                            ("timing", &rule.timing(locale)),
+                        ],
                     ));
                 }
             }
@@ -1745,35 +1856,53 @@ fn write_encounter(
 }
 
 fn write_enemy(out: &mut String, enemy: monsters::EnemyId, ascension: u8, locale: Locale) {
-    if locale != Locale::En {
-        writeln!(
-            out,
-            "{}",
-            combat_rule_text(
-                locale,
-                "enemySupplement",
-                &[("name", locale.entity("enemy", enemy.stable_id()))]
-            )
+    writeln!(
+        out,
+        "{}",
+        enemy_text(
+            locale,
+            "heading",
+            &[
+                ("name", locale.entity("enemy", enemy.stable_id())),
+                ("id", enemy.stable_id()),
+                ("ascension", &ascension.to_string()),
+            ]
         )
-        .unwrap();
-    }
-    writeln!(out, "Enemy definition: {} | A{ascension}", label(enemy)).unwrap();
+    )
+    .unwrap();
     let (min_hp, max_hp) = monsters::get_hp_range(enemy, ascension);
-    writeln!(out, "  Base starting HP range: {min_hp}..{max_hp}").unwrap();
+    writeln!(
+        out,
+        "  {}",
+        enemy_text(
+            locale,
+            "hp",
+            &[("min", &min_hp.to_string()), ("max", &max_hp.to_string())]
+        )
+    )
+    .unwrap();
     let Some(fact) = monsters::mechanics::get(enemy, ascension) else {
-        writeln!(out, "  Unknown: move explanations not yet covered. Current visible intent and powers remain authoritative.").unwrap();
+        writeln!(out, "  {}", enemy_text(locale, "unavailable", &[])).unwrap();
         return;
     };
     let mut referenced_powers = Vec::new();
     for (power, amount) in monsters::mechanics::starting_powers(enemy, ascension) {
-        writeln!(out, "  Starting power: {} {amount}", label(power)).unwrap();
+        writeln!(
+            out,
+            "  {}",
+            enemy_text(
+                locale,
+                "startingPower",
+                &[
+                    ("power", locale.entity("power", power.stable_id())),
+                    ("amount", &amount.to_string())
+                ]
+            )
+        )
+        .unwrap();
         referenced_powers.push(power);
     }
-    writeln!(
-        out,
-        "Possible moves (base values before powers; not a prediction):"
-    )
-    .unwrap();
+    writeln!(out, "{}", enemy_text(locale, "moves", &[])).unwrap();
     let mut referenced_cards = Vec::new();
     for (name, plan) in fact.moves {
         for step in &plan.steps {
@@ -1795,78 +1924,32 @@ fn write_enemy(out: &mut String, enemy: monsters::EnemyId, ascension: u8, locale
         let effects: Vec<_> = plan
             .steps
             .iter()
-            .map(|step| match step {
-                MoveStep::Attack(a) => format!(
-                    "attack {} for {} base damage/hit (hits: {})",
-                    target(a.target),
-                    a.attack.base_damage,
-                    a.attack.hits
-                ),
-                MoveStep::ApplyPower(p) => format!(
-                    "apply {} {} to {}",
-                    p.amount,
-                    label(p.power_id),
-                    target(p.target)
-                ),
-                MoveStep::GainBlock(b) => {
-                    format!("gain {} Block for {}", b.amount, target(b.target))
-                }
-                MoveStep::Heal(h) => format!(
-                    "heal {} for {} HP, up to Max HP",
-                    target(h.target),
-                    h.amount
-                ),
-                MoveStep::GainBlockRandomMonster(b) => format!(
-                    "give {} Block to a random eligible other monster, or self if none remains",
-                    b.amount
-                ),
-                MoveStep::StealGold(s) => format!("steal up to {} player Gold", s.amount),
-                MoveStep::UpgradeCards(c) => format!(
-                    "upgrade existing {} cards in draw and discard piles",
-                    label(c.card_id)
-                ),
-                MoveStep::SpawnMonster(s) => format!(
-                    "spawn {} (current HP: {}; Max HP: {})",
-                    label(s.enemy_id),
-                    spawn_hp(s.hp.current),
-                    spawn_hp(s.hp.max)
-                ),
-                MoveStep::Suicide => "remove parent without death relic triggers".into(),
-                MoveStep::Sleep => {
-                    "sleep; no attack on this enemy turn (wake conditions below)".into()
-                }
-                MoveStep::Stun => "stunned; no attack on this enemy turn".into(),
-                MoveStep::Charge => {
-                    "charge; no attack on this enemy turn (charge cycle below)".into()
-                }
-                MoveStep::Escape => "escape from combat".into(),
-                MoveStep::RemovePower(p) => {
-                    format!("remove {} from {}", label(p.power_id), target(p.target))
-                }
-                MoveStep::Utility(UtilityStep::RemoveAllDebuffs { target: t }) => {
-                    format!("remove all debuffs from {}", target(*t))
-                }
-                MoveStep::AddCard(c) => card_addition(c),
-                _ => "Unknown: this effect has no explanation yet".into(),
-            })
+            .map(|step| enemy_step(step, locale))
             .collect();
-        writeln!(out, "  {name}: {}", effects.join("; ")).unwrap();
-    }
-    for (name, effect) in fact.special_moves {
-        writeln!(out, "  {name}: {effect}").unwrap();
-    }
-    writeln!(out, "Rules: {}", fact.notes).unwrap();
-    if !referenced_powers.is_empty() || !referenced_cards.is_empty() {
         writeln!(
             out,
-            "Referenced effect definitions (not evidence that they are currently active):"
+            "  {}: {}",
+            name.render(locale),
+            effects.join(locale.entry("game", "enemyRule.separator").unwrap())
         )
         .unwrap();
+    }
+    for (name, effect) in fact.special_moves {
+        writeln!(out, "  {}: {}", name.render(locale), effect.render(locale)).unwrap();
+    }
+    writeln!(
+        out,
+        "{}",
+        enemy_text(locale, "rules", &[("rules", &fact.notes.render(locale))])
+    )
+    .unwrap();
+    if !referenced_powers.is_empty() || !referenced_cards.is_empty() {
+        writeln!(out, "{}", enemy_text(locale, "referenced", &[])).unwrap();
         for power in referenced_powers {
-            write_power(out, power, Locale::En);
+            write_power(out, power, locale);
         }
         for (card, upgrades) in referenced_cards {
-            write_card_rule(out, card, upgrades, Locale::En);
+            write_card_rule(out, card, upgrades, locale);
         }
     }
 }
@@ -1874,6 +1957,7 @@ fn write_enemy(out: &mut String, enemy: monsters::EnemyId, ascension: u8, locale
 #[cfg(test)]
 mod tests {
     use super::*;
+    use monsters::EnemyId;
 
     #[test]
     fn completed_boss_rules_use_the_upcoming_act_and_actual_entry_healing() {
@@ -1971,7 +2055,10 @@ mod tests {
             }
         }
         let chosen = render_query(None, Some(20), "enemy Chosen").unwrap();
-        assert!(chosen.contains("Drain: apply 3 Weak to player; apply 3 Strength to self"));
+        assert!(chosen.contains(&format!(
+            "Drain: apply 3 {} to player; apply 3 Strength to self",
+            Locale::En.entity("power", "Weak")
+        )));
         assert!(chosen.contains("Hex: apply 1 Hex to player"));
         assert!(chosen.contains("including a Skill or Power"));
         assert!(chosen.contains("random positions"));
@@ -2235,7 +2322,10 @@ mod tests {
     fn first_act_elite_encounters_expose_members_and_ascension_effects() {
         let nob = render_query(None, Some(20), "encounter Gremlin Nob").unwrap();
         assert!(nob.contains("Fixed starting enemies: Gremlin Nob [GremlinNob]"));
-        assert!(nob.contains("apply 3 Anger to self"));
+        assert!(nob.contains(&format!(
+            "apply 3 {} to self",
+            Locale::En.entity("power", "Anger")
+        )));
         let laga = render_query(None, Some(20), "encounter Lagavulin").unwrap();
         assert!(laga.contains("Fixed starting enemies: Lagavulin [Lagavulin]"));
         assert!(laga.contains("apply -2 Dexterity to player"));
@@ -2255,8 +2345,12 @@ mod tests {
     #[test]
     fn act_two_elite_queries_expose_lineups_dynamic_hits_and_ally_effects() {
         let slavers = render_query(None, Some(20), "encounter Slavers").unwrap();
-        for enemy in ["Blue Slaver", "Taskmaster", "Red Slaver"] {
-            assert!(slavers.contains(&format!("Enemy definition: {enemy}")));
+        for enemy in [EnemyId::SlaverBlue, EnemyId::Taskmaster, EnemyId::SlaverRed] {
+            assert!(slavers.contains(&format!(
+                "Enemy definition: {} [{}]",
+                Locale::En.entity("enemy", enemy.stable_id()),
+                enemy.stable_id()
+            )));
         }
         assert_eq!(
             render_query(None, Some(20), "enemy Slavers").unwrap(),
@@ -2540,6 +2634,66 @@ mod tests {
     }
 
     #[test]
+    fn enemy_queries_localize_complete_catalogs_and_preparation_effects() {
+        for &id in monsters::EnemyId::STABLE_IDS {
+            let enemy = monsters::EnemyId::from_stable_id(id).unwrap();
+            for ascension in [0, 20] {
+                let definition = monsters::mechanics::get(enemy, ascension).unwrap();
+                for locale in [Locale::En, Locale::ZhCn] {
+                    let text = super::render_query(
+                        None,
+                        Some(ascension),
+                        None,
+                        &format!("enemy {id}"),
+                        locale,
+                    )
+                    .unwrap();
+                    assert!(
+                        text.contains(id) && text.contains(locale.entity("enemy", id)),
+                        "{locale}/{id}"
+                    );
+                    assert!(
+                        text.contains(&definition.notes.render(locale)),
+                        "{locale}/{id}"
+                    );
+                    for (name, _) in &definition.moves {
+                        assert!(text.contains(&name.render(locale)), "{locale}/{id}");
+                    }
+                    for (name, rule) in &definition.special_moves {
+                        assert!(
+                            text.contains(&name.render(locale))
+                                && text.contains(&rule.render(locale)),
+                            "{locale}/{id}"
+                        );
+                    }
+                    assert!(
+                        !text.contains("{{") && !text.contains("英文机制补充"),
+                        "{locale}/{id}"
+                    );
+                }
+            }
+        }
+        let mut text = String::new();
+        write_encounter_preparation_links(
+            &mut text,
+            &[EncounterId::Slavers, EncounterId::TheHeart],
+            20,
+            Locale::ZhCn,
+        );
+        assert!(text.contains("将 3 张伤口加入弃牌堆"), "{text}");
+        assert!(text.contains("初始死亡律动 2"), "{text}");
+        assert!(text.contains(
+            &powers::mechanics::get(powers::PowerId::BeatOfDeath)
+                .unwrap()
+                .effect(Locale::ZhCn)
+        ));
+        assert!(
+            !text.contains("starting") && !text.contains("add 3 Wound"),
+            "{text}"
+        );
+    }
+
+    #[test]
     fn observed_city_queries_expose_hit_rules_and_effects_beyond_visible_intents() {
         let byrd = render_query(None, Some(20), "enemy Byrd").unwrap();
         assert!(byrd.contains("base damage/hit (hits: 6)"));
@@ -2557,7 +2711,10 @@ mod tests {
         let plant = render_query(None, Some(20), "enemy Snake Plant").unwrap();
         assert!(plant.contains("8 base damage/hit (hits: 3)"));
         assert!(plant.contains("apply 2 Frail to player"));
-        assert!(plant.contains("apply 2 Weak to player"));
+        assert!(plant.contains(&format!(
+            "apply 2 {} to player",
+            Locale::En.entity("power", "Weak")
+        )));
         assert!(plant.contains("two intervening Chompy Chomps"));
         for (query, expected) in [
             (
@@ -2677,15 +2834,24 @@ mod tests {
         }
         let automaton = render_query(None, Some(20), "encounter Automaton").unwrap();
         assert!(automaton.contains("Starting power: Artifact 3"));
-        assert!(automaton.contains("Hyper Beam: attack player for 50 base damage/hit"));
+        assert!(automaton.contains(&format!(
+            "{}: attack player for 50 base damage/hit",
+            Locale::En.entity("enemyMove", "BronzeAutomaton_HyperBeam")
+        )));
         assert!(automaton.contains("enemy turn 6"));
         let rept = render_query(None, Some(20), "encounter Reptomancer").unwrap();
-        assert!(rept.contains("Summon up to 2 Snake Daggers"));
+        assert!(rept.contains(&format!(
+            "Summon {} minions into empty dagger slots (summon limit: 2",
+            Locale::En.entity("enemy", "SnakeDagger")
+        )));
         assert!(rept.contains("Snake Strike: attack player for 16 base damage/hit (hits: 2)"));
         assert!(rept.contains("add 1 Wound to discard pile"));
         assert!(render_query(None, Some(17), "encounter Reptomancer")
             .unwrap()
-            .contains("Summon up to 1 Snake Daggers"));
+            .contains(&format!(
+                "Summon {} minions into empty dagger slots (summon limit: 1",
+                Locale::En.entity("enemy", "SnakeDagger")
+            )));
         let orb = render_query(None, Some(20), "enemy BronzeOrb").unwrap();
         assert!(orb.contains("Give Bronze Automaton 12 Block"));
         assert!(orb.contains("preferring Rare, then Uncommon, then Common"));
@@ -2737,9 +2903,9 @@ mod tests {
         for query in ["encounter TheHeart", "enemy TheHeart", "enemy CorruptHeart"] {
             let view = render_query(None, Some(20), query).unwrap();
             assert!(view.contains("Starting power: Invincible 200"));
-            assert!(view.contains("Starting power: Beat of Death 2"));
+            assert!(view.contains("Starting power: Beat Of Death 2"));
             assert!(view.contains("Buff 1: gain 2 Artifact"));
-            assert!(view.contains("Buff 2: gain 1 Beat of Death"));
+            assert!(view.contains("Buff 2: gain 1 Beat Of Death"));
             assert!(view.contains("Buff 3: gain Painful Stabs"));
             assert!(view.contains("Buff 4: gain 10 Strength"));
             assert!(view.contains("Buff 5 and every later Buff: gain 50 Strength"));
@@ -2752,7 +2918,7 @@ mod tests {
         }
         let low = render_query(None, Some(18), "enemy CorruptHeart").unwrap();
         assert!(low.contains("Starting power: Invincible 300"));
-        assert!(low.contains("Starting power: Beat of Death 1"));
+        assert!(low.contains("Starting power: Beat Of Death 1"));
         assert!(!low.contains("200"));
         let apotheosis = render_query(None, Some(20), "card Apotheosis").unwrap();
         assert!(apotheosis.contains("for this combat only"));
@@ -3415,10 +3581,10 @@ mod tests {
                 assert!(zh.contains(&format!("[{}] | 进阶 {ascension}", encounter.stable_id())));
                 for &enemy in lineup.fixed.iter().chain(lineup.random_pool.iter()) {
                     let mut original = String::new();
-                    write_enemy(&mut original, enemy, ascension, Locale::En);
+                    write_enemy(&mut original, enemy, ascension, Locale::ZhCn);
                     assert!(
                         zh.contains(&original),
-                        "{id}: localized headers must preserve the complete mechanism supplement"
+                        "{id}: encounter and enemy queries must share the complete localized definition"
                     );
                     if lineup.random_pool.contains(&enemy) {
                         let weight = lineup
@@ -3492,7 +3658,7 @@ mod tests {
             "Scouring Whip: add 3 Wound to discard pile",
             "Painful Stabs",
             "add 1 Dazed to draw pile at random positions",
-            "Beat of Death",
+            Locale::En.entity("power", "BeatOfDeath"),
         ] {
             assert!(
                 full.contains(fact) && brief.contains(fact),
@@ -3643,7 +3809,7 @@ mod tests {
             assert!(view.contains(KeyRuleV1::EmeraldOpportunities.text(Locale::En)));
             assert!(view.contains("Act 3 bosses advance without a normal reward screen"));
             assert!(view.contains("Base starting HP range: 800..800"));
-            assert!(view.contains("Starting power: Beat of Death 2"));
+            assert!(view.contains("Starting power: Beat Of Death 2"));
             assert!(view.contains("Starting power: Invincible 200"));
             assert!(view.contains("hits: 15"));
             assert!(view.contains("Torii's normal-hit reduction does not apply"));
@@ -3773,8 +3939,8 @@ mod tests {
                 }
                 if act == 4 {
                     assert!(view.contains("Fixed Act 4 elite encounter:"));
-                    assert!(view.contains("Enemy definition: Spire Shield | A20"));
-                    assert!(view.contains("Enemy definition: Spire Spear | A20"));
+                    assert!(view.contains("Enemy definition: Spire Shield [SpireShield] | A20"));
+                    assert!(view.contains("Enemy definition: Spire Spear [SpireSpear] | A20"));
                 }
                 assert!(view.contains(&expected));
                 assert_eq!(
@@ -3818,7 +3984,10 @@ mod tests {
         assert!(collector.contains("apply 5 Strength to all monsters"));
         assert!(collector.contains("gain 23 Block for self"));
         for power in ["Weak", "Vulnerable", "Frail"] {
-            assert!(collector.contains(&format!("apply 5 {power} to player")));
+            assert!(collector.contains(&format!(
+                "apply 5 {} to player",
+                Locale::En.entity("power", power)
+            )));
         }
         assert!(collector.contains("first turn summons two Torch Heads"));
         assert!(render_query(None, Some(20), "enemy TorchHead")

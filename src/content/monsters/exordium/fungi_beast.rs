@@ -72,10 +72,14 @@ fn plan_for(move_id: u8, asc: u8) -> MonsterTurnPlan {
 }
 
 pub fn mechanics(asc: u8) -> super::super::mechanics::MonsterMechanics {
+    use crate::content::monsters::mechanics::MonsterText as Text;
     super::super::mechanics::MonsterMechanics {
         special_moves: vec![],
-        moves: vec![("Bite", bite_plan()), ("Grow", grow_plan(asc))],
-        notes: "Each Fungi Beast can Grow. It cannot Grow twice consecutively or Bite three times consecutively. Spore Cloud is a separate death trigger; inspect its current amount on the monster.",
+        moves: vec![
+            (Text::new("fungi_beast.bite"), bite_plan()),
+            (Text::new("fungi_beast.grow"), grow_plan(asc)),
+        ],
+        notes: Text::new("fungi_beast.notes"),
     }
 }
 

@@ -123,10 +123,18 @@ fn plan_for(move_id: u8, asc: u8) -> MonsterTurnPlan {
 }
 
 pub fn mechanics(asc: u8) -> super::super::mechanics::MonsterMechanics {
+    use crate::content::monsters::mechanics::MonsterText as Text;
     super::super::mechanics::MonsterMechanics {
-        moves: vec![("Goop Spray", sticky_plan(asc)), ("Slam", slam_plan(asc)), ("Split", split_plan())],
-        special_moves: vec![("Preparing", "no attack or debuff on this enemy turn; plans Slam next".into())],
-        notes: "Starts with Goop Spray, then Preparing, then Slam; repeats this cycle unless interrupted. While alive, reaching half Max HP or below replaces its current intent with Split. Splits into one Large Spike Slime and one Large Acid Slime. Each child's current and Max HP equal the parent's remaining HP at split execution. Further damage before splitting reduces both children; killing the parent prevents splitting.",
+        moves: vec![
+            (Text::new("slime_boss.goopSpray"), sticky_plan(asc)),
+            (Text::new("slime_boss.slam"), slam_plan(asc)),
+            (Text::new("slime_boss.split"), split_plan()),
+        ],
+        special_moves: vec![(
+            Text::new("slime_boss.preparing"),
+            Text::new("slime_boss.preparingRule"),
+        )],
+        notes: Text::new("slime_boss.notes1"),
     }
 }
 

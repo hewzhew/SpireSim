@@ -15,10 +15,17 @@ const ATTACK: u8 = 2;
 const ATTACK_ROLL_CUTOFF: i32 = 20;
 
 pub fn mechanics(ascension: u8) -> crate::content::monsters::mechanics::MonsterMechanics {
+    use crate::content::monsters::mechanics::MonsterText as Text;
     crate::content::monsters::mechanics::MonsterMechanics {
-        moves: vec![("Attack", attack_plan(ascension)), ("Daze", daze_plan())],
-        special_moves: vec![("Move selection", format!("A move roll below {ATTACK_ROLL_CUTOFF} selects Attack unless the previous move was Attack; otherwise it selects Daze. Attack cannot repeat immediately."))],
-        notes: "Daze inserts cards into random positions in the draw pile, not the discard pile. Possible moves are not a prediction of the next roll.",
+        moves: vec![
+            (Text::new("repulsor.attack"), attack_plan(ascension)),
+            (Text::new("repulsor.daze"), daze_plan()),
+        ],
+        special_moves: vec![(
+            Text::new("repulsor.moveSelection"),
+            Text::new("repulsor.selectionRule").with("cutoff", ATTACK_ROLL_CUTOFF),
+        )],
+        notes: Text::new("repulsor.notes"),
     }
 }
 

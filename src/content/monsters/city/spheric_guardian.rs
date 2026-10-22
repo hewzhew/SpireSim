@@ -109,15 +109,22 @@ fn plan_for(move_id: u8, asc: u8) -> MonsterTurnPlan {
 }
 
 pub fn mechanics(asc: u8) -> crate::content::monsters::mechanics::MonsterMechanics {
+    use crate::content::monsters::mechanics::MonsterText as Text;
     crate::content::monsters::mechanics::MonsterMechanics {
         special_moves: vec![],
         moves: vec![
-            ("Harden", harden_plan(asc)),
-            ("Bash and Frail", bash_and_frail_plan(asc)),
-            ("Slam", slam_plan(asc)),
-            ("Bash and Block", bash_and_block_plan(asc)),
+            (Text::new("spheric_guardian.harden"), harden_plan(asc)),
+            (
+                Text::new("spheric_guardian.bashAndFrail"),
+                bash_and_frail_plan(asc),
+            ),
+            (Text::new("spheric_guardian.slam"), slam_plan(asc)),
+            (
+                Text::new("spheric_guardian.bashAndBlock"),
+                bash_and_block_plan(asc),
+            ),
         ],
-        notes: "Starts with 20 HP, 40 Block, 3 Artifact and Barricade. Barricade preserves its Block between turns. Opens with Harden, then Bash and Frail; afterward alternates Slam and Bash and Block. Artifact blocks incoming debuffs one at a time.",
+        notes: Text::new("spheric_guardian.notes"),
     }
 }
 

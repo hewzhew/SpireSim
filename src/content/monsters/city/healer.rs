@@ -191,10 +191,18 @@ fn plan_for(move_id: u8, ascension_level: u8) -> MonsterTurnPlan {
 }
 
 pub fn mechanics(asc: u8) -> crate::content::monsters::mechanics::MonsterMechanics {
+    use crate::content::monsters::mechanics::MonsterText as Text;
     crate::content::monsters::mechanics::MonsterMechanics {
-        moves: vec![("Attack and Frail", attack_plan(asc)), ("Heal", heal_plan(asc)), ("Strengthen", buff_plan(asc))],
-        special_moves: vec![("Move selection", format!("When living monsters' total missing HP is greater than {}, chooses Heal unless the last two moves were Heal. Otherwise chooses Attack and Frail or Strengthen. Heal and Strengthen cannot each repeat three times consecutively; at A17+ Attack and Frail cannot repeat on consecutive turns. These conditions are checked when selecting a move, not reevaluated when an already selected move executes.", heal_threshold(asc)))],
-        notes: "Heal restores the listed HP to each living monster, including Mystic, up to each monster's Max HP. Strengthen grants persistent Strength to each living monster, including Mystic. Both Heal and Strengthen have a Buff intent icon: that icon alone does not distinguish them. Attack and Frail applies Frail after its hit, even if Block absorbs all damage.",
+        moves: vec![
+            (Text::new("healer.attackAndFrail"), attack_plan(asc)),
+            (Text::new("healer.heal"), heal_plan(asc)),
+            (Text::new("healer.strengthen"), buff_plan(asc)),
+        ],
+        special_moves: vec![(
+            Text::new("healer.moveSelection"),
+            Text::new("healer.selectionRule").with("threshold", heal_threshold(asc)),
+        )],
+        notes: Text::new("healer.notes"),
     }
 }
 

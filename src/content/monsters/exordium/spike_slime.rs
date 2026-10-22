@@ -142,18 +142,42 @@ fn large_plan_for(move_id: u8, asc: u8) -> MonsterTurnPlan {
 }
 
 pub fn mechanics(enemy: EnemyId, asc: u8) -> super::super::mechanics::MonsterMechanics {
+    use crate::content::monsters::mechanics::MonsterText as Text;
     let (moves, notes) = match enemy {
-        EnemyId::SpikeSlimeL => (vec![
-            ("Flame Tackle", large_plan_for(FLAME_TACKLE, asc)),
-            ("Lick", large_plan_for(FRAIL_LICK, asc)),
-            ("Split", split_plan()),
-        ], "Random moves with history restrictions. While alive, reaching half Max HP or below replaces its current intent with Split. Each child uses the parent's remaining HP at split execution as both current and Max HP; further damage before splitting reduces both children. Killing the parent prevents splitting."),
-        EnemyId::SpikeSlimeM => (vec![
-            ("Flame Tackle", medium_plan_for(FLAME_TACKLE, asc)),
-            ("Lick", medium_plan_for(FRAIL_LICK, asc)),
-        ], "Random moves with history restrictions. Medium Spike Slimes do not split."),
-        EnemyId::SpikeSlimeS => (vec![("Tackle", small_plan_for(FLAME_TACKLE, asc))],
-            "Attacks every turn. Small Spike Slimes do not split."),
+        EnemyId::SpikeSlimeL => (
+            vec![
+                (
+                    Text::new("spike_slime.flameTackle"),
+                    large_plan_for(FLAME_TACKLE, asc),
+                ),
+                (
+                    Text::new("spike_slime.lick"),
+                    large_plan_for(FRAIL_LICK, asc),
+                ),
+                (Text::new("spike_slime.split"), split_plan()),
+            ],
+            Text::new("spike_slime.notesLarge"),
+        ),
+        EnemyId::SpikeSlimeM => (
+            vec![
+                (
+                    Text::new("spike_slime.flameTackle"),
+                    medium_plan_for(FLAME_TACKLE, asc),
+                ),
+                (
+                    Text::new("spike_slime.lick"),
+                    medium_plan_for(FRAIL_LICK, asc),
+                ),
+            ],
+            Text::new("spike_slime.notesMedium"),
+        ),
+        EnemyId::SpikeSlimeS => (
+            vec![(
+                Text::new("spike_slime.tackle"),
+                small_plan_for(FLAME_TACKLE, asc),
+            )],
+            Text::new("spike_slime.notesSmall"),
+        ),
         _ => unreachable!("not a Spike Slime"),
     };
     super::super::mechanics::MonsterMechanics {

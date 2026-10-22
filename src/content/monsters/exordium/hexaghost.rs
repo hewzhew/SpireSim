@@ -303,19 +303,41 @@ fn plan_for(
 }
 
 pub fn mechanics(asc: u8) -> super::super::mechanics::MonsterMechanics {
+    use crate::content::monsters::mechanics::MonsterText as Text;
     super::super::mechanics::MonsterMechanics {
         moves: vec![
-            ("Tackle", plan_for(TACKLE, asc, None, false)),
-            ("Inflame", plan_for(INFLAME, asc, None, false)),
-            ("Sear before first Inferno", plan_for(SEAR, asc, None, false)),
-            ("Sear after first Inferno", plan_for(SEAR, asc, None, true)),
-            ("Inferno", plan_for(INFERNO, asc, None, false)),
+            (
+                Text::new("hexaghost.tackle"),
+                plan_for(TACKLE, asc, None, false),
+            ),
+            (
+                Text::new("hexaghost.inflame"),
+                plan_for(INFLAME, asc, None, false),
+            ),
+            (
+                Text::new("hexaghost.searBeforeFirstInferno"),
+                plan_for(SEAR, asc, None, false),
+            ),
+            (
+                Text::new("hexaghost.searAfterFirstInferno"),
+                plan_for(SEAR, asc, None, true),
+            ),
+            (
+                Text::new("hexaghost.inferno"),
+                plan_for(INFERNO, asc, None, false),
+            ),
         ],
         special_moves: vec![
-            ("Activate", "no attack on this enemy turn; locks Divider's base damage per hit to floor(player current HP / 12) + 1 at Activate execution, then plans Divider".into()),
-            ("Divider", "attack player with the previously locked base damage/hit (hits: 6), before Strength and other damage modifiers. It does not recalculate from player HP on the Divider turn.".into()),
+            (
+                Text::new("hexaghost.activate"),
+                Text::new("hexaghost.activateRule"),
+            ),
+            (
+                Text::new("hexaghost.divider"),
+                Text::new("hexaghost.dividerRule"),
+            ),
         ],
-        notes: "Starts Activate, then Divider, then repeats Sear, Tackle, Sear, Inflame, Tackle, Sear, Inferno. Inferno upgrades Burns in draw and discard piles and adds three upgraded Burns; all later Sears add upgraded Burns. Inflame Strength persists and affects every hit.",
+        notes: Text::new("hexaghost.notes"),
     }
 }
 

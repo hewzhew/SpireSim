@@ -52,20 +52,35 @@ pub(crate) fn louse_curl_up_range(asc: u8) -> (i32, i32) {
 
 fn louse_mechanics(
     asc: u8,
-    moves: Vec<(&'static str, MonsterTurnPlan)>,
+    moves: Vec<(super::mechanics::MonsterText, MonsterTurnPlan)>,
 ) -> super::mechanics::MonsterMechanics {
+    use crate::content::monsters::mechanics::MonsterText as Text;
     let (min, max) = louse_bite_damage_range(asc);
     let (curl_min, curl_max) = louse_curl_up_range(asc);
     super::mechanics::MonsterMechanics {
         moves,
         special_moves: vec![
-            ("Bite", format!("attack player once; base damage is sampled once at spawn from {min}..{max} inclusive and stays fixed for this monster, before Strength and other damage modifiers. Use the current visible intent for the actual modified damage.")),
-            ("Starting Curl Up", format!("sampled once from {curl_min}..{curl_max} inclusive. {}", crate::content::powers::mechanics::get(crate::content::powers::PowerId::CurlUp).unwrap().effect(sts_presentation::Locale::En))),
+            (
+                Text::new("louse.bite"),
+                Text::new("louse.biteRule")
+                    .with("min", min)
+                    .with("max", max),
+            ),
+            (
+                Text::new("louse.startingCurlUp"),
+                Text::new("louse.curlRule")
+                    .with("min", curl_min)
+                    .with("max", curl_max)
+                    .with(
+                        "effect",
+                        Text::PowerEffect(crate::content::powers::PowerId::CurlUp),
+                    ),
+            ),
         ],
         notes: if asc >= 17 {
-            "Randomly rolls Bite or its non-attack move, subject to history: cannot Bite three times consecutively; the non-attack move cannot repeat immediately."
+            Text::new("louse.notesHigh")
         } else {
-            "Randomly rolls Bite or its non-attack move, subject to history: neither move can occur three times consecutively."
+            Text::new("louse.notesLow")
         },
     }
 }

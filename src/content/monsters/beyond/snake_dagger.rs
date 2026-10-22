@@ -170,10 +170,14 @@ fn plan_for(move_id: u8) -> MonsterTurnPlan {
 }
 
 pub fn mechanics() -> super::super::mechanics::MonsterMechanics {
+    use crate::content::monsters::mechanics::MonsterText as Text;
     super::super::mechanics::MonsterMechanics {
-        moves: vec![("Wound", wound_plan())],
-        special_moves: vec![("Explode", format!("Attack player for {EXPLODE_DAMAGE} base damage/hit (hits: 1), then lose own current HP through the normal damage/death pipeline."))],
-        notes: "On its first enemy turn, attacks and adds a Wound to the player's discard pile. On its next turn, attacks for 25 base damage and then loses its own current HP. A newly summoned dagger starts with the same sequence. Minions die when Reptomancer dies.",
+        moves: vec![(Text::new("snake_dagger.wound"), wound_plan())],
+        special_moves: vec![(
+            Text::new("snake_dagger.explode"),
+            Text::new("snake_dagger.explodeRule").with("damage", EXPLODE_DAMAGE),
+        )],
+        notes: Text::new("snake_dagger.notes"),
     }
 }
 

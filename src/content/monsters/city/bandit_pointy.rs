@@ -30,10 +30,14 @@ fn pointy_special_plan(ascension_level: u8) -> MonsterTurnPlan {
 }
 
 pub fn mechanics(ascension_level: u8) -> crate::content::monsters::mechanics::MonsterMechanics {
+    use crate::content::monsters::mechanics::MonsterText as Text;
     crate::content::monsters::mechanics::MonsterMechanics {
-        moves: vec![("Pointy Special", pointy_special_plan(ascension_level))],
+        moves: vec![(
+            Text::new("bandit_pointy.pointySpecial"),
+            pointy_special_plan(ascension_level),
+        )],
         special_moves: vec![],
-        notes: "Uses Pointy Special every turn, including the opening turn.",
+        notes: Text::new("bandit_pointy.notes"),
     }
 }
 

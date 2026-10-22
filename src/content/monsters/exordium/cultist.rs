@@ -59,10 +59,14 @@ fn plan_for(move_id: u8, asc: u8) -> MonsterTurnPlan {
 }
 
 pub fn mechanics(asc: u8) -> super::super::mechanics::MonsterMechanics {
+    use crate::content::monsters::mechanics::MonsterText as Text;
     super::super::mechanics::MonsterMechanics {
         special_moves: vec![],
-        moves: vec![("Incantation", ritual_plan(asc)), ("Dark Strike", attack_plan())],
-        notes: "Starts by gaining Ritual, then attacks. Monster Ritual skips its first end-of-round trigger; later triggers grant Strength repeatedly.",
+        moves: vec![
+            (Text::new("cultist.incantation"), ritual_plan(asc)),
+            (Text::new("cultist.darkStrike"), attack_plan()),
+        ],
+        notes: Text::new("cultist.notes"),
     }
 }
 

@@ -77,10 +77,15 @@ fn plan_for(move_id: u8, asc: u8) -> MonsterTurnPlan {
 }
 
 pub fn mechanics(asc: u8) -> super::super::mechanics::MonsterMechanics {
+    use crate::content::monsters::mechanics::MonsterText as Text;
     super::super::mechanics::MonsterMechanics {
-        moves: vec![("Protect", protect_plan(asc)), ("Shield Bash", bash_plan(asc)), ("Escape", escape_plan())],
+        moves: vec![
+            (Text::new("gremlin_tsundere.protect"), protect_plan(asc)),
+            (Text::new("gremlin_tsundere.shieldBash"), bash_plan(asc)),
+            (Text::new("gremlin_tsundere.escape"), escape_plan()),
+        ],
         special_moves: vec![],
-        notes: "Starts with Protect and keeps protecting while other non-dying, non-escaped monsters remain. When alone, Protect plans Shield Bash for the next turn, then it attacks repeatedly. Protect targets a random eligible other monster, or self if none remains. Escape is a separately assigned move.",
+        notes: Text::new("gremlin_tsundere.notes"),
     }
 }
 

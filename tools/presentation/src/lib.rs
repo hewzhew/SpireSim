@@ -89,13 +89,33 @@ impl Locale {
     /// Static rule text may explicitly reference another entity by stable ID.
     /// These slots carry names only; no rule values or game state are inferred.
     pub fn definition_text(self, namespace: &str, key: &str) -> Result<String, String> {
+        self.definition_text_with(namespace, key, &[])
+    }
+
+    /// Rule owners supply dynamic values; explicit entity references still
+    /// resolve from the shared identity catalogue. Neither is parsed again.
+    pub fn definition_text_with(
+        self,
+        namespace: &str,
+        key: &str,
+        parameters: &[(&str, &str)],
+    ) -> Result<String, String> {
         let template = self
             .entry(namespace, key)
             .ok_or_else(|| format!("unknown presentation message: {namespace}:{key}"))?;
-        self.definition_template(template)
+        self.definition_template_with(template, parameters)
     }
 
+    #[cfg(test)]
     fn definition_template(self, template: &str) -> Result<String, String> {
+        self.definition_template_with(template, &[])
+    }
+
+    fn definition_template_with(
+        self,
+        template: &str,
+        parameters: &[(&str, &str)],
+    ) -> Result<String, String> {
         let mut result = String::new();
         let mut remaining = template;
         while let Some(start) = remaining.find("{{") {
@@ -103,6 +123,15 @@ impl Locale {
             let tail = &remaining[start + 2..];
             let end = tail.find("}}").ok_or("invalid definition template")?;
             let name = tail[..end].trim();
+            if !name.starts_with("entity_") {
+                if let Some((_, value)) =
+                    parameters.iter().find(|(parameter, _)| *parameter == name)
+                {
+                    result.push_str(value);
+                    remaining = &tail[end + 2..];
+                    continue;
+                }
+            }
             let (kind, id) = name
                 .strip_prefix("entity_")
                 .and_then(|value| value.split_once('_'))
@@ -113,6 +142,7 @@ impl Locale {
                             | "relic"
                             | "potion"
                             | "enemy"
+                            | "enemyMove"
                             | "power"
                             | "stance"
                             | "event"
@@ -300,6 +330,10 @@ mod tests {
                 .text("game", "effect.damage", &[("damage", "{{keep}} 原文")])
                 .unwrap(),
             "造成 {{keep}} 原文 点伤害"
+        );
+        assert_eq!(
+            Locale::ZhCn.definition_text_with("game", "enemyRule.exploder.explosionRule", &[("count", "{{untouched}}"), ("damage", "30")]).unwrap(),
+            "初始有 {{untouched}} 层爆炸。使用两次攻击后，下一次行动不攻击也不获得格挡；随后爆炸使其死亡，并对玩家造成 30 点荆棘类伤害。玩家格挡可以吸收该伤害；力量、虚弱和易伤不修正该伤害。"
         );
     }
 }

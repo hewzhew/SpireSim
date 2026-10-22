@@ -43,6 +43,46 @@ KEYS = {
         "SpireGrowth": "Serpent", "SnakeDagger": "Dagger",
     },
 }
+# Original MOVES identities and reviewed array layouts, independent of display names.
+ENEMY_MOVES = {'AcidSlimeL': (3, {'CorrosiveSpit': 0, 'Split': 1, 'Lick': 2}),
+ 'AcidSlimeM': (2, {'CorrosiveSpit': 0, 'Lick': 1}),
+ 'AwakenedOne': (4, {'SoulStrike': 0, 'DarkEcho': 1, 'Cleanse': 2, 'Sludge': 3}),
+ 'BronzeAutomaton': (1, {'HyperBeam': 0}),
+ 'Champ': (3, {'DefensiveStance': 0, 'Execute': 1, 'FaceSlap': 2}),
+ 'Cultist': (3, {'Incantation': 2}),
+ 'Darkling': (1, {'ChompChomp': 0}),
+ 'Donu': (1, {'CircleOfPower': 0}),
+ 'FungiBeast': (1, {'Grow': 0}),
+ 'GremlinFat': (1, {'Smash': 0}),
+ 'GremlinLeader': (1, {'Rally': 0}),
+ 'GremlinNob': (2, {'SkullBash': 0, 'BullRush': 1}),
+ 'GremlinTsundere': (2, {'Protect': 0, 'ShieldBash': 1}),
+ 'GremlinWarrior': (1, {'Claw': 0}),
+ 'GremlinWizard': (2, {'Charging': 0, 'UltimateBlast': 1}),
+ 'Hexaghost': (3, {'Inflame': 0, 'Sear': 1, 'Inferno': 2}),
+ 'JawWorm': (2, {'Bellow': 0, 'Thrash': 1}),
+ 'Lagavulin': (1, {'SiphonSoul': 0}),
+ 'Looter': (2, {'Lunge': 0, 'Mug': 1}),
+ 'LouseDefensive': (1, {'SpitWeb': 0}),
+ 'LouseNormal': (1, {'Grow': 0}),
+ 'Mugger': (2, {'Lunge': 0, 'Mug': 1}),
+ 'OrbWalker': (1, {'StrengthUp': 0}),
+ 'Sentry': (1, {'Disintegrate': 0}),
+ 'SlaverBlue': (1, {'Rake': 0}),
+ 'SlaverRed': (2, {'Scrape': 0, 'Entangle': 1}),
+ 'SlimeBoss': (4, {'Slam': 0, 'Preparing': 1, 'Split': 2, 'GoopSpray': 3}),
+ 'SnakePlant': (1, {'EnfeeblingSpores': 0}),
+ 'Snecko': (3, {'PerplexingGlare': 0, 'TailWhip': 1, 'Bite': 2}),
+ 'SpikeSlimeL': (2, {'Lick': 0, 'Split': 1}),
+ 'SpikeSlimeM': (1, {'Lick': 0}),
+ 'TheGuardian': (7,
+                 {'DefensiveMode': 0,
+                  'FierceBash': 1,
+                  'Roll': 2,
+                  'TwinSlam': 3,
+                  'Whirlwind': 4,
+                  'ChargingUp': 5,
+                  'VentSteam': 6})}
 OMITTED = {
     "card.Impulse": "No corresponding card localization entry in the installed release; retain stable-ID fallback.",
     "power.GuardianThreshold": "Simulator-owned Guardian threshold state; no original power localization identity.",
@@ -370,6 +410,17 @@ def names_from_archive(jar: Path, repository: Path = REPOSITORY) -> tuple[dict, 
                     if not key:
                         raise ValueError(f"Missing exact original key: {kind}.{entity.stable_id}")
                     names[kind][entity.stable_id] = take(kind, entity.stable_id, key, records[kind])
+            names["enemyMove"] = {}
+            for enemy, (count, moves) in ENEMY_MOVES.items():
+                key = KEYS["enemy"].get(enemy, enemy)
+                values = records["enemy"][key].get("MOVES")
+                if (not isinstance(values, list) or len(values) != count
+                        or not all(isinstance(value, str) for value in values)
+                        or {index for index, value in enumerate(values) if value.strip()} != set(moves.values())):
+                    raise ValueError(f"Original enemy MOVES layout requires review: {locale}/{enemy}")
+                for move, index in moves.items():
+                    identity = f"{enemy}_{move}"
+                    names["enemyMove"][identity] = take("enemyMove", identity, key, records["enemy"], "MOVES", index, resource="monsters")
             characters = source(language, "characters")
             names["character"] = {stable: take("character", stable, key, characters, "NAMES", 0) for stable, key in CHARACTERS.items()}
             events = source(language, "events")

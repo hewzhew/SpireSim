@@ -61,10 +61,19 @@ fn plan_for(move_id: u8, asc: u8) -> MonsterTurnPlan {
 }
 
 pub fn mechanics(asc: u8) -> super::super::mechanics::MonsterMechanics {
+    use crate::content::monsters::mechanics::MonsterText as Text;
     super::super::mechanics::MonsterMechanics {
-        moves: vec![("Scratch", scratch_plan(asc)), ("Escape", escape_plan())],
-        special_moves: vec![("Starting Angry", format!("amount {}. {}", angry_amount(asc), crate::content::powers::mechanics::get(PowerId::Angry).unwrap().effect(sts_presentation::Locale::En)))],
-        notes: "Normally attacks every turn. Angry Strength increases the damage of later attacks. Escape is a separately assigned move, not part of the normal attack cycle.",
+        moves: vec![
+            (Text::new("gremlin_warrior.scratch"), scratch_plan(asc)),
+            (Text::new("gremlin_warrior.escape"), escape_plan()),
+        ],
+        special_moves: vec![(
+            Text::new("gremlin_warrior.startingAngry"),
+            Text::new("gremlin_warrior.angryRule")
+                .with("amount", angry_amount(asc))
+                .with("effect", Text::PowerEffect(PowerId::Angry)),
+        )],
+        notes: Text::new("gremlin_warrior.notes"),
     }
 }
 

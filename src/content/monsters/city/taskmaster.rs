@@ -126,14 +126,18 @@ fn strength_gain(ascension_level: u8) -> i32 {
 }
 
 pub fn mechanics(asc: u8) -> crate::content::monsters::mechanics::MonsterMechanics {
+    use crate::content::monsters::mechanics::MonsterText as Text;
     crate::content::monsters::mechanics::MonsterMechanics {
-        moves: vec![("Scouring Whip", whip_plan(asc))],
+        moves: vec![(Text::new("taskmaster.scouringWhip"), whip_plan(asc))],
         special_moves: if strength_gain(asc) > 0 {
-            vec![("Scouring Whip follow-up", format!("After attacking and adding Wounds, gain {} Strength on self. This Strength persists and increases later attacks.", strength_gain(asc)))]
+            vec![(
+                Text::new("taskmaster.scouringWhipFollowUp"),
+                Text::new("taskmaster.followupRule").with("amount", strength_gain(asc)),
+            )]
         } else {
             vec![]
         },
-        notes: "Uses Scouring Whip every turn. Wounds go to the discard pile even if the attack is fully blocked. At A18+, also gains Strength after each Whip; this is an execution effect beyond the visible attack-and-card intent.",
+        notes: Text::new("taskmaster.notes"),
     }
 }
 

@@ -550,18 +550,25 @@ fn plan_for(move_id: u8, ascension_level: u8) -> MonsterTurnPlan {
 }
 
 pub fn mechanics(ascension: u8) -> super::super::mechanics::MonsterMechanics {
+    use crate::content::monsters::mechanics::MonsterText as Text;
     let mut moves = vec![
-        ("Flail", flail_plan(ascension)),
-        ("Boost", boost_plan(ascension)),
-        ("Hyper Beam", hyper_beam_plan(ascension)),
+        (Text::new("bronze_automaton.flail"), flail_plan(ascension)),
+        (Text::new("bronze_automaton.boost"), boost_plan(ascension)),
+        (
+            Text::new("bronze_automaton.hyperBeam"),
+            hyper_beam_plan(ascension),
+        ),
     ];
     if ascension < 19 {
-        moves.push(("Stunned", stunned_plan()));
+        moves.push((Text::new("bronze_automaton.stunned"), stunned_plan()));
     }
     super::super::mechanics::MonsterMechanics {
         moves,
-        special_moves: vec![("Spawn Orbs", "Summon two Bronze Orbs as Minions. They die when Bronze Automaton dies.".into())],
-        notes: "Opens by summoning two Bronze Orbs, then alternates Flail and Boost. The first Hyper Beam occurs on enemy turn 6. Below A19 the next move is Stunned; at A19+ it is Boost, then the attack/buff cycle continues toward another Hyper Beam. Starting Artifact blocks debuff applications individually.",
+        special_moves: vec![(
+            Text::new("bronze_automaton.spawnOrbs"),
+            Text::new("bronze_automaton.spawnRule"),
+        )],
+        notes: Text::new("bronze_automaton.notes1"),
     }
 }
 

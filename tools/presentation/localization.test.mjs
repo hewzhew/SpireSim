@@ -103,6 +103,19 @@ test('all reviewed relic definitions use official cross references in both langu
   }
 });
 
+test('enemy rules combine original move identities with literal owner-provided values', () => {
+  for (const locale of ['en', 'zh-CN']) {
+    const display = createPresentation({ locale });
+    assert.equal(Object.keys(catalogs[locale].game.enemyMove).length, 61);
+    assert.equal(display.definitionText('game:enemyRule.lagavulin.siphonSoul'), display.entity('enemyMove', 'Lagavulin_SiphonSoul'));
+    if (locale === 'zh-CN') assert.notEqual(display.entity('enemyMove', 'Looter_Mug'), display.entity('enemyMove', 'Mugger_Mug'));
+    const value = '{{literal}} $t(game:power.Strength)';
+    const rule = display.definitionText('game:enemyRule.exploder.explosionRule', { count: value, damage: 30 });
+    assert.ok(rule.includes(value) && rule.includes('30'));
+    assert.throws(() => display.definitionText('game:enemyRule.exploder.explosionRule', { count: 3 }), /Invalid definition reference/);
+  }
+});
+
 test('generated name sections match their recorded original-resource import', async () => {
   const source = JSON.parse(await readFile(new URL('./original-names.json', import.meta.url), 'utf8'));
   assert.equal(source.schema, 'sts-original-localization-names-v1');

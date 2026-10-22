@@ -187,18 +187,28 @@ fn stunned_plan() -> MonsterTurnPlan {
 }
 
 pub fn mechanics(asc: u8) -> crate::content::monsters::mechanics::MonsterMechanics {
+    use crate::content::monsters::mechanics::MonsterText as Text;
     crate::content::monsters::mechanics::MonsterMechanics {
         moves: vec![
-            ("Fell", fell_plan(asc)),
-            ("Double Strike", double_strike_plan(asc)),
-            ("Life Suck", life_suck_plan(asc)),
-            ("Stunned", stunned_plan()),
+            (Text::new("shelled_parasite.fell"), fell_plan(asc)),
+            (
+                Text::new("shelled_parasite.doubleStrike"),
+                double_strike_plan(asc),
+            ),
+            (Text::new("shelled_parasite.lifeSuck"), life_suck_plan(asc)),
+            (Text::new("shelled_parasite.stunned"), stunned_plan()),
         ],
         special_moves: vec![
-            ("Starting protection", format!("Starts with {STARTING_PLATED_ARMOR} Plated Armor and {STARTING_PLATED_ARMOR} Block. Losing the last Plated Armor replaces the planned move with Stunned; inspect Plated Armor for its hit and turn-end triggers.")),
-            ("Life Suck healing", "Heal self for the player's actual HP lost to this hit, after Block and damage prevention. The visible intent is Attack Buff.".into()),
+            (
+                Text::new("shelled_parasite.startingProtection"),
+                Text::new("shelled_parasite.protectionRule").with("amount", STARTING_PLATED_ARMOR),
+            ),
+            (
+                Text::new("shelled_parasite.lifeSuckHealing"),
+                Text::new("shelled_parasite.lifeSuckRule"),
+            ),
         ],
-        notes: "At A17+, the opening move is Fell; below A17 it is Double Strike or Life Suck. Fell cannot repeat consecutively; Double Strike and Life Suck can each repeat at most twice. Stunned skips its attack, then the next move is rolled normally. Possible base moves are not a prediction of a hidden intention.",
+        notes: Text::new("shelled_parasite.notes"),
     }
 }
 

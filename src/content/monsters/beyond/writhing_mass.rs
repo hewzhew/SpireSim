@@ -158,15 +158,19 @@ fn plan_for(move_id: u8, ascension_level: u8) -> MonsterTurnPlan {
 }
 
 pub fn mechanics(asc: u8) -> crate::content::monsters::mechanics::MonsterMechanics {
+    use crate::content::monsters::mechanics::MonsterText as Text;
     crate::content::monsters::mechanics::MonsterMechanics {
         moves: vec![
-            ("Strong Strike", big_hit_plan(asc)),
-            ("Multi Strike", multi_hit_plan(asc)),
-            ("Flail", attack_block_plan(asc)),
-            ("Wither", attack_debuff_plan(asc)),
+            (Text::new("writhing_mass.strongStrike"), big_hit_plan(asc)),
+            (Text::new("writhing_mass.multiStrike"), multi_hit_plan(asc)),
+            (Text::new("writhing_mass.flail"), attack_block_plan(asc)),
+            (Text::new("writhing_mass.wither"), attack_debuff_plan(asc)),
         ],
-        special_moves: vec![("Implant", format!("Add one {} Curse to the player's permanent master deck; this is not a blockable attack or an Artifact-blockable power application. Can execute once per combat; merely rolling this intent does not consume that use.", crate::content::identity::gameplay_display_label_v1(CardId::Parasite)))],
-        notes: "Starts with Reactive and Malleable. Its opening is Multi Strike, Flail or Wither. Later rolls can also choose Strong Strike or Implant, with restrictions against repeated moves. Qualifying nonlethal hits trigger Reactive to reroll its intention, so inspect the actual intention after attacking. Malleable also gains Block after qualifying hits; see both power definitions.",
+        special_moves: vec![(
+            Text::new("writhing_mass.implant"),
+            Text::new("writhing_mass.implantRule"),
+        )],
+        notes: Text::new("writhing_mass.notes"),
     }
 }
 

@@ -226,14 +226,15 @@ fn plan_for(move_id: u8, ascension_level: u8) -> MonsterTurnPlan {
 }
 
 pub fn mechanics(ascension_level: u8) -> crate::content::monsters::mechanics::MonsterMechanics {
+    use crate::content::monsters::mechanics::MonsterText as Text;
     crate::content::monsters::mechanics::MonsterMechanics {
         moves: vec![
-            ("Perplexing Glare", glare_plan()),
-            ("Bite", bite_plan(ascension_level)),
-            ("Tail Whip", tail_plan(ascension_level)),
+            (Text::new("snecko.perplexingGlare"), glare_plan()),
+            (Text::new("snecko.bite"), bite_plan(ascension_level)),
+            (Text::new("snecko.tailWhip"), tail_plan(ascension_level)),
         ],
         special_moves: vec![],
-        notes: "Opens with Perplexing Glare, applying persistent Confusion. Afterward randomly chooses Bite or Tail Whip; two consecutive Bites force Tail Whip next. Confusion randomizes eligible card costs as they are drawn. Use the current hand's actual costs for payment.",
+        notes: Text::new("snecko.notes"),
     }
 }
 

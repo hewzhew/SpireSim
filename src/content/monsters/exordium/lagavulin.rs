@@ -110,12 +110,25 @@ fn plan_for(move_id: u8, asc: u8) -> MonsterTurnPlan {
 }
 
 pub fn mechanics(asc: u8) -> super::super::mechanics::MonsterMechanics {
+    use crate::content::monsters::mechanics::MonsterText as Text;
     super::super::mechanics::MonsterMechanics {
-        moves: vec![("Attack", attack_plan(asc)), ("Siphon Soul", debuff_plan(asc)),
-            ("Sleep", idle_plan()), ("Wake from damage", open_plan())],
-        special_moves: vec![("Sleeping start", format!("starts with {ARMOR} Block and {ARMOR} Metallicize. Positive HP loss wakes it, removes {ARMOR} Metallicize and replaces its current intent with Stun, giving a non-attacking wake turn. Blocked damage does not wake it. Otherwise it sleeps for three enemy turns, then removes {ARMOR} Metallicize and plans Attack.")),
-            ("Natural wake", "wake without attacking on this enemy turn; remove sleeping Metallicize and plan Attack".into())],
-        notes: "After waking from sleep, cycles two Attacks then Siphon Soul. The Strength and Dexterity losses persist; they are not temporary Shackled. An encounter that starts awake begins with Siphon Soul instead. Sleep is an intent, not an Asleep power.",
+        moves: vec![
+            (Text::new("lagavulin.attack"), attack_plan(asc)),
+            (Text::new("lagavulin.siphonSoul"), debuff_plan(asc)),
+            (Text::new("lagavulin.sleep"), idle_plan()),
+            (Text::new("lagavulin.wakeFromDamage"), open_plan()),
+        ],
+        special_moves: vec![
+            (
+                Text::new("lagavulin.sleepingStart"),
+                Text::new("lagavulin.sleepingRule").with("armor", ARMOR),
+            ),
+            (
+                Text::new("lagavulin.naturalWake"),
+                Text::new("lagavulin.naturalWakeRule"),
+            ),
+        ],
+        notes: Text::new("lagavulin.notes"),
     }
 }
 

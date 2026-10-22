@@ -31,10 +31,11 @@ fn tackle_plan() -> MonsterTurnPlan {
 }
 
 pub fn mechanics() -> crate::content::monsters::mechanics::MonsterMechanics {
+    use crate::content::monsters::mechanics::MonsterText as Text;
     crate::content::monsters::mechanics::MonsterMechanics {
         special_moves: vec![],
-        moves: vec![("Tackle", tackle_plan())],
-        notes: "Attacks every turn. It is a Minion of the Collector and is removed when the Collector dies.",
+        moves: vec![(Text::new("torch_head.tackle"), tackle_plan())],
+        notes: Text::new("torch_head.notes"),
     }
 }
 

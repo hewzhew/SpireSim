@@ -16,10 +16,18 @@ const SCYTHE: u8 = 3;
 const TRI_BURN: u8 = 4;
 
 pub fn mechanics(asc: u8) -> crate::content::monsters::mechanics::MonsterMechanics {
+    use crate::content::monsters::mechanics::MonsterText as Text;
     crate::content::monsters::mechanics::MonsterMechanics {
-        moves: vec![("Tri Attack", tri_attack_plan(asc)), ("Scythe", scythe_plan()), ("Tri Burn", tri_burn_plan(asc))],
-        special_moves: vec![("Intangible after move", "After its move actions, apply 1 Intangible to self if Intangible is absent. Monster Intangible skips its fresh turn-end decrement, then decrements at its next own turn end; this normally alternates protected and unprotected player turns. See info power Intangible for per-hit damage caps.".into())],
-        notes: "Opens with Tri Attack or Tri Burn, never Scythe. Tri Attack cannot occur three times in a row, and Tri Burn cannot repeat consecutively. Choosing Scythe sets a cooldown of 2; move rolls decrement it and only allow Scythe when the decremented value is non-positive. Read current visible intention and Intangible rather than assuming a fixed future random move.",
+        moves: vec![
+            (Text::new("nemesis.triAttack"), tri_attack_plan(asc)),
+            (Text::new("nemesis.scythe"), scythe_plan()),
+            (Text::new("nemesis.triBurn"), tri_burn_plan(asc)),
+        ],
+        special_moves: vec![(
+            Text::new("nemesis.intangibleAfterMove"),
+            Text::new("nemesis.intangibleRule"),
+        )],
+        notes: Text::new("nemesis.notes"),
     }
 }
 

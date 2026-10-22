@@ -179,11 +179,16 @@ fn plan_for(move_id: u8, asc: u8) -> MonsterTurnPlan {
 }
 
 pub fn mechanics(asc: u8) -> super::super::mechanics::MonsterMechanics {
+    use crate::content::monsters::mechanics::MonsterText as Text;
     super::super::mechanics::MonsterMechanics {
-        moves: vec![("Mug", mug_plan(asc)), ("Lunge", lunge_plan(asc)),
-            ("Smoke Bomb", smoke_bomb_plan()), ("Escape", escape_plan())],
+        moves: vec![
+            (Text::new("looter.mug"), mug_plan(asc)),
+            (Text::new("looter.lunge"), lunge_plan(asc)),
+            (Text::new("looter.smokeBomb"), smoke_bomb_plan()),
+            (Text::new("looter.escape"), escape_plan()),
+        ],
         special_moves: vec![],
-        notes: "Starts with two Mugs, then has a 50% chance of Lunge before Smoke Bomb, otherwise immediately Smoke Bomb. Smoke Bomb is followed by Escape. Gold theft occurs before attack damage, even if Block prevents HP loss. Killing the Looter recovers stolen Gold as a reward; Escape does not recover it.",
+        notes: Text::new("looter.notes"),
     }
 }
 

@@ -147,14 +147,18 @@ fn plan_for(move_id: u8, ascension_level: u8, entity: &MonsterEntity) -> Monster
 }
 
 pub fn mechanics(asc: u8) -> crate::content::monsters::mechanics::MonsterMechanics {
+    use crate::content::monsters::mechanics::MonsterText as Text;
     crate::content::monsters::mechanics::MonsterMechanics {
         moves: vec![
-            ("Roar", roar_plan(asc)),
-            ("Slam", slam_plan(asc)),
-            ("Drool", drool_plan(asc)),
+            (Text::new("maw.roar"), roar_plan(asc)),
+            (Text::new("maw.slam"), slam_plan(asc)),
+            (Text::new("maw.drool"), drool_plan(asc)),
         ],
-        special_moves: vec![("Nom Nom Nom", format!("Attack player for {NOM_DAMAGE} base damage/hit. Hits grow with the enemy turn count: max(1, floor((enemy turn number + 1) / 2)), counting opening Roar as turn 1. Current visible intent gives the actual hit count and modified damage."))],
-        notes: "Opens with Roar once, applying Weak and Frail. Afterward chooses Nom Nom Nom when its roll allows and that was not its previous move; otherwise uses Drool after Slam/Nom Nom Nom, or Slam after other moves. Drool grants persistent Strength, increasing every later normal attack hit.",
+        special_moves: vec![(
+            Text::new("maw.nomNomNom"),
+            Text::new("maw.nomRule").with("damage", NOM_DAMAGE),
+        )],
+        notes: Text::new("maw.notes"),
     }
 }
 

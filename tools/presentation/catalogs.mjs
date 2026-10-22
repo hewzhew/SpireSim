@@ -58,7 +58,7 @@ export function validateCatalogs(resources = catalogs) {
       }
       for (const parameter of parameters(messages[key])) {
         if (!parameter.startsWith('entity_')) continue;
-        const reference = /^entity_(card|relic|potion|enemy|power|stance|event|character|encounter)_(\w+)$/.exec(parameter);
+        const reference = /^entity_(card|relic|potion|enemy|enemyMove|power|stance|event|character|encounter)_(\w+)$/.exec(parameter);
         if (!reference || typeof resources[locale].game?.[reference[1]]?.[reference[2]] !== 'string') {
           throw new Error(`Unknown definition entity for ${locale}:${key}:${parameter}`);
         }
