@@ -131,7 +131,7 @@ export async function main() {
       await writeFile(stateFile, session);
     }
     const { controlPlayer } = await import('../dsh_player/launch.mjs');
-    await controlPlayer({ repository, session, binary, parameters }, text => process.stdout.write(text + '\n'));
+    await controlPlayer({ repository, session, binary, parameters, locale: presentation.locale }, text => process.stdout.write(text + '\n'));
     return;
   }
   const commands = commandGroups(command, parameters, presentation);

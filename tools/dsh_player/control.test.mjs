@@ -6,7 +6,7 @@ import { join, sep } from 'node:path';
 import { controlPlayer } from './launch.mjs';
 import { proposePlayerCommand, bindCoachedPlayer, readPlayerReview } from './supervision.mjs';
 
-async function fixture(t, { failExecution = false, failClose = false, terminal = false } = {}) {
+async function fixture(t, { failExecution = false, failClose = false, terminal = false, locale = 'en', agentLocale = 'en' } = {}) {
   const base = await realpath(tmpdir());
   const session = await mkdtemp(join(base, 'sts-player-control-'));
   t.after(async () => {
@@ -32,7 +32,7 @@ async function fixture(t, { failExecution = false, failClose = false, terminal =
     async close() { connected = false; order.push('close'); if (failClose) throw new Error('connection close failed'); },
   };
   await bindCoachedPlayer(session, { id: 'player-control', home: session, model: 'deepseek-flash', reasoning: 'low',
-    maxTokens: 16384, running: false, pid: process.pid });
+    maxTokens: 16384, running: false, pid: process.pid, agentLocale });
   await proposePlayerCommand(session, game, 'buy:Inflame#0, buy:ShrugItOff#0');
   const dependencies = {
     async openWorkbench() { assert.equal(connected, false); connected = true; order.push('open'); return game; },
@@ -43,7 +43,7 @@ async function fixture(t, { failExecution = false, failClose = false, terminal =
       return { outcome: 'needs-review' };
     },
   };
-  const control = parameters => controlPlayer({ repository: session, session, parameters }, () => {}, dependencies);
+  const control = parameters => controlPlayer({ repository: session, session, parameters, locale }, () => {}, dependencies);
   return { control, state, mutations, starts, order, session };
 }
 
@@ -81,6 +81,19 @@ test('replace --continue executes only the replacement before resuming', async t
   assert.equal(f.starts.length, 1);
 });
 
+test('operator language follows continuation while the saved model language and commands stay fixed', async t => {
+  for (const locale of ['en', 'zh-CN']) for (const agentLocale of ['en', 'zh-CN']) {
+    const f = await fixture(t, { locale, agentLocale });
+    await f.control(['accept', '--continue']);
+    assert.deepEqual(f.mutations, ['buy:Inflame#0, buy:ShrugItOff#0']);
+    assert.deepEqual(f.order, ['open', 'execute', 'close', 'start']);
+    assert.equal(f.starts.length, 1);
+    assert.equal(f.starts[0].locale, locale);
+    assert.equal(f.starts[0].agentLocale, agentLocale);
+    assert.match(f.starts[0].task, agentLocale === 'en' ? /^Continue the bound run/ : /^从提供的实际游戏读数继续已绑定对局/);
+  }
+});
+
 test('partial failure, stale approval, or a failed close cannot start continuation', async t => {
   for (const failure of ['execution', 'stale', 'close']) {
     const f = await fixture(t, { failExecution: failure === 'execution', failClose: failure === 'close' });
@@ -105,5 +118,8 @@ test('malformed continuation options fail before connecting or adopting', async 
   const dependencies = { openWorkbench() { assert.fail('invalid options must not open a game'); } };
   for (const parameters of [['accept', '--continue', 'extra'], ['accept', '--continue', '--continue'], ['replace', '--continue']]) {
     await assert.rejects(controlPlayer({ parameters }, () => {}, dependencies), /takes no arguments|requires a replacement/);
+  }
+  for (const parameters of [['accept', 'extra'], ['replace']]) {
+    await assert.rejects(controlPlayer({ parameters, locale: 'zh-CN' }, () => {}, dependencies), /不接受参数|需要替换命令/);
   }
 });

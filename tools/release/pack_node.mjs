@@ -141,7 +141,7 @@ if (process.argv.slice(2).join(' ') === '--check') {
           within(verification, await realpath(createRequire(entry).resolve('@sts-simulator/presentation')));
           const { nativeGuide } = await import(pathToFileURL(entry).href);
           const { playerGuide, apply: applyScripted } = await import(pathToFileURL(join(installed, 'index.mjs')).href);
-          const { continuationTask } = await import(pathToFileURL(join(installed, 'launch.mjs')).href);
+          const { continuationTask, runPlayer } = await import(pathToFileURL(join(installed, 'launch.mjs')).href);
           const { preparationInstructions, preparationStageGuide } = await import(pathToFileURL(join(installed, 'preparation.mjs')).href);
           const { cardChoiceInstructions, preparationCardChoiceRoute } = await import(pathToFileURL(join(installed, 'card-choice.mjs')).href);
           const { shopInstructions, renderShopBudget } = await import(pathToFileURL(join(installed, 'shop.mjs')).href);
@@ -166,6 +166,12 @@ if (process.argv.slice(2).join(' ') === '--check') {
                 : 'sts-player 必须挂载在独立的 Agent 或预设作用域中')) {
               throw new Error(`Installed scripted runtime lost its scoped language: ${locale}`);
             }
+            let launcherError;
+            try { await runPlayer({ locale, agentLocale: locale === 'en' ? 'zh-CN' : 'en', model: 'deepseek-v4-pro' }); }
+            catch (error) { launcherError = error.message; }
+            if (!launcherError?.startsWith(locale === 'en' ? 'deepseek-v4-pro is prohibited' : '此玩家不使用 deepseek-v4-pro')) {
+              throw new Error(`Installed launcher did not separate operator and agent language: ${locale}`);
+            }
             const preparation = preparationInstructions(locale), card = cardChoiceInstructions(locale), shop = shopInstructions(locale);
             if (!preparationStageGuide('pending', undefined, {}, undefined, locale).includes(locale === 'en' ? 'Current task: rate' : '当前任务：评估')
                 || !preparation.text('eventCombatEntry').includes(locale === 'en' ? 'received after victory' : '在获胜后取得')
@@ -180,7 +186,7 @@ if (process.argv.slice(2).join(' ') === '--check') {
                 || !renderShopBudget({ gold: 40, starts: [] }, undefined, locale).includes(locale === 'en' ? 'Shop budget: Gold 40' : '商店预算：金币 40')) {
               throw new Error(`Installed preparation guide lost language or protocol: ${locale}`);
             }
-            report.installed_scripted_checks.push({ package: manifest.name, locale, imported_entries: true, preserved_guide_commands_and_operator: true, runtime_control_messages: true, preparation_guides_and_schemas: true, deck_mechanism_messages: true, card_choice_messages: true, shop_messages: true, preparation_card_conditions: true, preparation_resource_conditions: true, preparation_classification_messages: true });
+            report.installed_scripted_checks.push({ package: manifest.name, locale, imported_entries: true, preserved_guide_commands_and_operator: true, runtime_control_messages: true, launcher_operator_locale_independent: true, preparation_guides_and_schemas: true, deck_mechanism_messages: true, card_choice_messages: true, shop_messages: true, preparation_card_conditions: true, preparation_resource_conditions: true, preparation_classification_messages: true });
           }
         }
       }

@@ -38,6 +38,10 @@ import { preparationCardChoice, renderPreparationCardChoice, adoptPreparationCar
 import { inspectPlayer, parseInspectionArgs, recordPlayerRequests } from './inspection.mjs';
 
 function launchText(locale, key) { return createPresentation({ locale }).text(`scripted:launch.${key}`); }
+function launcherText(locale, key, parameters = {}) {
+  return createPresentation({ locale }).text(`scripted:launcher.${key}`,
+    Object.fromEntries(Object.entries(parameters).map(([name, value]) => [name, String(value)])));
+}
 
 // Decision boundaries cut ordinary room history. Pressure compaction remains
 // a fallback for a single unusually long shop or combat investigation.
@@ -72,23 +76,24 @@ export function continuationTask(task, previousRunOutcome, locale = 'en') {
 }
 
 export async function runPlayer(options, display = console.log) {
-  if (options.model === 'deepseek-v4-pro') throw new Error('deepseek-v4-pro is prohibited for this player; use deepseek-flash (DeepSeek-V41-Flash).');
+  const locale = createPresentation({ locale: options.locale }).locale;
+  if (options.model === 'deepseek-v4-pro') throw new Error(launcherText(locale, 'proModelProhibited'));
   let agentLocale = options.agentLocale ?? 'en';
-  if (!['en', 'zh-CN'].includes(agentLocale)) throw new Error('agentLocale must be en or zh-CN');
+  if (!['en', 'zh-CN'].includes(agentLocale)) throw new Error(launcherText(locale, 'invalidAgentLocale'));
   let taskScope = options.taskScope ?? 'run';
-  if (!['run', 'preparation'].includes(taskScope)) throw new Error('task-scope must be run or preparation');
-  if (options.supervised && taskScope !== 'run') throw new Error('Coached play requires task-scope run.');
+  if (!['run', 'preparation'].includes(taskScope)) throw new Error(launcherText(locale, 'invalidTaskScope'));
+  if (options.supervised && taskScope !== 'run') throw new Error(launcherText(locale, 'coachedScope'));
   const repository = await realpath(resolve(options.repository));
   const session = await realpath(resolve(options.session));
   const home = resolve(options.home ?? join(repository, '.oracle-lab/dsh-player'));
   const binary = await realpath(resolve(options.binary ?? join(repository, 'target/dev-opt/run_play.exe')));
   const id = options.resume ?? `sts-player-${randomUUID()}`;
-  if (!/^[a-zA-Z0-9][a-zA-Z0-9_-]*$/.test(id)) throw new Error('invalid player session id');
+  if (!/^[a-zA-Z0-9][a-zA-Z0-9_-]*$/.test(id)) throw new Error(launcherText(locale, 'invalidSessionId'));
   const maxMs = Number(options.maxMs ?? 0);
   const maxTokens = Number(options.maxTokens ?? 32768);
-  if (!Number.isSafeInteger(maxMs) || maxMs < 0 || maxMs > 2147483647) throw new Error('max-ms must be an integer from 0 to 2147483647');
-  if (!Number.isSafeInteger(maxTokens) || maxTokens <= 0) throw new Error('max-tokens must be a positive integer');
-  if (!options.dry && !process.env.DEEPSEEK_API_KEY) throw new Error('DEEPSEEK_API_KEY is required for a model run');
+  if (!Number.isSafeInteger(maxMs) || maxMs < 0 || maxMs > 2147483647) throw new Error(launcherText(locale, 'invalidMaxMs'));
+  if (!Number.isSafeInteger(maxTokens) || maxTokens <= 0) throw new Error(launcherText(locale, 'invalidMaxTokens'));
+  if (!options.dry && !process.env.DEEPSEEK_API_KEY) throw new Error(launcherText(locale, 'apiKeyRequired'));
   // Use the same ESM resolver as the imported components, including a host
   // loader. Resolve metadata before opening the game or writing a player binding.
   const versions = {};
@@ -105,27 +110,27 @@ export async function runPlayer(options, display = console.log) {
     const saved = JSON.parse(await readFile(bindingFile, 'utf8'));
     if (saved.id !== id || typeof saved.repository !== 'string' || typeof saved.session !== 'string'
         || !samePath(saved.repository, repository) || !samePath(saved.session, session)) {
-      throw new Error('resume binding differs from this repository/game; start a new player instead');
+      throw new Error(launcherText(locale, 'bindingMismatch'));
     }
     previousGameSource = saved.lastGameSource;
     previousRunOutcome = saved.lastRunOutcome;
     const savedLocale = saved.agentLocale ?? 'en';
     if (!['en', 'zh-CN'].includes(savedLocale) || options.agentLocale !== undefined && options.agentLocale !== savedLocale) {
-      throw new Error('resume agent language differs from the saved player; create a new player for another language');
+      throw new Error(launcherText(locale, 'resumeLanguageMismatch'));
     }
     agentLocale = savedLocale;
     if (options.taskScope !== undefined && options.taskScope !== (saved.taskScope ?? 'run')) {
-      throw new Error('resume task scope differs from the saved player; create a new player for another task');
+      throw new Error(launcherText(locale, 'resumeScopeMismatch'));
     }
     taskScope = saved.taskScope ?? 'run';
     options.supervised ??= saved.supervised;
     preparationRoot = saved.preparationRoot;
     rewardProgress = saved.rewardProgress;
-    if (taskScope === 'preparation' && !preparationRoot) throw new Error('saved preparation task lacks its actual root');
+    if (taskScope === 'preparation' && !preparationRoot) throw new Error(launcherText(locale, 'missingPreparationRoot'));
   }
-  if (options.supervised && taskScope !== 'run') throw new Error('Coached play requires task-scope run.');
+  if (options.supervised && taskScope !== 'run') throw new Error(launcherText(locale, 'coachedScope'));
   if (options.supervised && !options.dry && playerIsRunning(await readPlayerBinding(session))) {
-    throw new Error('The coached player is still running; wait before starting another run.');
+    throw new Error(launcherText(locale, 'coachedRunning'));
   }
   if (taskScope === 'preparation' && !preparationRoot) {
     const { openRunPlay } = await import(pathToFileURL(join(repository, 'tools/run_play/client.mjs')));
@@ -136,7 +141,7 @@ export async function runPlayer(options, display = console.log) {
   Object.assign(binding, { taskScope, agentLocale, supervised: Boolean(options.supervised), ...(preparationRoot ? { preparationRoot } : {}), ...(rewardProgress ? { rewardProgress } : {}) });
   const task = options.taskFile ? await readFile(resolve(options.taskFile), 'utf8')
     : options.task ?? launchText(agentLocale, taskScope === 'preparation' ? 'preparationTask' : 'defaultTask');
-  if (!options.dry && !task.trim()) throw new Error('player task must not be empty');
+  if (!options.dry && !task.trim()) throw new Error(launcherText(locale, 'emptyTask'));
   if (!options.resume) {
     await writeFile(bindingFile, JSON.stringify(binding, null, 2) + '\n', { flag: 'wx' });
   }
@@ -178,7 +183,7 @@ export async function runPlayer(options, display = console.log) {
       if (owner.id !== id) return;
       if (event.type === 'step/start') steps++;
       if (event.type === 'llm/retry') {
-        display(`[${steps}] Model request retry ${event.data.retry}/${event.data.maxRetries}: ${event.data.failure.code}; wait ${Math.round(event.data.delayMs)} ms`);
+        display(launcherText(locale, 'requestRetry', { step: steps, retry: event.data.retry, maxRetries: event.data.maxRetries, failureCode: event.data.failure.code, delayMs: Math.round(event.data.delayMs) }));
       }
       if (event.type === 'tool/call') {
         if (event.data.name === 'sts') gameCalls.add(event.data.callId);
@@ -189,7 +194,7 @@ export async function runPlayer(options, display = console.log) {
       if (event.type === 'tool/result') {
         const isGameCall = gameCalls.delete(event.data.message?.toolCallId);
         const text = (event.data.message.content ?? []).filter(x => x.type === 'text').map(x => x.text).join('\n');
-        if (event.data.message?.isError) display(`[${steps}] Tool error: ${safeError(text)}`);
+        if (event.data.message?.isError) display(launcherText(locale, 'toolError', { step: steps, error: safeError(text) }));
         else if (options.supervised && isGameCall && text !== lastGameText) {
           lastGameText = text;
           display(safeError(text));
@@ -222,7 +227,7 @@ export async function runPlayer(options, display = console.log) {
       : ['sts', 'sts_feedback', 'read', 'grep', 'glob', 'todo_write'];
     const allowed = new Set(taskScope === 'preparation' ? required : [...required, 'read_image', 'skill']);
     if (required.some(name => !tools.includes(name)) || tools.some(name => !allowed.has(name))) {
-      throw new Error('dedicated player tool scope is incomplete or includes unapproved tools: '
+      throw new Error(launcherText(locale, 'invalidTools')
         + JSON.stringify({ required, actual: tools }));
     }
     const source = { commit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: repository, encoding: 'utf8' }).trim(),
@@ -232,7 +237,7 @@ export async function runPlayer(options, display = console.log) {
       source, versions, nodeVersion: process.version, dry: Boolean(options.dry), officialLoop: true,
       contextAttachment: { resetContextOnAttach, gameSource: attachedGameSource },
       compaction: { backend: 'dsh-compaction-basic', ...playerCompaction, maxTokens } }, null, 2) + '\n');
-    display(`Player ${id} | ${agentOptions.model} | artifact ${output}`);
+    display(launcherText(locale, 'playerStarted', { id: id, model: agentOptions.model, output: output }));
     if (options.supervised && !options.dry) await bindCoachedPlayer(session, {
       id, home, model: agentOptions.model, reasoning: agentOptions.reasoningEffort, maxTokens, agentLocale,
       running: true, pid: process.pid, lastRun: output,
@@ -256,7 +261,7 @@ export async function runPlayer(options, display = console.log) {
         if (outcome === 'error') {
           const error = end.data.reason.error;
           runError = { code: error?.code, message: safeError(error?.message ?? error) };
-          display(`Error${runError.code ? ` [${runError.code}]` : ''}: ${runError.message}`);
+          display(launcherText(locale, 'codedError', { codeSuffix: runError.code ? ` [${runError.code}]` : '', message: runError.message }));
           await writeFile(join(output, 'error.txt'), runError.message + '\n');
         }
       }
@@ -265,7 +270,7 @@ export async function runPlayer(options, display = console.log) {
     outcome = 'error';
     const message = safeError(error);
     runError = { code: error?.code, message };
-    display(`Error: ${message}`);
+    display(launcherText(locale, 'error', { message: message }));
     await writeFile(join(output, 'error.txt'), message + '\n');
   } finally {
     clearTimeout(timer);
@@ -285,12 +290,12 @@ export async function runPlayer(options, display = console.log) {
         const projection = ctx.sessionProjections.snapshot(handle.agent.session).values;
         result.tokenUsage = projection.tokenUsage;
         result.contextPressure = projection.contextPressure;
-      } catch (error) { cleanupErrors.push(`measurement: ${safeError(error)}`); }
+      } catch (error) { cleanupErrors.push(launcherText(locale, 'measurementError', { error: safeError(error) })); }
     }
     for (const [name, close] of [
-      ['flush', async () => { if (handle) await ctx.sessions.flush(handle.agent.session); }],
-      ['agent disposal', async () => { if (handle) await handle.dispose(); }],
-      ['context disposal', async () => { await ctx.fiber.dispose(); }],
+      [launcherText(locale, 'flush'), async () => { if (handle) await ctx.sessions.flush(handle.agent.session); }],
+      [launcherText(locale, 'agentDisposal'), async () => { if (handle) await handle.dispose(); }],
+      [launcherText(locale, 'contextDisposal'), async () => { await ctx.fiber.dispose(); }],
     ]) {
       try { await close(); } catch (error) { cleanupErrors.push(`${name}: ${safeError(error)}`); }
     }
@@ -316,7 +321,7 @@ export async function runPlayer(options, display = console.log) {
           : { kind: position.kind, site: position.site };
       } catch (error) {
         result.gameObservationError = safeError(error);
-        display(`Final game observation failed: ${result.gameObservationError}`);
+        display(launcherText(locale, 'finalObservationFailed', { error: result.gameObservationError }));
       } finally {
         if (game) {
           try { await game.close(); }
@@ -335,7 +340,7 @@ export async function runPlayer(options, display = console.log) {
           await rename(temporary, bindingFile);
         } catch (error) {
           result.contextCheckpointError = safeError(error);
-          display(`Context checkpoint was not saved: ${result.contextCheckpointError}`);
+          display(launcherText(locale, 'checkpointFailed', { error: result.contextCheckpointError }));
         }
       }
     }
@@ -344,14 +349,14 @@ export async function runPlayer(options, display = console.log) {
       id, home, model: agentOptions.model, reasoning: agentOptions.reasoningEffort, maxTokens, agentLocale,
       running: cleanupErrors.length > 0, pid: process.pid, lastRun: output,
     });
-    display(options.supervised ? `Result: ${outcome} | inspect with node .\\p player` : `Result: ${outcome} | resume with --home "${home}" --resume ${id}`);
+    display(options.supervised ? launcherText(locale, 'coachedResult', { outcome: outcome }) : launcherText(locale, 'playerResult', { outcome: outcome, home: home, id: id }));
   }
   return { ...result, output };
 }
 
 // Operator controls share the existing bound workbench and official launcher.
 // Continuation starts only after successful adoption and connection release.
-export async function controlPlayer({ repository, session, parameters = [], binary }, display = console.log,
+export async function controlPlayer({ repository, session, parameters = [], binary, locale = 'en' }, display = console.log,
   { openWorkbench, startPlayer = runPlayer } = {}) {
   const operation = parameters[0] ?? 'status';
   let args = parameters.slice(1);
@@ -364,13 +369,13 @@ export async function controlPlayer({ repository, session, parameters = [], bina
   const continueAfter = ['accept', 'replace'].includes(operation) && args[0] === '--continue';
   if (continueAfter) args = args.slice(1);
   if (!['status', 'next', 'accept', 'replace', 'reject', 'coach'].includes(operation)) {
-    throw new Error('player [status | next | accept [--continue] | replace [--continue] <command> | reject <guidance> | coach <guidance>]');
+    throw new Error(launcherText(locale, 'controlUsage'));
   }
-  if (['status', 'next', 'accept'].includes(operation) && args.length) throw new Error(`player ${operation} takes no arguments`);
-  if (['replace', 'reject', 'coach'].includes(operation) && !args.join(' ').trim()) throw new Error(`player ${operation} requires ${operation === 'replace' ? 'a replacement command' : 'concise guidance'}`);
+  if (['status', 'next', 'accept'].includes(operation) && args.length) throw new Error(launcherText(locale, 'controlNoArguments', { operation: operation }));
+  if (['replace', 'reject', 'coach'].includes(operation) && !args.join(' ').trim()) throw new Error(launcherText(locale, 'controlArgumentRequired', { operation: operation, argument: operation === 'replace' ? launcherText(locale, 'replacementCommand') : launcherText(locale, 'conciseGuidance') }));
   openWorkbench ??= (await import(pathToFileURL(join(repository, 'tools/run_play/workbench.mjs')))).openWorkbench;
   const binding = await readPlayerBinding(session);
-  if (operation !== 'status' && playerIsRunning(binding)) throw new Error('The coached player is still running; wait for its pending proposal.');
+  if (operation !== 'status' && playerIsRunning(binding)) throw new Error(launcherText(locale, 'pendingPlayerRunning'));
   const game = await openWorkbench({ repository, session, binary, agentLocale: binding?.agentLocale ?? 'en', commandPrefix: '' });
   let nextOptions;
   try {
@@ -379,7 +384,7 @@ export async function controlPlayer({ repository, session, parameters = [], bina
     if (operation === 'status') display(renderPlayerReview(frame, review));
     else if (operation === 'coach' || operation === 'reject') {
       await setPlayerGuidance(session, frame, args.join(' '), { reject: operation === 'reject' });
-      display(operation === 'reject' ? 'Proposal rejected; game unchanged.' : 'Maintainer guidance saved for this task; game unchanged.');
+      display(operation === 'reject' ? launcherText(locale, 'proposalRejected') : launcherText(locale, 'guidanceSaved'));
     } else if (operation === 'accept' || operation === 'replace') {
       const result = await adoptPlayerProposal(session, game, operation === 'replace' ? { command: args.join(' ') } : {});
       display(renderPlayerReview(result.frame, result.review));
@@ -388,10 +393,10 @@ export async function controlPlayer({ repository, session, parameters = [], bina
     }
     if (operation === 'next' || continueAfter) {
       if (playerReviewOutstanding(review)) {
-        throw new Error('Handle the outstanding proposal or execution error before asking Flash again. Use player status, then accept/replace/reject.');
+        throw new Error(launcherText(locale, 'outstandingReview'));
       }
       if (frame.task.family === 'terminal') { display(frame.text); return { outcome: 'terminal' }; }
-      nextOptions = { repository, session, binary, home: binding?.home,
+      nextOptions = { repository, session, binary, locale, home: binding?.home,
         resume: binding?.id, model: binding?.model ?? 'deepseek-flash',
         reasoning: binding?.reasoning ?? 'low', maxTokens: binding?.maxTokens ?? 16384,
         maxMs: 90000, supervised: true, agentLocale: binding?.agentLocale ?? 'en',
@@ -432,7 +437,7 @@ function retainsCombatRelics(relics, baseline, preparation) {
   });
 }
 
-export function preparationNextCombat(candidate, observation) {
+export function preparationNextCombat(candidate, observation, locale = 'en') {
   const context = observation?.position?.observation?.run_context;
   if (context?.status !== 'available' || context.act !== 4
       || context.encounter_id !== 'ShieldAndSpear' || context.run_goal !== 'heart_victory') return;
@@ -442,7 +447,7 @@ export function preparationNextCombat(candidate, observation) {
   if (!incense || !Number.isSafeInteger(incense.counter) || incense.counter < 0 || incense.counter >= 6) return;
   return { encounter: 'TheHeart', incenseTriggerTurn: turn,
     earlyAttackCoverage: turn === 2 || turn === 3,
-    basis: 'Heart opens with Debilitate, then attacks on turns 2 and 3; attack order is unrevealed.' };
+    basis: launchText(locale, 'heartOpening') };
 }
 
 function smallCombatHpCostAllowance(player) {
@@ -496,12 +501,12 @@ export function preparationCombatCandidate(candidates, observation) {
 // Review material HP costs before adoption. A replayed win describes one
 // reachable outcome; a large loss needs investigation while the root remains
 // available, rather than becoming the next classifier's depleted inventory.
-export function preparationCombatReview(candidate, observation) {
+export function preparationCombatReview(candidate, observation, locale = 'en') {
   const player = observation.position?.observation?.observation?.player;
   const hp = candidate?.outcome?.final_hp;
   if (!player || !Number.isSafeInteger(player.hp) || !Number.isSafeInteger(player.max_hp)
       || player.max_hp <= 0 || !Number.isSafeInteger(hp)) {
-    throw new Error('Combat adoption requires actual starting HP and a replayed final HP.');
+    throw new Error(launcherText(locale, 'actualCombatHpRequired'));
   }
   const context = observation.position.observation.run_context;
   // The goal is achieved by any replayed Heart win; there is no later route
@@ -555,15 +560,16 @@ export async function preparationCombatEscape(game, observation) {
 // choices get a fresh official player; combat and forced continuations remain
 // with their existing owners.
 export async function runPreparationFlow(options, display = console.log) {
+  const locale = createPresentation({ locale: options.locale }).locale;
   const agentLocale = options.agentLocale ?? 'en';
-  if (!['en', 'zh-CN'].includes(agentLocale)) throw new Error('agentLocale must be en or zh-CN');
+  if (!['en', 'zh-CN'].includes(agentLocale)) throw new Error(launcherText(locale, 'invalidAgentLocale'));
   if (options.resume || options.dry || options.task || options.taskFile) {
-    throw new Error('preparation-flow starts from the actual game with its supplied stage task; use preparation for a resumed or custom task.');
+    throw new Error(launcherText(locale, 'flowTaskRequired'));
   }
-  if (options.model && options.model !== 'deepseek-flash') throw new Error('preparation-flow uses deepseek-flash.');
+  if (options.model && options.model !== 'deepseek-flash') throw new Error(launcherText(locale, 'flowModelRequired'));
   const maxSteps = Number(options.flowMaxSteps ?? 64), stopFloor = Number(options.stopFloor ?? 0);
   if (!Number.isSafeInteger(maxSteps) || maxSteps < 1 || !Number.isSafeInteger(stopFloor) || stopFloor < 0) {
-    throw new Error('flow-max-steps must be positive and stop-floor nonnegative.');
+    throw new Error(launcherText(locale, 'invalidFlowLimits'));
   }
   const repository = await realpath(resolve(options.repository)), session = await realpath(resolve(options.session));
   const binary = await realpath(resolve(options.binary ?? join(repository, 'target/dev-opt/run_play.exe')));
@@ -581,7 +587,7 @@ export async function runPreparationFlow(options, display = console.log) {
     model: 'deepseek-flash', maxMsPerTask: options.maxMs ?? 180000, stopRequestFile,
     source: { commit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: repository, encoding: 'utf8' }).trim(),
       worktree: execFileSync('git', ['status', '--short'], { cwd: repository, encoding: 'utf8' }).trim() } }, null, 2));
-  display(`Preparation flow | deepseek-flash | artifact ${output}`);
+  display(launcherText(locale, 'flowStarted', { output: output }));
   try {
     for (let step = 0; step < maxSteps; step++) {
       if (existsSync(stopRequestFile)) { result.outcome = 'interrupted'; break; }
@@ -597,7 +603,7 @@ export async function runPreparationFlow(options, display = console.log) {
       if (stopFloor && run.floor >= stopFloor && !combat && visible.observation.context.kind === 'map') {
         result.outcome = 'checkpoint'; break;
       }
-      display(`Flow ${step} | Act ${run.act} F${run.floor} | ${combat ? 'combat' : visible.observation.context.kind}`);
+      display(launcherText(locale, 'flowStep', { step: step, act: run.act, floor: run.floor, context: combat ? 'combat' : visible.observation.context.kind }));
       const policyReading = preparationReading(before, rewardProgress);
       const procedural = combat ? undefined : preparationProceduralAction(policyReading);
       let cardFrame;
@@ -605,7 +611,7 @@ export async function runPreparationFlow(options, display = console.log) {
         try {
           cardFrame = preparationCardChoice(policyReading, strategicOptionCommand, agentLocale);
           if (cardFrame?.route.kind === 'model') {
-            const supply = preparationReadingSupply(policyReading, strategicOptionCommand);
+            const supply = preparationReadingSupply(policyReading, strategicOptionCommand, agentLocale);
             policyReading.candidateReadings = supply.candidates;
             policyReading.ownedRelicReadings = supply.relicReadings;
             cardFrame = preparationCardChoice(policyReading, strategicOptionCommand, agentLocale);
@@ -617,7 +623,7 @@ export async function runPreparationFlow(options, display = console.log) {
           result.outcome = 'preparation-needs-review'; result.preparationGap = error.preparationGap;
           if (cardFrame) await writeFile(join(folder, 'card-choice.json'), JSON.stringify(cardFrame, null, 2));
           await writeFile(join(folder, 'card-choice-gap.json'), JSON.stringify(error.preparationGap, null, 2));
-          display(`Card choice gap | ${error.preparationGap.kind}: ${error.preparationGap.reason}`);
+          display(launcherText(locale, 'cardChoiceGap', { kind: error.preparationGap.kind, reason: error.preparationGap.reason }));
           break;
         }
       }
@@ -625,7 +631,7 @@ export async function runPreparationFlow(options, display = console.log) {
       if (cardFrame?.route.kind === 'review') {
         result.outcome = 'preparation-needs-review'; result.preparationGap = cardFrame.route.gap;
         await writeFile(join(folder, 'card-choice-gap.json'), JSON.stringify(cardFrame.route.gap, null, 2));
-        display(`Card choice gap | ${cardFrame.route.gap.kind}: ${cardFrame.route.gap.reason}`);
+        display(launcherText(locale, 'cardChoiceGap', { kind: cardFrame.route.gap.kind, reason: cardFrame.route.gap.reason }));
         break;
       }
       let execution, adoptedAction, needsReview = false;
@@ -653,17 +659,17 @@ export async function runPreparationFlow(options, display = console.log) {
               smallHpCostAllowance: smallCombatHpCostAllowance(visible.observation.player),
               selected: candidate.ref,
               minimumObservedHp: candidate.minimumObservedHp,
-              nextCombatPreparation: preparationNextCombat(candidate, before),
+              nextCombatPreparation: preparationNextCombat(candidate, before, agentLocale),
               alternatives: report.candidates.map(row => ({ candidate: row.ref,
                 meetsRequestedSatisfaction: row.meetsRequestedSatisfaction,
                 minimumObservedHp: row.minimumObservedHp,
-                nextCombatPreparation: preparationNextCombat(row, before), outcome: row.outcome })),
+                nextCombatPreparation: preparationNextCombat(row, before, agentLocale), outcome: row.outcome })),
             }, null, 2));
-            const review = preparationCombatReview(candidate, before);
+            const review = preparationCombatReview(candidate, before, locale);
             if (review) {
               await writeFile(join(folder, 'combat-adoption-review.json'), JSON.stringify(review, null, 2));
               result.outcome = 'combat-needs-review'; result.combatReview = review;
-              display(`Combat review | HP ${review.startingHp} -> ${review.settledHp} | candidate ${review.candidate} retained at the unchanged root`);
+              display(launcherText(locale, 'combatReview', { startingHp: review.startingHp, settledHp: review.settledHp, candidate: review.candidate }));
               break;
             }
             const adopted = await candidate.commit();
@@ -678,7 +684,7 @@ export async function runPreparationFlow(options, display = console.log) {
         const workbench = await openWorkbench({ repository, session, binary, agentLocale, recordDirectory: join(folder, 'forced-wire'), commandPrefix: '' });
         try {
           if (!sameGameContextSource(before, await workbench.observe())) {
-            throw new Error('Game position changed before the procedural preparation; inspect the current saved position.');
+            throw new Error(launcherText(locale, 'proceduralPositionChanged'));
           }
           await writeFile(join(folder, 'forced.txt'), (await workbench.execute(command)).text);
         }
@@ -697,7 +703,7 @@ export async function runPreparationFlow(options, display = console.log) {
           execution = { owner: adopted.owner, command: adopted.command, route: adopted.route };
           adoptedAction = before.position.actions.find(row => strategicOptionCommand(row.semantic_action, before)
             === adopted.command)?.candidate?.action;
-          display(`Card policy | ${adopted.command}`);
+          display(launcherText(locale, 'cardPolicy', { command: adopted.command }));
           result.cardPolicyActions++;
         } finally { await workbench.close(); }
       } else {
@@ -726,7 +732,7 @@ export async function runPreparationFlow(options, display = console.log) {
     }
   } catch (error) { result.outcome = 'error'; result.error = safeError(error); }
   await writeFile(join(output, 'result.json'), JSON.stringify(result, null, 2));
-  display(`Flow result: ${result.outcome} | ${result.modelTasks} Flash tasks, ${result.cardPolicyActions} card policies, ${result.combatSearches} searches, ${result.combatVictories} wins, ${result.combatEscapes} escapes | ${output}`);
+  display(launcherText(locale, 'flowResult', { outcome: result.outcome, modelTasks: result.modelTasks, cardPolicyActions: result.cardPolicyActions, combatSearches: result.combatSearches, combatVictories: result.combatVictories, combatEscapes: result.combatEscapes, output: output }));
   return result;
 }
 
@@ -735,18 +741,20 @@ async function main() {
     repository: { type: 'string' }, session: { type: 'string' }, home: { type: 'string' }, binary: { type: 'string' },
     resume: { type: 'string' }, model: { type: 'string' }, reasoning: { type: 'string' },
     'task-scope': { type: 'string' },
-    'agent-locale': { type: 'string' },
+    'agent-locale': { type: 'string' }, locale: { type: 'string' },
     supervised: { type: 'boolean' },
     'max-tokens': { type: 'string' }, 'max-ms': { type: 'string' },
     'flow-max-steps': { type: 'string' }, 'stop-floor': { type: 'string' },
     task: { type: 'string' }, 'task-file': { type: 'string' }, dry: { type: 'boolean' }, help: { type: 'boolean' },
   } });
+  const locale = values.locale ?? 'en';
+  if (!['en', 'zh-CN'].includes(locale)) throw new Error(launcherText('en', 'invalidLocale'));
   if (values.help) {
-    console.log('sts-dsh-player --repository PATH --session PATH [--agent-locale en|zh-CN] [--home PATH] [--binary PATH] [--resume ID]\n  [--task-scope run|preparation|preparation-flow] [--flow-max-steps 64] [--stop-floor N] [--task TEXT | --task-file PATH] [--model deepseek-flash] [--reasoning low|high|max|off] [--max-tokens 32768]\n  [--max-ms N] [--dry]\nDefault: play through the first terminal victory or defeat, no wall-time limit. preparation ends after one preparation and its execution targets. preparation-flow gives each strategic decision fresh context and runs CombatSolver between decisions; --max-ms applies to each Flash task. Create manifest.stopRequestFile to cancel and save the official session. --dry makes no model request.');
+    console.log(launcherText(locale, 'usage'));
     return;
   }
-  if (!values.repository || !values.session) throw new Error('--repository and --session are required');
-  if (values.task !== undefined && values['task-file'] !== undefined) throw new Error('use either --task or --task-file');
+  if (!values.repository || !values.session) throw new Error(launcherText(locale, 'pathsRequired'));
+  if (values.task !== undefined && values['task-file'] !== undefined) throw new Error(launcherText(locale, 'exclusiveTask'));
   const runner = values['task-scope'] === 'preparation-flow' ? runPreparationFlow : runPlayer;
   const result = await runner({ ...values, agentLocale: values['agent-locale'], taskScope: values['task-scope'], taskFile: values['task-file'], maxTokens: values['max-tokens'], maxMs: values['max-ms'],
     flowMaxSteps: values['flow-max-steps'], stopFloor: values['stop-floor'] });

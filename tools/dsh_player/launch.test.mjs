@@ -19,7 +19,7 @@ import { promisify } from 'node:util';
 import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
 import { basename, dirname, join, resolve } from 'node:path';
-import { runPlayer, continuationTask, watchPlayerStopRequest, preparationCombatCandidate, preparationNextCombat, preparationCombatReview, preparationCombatEscape } from './launch.mjs';
+import { runPlayer, runPreparationFlow, continuationTask, watchPlayerStopRequest, preparationCombatCandidate, preparationNextCombat, preparationCombatReview, preparationCombatEscape } from './launch.mjs';
 
 const languageRepository = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const languageBinary = join(languageRepository, 'target/dev-opt', process.platform === 'win32' ? 'run_play.exe' : 'run_play');
@@ -49,23 +49,52 @@ test('scripted dry setup supplies file tools preserves locale bindings and leave
     const fingerprint = async () => JSON.parse((await run(languageBinary, ['state-fingerprint', '--session', session],
       { cwd: languageRepository, windowsHide: true })).stdout);
     const before = await fingerprint();
-    for (const agentLocale of ['en', 'zh-CN']) {
-      const home = join(directory, agentLocale), output = [];
-      const result = await runPlayer({ repository: languageRepository, session, binary: languageBinary, home, agentLocale, dry: true }, text => output.push(text));
+    for (const locale of ['en', 'zh-CN']) for (const agentLocale of ['en', 'zh-CN']) {
+      const home = join(directory, locale + '-' + agentLocale), output = [];
+      const result = await runPlayer({ repository: languageRepository, session, binary: languageBinary, home, locale, agentLocale, dry: true }, text => output.push(text));
       assert.equal(result.outcome, 'dry-setup-passed', JSON.stringify(result));
       assert.equal(result.modelUsed, false);
       assert.equal(result.steps, 0);
       const manifest = JSON.parse(await readFile(join(result.output, 'manifest.json'), 'utf8'));
       assert.equal(manifest.agentLocale, agentLocale);
+      assert.match(manifest.task, agentLocale === 'en' ? /^Continue the bound run/ : /^从提供的实际游戏读数继续已绑定对局/);
       for (const name of ['sts', 'sts_feedback', 'read', 'glob', 'grep', 'todo_write']) assert.ok(manifest.tools.includes(name), name);
       assert.match(output.join('\n'), agentLocale === 'en' ? /Neow/ : /涅奥/);
+      assert.match(output[0], locale === 'en' ? /^Player / : /^玩家 /);
+      assert.match(output.at(-1), locale === 'en' ? /^Result: dry-setup-passed/ : /^结果：dry-setup-passed/);
       const bindingPath = join(home, 'players', result.id + '.json'), binding = await readFile(bindingPath);
       await assert.rejects(runPlayer({ repository: languageRepository, session, binary: languageBinary, home, resume: result.id,
-        agentLocale: agentLocale === 'en' ? 'zh-CN' : 'en', dry: true }, () => {}), /resume agent language differs/);
+        locale, agentLocale: agentLocale === 'en' ? 'zh-CN' : 'en', dry: true }, () => {}),
+      locale === 'en' ? /resume agent language differs/ : /接续语言与已保存玩家不同/);
+      const resumedOutput = [];
+      const resumed = await runPlayer({ repository: languageRepository, session, binary: languageBinary, home, resume: result.id,
+        locale: locale === 'en' ? 'zh-CN' : 'en', agentLocale, dry: true }, text => resumedOutput.push(text));
+      assert.equal(resumed.outcome, 'dry-setup-passed');
+      assert.match(resumedOutput[0], locale === 'en' ? /^玩家 / : /^Player /);
+      const resumedManifest = JSON.parse(await readFile(join(resumed.output, 'manifest.json'), 'utf8'));
+      assert.equal(resumedManifest.agentLocale, agentLocale);
+      assert.equal(resumedManifest.task, manifest.task);
       assert.deepEqual(await readFile(bindingPath), binding);
       assert.deepEqual(await fingerprint(), before);
     }
   });
+
+test('launcher help and validation use operator language independently from agent language', async () => {
+  const run = promisify(execFile), entry = fileURLToPath(new URL('./launch.mjs', import.meta.url));
+  for (const locale of ['en', 'zh-CN']) {
+    const { stdout } = await run(process.execPath, [entry, '--locale', locale, '--agent-locale', locale === 'en' ? 'zh-CN' : 'en', '--help'],
+      { windowsHide: true });
+    assert.match(stdout, /\[--locale en\|zh-CN\] \[--agent-locale en\|zh-CN\]/);
+    assert.match(stdout, locale === 'en' ? /--locale selects operator messages/ : /--locale 选择操作提示语言/);
+    await assert.rejects(run(process.execPath, [entry, '--locale', locale], { windowsHide: true }),
+      error => (locale === 'en' ? /--repository and --session are required/ : /需要 --repository 和 --session/).test(error.stderr));
+  }
+  await assert.rejects(run(process.execPath, [entry, '--locale', 'invalid', '--help'], { windowsHide: true }),
+    error => /--locale must be en or zh-CN/.test(error.stderr));
+  await assert.rejects(runPlayer({ locale: 'zh-CN', agentLocale: 'en', model: 'deepseek-v4-pro' }), /此玩家不使用 deepseek-v4-pro/);
+  await assert.rejects(runPreparationFlow({ locale: 'zh-CN', agentLocale: 'en', dry: true }), /从实际游戏开始/);
+  assert.throws(() => preparationCombatReview({}, {}, 'zh-CN'), /实际起始生命/);
+});
 
 test('Chinese continuation translates only the host explanation and preserves the operator task', () => {
   const task = '用户任务 🐱 {{literal}}\nact play:Strike@0';
@@ -273,6 +302,10 @@ test('Shield and Spear settlement can prefer Heart attack coverage with the same
   assert.deepEqual(preparationNextCombat(second, root), { encounter: 'TheHeart', incenseTriggerTurn: 2,
     earlyAttackCoverage: true,
     basis: 'Heart opens with Debilitate, then attacks on turns 2 and 3; attack order is unrevealed.' });
+  const { basis, ...chinesePreparation } = preparationNextCombat(second, root, 'zh-CN');
+  assert.match(basis, /攻击顺序尚未揭晓/);
+  const { basis: englishBasis, ...englishPreparation } = preparationNextCombat(second, root);
+  assert.deepEqual(chinesePreparation, englishPreparation);
   assert.strictEqual(preparationCombatCandidate([late, second], root), second);
   assert.strictEqual(preparationCombatCandidate([late, third], root), third);
   assert.strictEqual(preparationCombatCandidate([late, first], root), late, 'the greatest counter is not the next attack window');
