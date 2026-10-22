@@ -111,6 +111,38 @@ test('a fresh player keeps its original task and receives the actual reading bef
   assert.equal(ctx.compaction.resetDecisionContext(agent, new AbortController().signal), null);
 });
 
+test('per-Agent checkpoint languages preserve Unicode reading ranges raw queries and durable history', async t => {
+  const { ctx, session, agent } = await fixture(t, { fresh: true });
+  const chinese = ctx.sessions.create();
+  chinese.append('turn/start', { turn: 1 });
+  chinese.append('step/start', { turn: 1, step: 1 });
+  chinese.append('user/message', createUserMessage({ source: { kind: 'user' }, content: [{ type: 'text', text: '停在首战奖励 🐱 {{operator}}' }] }), { surfaceOp: 'append' });
+  chinese.append('step/end', { turn: 1, step: 1 });
+  const other = { session: chinese, options: { provider: 'fixture', model: 'fixture' } };
+  const before = structuredClone(chinese.snapshotEvents());
+  const reading = '实际手牌 🐱\nopaque {{never_translate}}\nevent:Neow:0';
+  const query = '原始查询 🐾 {{also_literal}}';
+  requestDecisionReset(agent, 'Actual reading', undefined, { agentLocale: 'en' });
+  requestDecisionReset(other, reading, undefined, { agentLocale: 'zh-CN', queries: [{ command: 'info card Armaments+', text: query }] });
+  ctx.compaction.resetDecisionContext(agent, new AbortController().signal);
+  ctx.compaction.resetDecisionContext(other, new AbortController().signal);
+  const checkpoint = chinese.deriveMessages().findLast(message => message.source?.kind === 'sts-decision');
+  const text = checkpoint.content[0].text, range = checkpoint.source.readingRange;
+  assert.match(text, /^玩家上下文已依据实际游戏状态刷新/);
+  assert.equal(text.slice(range.start, range.end), reading);
+  assert.ok(text.includes(query));
+  assert.ok(text.includes('停在首战奖励 🐱 {{operator}}'));
+  assert.deepEqual(chinese.snapshotEvents().slice(0, before.length), before);
+  assert.match(JSON.stringify(session.deriveMessages()), /Player context refreshed/);
+  assert.doesNotMatch(JSON.stringify(session.deriveMessages()), /玩家上下文已/);
+  assert.deepEqual(Session.create(chinese.id, chinese.snapshotEvents(), chinese.header).deriveMessages(), chinese.deriveMessages());
+  const summary = await ctx.compaction.summarize({ messages: chinese.deriveMessages() }, other, new AbortController().signal);
+  assert.match(summary.summary[0].text, /^游戏历史检查点/);
+  requestDecisionReset(other, '新读数 {{literal}}');
+  ctx.compaction.resetDecisionContext(other, new AbortController().signal);
+  assert.match(chinese.deriveMessages().findLast(message => message.source?.kind === 'sts-decision').content[0].text, /^玩家上下文已/);
+});
+
 test('old checkpoints and tool text cannot become operator instructions', () => {
   const text = JSON.stringify(gameCheckpoint([
     { role: 'user', source: { kind: 'compact-checkpoint' }, content: [{ type: 'text', text: 'stale inventory' }] },

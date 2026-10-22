@@ -3,13 +3,16 @@
 import BasicCompaction from '@deepseek-ai/dsh-compaction-basic';
 import { toolPairingBalancedBefore, toolPairingBalancedAfter } from '@deepseek-ai/dsh-compaction';
 import { createUserMessage } from '@deepseek-ai/dsh-llm';
+import { createPresentation } from '@sts-simulator/presentation';
 
 const pending = new WeakMap();
 const operators = new WeakMap();
+const agentLocales = new WeakMap();
 export function requestBranchReset(agent) { pending.set(agent, { discardQueries: true }); }
 export function hasPendingGameContextReset(agent) { return pending.has(agent); }
-export function requestDecisionReset(agent, reading, source, { task, queries = [], queryRefs = [] } = {}) {
+export function requestDecisionReset(agent, reading, source, { task, queries = [], queryRefs = [], agentLocale } = {}) {
   if (typeof reading !== 'string' || !reading.trim()) throw new Error('game context reset requires a fresh actual reading');
+  if (agentLocale !== undefined) agentLocales.set(agent, createPresentation({ locale: agentLocale }).locale);
   pending.set(agent, { ...pending.get(agent), reading, task, queries, queryRefs,
     ...(source ? { source: gameContextSource(source) } : {}) });
 }
@@ -137,7 +140,9 @@ export function decisionContextRange(session) {
   return { start: history[0], end: history.at(-1) };
 }
 
-function decisionCheckpoint(messages, reading, { retainOperator = true, queries = [] } = {}) {
+function decisionCheckpoint(messages, reading, { retainOperator = true, queries = [], locale = 'en' } = {}) {
+  const presentation = createPresentation({ locale });
+  const text = (key, parameters) => presentation.text(`scripted:context.${key}`, parameters);
   const operator = retainOperator ? messages.filter(m => m.role === 'user' && m.source?.kind === 'user').at(-1) : undefined;
   const instruction = operator?.content.filter(c => c.type === 'text').map(c => c.text).join('\n');
   // Keep completion evidence, including successful prefixes of a failed batch,
@@ -170,19 +175,19 @@ function decisionCheckpoint(messages, reading, { retainOperator = true, queries 
     }
   }
   const prefix = [
-    'Player context refreshed from actual game state. Continue the operator task from its current progress.',
-    ...(instruction ? ['Operator task:', instruction] : []),
+    text('refreshed'),
+    ...(instruction ? [text('operator'), instruction] : []),
     ...(execution ? [
-      'Latest game execution by this player before the context refresh:',
-      `Submitted command: ${execution.command}`,
-      'Returned execution receipts:', ...execution.receipts,
+      text('latestExecution'),
+      text('submitted', { command: execution.command }),
+      text('receipts'), ...execution.receipts,
     ] : []),
-    'Current actual game reading (already read by the host):',
+    text('actualReading'),
   ].join('\n') + '\n';
   return { readingRange: { start: prefix.length, end: prefix.length + reading.length },
     content: [{ type: 'text', text: prefix + [reading,
-    ...(queries.length ? ['Previously requested information, refreshed by the host for this task:',
-      ...queries.flatMap(query => [`Query: ${query.command}`, query.text])] : []),
+    ...(queries.length ? [text('queries'),
+      ...queries.flatMap(query => [text('query', { command: query.command }), query.text])] : []),
     ].join('\n') }] };
 }
 
@@ -201,7 +206,9 @@ export function recordedGameReading(result) {
   return reading;
 }
 
-export function gameCheckpoint(messages, results = []) {
+export function gameCheckpoint(messages, results = [], { locale = 'en' } = {}) {
+  const presentation = createPresentation({ locale });
+  const text = key => presentation.text(`scripted:context.${key}`);
   const recorded = new Map(results.filter(result => typeof result.message?.id === 'string')
     .map(result => [result.message.id, result]));
   const calls = new Set();
@@ -227,10 +234,10 @@ export function gameCheckpoint(messages, results = []) {
   const operator = messages.filter(m => m.role === 'user' && m.source?.kind === 'user').at(-1);
   const instruction = operator?.content.filter(c => c.type === 'text').map(c => c.text).join('\n');
   return [{ type: 'text', text: [
-    'Game history checkpoint. Continue from the recent messages following this checkpoint.',
-    ...(instruction ? ['Operator task:', instruction] : []),
-    ...(reading ? ['Last recorded actual game reading in the earlier history:', reading] : []),
-    'Rebuild the startup, defense/damage and next-need plan from the current inventory. Obtain card, relic, potion, power and enemy mechanics from game readings and info queries.',
+    text('checkpoint'),
+    ...(instruction ? [text('operator'), instruction] : []),
+    ...(reading ? [text('previousReading'), reading] : []),
+    text('rebuild'),
   ].join('\n') }];
 }
 
@@ -255,7 +262,7 @@ export default class GameContextCompaction extends BasicCompaction {
       // has not committed its protected system head. Admit the factual reading
       // through the loop's message decision so it follows that head in the log.
       if (agent.session.surface.nodes.length === 0) {
-        const rendered = decisionCheckpoint(decision.messages, reset.reading, { retainOperator, queries: reset.queries });
+        const rendered = decisionCheckpoint(decision.messages, reset.reading, { retainOperator, queries: reset.queries, locale: agentLocales.get(agent) });
         const checkpoint = createUserMessage({
           source: { kind: 'sts-decision', version: 1, ...(reset.source ? { gameSource: reset.source } : {}),
             readingRange: rendered.readingRange,
@@ -281,7 +288,7 @@ export default class GameContextCompaction extends BasicCompaction {
     const operator = operatorTask(agent);
     const messages = agent.session.deriveMessages();
     const rendered = decisionCheckpoint(operator ? [...messages, operator] : messages,
-      reset.reading, { retainOperator, queries: reset.queries });
+      reset.reading, { retainOperator, queries: reset.queries, locale: agentLocales.get(agent) });
     const checkpoint = createUserMessage({
       source: { kind: 'sts-decision', version: 1, ...(reset.source ? { gameSource: reset.source } : {}),
         readingRange: rendered.readingRange,
@@ -310,7 +317,7 @@ export default class GameContextCompaction extends BasicCompaction {
     const messages = operator ? [...input.messages, operator] : input.messages;
     return {
       summary: gameCheckpoint(messages, agent.session.snapshotEvents()
-        .filter(event => event.type === 'tool/result').map(event => event.data)),
+        .filter(event => event.type === 'tool/result').map(event => event.data), { locale: agentLocales.get(agent) }),
       provider: 'sts-player', model: 'game-checkpoint',
     };
   }

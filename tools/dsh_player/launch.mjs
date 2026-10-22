@@ -8,6 +8,7 @@ import { resolve, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
 import { performance } from 'node:perf_hooks';
+import { createPresentation } from '@sts-simulator/presentation';
 import { Context } from '@deepseek-ai/cordis';
 import LlmRuntime, { createUserMessage, ToolCallId } from '@deepseek-ai/dsh-llm';
 import SessionStore, { SessionId } from '@deepseek-ai/dsh-session';
@@ -19,6 +20,7 @@ import SystemPrompt from '@deepseek-ai/dsh-system-prompt';
 import ToolRuntime from '@deepseek-ai/dsh-tools';
 import * as SessionPersistence from '@deepseek-ai/dsh-session-persistence-jsonl';
 import LocalFileSystem from '@deepseek-ai/dsh-fs-local';
+import WorkingDirectory from '@deepseek-ai/dsh-working-directory';
 import Subprocess from '@deepseek-ai/dsh-subprocess-local';
 import TokenMeter from '@deepseek-ai/dsh-token-meter';
 import GameContextCompaction, { gameContextSource, sameGameContextSource } from './context.mjs';
@@ -35,8 +37,7 @@ import { preparationTaskRoot, preparationTaskProgress, preparationProceduralActi
 import { preparationCardChoice, renderPreparationCardChoice, adoptPreparationCardChoice } from './card-choice.mjs';
 import { inspectPlayer, parseInspectionArgs, recordPlayerRequests } from './inspection.mjs';
 
-const defaultTask = 'Continue the bound run toward its stated objective from the supplied actual game reading. At a requested checkpoint, terminal result or blocking tool failure, report the actual state and any unresolved concern.';
-const preparationTask = 'Complete one preparation decision from the current host-supplied stage. Follow that stage\'s tool format and finish the adopted preparation\'s attached choices.';
+function launchText(locale, key) { return createPresentation({ locale }).text(`scripted:launch.${key}`); }
 
 // Decision boundaries cut ordinary room history. Pressure compaction remains
 // a fallback for a single unusually long shop or combat investigation.
@@ -64,14 +65,16 @@ export function watchPlayerStopRequest(path, stop, intervalMs = 1000) {
   return () => clearInterval(timer);
 }
 
-export function continuationTask(task, previousRunOutcome) {
-  const reason = previousRunOutcome === 'interrupted' ? 'The host paused the previous player run.'
-    : previousRunOutcome === 'time-limit' ? 'The host stopped the previous player run at its configured wall-time limit.' : '';
-  return reason ? `${reason} An in-flight tool or model request may have been canceled. The host supplies a fresh source-checked game reading before your next request. Continue from that saved progress using the documented tool budgets.\n\n${task}` : task;
+export function continuationTask(task, previousRunOutcome, locale = 'en') {
+  const reason = previousRunOutcome === 'interrupted' ? launchText(locale, 'interrupted')
+    : previousRunOutcome === 'time-limit' ? launchText(locale, 'timeLimit') : '';
+  return reason ? reason + launchText(locale, 'continuation') + '\n\n' + task : task;
 }
 
 export async function runPlayer(options, display = console.log) {
   if (options.model === 'deepseek-v4-pro') throw new Error('deepseek-v4-pro is prohibited for this player; use deepseek-flash (DeepSeek-V41-Flash).');
+  let agentLocale = options.agentLocale ?? 'en';
+  if (!['en', 'zh-CN'].includes(agentLocale)) throw new Error('agentLocale must be en or zh-CN');
   let taskScope = options.taskScope ?? 'run';
   if (!['run', 'preparation'].includes(taskScope)) throw new Error('task-scope must be run or preparation');
   if (options.supervised && taskScope !== 'run') throw new Error('Coached play requires task-scope run.');
@@ -106,6 +109,11 @@ export async function runPlayer(options, display = console.log) {
     }
     previousGameSource = saved.lastGameSource;
     previousRunOutcome = saved.lastRunOutcome;
+    const savedLocale = saved.agentLocale ?? 'en';
+    if (!['en', 'zh-CN'].includes(savedLocale) || options.agentLocale !== undefined && options.agentLocale !== savedLocale) {
+      throw new Error('resume agent language differs from the saved player; create a new player for another language');
+    }
+    agentLocale = savedLocale;
     if (options.taskScope !== undefined && options.taskScope !== (saved.taskScope ?? 'run')) {
       throw new Error('resume task scope differs from the saved player; create a new player for another task');
     }
@@ -121,18 +129,18 @@ export async function runPlayer(options, display = console.log) {
   }
   if (taskScope === 'preparation' && !preparationRoot) {
     const { openRunPlay } = await import(pathToFileURL(join(repository, 'tools/run_play/client.mjs')));
-    const probe = await openRunPlay({ repository, session, binary, recordDirectory: join(output, 'task-root-wire') });
+    const probe = await openRunPlay({ repository, session, binary, agentLocale, recordDirectory: join(output, 'task-root-wire') });
     try { preparationRoot = preparationTaskRoot(await probe.observe()); }
     finally { await probe.close(); }
   }
-  Object.assign(binding, { taskScope, supervised: Boolean(options.supervised), ...(preparationRoot ? { preparationRoot } : {}), ...(rewardProgress ? { rewardProgress } : {}) });
+  Object.assign(binding, { taskScope, agentLocale, supervised: Boolean(options.supervised), ...(preparationRoot ? { preparationRoot } : {}), ...(rewardProgress ? { rewardProgress } : {}) });
   const task = options.taskFile ? await readFile(resolve(options.taskFile), 'utf8')
-    : options.task ?? (taskScope === 'preparation' ? preparationTask : defaultTask);
+    : options.task ?? launchText(agentLocale, taskScope === 'preparation' ? 'preparationTask' : 'defaultTask');
   if (!options.dry && !task.trim()) throw new Error('player task must not be empty');
   if (!options.resume) {
     await writeFile(bindingFile, JSON.stringify(binding, null, 2) + '\n', { flag: 'wx' });
   }
-  const executionTask = continuationTask(task, previousRunOutcome);
+  const executionTask = continuationTask(task, previousRunOutcome, agentLocale);
   const stopRequestFile = join(output, 'stop-request');
   const ctx = new Context();
   const started = performance.now();
@@ -152,10 +160,10 @@ export async function runPlayer(options, display = console.log) {
     }
     await ctx.plugin(SystemPrompt, { includeHarnessIdentity: false, includeRuntimeContext: false,
       personaPrefix: taskScope === 'preparation'
-        ? 'You complete the current supplied preparation step through sts.'
-        : 'You control a turn-based tactical expedition through bound game tools. The simulator readings and supplied mechanics are authoritative. Use available references to investigate choices.' });
+        ? launchText(agentLocale, 'personaPreparation') : launchText(agentLocale, 'personaRun') });
     await ctx.plugin(SessionPersistence, { root: join(home, 'sessions'), compression: 'none' });
     await ctx.plugin(LocalFileSystem, { cwd: repository });
+    await ctx.plugin(WorkingDirectory, { defaultDirectory: repository });
     await ctx.plugin(Subprocess);
     await ctx.plugin(FileTools);
     await ctx.plugin(FileSearch, { sampleOverCapGlobResults: true });
@@ -195,14 +203,14 @@ export async function runPlayer(options, display = console.log) {
     let attachedGameSource, resetContextOnAttach = true;
     if (options.resume) {
       const { openRunPlay } = await import(pathToFileURL(join(repository, 'tools/run_play/client.mjs')));
-      const probe = await openRunPlay({ repository, session, binary,
+      const probe = await openRunPlay({ repository, session, binary, agentLocale,
         recordDirectory: join(output, 'attachment-observation-wire') });
       try { attachedGameSource = gameContextSource(await probe.observe()); }
       finally { await probe.close(); }
       resetContextOnAttach = !sameGameContextSource(previousGameSource, attachedGameSource);
     }
     const setup = async agentCtx => {
-      await agentCtx.plugin(Player, { repository, session, binary, resetContextOnAttach, taskScope, supervised: options.supervised, preparationRoot, rewardProgress });
+      await agentCtx.plugin(Player, { repository, session, binary, agentLocale, resetContextOnAttach, taskScope, supervised: options.supervised, preparationRoot, rewardProgress });
     };
     handle = options.resume
       ? await ctx.agents.resume({ resumeSessionId: SessionId(id), agentOptions, setup })
@@ -214,7 +222,8 @@ export async function runPlayer(options, display = console.log) {
       : ['sts', 'sts_feedback', 'read', 'grep', 'glob', 'todo_write'];
     const allowed = new Set(taskScope === 'preparation' ? required : [...required, 'read_image', 'skill']);
     if (required.some(name => !tools.includes(name)) || tools.some(name => !allowed.has(name))) {
-      throw new Error('dedicated player tool scope is incomplete or includes unapproved tools');
+      throw new Error('dedicated player tool scope is incomplete or includes unapproved tools: '
+        + JSON.stringify({ required, actual: tools }));
     }
     const source = { commit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: repository, encoding: 'utf8' }).trim(),
       worktree: execFileSync('git', ['status', '--short'], { cwd: repository, encoding: 'utf8' }).trim() };
@@ -225,7 +234,7 @@ export async function runPlayer(options, display = console.log) {
       compaction: { backend: 'dsh-compaction-basic', ...playerCompaction, maxTokens } }, null, 2) + '\n');
     display(`Player ${id} | ${agentOptions.model} | artifact ${output}`);
     if (options.supervised && !options.dry) await bindCoachedPlayer(session, {
-      id, home, model: agentOptions.model, reasoning: agentOptions.reasoningEffort, maxTokens,
+      id, home, model: agentOptions.model, reasoning: agentOptions.reasoningEffort, maxTokens, agentLocale,
       running: true, pid: process.pid, lastRun: output,
     });
     if (options.dry) {
@@ -296,7 +305,7 @@ export async function runPlayer(options, display = console.log) {
       let game, finalGameSource;
       try {
         const { openRunPlay } = await import(pathToFileURL(join(repository, 'tools/run_play/client.mjs')));
-        game = await openRunPlay({ repository, session, binary, recordDirectory: join(output, 'final-observation-wire') });
+        game = await openRunPlay({ repository, session, binary, agentLocale, recordDirectory: join(output, 'final-observation-wire') });
         const observation = await game.observe();
         finalGameSource = gameContextSource(observation);
         if (preparationRoot) result.preparationProgress = preparationTaskProgress(preparationRoot, observation);
@@ -332,7 +341,7 @@ export async function runPlayer(options, display = console.log) {
     }
     await writeFile(join(output, 'result.json'), JSON.stringify(result, null, 2) + '\n');
     if (options.supervised && !options.dry) await bindCoachedPlayer(session, {
-      id, home, model: agentOptions.model, reasoning: agentOptions.reasoningEffort, maxTokens,
+      id, home, model: agentOptions.model, reasoning: agentOptions.reasoningEffort, maxTokens, agentLocale,
       running: cleanupErrors.length > 0, pid: process.pid, lastRun: output,
     });
     display(options.supervised ? `Result: ${outcome} | inspect with node .\\p player` : `Result: ${outcome} | resume with --home "${home}" --resume ${id}`);
@@ -362,7 +371,7 @@ export async function controlPlayer({ repository, session, parameters = [], bina
   openWorkbench ??= (await import(pathToFileURL(join(repository, 'tools/run_play/workbench.mjs')))).openWorkbench;
   const binding = await readPlayerBinding(session);
   if (operation !== 'status' && playerIsRunning(binding)) throw new Error('The coached player is still running; wait for its pending proposal.');
-  const game = await openWorkbench({ repository, session, binary, commandPrefix: '' });
+  const game = await openWorkbench({ repository, session, binary, agentLocale: binding?.agentLocale ?? 'en', commandPrefix: '' });
   let nextOptions;
   try {
     let review = await readPlayerReview(session);
@@ -385,8 +394,8 @@ export async function controlPlayer({ repository, session, parameters = [], bina
       nextOptions = { repository, session, binary, home: binding?.home,
         resume: binding?.id, model: binding?.model ?? 'deepseek-flash',
         reasoning: binding?.reasoning ?? 'low', maxTokens: binding?.maxTokens ?? 16384,
-        maxMs: 90000, supervised: true,
-        task: defaultTask };
+        maxMs: 90000, supervised: true, agentLocale: binding?.agentLocale ?? 'en',
+        task: launchText(binding?.agentLocale ?? 'en', 'defaultTask') };
     }
   } finally { await game.close(); }
   return nextOptions ? startPlayer(nextOptions, display) : { outcome: 'completed' };
@@ -546,6 +555,8 @@ export async function preparationCombatEscape(game, observation) {
 // choices get a fresh official player; combat and forced continuations remain
 // with their existing owners.
 export async function runPreparationFlow(options, display = console.log) {
+  const agentLocale = options.agentLocale ?? 'en';
+  if (!['en', 'zh-CN'].includes(agentLocale)) throw new Error('agentLocale must be en or zh-CN');
   if (options.resume || options.dry || options.task || options.taskFile) {
     throw new Error('preparation-flow starts from the actual game with its supplied stage task; use preparation for a resumed or custom task.');
   }
@@ -566,7 +577,7 @@ export async function runPreparationFlow(options, display = console.log) {
   let rewardProgress = existsSync(rewardProgressFile) ? JSON.parse(await readFile(rewardProgressFile, 'utf8')) : undefined;
   const result = { outcome: 'step-limit', output, stopRequestFile, steps: 0, modelTasks: 0,
     combatSearches: 0, combatVictories: 0, combatEscapes: 0, forcedActions: 0, cardPolicyActions: 0 };
-  await writeFile(join(output, 'manifest.json'), JSON.stringify({ repository, session, binary, maxSteps, stopFloor,
+  await writeFile(join(output, 'manifest.json'), JSON.stringify({ repository, session, binary, agentLocale, maxSteps, stopFloor,
     model: 'deepseek-flash', maxMsPerTask: options.maxMs ?? 180000, stopRequestFile,
     source: { commit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: repository, encoding: 'utf8' }).trim(),
       worktree: execFileSync('git', ['status', '--short'], { cwd: repository, encoding: 'utf8' }).trim() } }, null, 2));
@@ -576,7 +587,7 @@ export async function runPreparationFlow(options, display = console.log) {
       if (existsSync(stopRequestFile)) { result.outcome = 'interrupted'; break; }
       const folder = join(output, `step-${String(step).padStart(3, '0')}`);
       await mkdir(folder);
-      let game = await openRunPlay({ repository, session, binary, recordDirectory: join(folder, 'before-wire') });
+      let game = await openRunPlay({ repository, session, binary, agentLocale, recordDirectory: join(folder, 'before-wire') });
       let before;
       try { before = await game.observe(); } finally { await game.close(); }
       await writeFile(join(folder, 'before.json'), JSON.stringify(before, null, 2));
@@ -619,7 +630,7 @@ export async function runPreparationFlow(options, display = console.log) {
       }
       let execution, adoptedAction, needsReview = false;
       if (combat) {
-        game = await openRunPlay({ repository, session, binary, recordDirectory: join(folder, 'combat-wire') });
+        game = await openRunPlay({ repository, session, binary, agentLocale, recordDirectory: join(folder, 'combat-wire') });
         try {
           const report = await game.research({ effort: 'whole_combat', maxSearchMs: 8000, maxGenerationWork: 200000 });
           result.combatSearches++;
@@ -664,7 +675,7 @@ export async function runPreparationFlow(options, display = console.log) {
         } finally { await game.close(); }
       } else if (procedural) {
         const command = strategicOptionCommand(procedural.row.semantic_action, before);
-        const workbench = await openWorkbench({ repository, session, binary, recordDirectory: join(folder, 'forced-wire'), commandPrefix: '' });
+        const workbench = await openWorkbench({ repository, session, binary, agentLocale, recordDirectory: join(folder, 'forced-wire'), commandPrefix: '' });
         try {
           if (!sameGameContextSource(before, await workbench.observe())) {
             throw new Error('Game position changed before the procedural preparation; inspect the current saved position.');
@@ -676,7 +687,7 @@ export async function runPreparationFlow(options, display = console.log) {
         adoptedAction = procedural.row.candidate.action;
         result.forcedActions++;
       } else if (cardFrame?.route.kind === 'automatic') {
-        const workbench = await openWorkbench({ repository, session, binary,
+        const workbench = await openWorkbench({ repository, session, binary, agentLocale,
           recordDirectory: join(folder, 'card-policy-wire'), commandPrefix: '' });
         try {
           const { adopted } = await adoptPreparationCardChoice(workbench, cardFrame, policyReading, {
@@ -690,7 +701,7 @@ export async function runPreparationFlow(options, display = console.log) {
           result.cardPolicyActions++;
         } finally { await workbench.close(); }
       } else {
-        const player = await runPlayer({ ...options, repository, session, binary, home: join(folder, 'player'), taskScope: 'preparation',
+        const player = await runPlayer({ ...options, repository, session, binary, agentLocale, home: join(folder, 'player'), taskScope: 'preparation',
           model: 'deepseek-flash', maxMs: options.maxMs ?? 180000, externalStopRequestFile: stopRequestFile, rewardProgress }, display);
         execution = { owner: cardFrame ? 'flash-card-choice' : 'flash-classification', player };
         result.modelTasks++;
@@ -700,7 +711,7 @@ export async function runPreparationFlow(options, display = console.log) {
           result.outcome = 'preparation-needs-review'; result.player = player; needsReview = true;
         }
       }
-      game = await openRunPlay({ repository, session, binary, recordDirectory: join(folder, 'after-wire') });
+      game = await openRunPlay({ repository, session, binary, agentLocale, recordDirectory: join(folder, 'after-wire') });
       let after;
       try { after = await game.observe(); } finally { await game.close(); }
       await writeFile(join(folder, 'after.json'), JSON.stringify(after, null, 2));
@@ -724,19 +735,20 @@ async function main() {
     repository: { type: 'string' }, session: { type: 'string' }, home: { type: 'string' }, binary: { type: 'string' },
     resume: { type: 'string' }, model: { type: 'string' }, reasoning: { type: 'string' },
     'task-scope': { type: 'string' },
+    'agent-locale': { type: 'string' },
     supervised: { type: 'boolean' },
     'max-tokens': { type: 'string' }, 'max-ms': { type: 'string' },
     'flow-max-steps': { type: 'string' }, 'stop-floor': { type: 'string' },
     task: { type: 'string' }, 'task-file': { type: 'string' }, dry: { type: 'boolean' }, help: { type: 'boolean' },
   } });
   if (values.help) {
-    console.log('sts-dsh-player --repository PATH --session PATH [--home PATH] [--binary PATH] [--resume ID]\n  [--task-scope run|preparation|preparation-flow] [--flow-max-steps 64] [--stop-floor N] [--task TEXT | --task-file PATH] [--model deepseek-flash] [--reasoning low|high|max|off] [--max-tokens 32768]\n  [--max-ms N] [--dry]\nDefault: play through the first terminal victory or defeat, no wall-time limit. preparation ends after one preparation and its execution targets. preparation-flow gives each strategic decision fresh context and runs CombatSolver between decisions; --max-ms applies to each Flash task. Create manifest.stopRequestFile to cancel and save the official session. --dry makes no model request.');
+    console.log('sts-dsh-player --repository PATH --session PATH [--agent-locale en|zh-CN] [--home PATH] [--binary PATH] [--resume ID]\n  [--task-scope run|preparation|preparation-flow] [--flow-max-steps 64] [--stop-floor N] [--task TEXT | --task-file PATH] [--model deepseek-flash] [--reasoning low|high|max|off] [--max-tokens 32768]\n  [--max-ms N] [--dry]\nDefault: play through the first terminal victory or defeat, no wall-time limit. preparation ends after one preparation and its execution targets. preparation-flow gives each strategic decision fresh context and runs CombatSolver between decisions; --max-ms applies to each Flash task. Create manifest.stopRequestFile to cancel and save the official session. --dry makes no model request.');
     return;
   }
   if (!values.repository || !values.session) throw new Error('--repository and --session are required');
   if (values.task !== undefined && values['task-file'] !== undefined) throw new Error('use either --task or --task-file');
   const runner = values['task-scope'] === 'preparation-flow' ? runPreparationFlow : runPlayer;
-  const result = await runner({ ...values, taskScope: values['task-scope'], taskFile: values['task-file'], maxTokens: values['max-tokens'], maxMs: values['max-ms'],
+  const result = await runner({ ...values, agentLocale: values['agent-locale'], taskScope: values['task-scope'], taskFile: values['task-file'], maxTokens: values['max-tokens'], maxMs: values['max-ms'],
     flowMaxSteps: values['flow-max-steps'], stopFloor: values['stop-floor'] });
   if (!['completed', 'dry-setup-passed', 'checkpoint', 'step-limit', 'terminal', 'needs-review'].includes(result.outcome)) process.exitCode = 1;
 }

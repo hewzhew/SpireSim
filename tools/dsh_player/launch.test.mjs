@@ -12,10 +12,71 @@ import ToolRuntime, { defineTool } from '@deepseek-ai/dsh-tools';
 import * as SessionPersistence from '@deepseek-ai/dsh-session-persistence-jsonl';
 import TokenMeter from '@deepseek-ai/dsh-token-meter';
 import GameContextCompaction, { requestDecisionReset } from './context.mjs';
-import { mkdtemp, writeFile, rm, rmdir } from 'node:fs/promises';
+import { mkdtemp, writeFile, readFile, readdir, realpath, rm, rmdir } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
-import { dirname, join, resolve } from 'node:path';
-import { continuationTask, watchPlayerStopRequest, preparationCombatCandidate, preparationNextCombat, preparationCombatReview, preparationCombatEscape } from './launch.mjs';
+import { basename, dirname, join, resolve } from 'node:path';
+import { runPlayer, continuationTask, watchPlayerStopRequest, preparationCombatCandidate, preparationNextCombat, preparationCombatReview, preparationCombatEscape } from './launch.mjs';
+
+const languageRepository = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
+const languageBinary = join(languageRepository, 'target/dev-opt', process.platform === 'win32' ? 'run_play.exe' : 'run_play');
+
+test('scripted dry setup supplies file tools preserves locale bindings and leaves exact state unchanged',
+  { skip: !existsSync(languageBinary), timeout: 20000 }, async t => {
+    const base = await realpath(tmpdir()), directory = await mkdtemp(join(base, 'sts-scripted-language-'));
+    const session = join(directory, basename(directory));
+    const recordPrefix = basename(session) + '-dsh-';
+    t.after(async () => {
+      const records = await realpath(join(languageRepository, '.oracle-lab/run-play-records'));
+      for (const entry of await readdir(records, { withFileTypes: true })) {
+        if (!entry.isDirectory() || !entry.name.startsWith(recordPrefix)) continue;
+        const target = await realpath(join(records, entry.name));
+        assert.equal(dirname(target), records);
+        assert.ok(basename(target).startsWith(recordPrefix));
+        await rm(target, { recursive: true, force: true });
+      }
+      const target = await realpath(directory);
+      assert.equal(dirname(target), base);
+      assert.ok(basename(target).startsWith('sts-scripted-language-'));
+      await rm(target, { recursive: true, force: true });
+    });
+    const run = promisify(execFile);
+    await run(languageBinary, ['new', '--session', session, '--seed', '202610230733', '--ascension', '20', '--goal', 'heart-victory'],
+      { cwd: languageRepository, windowsHide: true });
+    const fingerprint = async () => JSON.parse((await run(languageBinary, ['state-fingerprint', '--session', session],
+      { cwd: languageRepository, windowsHide: true })).stdout);
+    const before = await fingerprint();
+    for (const agentLocale of ['en', 'zh-CN']) {
+      const home = join(directory, agentLocale), output = [];
+      const result = await runPlayer({ repository: languageRepository, session, binary: languageBinary, home, agentLocale, dry: true }, text => output.push(text));
+      assert.equal(result.outcome, 'dry-setup-passed', JSON.stringify(result));
+      assert.equal(result.modelUsed, false);
+      assert.equal(result.steps, 0);
+      const manifest = JSON.parse(await readFile(join(result.output, 'manifest.json'), 'utf8'));
+      assert.equal(manifest.agentLocale, agentLocale);
+      for (const name of ['sts', 'sts_feedback', 'read', 'glob', 'grep', 'todo_write']) assert.ok(manifest.tools.includes(name), name);
+      assert.match(output.join('\n'), agentLocale === 'en' ? /Neow/ : /涅奥/);
+      const bindingPath = join(home, 'players', result.id + '.json'), binding = await readFile(bindingPath);
+      await assert.rejects(runPlayer({ repository: languageRepository, session, binary: languageBinary, home, resume: result.id,
+        agentLocale: agentLocale === 'en' ? 'zh-CN' : 'en', dry: true }, () => {}), /resume agent language differs/);
+      assert.deepEqual(await readFile(bindingPath), binding);
+      assert.deepEqual(await fingerprint(), before);
+    }
+  });
+
+test('Chinese continuation translates only the host explanation and preserves the operator task', () => {
+  const task = '用户任务 🐱 {{literal}}\nact play:Strike@0';
+  for (const outcome of ['interrupted', 'time-limit']) {
+    const text = continuationTask(task, outcome, 'zh-CN');
+    assert.match(text, /宿主/);
+    assert.match(text, /最新游戏读数/);
+    assert.ok(text.endsWith('\n\n' + task));
+  }
+  assert.equal(continuationTask(task, 'completed', 'zh-CN'), task);
+});
 
 test('low-HP escape checks the legal potion and full private settlement before adoption', async () => {
   const before = { position: { observation: { domain: 'combat', observation: {

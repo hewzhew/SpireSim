@@ -40,7 +40,7 @@ if (process.argv.slice(2).join(' ') === '--check') {
   const revision = (await run('git', ['rev-parse', 'HEAD'], { cwd: repository, windowsHide: true })).stdout.trim();
   const sourceDirty = Boolean((await run('git', ['status', '--porcelain'], { cwd: repository, windowsHide: true })).stdout.trim());
   const report = { schema: 'sts-node-distribution-v1', source_revision: revision, source_dirty: sourceDirty,
-    producer_sha256: sha(await readFile(fileURLToPath(import.meta.url))), packages: [], source_files_sha256: {}, installed_reading_checks: [], installed_native_checks: [], remote_modified: false };
+    producer_sha256: sha(await readFile(fileURLToPath(import.meta.url))), packages: [], source_files_sha256: {}, installed_reading_checks: [], installed_native_checks: [], installed_scripted_checks: [], remote_modified: false };
   let commandIndex = 0;
   async function npmCommand(cwd, parameters) {
     const log = join(output, `npm-${String(commandIndex++).padStart(2, '0')}.txt`);
@@ -140,6 +140,8 @@ if (process.argv.slice(2).join(' ') === '--check') {
           const entry = join(installed, 'native.mjs');
           within(verification, await realpath(createRequire(entry).resolve('@sts-simulator/presentation')));
           const { nativeGuide } = await import(pathToFileURL(entry).href);
+          const { playerGuide } = await import(pathToFileURL(join(installed, 'index.mjs')).href);
+          const { continuationTask } = await import(pathToFileURL(join(installed, 'launch.mjs')).href);
           for (const locale of ['en', 'zh-CN']) {
             const manual = nativeGuide(true, locale), assisted = nativeGuide(false, locale);
             if (!manual.includes(locale === 'en' ? 'public-information manual play' : '依据公开信息手动出牌')
@@ -147,6 +149,13 @@ if (process.argv.slice(2).join(' ') === '--check') {
               throw new Error(`Installed native guide lost its language or play mode: ${locale}`);
             }
             report.installed_native_checks.push({ package: manifest.name, locale, imported_entry: true, preserved_mode_and_commands: true });
+            const guide = playerGuide(locale), task = 'Opaque {{operator}}\nact play:Strike@0';
+            if (!guide.includes(locale === 'en' ? 'Bare info expands the current options' : '无参数 info 展开当前选项')
+                || !guide.includes('research whole_combat 8000 work 200000')
+                || !continuationTask(task, 'interrupted', locale).endsWith('\n\n' + task)) {
+              throw new Error(`Installed scripted guide lost language, command or operator text: ${locale}`);
+            }
+            report.installed_scripted_checks.push({ package: manifest.name, locale, imported_entries: true, preserved_guide_commands_and_operator: true });
           }
         }
       }

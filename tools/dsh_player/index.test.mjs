@@ -175,6 +175,31 @@ function preparationPosition(act, floor, site = 'map', revision = 1) {
   return current;
 }
 
+test('ordinary scripted players localize guides and tool descriptions per scope without changing schemas', async t => {
+  const f = await fixture(t, 'Supplied rules {{opaque}}');
+  const guides = [], schemas = [], handles = [];
+  for (const agentLocale of ['en', 'zh-CN']) {
+    const handle = await f.create({ agentLocale }); handles.push(handle);
+    const scope = f.scope();
+    const assembly = await f.ctx.systemPrompt.assemble({ scope: scopeOf(scope) });
+    const guide = assembly.sections.find(section => section.name === 'sts:player-guide').text;
+    guides.push(guide);
+    const tools = f.ctx.tools.schemas(handle.agent).filter(tool => ['sts', 'sts_feedback'].includes(tool.name));
+    schemas.push(JSON.parse(JSON.stringify(tools, (key, value) => key === 'description' ? undefined : value)));
+    const tool = tools.find(tool => tool.name === 'sts');
+    assert.match(guide, agentLocale === 'en' ? /Bare info expands the current options/ : /无参数 info 展开当前选项/);
+    assert.match(tool.description, agentLocale === 'en' ? /Submit a displayed game command/ : /提交显示的游戏命令/);
+    assert.ok(tool.description.includes('review <plan ID>'));
+    const failed = await f.ctx.tools.execute({ name: 'sts_feedback', arguments: { message: ' ' }, agent: handle.agent,
+      signal: new AbortController().signal, callId: 'language-validation-' + agentLocale });
+    assert.equal(failed.isError, true);
+    assert.match(failed.content[0].text, agentLocale === 'en' ? /concrete difficulty/ : /具体困难/);
+  }
+  assert.notEqual(guides[0], guides[1]);
+  assert.deepEqual(schemas[0], schemas[1]);
+  for (const handle of handles) await handle.dispose();
+});
+
 test('bound rules are loaded before play, remain scoped, and close with the player', async t => {
   const rules = 'Run rules | A20\nAct transition: heal 75% of missing HP. {{literal}}';
   const f = await fixture(t, rules);
