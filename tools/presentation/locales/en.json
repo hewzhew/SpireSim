@@ -1824,6 +1824,44 @@
         "FrontierOpenWithoutWitness": "search frontier remains open without a win",
         "MilestoneCandidates": "partial combat plans retained"
       }
+    },
+    "review": {
+      "refsMismatch": "Combat review references and traces disagree",
+      "turnZero": "Review turn starts at 1",
+      "noTurn": "{{reference}} has no requested turn",
+      "summary": "{{reference}} | Settled HP {{hp}}/{{maxHp}} | Additional potions {{potions}} | Actions {{actions}}",
+      "minimum": "Minimum observed HP: {{hp}}",
+      "blockScope": "Block before End Turn excludes end-turn triggers; HP change includes their settlement and enemy actions.",
+      "endBlock": " | Block before End Turn {{block}}",
+      "compactPowers": " | Powers: {{powers}}",
+      "compactTurn": "T{{turn}} | Start HP {{hp}}/{{maxHp}} | HP change {{delta}} | Start Block {{block}}{{end}}{{powers}} | {{actions}}{{more}}",
+      "moreCompact": " -> … +{{count}} more",
+      "turn": "Turn {{turn}} | Start HP {{hp}}/{{maxHp}} | Start Energy {{energy}}",
+      "moreActions": " -> ... ({{count}} more actions)",
+      "expand": "Expand a turn: review {{reference}} {{turn}}",
+      "continue": "Continue: review {{reference}} {{turn}}",
+      "actionHp": "  Actions: HP {{delta}}",
+      "endTurn": "  End turn: Block {{block}} | Incoming {{incoming}}",
+      "hpDelta": " | HP {{delta}}",
+      "maxHpDelta": "  Max HP {{delta}}",
+      "context": "  Block {{block}} | Incoming {{incoming}}",
+      "hand": "  Hand: {{cards}}",
+      "powers": "  Powers: {{powers}}",
+      "enemy": "  M{{slot}} {{name}}: HP {{hp}}/{{maxHp}}",
+      "enemyBlock": ", Block {{block}}",
+      "reviving": "Reviving",
+      "enemyPowers": "    Powers: {{powers}}",
+      "unknown": "unknown",
+      "action": {
+        "endTurn": "End turn",
+        "proceed": "Proceed",
+        "cancel": "Cancel",
+        "discardPotion": "Discard P{{slot}}",
+        "choose": "Choose {{name}}",
+        "selectNone": "Select none",
+        "select": "Select {{cards}}",
+        "unknownCard": "Unknown card"
+      }
     }
   },
   "decision": {

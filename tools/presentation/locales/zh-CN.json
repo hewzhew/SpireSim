@@ -1824,6 +1824,44 @@
         "FrontierOpenWithoutWitness": "尚未找到胜线，搜索前沿仍开放",
         "MilestoneCandidates": "已保留部分战斗方案"
       }
+    },
+    "review": {
+      "refsMismatch": "战斗复盘的方案引用与轨迹不一致",
+      "turnZero": "复盘回合从 1 开始",
+      "noTurn": "{{reference}} 没有请求的回合",
+      "summary": "{{reference}} | 结算生命 {{hp}}/{{maxHp}} | 额外使用药水 {{potions}} | 动作数 {{actions}}",
+      "minimum": "最低观测生命：{{hp}}",
+      "blockScope": "回合结束前的格挡不包含回合结束触发效果；生命变化包含这些效果的结算和敌方行动。",
+      "endBlock": " | 回合结束前格挡 {{block}}",
+      "compactPowers": " | 状态：{{powers}}",
+      "compactTurn": "第 {{turn}} 回合 | 起始生命 {{hp}}/{{maxHp}} | 生命变化 {{delta}} | 起始格挡 {{block}}{{end}}{{powers}} | {{actions}}{{more}}",
+      "moreCompact": " -> … 另有 {{count}} 个动作",
+      "turn": "第 {{turn}} 回合 | 起始生命 {{hp}}/{{maxHp}} | 起始能量 {{energy}}",
+      "moreActions": " -> ...（另有 {{count}} 个动作）",
+      "expand": "展开回合：review {{reference}} {{turn}}",
+      "continue": "继续查看：review {{reference}} {{turn}}",
+      "actionHp": "  玩家动作：生命 {{delta}}",
+      "endTurn": "  回合结束：格挡 {{block}} | 来袭伤害 {{incoming}}",
+      "hpDelta": " | 生命 {{delta}}",
+      "maxHpDelta": "  生命上限 {{delta}}",
+      "context": "  格挡 {{block}} | 来袭伤害 {{incoming}}",
+      "hand": "  手牌：{{cards}}",
+      "powers": "  状态：{{powers}}",
+      "enemy": "  M{{slot}} {{name}}：生命 {{hp}}/{{maxHp}}",
+      "enemyBlock": "，格挡 {{block}}",
+      "reviving": "复活中",
+      "enemyPowers": "    状态：{{powers}}",
+      "unknown": "未知",
+      "action": {
+        "endTurn": "结束回合",
+        "proceed": "前进",
+        "cancel": "取消",
+        "discardPotion": "丢弃 P{{slot}}",
+        "choose": "选择 {{name}}",
+        "selectNone": "不选择卡牌",
+        "select": "选择 {{cards}}",
+        "unknownCard": "未知卡牌"
+      }
     }
   },
   "decision": {

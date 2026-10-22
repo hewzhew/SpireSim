@@ -584,9 +584,31 @@ fn saved_plans_survive_reopen_and_commit_the_reviewed_execution_without_research
     let reviewed = exchange(
         &mut game,
         json!({"command":"combat_review","candidate_refs":["c0"],
-        "effort":"whole_combat","report_id":report_id,"compact":true}),
+        "effort":"whole_combat","report_id":report_id,"compact":true,"include_steps":true}),
     );
     assert_eq!(reviewed["status"], "ok", "{reviewed}");
+    let localized_review = exchange_locale(
+        &mut game,
+        json!({"command":"combat_review","candidate_refs":["c0"],"effort":"whole_combat","report_id":report_id,"compact":true,"include_steps":true}),
+        Locale::ZhCn,
+    );
+    assert_eq!(localized_review["status"], "ok", "{localized_review}");
+    assert_eq!(
+        localized_review["result"]["trace"],
+        reviewed["result"]["trace"]
+    );
+    let localized_view = localized_review["result"]["view"].as_str().unwrap();
+    assert!(
+        localized_view.contains("结算生命") && localized_view.contains("打击"),
+        "{localized_view}"
+    );
+    assert!(!localized_view.contains('·'));
+    for step in localized_review["result"]["trace"]["candidates"][0]["steps"]
+        .as_array()
+        .unwrap()
+    {
+        assert!(step.get("display").is_none());
+    }
     assert_eq!(*game.head(), root);
     assert_eq!(
         fs::read(paths.root().join("combat-plans.json")).unwrap(),
@@ -612,14 +634,61 @@ fn saved_plans_survive_reopen_and_commit_the_reviewed_execution_without_research
         })
         .collect();
     let pagination =
-        crate::combat_reading::review(&trace, &[selector.to_owned()], None, true).unwrap();
+        crate::combat_reading::review(&trace, &[selector.to_owned()], None, true, Locale::En)
+            .unwrap();
     assert!(pagination.contains(&format!("Expand a turn: review {selector} 4")));
     assert!(pagination.contains(&format!("Continue: review {selector} 12")));
     assert!(!pagination.contains("T12 |"));
     let expanded =
-        crate::combat_reading::review(&trace, &[selector.to_owned()], Some(12), false).unwrap();
+        crate::combat_reading::review(&trace, &[selector.to_owned()], Some(12), false, Locale::En)
+            .unwrap();
     assert!(expanded.contains("Turn 12 |"));
     assert!(!expanded.contains("Continue:"));
+    for step in &mut trace.candidates[0].steps {
+        step.label = "raw record must not be translated or parsed".into();
+    }
+    let raw_before = serde_json::to_value(&trace).unwrap();
+    let localized = crate::combat_reading::review(
+        &trace,
+        &[selector.to_owned()],
+        Some(12),
+        false,
+        Locale::ZhCn,
+    )
+    .unwrap();
+    assert!(
+        localized.contains("第 12 回合") && localized.contains("打击"),
+        "{localized}"
+    );
+    assert!(!localized.contains("raw record"));
+    assert_eq!(serde_json::to_value(&trace).unwrap(), raw_before);
+    let localized_pagination =
+        crate::combat_reading::review(&trace, &[selector.to_owned()], None, true, Locale::ZhCn)
+            .unwrap();
+    assert!(localized_pagination.contains(&format!("继续查看：review {selector} 12")));
+    assert!(
+        crate::combat_reading::review(&trace, &[], None, true, Locale::ZhCn)
+            .unwrap_err()
+            .contains("引用与轨迹不一致")
+    );
+    assert!(crate::combat_reading::review(
+        &trace,
+        &[selector.to_owned()],
+        Some(0),
+        false,
+        Locale::ZhCn
+    )
+    .unwrap_err()
+    .contains("从 1 开始"));
+    assert!(crate::combat_reading::review(
+        &trace,
+        &[selector.to_owned()],
+        Some(99),
+        false,
+        Locale::ZhCn
+    )
+    .unwrap_err()
+    .contains("没有请求的回合"));
     let bad = exchange(
         &mut game,
         json!({"command":"commit_combat_plan","candidate_ref":"c0",

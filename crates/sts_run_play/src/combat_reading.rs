@@ -9,7 +9,6 @@ use sts_oracle_learning::agent::task::{
     TaskResearchPlanAttemptExitV1, TaskResearchPlanMetaChangeV1, TaskResearchPlanPendingRewardV1,
 };
 use sts_oracle_learning::ai::combat_witness_contract::CombatWitnessSatisfactionV1;
-use sts_oracle_learning::content::identity::gameplay_display_label_v1;
 use sts_oracle_learning::content::relics::{
     persistent_state::{post_combat_persistent_relic_state_v1, relic_counter_is_combat_local_v1},
     RelicState,
@@ -18,7 +17,6 @@ use sts_oracle_learning::eval::run_control::WHOLE_COMBAT_RESEARCH_PLAN_PRODUCER_
 
 use crate::agent_protocol::{AgentCombatResearchBoundedProgressV1, AgentCombatResearchCandidateV1};
 use crate::combat_trace::RunPlayCombatTraceV1;
-use crate::render::format_card;
 
 pub(crate) fn research_message(locale: Locale, key: &str, parameters: &[(&str, &str)]) -> String {
     locale
@@ -1507,22 +1505,35 @@ mod tests {
             end_boundary: RunPlayCombatNextBoundaryV1::Strategic,
         };
         let mut view = String::new();
-        super::render_turn_changes(&mut view, &turn);
+        super::render_turn_changes(&mut view, &turn, sts_presentation::Locale::En);
         assert!(view.contains("Actions: HP -6"));
         assert!(view.contains("Incoming unknown | HP +6"));
         assert!(view.contains("Max HP +4"));
         assert_eq!(view.matches("HP -6").count(), 1);
         assert_eq!(view.matches("HP +6").count(), 1);
+        let mut localized = String::new();
+        super::render_turn_changes(&mut localized, &turn, sts_presentation::Locale::ZhCn);
+        for expected in [
+            "玩家动作：生命 -6",
+            "回合结束：格挡 5 | 来袭伤害 未知 | 生命 +6",
+            "生命上限 +4",
+        ] {
+            assert!(localized.contains(expected), "{localized}");
+        }
         turn.observed_player_hp_delta = -16;
         turn.end_turn.as_mut().unwrap().observed_player_hp_delta = -10;
         view.clear();
-        super::render_turn_changes(&mut view, &turn);
+        super::render_turn_changes(&mut view, &turn, sts_presentation::Locale::En);
         assert!(view.contains("Actions: HP -6"));
         assert!(view.contains("Incoming unknown | HP -10"));
         assert!(
             !view.contains("HP -16"),
             "do not print the overlapping total as another change"
         );
+        localized.clear();
+        super::render_turn_changes(&mut localized, &turn, sts_presentation::Locale::ZhCn);
+        assert!(localized.contains("玩家动作：生命 -6") && localized.contains("生命 -10"));
+        assert!(!localized.contains("生命 -16"));
     }
 
     #[test]
@@ -1548,6 +1559,61 @@ mod tests {
     }
 
     #[test]
+    fn review_action_labels_use_typed_ids_targets_and_the_requested_language() {
+        use crate::combat_trace::{RunPlayCombatActionDisplayV1 as Action, RunPlayPlayedCardV1};
+        use sts_oracle_learning::content::{cards::CardId, potions::PotionId};
+        use sts_oracle_learning::runtime::combat::StanceId;
+        use sts_presentation::Locale;
+        for (action, en, zh) in [
+            (
+                Action::PlayCard(RunPlayPlayedCardV1 {
+                    card_id: CardId::SearingBlow,
+                    upgrades: 3,
+                    target_slot: Some(2),
+                }),
+                "Searing Blow+3 @M2",
+                "灼热攻击+3 @M2",
+            ),
+            (
+                Action::UsePotion {
+                    slot: 1,
+                    potion_id: PotionId::SteroidPotion,
+                    target_slot: None,
+                },
+                "P1 Flex Potion",
+                "P1 类固醇药水",
+            ),
+            (Action::EndTurn, "End turn", "结束回合"),
+            (Action::Proceed, "Proceed", "前进"),
+            (Action::Cancel, "Cancel", "取消"),
+            (Action::DiscardPotion { slot: 0 }, "Discard P0", "丢弃 P0"),
+            (
+                Action::ChooseCard {
+                    card_id: CardId::ShrugItOff,
+                    upgrades: 1,
+                },
+                "Choose Shrug It Off+",
+                "选择 耸肩无视+",
+            ),
+            (
+                Action::ChooseStance(StanceId::Calm),
+                "Choose Calm",
+                "选择 平静",
+            ),
+            (Action::SelectCards(vec![]), "Select none", "不选择卡牌"),
+            (
+                Action::SelectCards(vec![(Some(CardId::StrikeG), 1), (None, 0)]),
+                "Select Strike+, Unknown card",
+                "选择 打击+, 未知卡牌",
+            ),
+        ] {
+            assert_eq!(super::action_label(&action, Locale::En), en);
+            assert_eq!(super::action_label(&action, Locale::ZhCn), zh);
+            assert_eq!(super::action_label(&action, Locale::En), en);
+        }
+    }
+
+    #[test]
     fn opening_preview_stops_at_the_first_turn_boundary_and_marks_truncation() {
         let actions = [
             "play:PommelStrike+#0@0",
@@ -1568,27 +1634,47 @@ mod tests {
     }
 }
 
+fn review_message(locale: Locale, key: &str, parameters: &[(&str, &str)]) -> String {
+    locale
+        .text("combat", &format!("review.{key}"), parameters)
+        .expect("combat review message")
+}
+
+fn review_word(locale: Locale, key: &str) -> &'static str {
+    locale
+        .entry("combat", &format!("review.{key}"))
+        .expect("combat review text")
+}
+
 pub(crate) fn review(
     trace: &RunPlayCombatTraceV1,
     refs: &[String],
     turn: Option<u32>,
     compact: bool,
+    locale: Locale,
 ) -> Result<String, String> {
+    let message = |key: &str, parameters: &[(&str, &str)]| review_message(locale, key, parameters);
     if refs.len() != trace.candidates.len() {
-        return Err("Combat review references and traces disagree".into());
+        return Err(message("refsMismatch", &[]));
     }
     if turn == Some(0) {
-        return Err("Review turn starts at 1".into());
+        return Err(message("turnZero", &[]));
     }
     let mut out = String::new();
     for (reference, candidate) in refs.iter().zip(&trace.candidates) {
         writeln!(
             out,
-            "{reference} | Settled HP {}/{} | Additional potions {} | Actions {}",
-            candidate.final_hp,
-            candidate.final_max_hp,
-            candidate.total_potions_consumed,
-            candidate.action_count
+            "{}",
+            message(
+                "summary",
+                &[
+                    ("reference", reference),
+                    ("hp", &candidate.final_hp.to_string()),
+                    ("maxHp", &candidate.final_max_hp.to_string()),
+                    ("potions", &candidate.total_potions_consumed.to_string()),
+                    ("actions", &candidate.action_count.to_string())
+                ]
+            )
         )
         .unwrap();
         if let Some(first) = candidate.turn_reviews.first() {
@@ -1603,18 +1689,23 @@ pub(crate) fn review(
                 .chain(std::iter::once(first.start.player_hp))
                 .min()
                 .unwrap();
-            writeln!(out, "Minimum observed HP: {minimum}").unwrap();
+            writeln!(
+                out,
+                "{}",
+                message("minimum", &[("hp", &minimum.to_string())])
+            )
+            .unwrap();
         }
-        writeln!(out, "Block before End Turn excludes end-turn triggers; HP change includes their settlement and enemy actions.").unwrap();
-        render_persistent_counters_at_finish(&mut out, &candidate.final_relics, Locale::En);
-        render_used_up_relics_at_finish(&mut out, &candidate.final_relics, None, Locale::En);
+        writeln!(out, "{}", message("blockScope", &[])).unwrap();
+        render_persistent_counters_at_finish(&mut out, &candidate.final_relics, locale);
+        render_used_up_relics_at_finish(&mut out, &candidate.final_relics, None, locale);
         let turns = candidate
             .turn_reviews
             .iter()
             .filter(|r| turn.is_none_or(|t| r.turn.saturating_add(1) == t))
             .collect::<Vec<_>>();
         if turns.is_empty() {
-            return Err(format!("{reference} has no requested turn"));
+            return Err(message("noTurn", &[("reference", reference)]));
         }
         for r in turns
             .iter()
@@ -1624,7 +1715,7 @@ pub(crate) fn review(
                 .steps
                 .iter()
                 .filter(|s| s.step >= r.first_step && s.step <= r.last_step)
-                .map(|s| s.label.clone())
+                .map(|s| action_label(&s.display, locale))
                 .collect::<Vec<_>>();
             let shown = if turn.is_some() {
                 actions.len()
@@ -1634,73 +1725,102 @@ pub(crate) fn review(
             if compact && turn.is_none() {
                 use crate::decision::combat::power_labels;
                 let end_context = r.end_turn.map_or_else(String::new, |end| {
-                    format!(" | Block before End Turn {}", end.player_block)
+                    message("endBlock", &[("block", &end.player_block.to_string())])
                 });
                 let powers = if r.start.player_powers.is_empty() {
                     String::new()
                 } else {
-                    format!(
-                        " | Powers: {}",
-                        power_labels(&r.start.player_powers, Locale::En)
+                    message(
+                        "compactPowers",
+                        &[("powers", &power_labels(&r.start.player_powers, locale))],
                     )
+                };
+                let more = if shown < actions.len() {
+                    message(
+                        "moreCompact",
+                        &[("count", &(actions.len() - shown).to_string())],
+                    )
+                } else {
+                    String::new()
                 };
                 writeln!(
                     out,
-                    "T{} | Start HP {}/{} | HP change {:+} | Start Block {}{}{} | {}{}",
-                    r.turn.saturating_add(1),
-                    r.start.player_hp,
-                    r.start.player_max_hp,
-                    r.observed_player_hp_delta,
-                    r.start.player_block,
-                    end_context,
-                    powers,
-                    actions[..shown].join(" · "),
-                    if shown < actions.len() {
-                        format!(" · … +{} more", actions.len() - shown)
-                    } else {
-                        String::new()
-                    },
+                    "{}",
+                    message(
+                        "compactTurn",
+                        &[
+                            ("turn", &r.turn.saturating_add(1).to_string()),
+                            ("hp", &r.start.player_hp.to_string()),
+                            ("maxHp", &r.start.player_max_hp.to_string()),
+                            ("delta", &format!("{:+}", r.observed_player_hp_delta)),
+                            ("block", &r.start.player_block.to_string()),
+                            ("end", &end_context),
+                            ("powers", &powers),
+                            ("actions", &actions[..shown].join(" -> ")),
+                            ("more", &more)
+                        ]
+                    )
                 )
                 .unwrap();
                 continue;
             }
             writeln!(
                 out,
-                "Turn {} | Start HP {}/{} | Start Energy {}",
-                r.turn.saturating_add(1),
-                r.start.player_hp,
-                r.start.player_max_hp,
-                r.start.energy
+                "{}",
+                message(
+                    "turn",
+                    &[
+                        ("turn", &r.turn.saturating_add(1).to_string()),
+                        ("hp", &r.start.player_hp.to_string()),
+                        ("maxHp", &r.start.player_max_hp.to_string()),
+                        ("energy", &r.start.energy.to_string())
+                    ]
+                )
             )
             .unwrap();
             if turn.is_some() {
-                render_turn_context(&mut out, &r.start);
+                render_turn_context(&mut out, &r.start, locale);
             }
             writeln!(
                 out,
                 "  {}{}",
                 actions[..shown].join(" -> "),
                 if shown < actions.len() {
-                    format!(" -> ... ({} more actions)", actions.len() - shown)
+                    message(
+                        "moreActions",
+                        &[("count", &(actions.len() - shown).to_string())],
+                    )
                 } else {
                     String::new()
                 }
             )
             .unwrap();
-            render_turn_changes(&mut out, r);
+            render_turn_changes(&mut out, r, locale);
         }
         if turn.is_none() {
             writeln!(
                 out,
-                "Expand a turn: review {reference} {}",
-                turns[0].turn.saturating_add(1)
+                "{}",
+                message(
+                    "expand",
+                    &[
+                        ("reference", reference),
+                        ("turn", &turns[0].turn.saturating_add(1).to_string())
+                    ]
+                )
             )
             .unwrap();
             if let Some(next) = turns.get(8) {
                 writeln!(
                     out,
-                    "Continue: review {reference} {}",
-                    next.turn.saturating_add(1)
+                    "{}",
+                    message(
+                        "continue",
+                        &[
+                            ("reference", reference),
+                            ("turn", &next.turn.saturating_add(1).to_string())
+                        ]
+                    )
                 )
                 .unwrap();
             }
@@ -1709,59 +1829,114 @@ pub(crate) fn review(
     Ok(out)
 }
 
-fn render_turn_changes(out: &mut String, turn: &crate::combat_trace::RunPlayCombatTurnReviewV1) {
+fn render_turn_changes(
+    out: &mut String,
+    turn: &crate::combat_trace::RunPlayCombatTurnReviewV1,
+    locale: Locale,
+) {
     let end_hp = turn.end_turn.map_or(0, |end| end.observed_player_hp_delta);
     let action_hp = turn.observed_player_hp_delta - end_hp;
     if action_hp != 0 {
-        writeln!(out, "  Actions: HP {action_hp:+}").unwrap();
+        writeln!(
+            out,
+            "{}",
+            review_message(locale, "actionHp", &[("delta", &format!("{action_hp:+}"))])
+        )
+        .unwrap();
     }
     if let Some(end) = turn.end_turn {
         write!(
             out,
-            "  End turn: Block {} | Incoming {}",
-            end.player_block,
-            end.visible_incoming_damage
-                .map_or_else(|| "unknown".into(), |n| n.to_string()),
+            "{}",
+            review_message(
+                locale,
+                "endTurn",
+                &[
+                    ("block", &end.player_block.to_string()),
+                    (
+                        "incoming",
+                        &end.visible_incoming_damage.map_or_else(
+                            || review_word(locale, "unknown").into(),
+                            |n| n.to_string()
+                        )
+                    )
+                ]
+            )
         )
         .unwrap();
         if end_hp != 0 {
-            write!(out, " | HP {end_hp:+}").unwrap();
+            out.push_str(&review_message(
+                locale,
+                "hpDelta",
+                &[("delta", &format!("{end_hp:+}"))],
+            ));
         }
         out.push('\n');
     }
     if turn.observed_player_max_hp_delta != 0 {
-        writeln!(out, "  Max HP {:+}", turn.observed_player_max_hp_delta).unwrap();
+        writeln!(
+            out,
+            "{}",
+            review_message(
+                locale,
+                "maxHpDelta",
+                &[("delta", &format!("{:+}", turn.observed_player_max_hp_delta))]
+            )
+        )
+        .unwrap();
     }
 }
 
-fn render_turn_context(out: &mut String, start: &crate::combat_trace::RunPlayCombatTurnStartV1) {
+fn render_turn_context(
+    out: &mut String,
+    start: &crate::combat_trace::RunPlayCombatTurnStartV1,
+    locale: Locale,
+) {
     use crate::decision::combat::{hand_card_label, intent_label, power_labels};
     use sts_oracle_learning::agent::information::state::CombatLearningEnemyIdentityV1;
+    let message = |key: &str, parameters: &[(&str, &str)]| review_message(locale, key, parameters);
     writeln!(
         out,
-        "  Block {} | Incoming {}",
-        start.player_block,
-        start
-            .visible_incoming_damage
-            .map_or_else(|| "unknown".into(), |n| n.to_string())
+        "{}",
+        message(
+            "context",
+            &[
+                ("block", &start.player_block.to_string()),
+                (
+                    "incoming",
+                    &start
+                        .visible_incoming_damage
+                        .map_or_else(|| review_word(locale, "unknown").into(), |n| n.to_string())
+                )
+            ]
+        )
     )
     .unwrap();
     writeln!(
         out,
-        "  Hand: {}",
-        start
-            .hand
-            .iter()
-            .map(|c| hand_card_label(c.card_id, c.upgrades, c.effective_cost, Locale::En))
-            .collect::<Vec<_>>()
-            .join(", ")
+        "{}",
+        message(
+            "hand",
+            &[(
+                "cards",
+                &start
+                    .hand
+                    .iter()
+                    .map(|c| hand_card_label(c.card_id, c.upgrades, c.effective_cost, locale))
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            )]
+        )
     )
     .unwrap();
     if !start.player_powers.is_empty() {
         writeln!(
             out,
-            "  Powers: {}",
-            power_labels(&start.player_powers, Locale::En)
+            "{}",
+            message(
+                "powers",
+                &[("powers", &power_labels(&start.player_powers, locale))]
+            )
         )
         .unwrap();
     }
@@ -1769,110 +1944,106 @@ fn render_turn_context(out: &mut String, start: &crate::combat_trace::RunPlayCom
         let CombatLearningEnemyIdentityV1::Known { enemy_id } = monster.enemy;
         write!(
             out,
-            "  M{} {}: HP {}/{}",
-            monster.slot,
-            gameplay_display_label_v1(enemy_id),
-            monster.hp,
-            monster.max_hp
+            "{}",
+            message(
+                "enemy",
+                &[
+                    ("slot", &monster.slot.to_string()),
+                    ("name", locale.entity("enemy", enemy_id.stable_id())),
+                    ("hp", &monster.hp.to_string()),
+                    ("maxHp", &monster.max_hp.to_string())
+                ]
+            )
         )
         .unwrap();
         if monster.block != 0 {
-            write!(out, ", Block {}", monster.block).unwrap();
+            out.push_str(&message(
+                "enemyBlock",
+                &[("block", &monster.block.to_string())],
+            ));
         }
         writeln!(
             out,
             " | {}",
             if monster.half_dead {
-                "Reviving".into()
+                review_word(locale, "reviving").into()
             } else {
-                intent_label(&monster.intent, Locale::En)
+                intent_label(&monster.intent, locale)
             }
         )
         .unwrap();
         if !monster.powers.is_empty() {
             writeln!(
                 out,
-                "    Powers: {}",
-                power_labels(&monster.powers, Locale::En)
+                "{}",
+                message(
+                    "enemyPowers",
+                    &[("powers", &power_labels(&monster.powers, locale))]
+                )
             )
             .unwrap();
         }
     }
 }
 
-pub(crate) fn selected_action_label(
-    observed: &sts_oracle_learning::eval::run_control::ExactRunPlayProbeStepV1,
-    card: Option<&crate::combat_trace::RunPlayPlayedCardV1>,
-    potion: Option<&crate::combat_trace::RunPlayPotionUseV1>,
-) -> Result<String, String> {
-    use sts_oracle_learning::agent::information::action::{
-        PublicCombatAtomicActionV1 as Atomic, PublicCombatIndexedChoiceCandidateV1 as Indexed,
-        PublicCombatSelectionDomainCandidateV1 as Domain,
-    };
-    use sts_oracle_learning::agent::task::TaskPublicCandidateV1 as Candidate;
-    if let Some(card) = card {
-        return Ok(format!(
+pub(crate) fn action_label(
+    action: &crate::combat_trace::RunPlayCombatActionDisplayV1,
+    locale: Locale,
+) -> String {
+    use crate::combat_trace::RunPlayCombatActionDisplayV1 as Action;
+    let target = |slot: Option<u8>| slot.map_or_else(String::new, |s| format!(" @M{s}"));
+    match action {
+        Action::PlayCard(card) => format!(
             "{}{}",
-            format_card(card.card_id, card.upgrades),
-            card.target_slot
-                .map_or_else(String::new, |s| format!(" @M{s}"))
-        ));
-    }
-    if let Some(potion) = potion {
-        return Ok(format!(
-            "P{} {}{}",
-            potion.slot,
-            gameplay_display_label_v1(potion.potion_id),
-            potion
-                .target_slot
-                .map_or_else(String::new, |s| format!(" @M{s}"))
-        ));
-    }
-    Ok(match &observed.selected_candidate {
-        Candidate::CombatAtomic {
-            action: Atomic::EndTurn,
-        } => "End turn".into(),
-        Candidate::CombatAtomic {
-            action: Atomic::Proceed,
-        } => "Proceed".into(),
-        Candidate::CombatAtomic {
-            action: Atomic::Cancel,
-        } => "Cancel".into(),
-        Candidate::CombatAtomic {
-            action: Atomic::DiscardPotion { potion_index },
-        } => format!("Discard P{potion_index}"),
-        Candidate::CombatIndexedChoice { candidate, .. } => match candidate {
-            Indexed::Card { card_id, upgrades } => {
-                format!("Choose {}", format_card(*card_id, *upgrades))
-            }
-            Indexed::Stance { stance } => format!("Choose {stance:?}"),
-        },
-        Candidate::CombatSelectionFamily { family } => {
-            let selected = observed
-                .choice
-                .ordinal_path
-                .iter()
-                .skip(1)
-                .map(|index| {
-                    let item = family
-                        .domain
-                        .get(*index)
-                        .ok_or("Review selection outside its domain")?;
-                    let (card, upgrades) = match item {
-                        Domain::Card {
-                            card_id, upgrades, ..
-                        } => (*card_id, upgrades.unwrap_or(0)),
-                        Domain::Scry { card_id, .. } => (*card_id, 0),
-                    };
-                    Ok(card.map_or_else(|| "Unknown card".into(), |c| format_card(c, upgrades)))
-                })
-                .collect::<Result<Vec<_>, String>>()?;
-            if selected.is_empty() {
-                "Select none".into()
-            } else {
-                format!("Select {}", selected.join(", "))
-            }
+            locale.card_name(card.card_id.stable_id(), card.upgrades),
+            target(card.target_slot)
+        ),
+        Action::UsePotion {
+            slot,
+            potion_id,
+            target_slot,
+        } => format!(
+            "P{slot} {}{}",
+            locale.entity("potion", potion_id.stable_id()),
+            target(*target_slot)
+        ),
+        Action::EndTurn => review_word(locale, "action.endTurn").into(),
+        Action::Proceed => review_word(locale, "action.proceed").into(),
+        Action::Cancel => review_word(locale, "action.cancel").into(),
+        Action::DiscardPotion { slot } => review_message(
+            locale,
+            "action.discardPotion",
+            &[("slot", &slot.to_string())],
+        ),
+        Action::ChooseCard { card_id, upgrades } => review_message(
+            locale,
+            "action.choose",
+            &[("name", &locale.card_name(card_id.stable_id(), *upgrades))],
+        ),
+        Action::ChooseStance(stance) => review_message(
+            locale,
+            "action.choose",
+            &[("name", locale.entity("stance", stance.stable_id()))],
+        ),
+        Action::SelectCards(cards) if cards.is_empty() => {
+            review_word(locale, "action.selectNone").into()
         }
-        _ => return Err("Review action lacks a typed display projection".into()),
-    })
+        Action::SelectCards(cards) => review_message(
+            locale,
+            "action.select",
+            &[(
+                "cards",
+                &cards
+                    .iter()
+                    .map(|(id, upgrades)| {
+                        id.map_or_else(
+                            || review_word(locale, "action.unknownCard").into(),
+                            |id| locale.card_name(id.stable_id(), *upgrades),
+                        )
+                    })
+                    .collect::<Vec<_>>()
+                    .join(", "),
+            )],
+        ),
+    }
 }

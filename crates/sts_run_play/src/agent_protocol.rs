@@ -5622,7 +5622,8 @@ fn handle_valid_request_v1(
                     .iter()
                     .map(|reference| crate::combat_reading::plan_id(id, reference))
                     .collect::<Vec<_>>();
-                let view = crate::combat_reading::review(&trace, &display_refs, *turn, *compact)?;
+                let view =
+                    crate::combat_reading::review(&trace, &display_refs, *turn, *compact, locale)?;
                 trace.set_steps_included_v1(*include_steps);
                 return Ok((
                     AgentShellResultV1::CombatReview {
@@ -5662,7 +5663,8 @@ fn handle_valid_request_v1(
                 .iter()
                 .map(|reference| crate::combat_reading::plan_id(id, reference))
                 .collect::<Vec<_>>();
-            let view = crate::combat_reading::review(&trace, &display_refs, *turn, *compact)?;
+            let view =
+                crate::combat_reading::review(&trace, &display_refs, *turn, *compact, locale)?;
             trace.set_steps_included_v1(*include_steps);
             if controller.head().head_revision != root_head_revision {
                 return Err("agent-shell combat review changed the durable head".to_string());

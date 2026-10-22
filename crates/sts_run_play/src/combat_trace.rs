@@ -151,6 +151,10 @@ pub struct RunPlayCombatTraceStepV1 {
     pub turn: u32,
     pub action: String,
     pub label: String,
+    /// Ephemeral display facts from the selected public candidate. Raw trace
+    /// records keep their canonical label and never serialize a view locale.
+    #[serde(skip)]
+    pub(crate) display: RunPlayCombatActionDisplayV1,
     pub player_block_before_action: i32,
     pub visible_incoming_damage_before_action: Option<i32>,
     pub card: Option<RunPlayPlayedCardV1>,
@@ -159,6 +163,28 @@ pub struct RunPlayCombatTraceStepV1 {
     pub delta: RunPlayCombatBoundaryDeltaV1,
     pub source_public_snapshot_id: String,
     pub next_public_snapshot_id: Option<String>,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub(crate) enum RunPlayCombatActionDisplayV1 {
+    PlayCard(RunPlayPlayedCardV1),
+    UsePotion {
+        slot: usize,
+        potion_id: PotionId,
+        target_slot: Option<u8>,
+    },
+    EndTurn,
+    Proceed,
+    Cancel,
+    DiscardPotion {
+        slot: usize,
+    },
+    ChooseCard {
+        card_id: CardId,
+        upgrades: u8,
+    },
+    ChooseStance(sts_oracle_learning::runtime::combat::StanceId),
+    SelectCards(Vec<(Option<CardId>, u8)>),
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Serialize)]
@@ -943,15 +969,18 @@ pub(crate) fn trace_step_v1(
         _ => None,
     };
 
+    let display = selected_action_display(
+        &observed.selected_candidate,
+        &observed.choice.ordinal_path,
+        card.as_ref(),
+        potion.as_ref(),
+    )?;
     Ok(RunPlayCombatTraceStepV1 {
         step,
         turn: before.turn.turn_count,
         action: action_label.to_string(),
-        label: crate::combat_reading::selected_action_label(
-            observed,
-            card.as_ref(),
-            potion.as_ref(),
-        )?,
+        label: crate::combat_reading::action_label(&display, sts_presentation::Locale::En),
+        display,
         player_block_before_action: before.player.block,
         visible_incoming_damage_before_action: visible_incoming_damage_v1(before),
         card,
@@ -970,6 +999,71 @@ pub(crate) fn trace_step_v1(
             .next_decision
             .as_ref()
             .map(|decision| decision.information.snapshot_id.clone()),
+    })
+}
+
+fn selected_action_display(
+    candidate: &TaskPublicCandidateV1,
+    ordinal_path: &[usize],
+    card: Option<&RunPlayPlayedCardV1>,
+    potion: Option<&RunPlayPotionUseV1>,
+) -> Result<RunPlayCombatActionDisplayV1, String> {
+    use sts_oracle_learning::agent::information::action::{
+        PublicCombatAtomicActionV1 as Atomic, PublicCombatIndexedChoiceCandidateV1 as Indexed,
+        PublicCombatSelectionDomainCandidateV1 as Domain,
+    };
+    use RunPlayCombatActionDisplayV1 as Display;
+    if let Some(card) = card {
+        return Ok(Display::PlayCard(*card));
+    }
+    if let Some(potion) = potion {
+        return Ok(Display::UsePotion {
+            slot: potion.slot,
+            potion_id: potion.potion_id,
+            target_slot: potion.target_slot,
+        });
+    }
+    Ok(match candidate {
+        TaskPublicCandidateV1::CombatAtomic {
+            action: Atomic::EndTurn,
+        } => Display::EndTurn,
+        TaskPublicCandidateV1::CombatAtomic {
+            action: Atomic::Proceed,
+        } => Display::Proceed,
+        TaskPublicCandidateV1::CombatAtomic {
+            action: Atomic::Cancel,
+        } => Display::Cancel,
+        TaskPublicCandidateV1::CombatAtomic {
+            action: Atomic::DiscardPotion { potion_index },
+        } => Display::DiscardPotion {
+            slot: *potion_index,
+        },
+        TaskPublicCandidateV1::CombatIndexedChoice { candidate, .. } => match candidate {
+            Indexed::Card { card_id, upgrades } => Display::ChooseCard {
+                card_id: *card_id,
+                upgrades: *upgrades,
+            },
+            Indexed::Stance { stance } => Display::ChooseStance(*stance),
+        },
+        TaskPublicCandidateV1::CombatSelectionFamily { family } => Display::SelectCards(
+            ordinal_path
+                .iter()
+                .skip(1)
+                .map(|index| {
+                    let item = family
+                        .domain
+                        .get(*index)
+                        .ok_or("Review selection outside its domain")?;
+                    Ok(match item {
+                        Domain::Card {
+                            card_id, upgrades, ..
+                        } => (*card_id, upgrades.unwrap_or(0)),
+                        Domain::Scry { card_id, .. } => (*card_id, 0),
+                    })
+                })
+                .collect::<Result<Vec<_>, String>>()?,
+        ),
+        _ => return Err("Review action lacks a typed display projection".into()),
     })
 }
 
@@ -1407,6 +1501,83 @@ mod tests {
     use sts_oracle_learning::agent::information::state::public_combat_state_v1;
     use sts_oracle_learning::content::monsters::EnemyId;
     use sts_oracle_learning::test_support::{blank_test_combat, test_monster};
+
+    #[test]
+    fn action_display_preserves_selected_order_unknown_cards_and_upgrade_identity() {
+        use sts_oracle_learning::agent::information::action::{
+            PublicCombatSelectionDistinctByV1, PublicCombatSelectionDomainCandidateV1 as Domain,
+            PublicCombatSelectionFamilyV1,
+        };
+        use sts_oracle_learning::sim::combat_action_surface::{
+            CombatSelectionInputEncodingV2, CombatSelectionReasonV2,
+        };
+        let mut candidate = TaskPublicCandidateV1::CombatSelectionFamily {
+            family: PublicCombatSelectionFamilyV1 {
+                input_encoding: CombatSelectionInputEncodingV2::SubmitScryDiscardIndices,
+                reason: CombatSelectionReasonV2::ScryDiscard,
+                hand_copy_projection: None,
+                source_pile: None,
+                domain: vec![
+                    Domain::Scry {
+                        index: 5,
+                        card_id: None,
+                        currently_present: false,
+                    },
+                    Domain::Scry {
+                        index: 7,
+                        card_id: Some(CardId::SearingBlow),
+                        currently_present: true,
+                    },
+                ],
+                raw_domain_count: 2,
+                eligible_domain_count: 2,
+                max_distinct_selection_count: 4,
+                declared_min: 0,
+                declared_max: 2,
+                effective_max: 2,
+                distinct_by: PublicCombatSelectionDistinctByV1::ScryOccurrence,
+            },
+        };
+        assert_eq!(
+            selected_action_display(&candidate, &[9, 1, 0], None, None).unwrap(),
+            RunPlayCombatActionDisplayV1::SelectCards(vec![
+                (Some(CardId::SearingBlow), 0),
+                (None, 0)
+            ])
+        );
+        assert_eq!(
+            selected_action_display(&candidate, &[9], None, None).unwrap(),
+            RunPlayCombatActionDisplayV1::SelectCards(vec![])
+        );
+        assert!(selected_action_display(&candidate, &[9, 2], None, None)
+            .unwrap_err()
+            .contains("outside its domain"));
+        let TaskPublicCandidateV1::CombatSelectionFamily { family } = &mut candidate else {
+            unreachable!()
+        };
+        family.input_encoding = CombatSelectionInputEncodingV2::SubmitSelectionGridCardLineages;
+        family.reason = CombatSelectionReasonV2::Grid(
+            sts_oracle_learning::state::core::GridSelectReason::DiscardToHand,
+        );
+        family.source_pile = Some(sts_oracle_learning::state::core::PileType::Discard);
+        family.domain = vec![Domain::Card {
+            ordinal: 0,
+            card_id: Some(CardId::SearingBlow),
+            upgrades: Some(3),
+            eligible: true,
+        }];
+        family.raw_domain_count = 1;
+        family.eligible_domain_count = 1;
+        family.max_distinct_selection_count = 1;
+        family.declared_min = 1;
+        family.declared_max = 1;
+        family.effective_max = 1;
+        family.distinct_by = PublicCombatSelectionDistinctByV1::CardOccurrence;
+        assert_eq!(
+            selected_action_display(&candidate, &[9, 0], None, None).unwrap(),
+            RunPlayCombatActionDisplayV1::SelectCards(vec![(Some(CardId::SearingBlow), 3)])
+        );
+    }
 
     #[test]
     fn successor_uses_entity_identity_when_summoning_shifts_slots() {
