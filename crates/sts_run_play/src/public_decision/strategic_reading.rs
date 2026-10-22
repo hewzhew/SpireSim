@@ -18,7 +18,7 @@ pub(super) fn project(decision: &TaskPublicDecisionV1) -> Result<Value, String> 
         PlannerDecisionContext::CardReward { reward_item_index, pending_rewards } => {
             for (index, reward) in pending_rewards.iter().enumerate() {
                 context_details.push_str(&format!("Reward item {index}: {}\n",
-                    crate::render::render_reward_descriptor(reward)));
+                    crate::render::render_reward_descriptor(reward, sts_presentation::Locale::En)));
             }
             format!("Card reward · reward item {reward_item_index:?}")
         }
@@ -38,7 +38,7 @@ pub(super) fn project(decision: &TaskPublicDecisionV1) -> Result<Value, String> 
             for (index, reward) in pending_rewards.iter().enumerate() {
                 context_details.push_str(&format!(
                     "Reward item {index}: {}\n",
-                    crate::render::render_reward_descriptor(reward)
+                    crate::render::render_reward_descriptor(reward, sts_presentation::Locale::En)
                 ));
             }
             format!(

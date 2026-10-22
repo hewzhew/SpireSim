@@ -763,7 +763,7 @@ fn render_shop_offer_v1(
         writeln!(
             output,
             "  {name} {price}g{} · {detail}",
-            crate::decision::purchase_suffix(status)
+            crate::decision::purchase_suffix(status, Locale::En)
         )
         .expect("string write");
     }
@@ -881,7 +881,7 @@ fn render_shop_status_v1(
             output,
             "Remove card: {}g{}",
             purge.price,
-            crate::decision::purchase_suffix(&purge.purchase_status)
+            crate::decision::purchase_suffix(&purge.purchase_status, Locale::En)
         )
         .expect("string write");
         for (ordinal, candidate) in decision.candidates.iter().enumerate() {

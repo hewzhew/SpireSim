@@ -1147,10 +1147,10 @@
           "detail": "take Outmaneuver"
         },
         {
-          "brief": "take Turbo",
+          "brief": "take TURBO",
           "candidate_id": "task_public_candidate_v1:78bb9702b982c8e3226cf6174c4a16f2fa03bb95",
           "candidate_sha256": "ee6cc957183c1259e6138dc720a93dd38436e90d6c53f8a1e07a70bb65e9f796",
-          "detail": "take Turbo"
+          "detail": "take TURBO"
         },
         {
           "brief": "take Double Energy",
@@ -1173,6 +1173,6 @@
       "schema": "sts-strategic-reading-surface-v1"
     }
   },
-  "payload_sha256": "ebcf6080baaa242a3c28f749ea639b047adb8968c56ac4193427312e934c480e",
+  "payload_sha256": "c2a2f0b0f8504387159cb106b22a838c44be2b6356924693d4890dace4237c5d",
   "schema": "sts-public-decision-export-v3"
 }

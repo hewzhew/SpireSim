@@ -1379,7 +1379,7 @@ fn render_reward_display_hints_v1(
         .map(|(index, reward)| {
             format!(
                 "[{index}] {} blocked:no_empty_potion_slot",
-                render_reward_descriptor(reward)
+                render_reward_descriptor(reward, Locale::En)
             )
         })
         .collect();
@@ -2341,7 +2341,9 @@ pub(crate) fn render_candidate_with_observation(
     observation: Option<&TaskPublicObservationV1>,
 ) -> String {
     match candidate {
-        TaskPublicCandidateV1::Strategic { action } => render_strategic_action(action, observation),
+        TaskPublicCandidateV1::Strategic { action } => {
+            render_strategic_action(action, observation, Locale::En)
+        }
         TaskPublicCandidateV1::CombatAtomic {
             action:
                 PublicCombatAtomicActionV1::PlayCard {
@@ -2492,10 +2494,16 @@ fn render_combat_selection_reason_v2(
     }
 }
 
-fn render_strategic_action(
+pub(crate) fn render_strategic_action(
     action: &TaskStrategicActionV1,
     observation: Option<&TaskPublicObservationV1>,
+    locale: Locale,
 ) -> String {
+    let text = |key: &str, parameters: &[(&str, &str)]| {
+        locale
+            .text("decision", key, parameters)
+            .expect("strategic action message")
+    };
     match action {
         TaskStrategicActionV1::ChooseRouteNode {
             x,
@@ -2636,24 +2644,32 @@ fn render_strategic_action(
                 effects.join(", ")
             )
         }
-        TaskStrategicActionV1::TakeCard { card, upgrades, .. } => {
-            format!("take {}", format_card(*card, *upgrades))
-        }
-        TaskStrategicActionV1::OpenCardReward { reward_item_index } => {
-            format!("open card reward #{reward_item_index}")
-        }
-        TaskStrategicActionV1::SingingBowl { .. } => format!(
-            "singing bowl: skip this card reward, gain {} Max HP",
-            sts_oracle_learning::content::relics::singing_bowl::MAX_HP_GAIN
+        TaskStrategicActionV1::TakeCard { card, upgrades, .. } => text(
+            "action.take",
+            &[("name", &locale.card_name(card.stable_id(), *upgrades))],
         ),
-        TaskStrategicActionV1::SkipCardReward { .. } => "skip card reward".to_string(),
+        TaskStrategicActionV1::OpenCardReward { reward_item_index } => text(
+            "action.openCardReward",
+            &[("index", &reward_item_index.to_string())],
+        ),
+        TaskStrategicActionV1::SingingBowl { .. } => text(
+            "action.singingBowl",
+            &[(
+                "amount",
+                &sts_oracle_learning::content::relics::singing_bowl::MAX_HP_GAIN.to_string(),
+            )],
+        ),
+        TaskStrategicActionV1::SkipCardReward { .. } => text("action.skipCard", &[]),
         TaskStrategicActionV1::ClaimReward {
             reward_item_index,
             reward,
         } => {
-            let mut label = format!(
-                "claim reward[{reward_item_index}] {}",
-                render_reward_descriptor(reward)
+            let mut label = text(
+                "action.claim",
+                &[
+                    ("index", &reward_item_index.to_string()),
+                    ("reward", &render_reward_descriptor(reward, locale)),
+                ],
             );
             if let Some(TaskPublicObservationV1::Strategic {
                 observation:
@@ -2674,12 +2690,13 @@ fn render_strategic_action(
                             if let Some(linked @ PlannerRewardDescriptor::Relic { .. }) =
                                 pending_rewards.get(linked_index)
                             {
-                                write!(
-                                    label,
-                                    " (alternative to {} reward[{linked_index}])",
-                                    render_reward_descriptor(linked)
-                                )
-                                .unwrap();
+                                label.push_str(&text(
+                                    "action.alternative",
+                                    &[
+                                        ("reward", &render_reward_descriptor(linked, locale)),
+                                        ("index", &linked_index.to_string()),
+                                    ],
+                                ));
                             }
                         }
                     }
@@ -2689,71 +2706,100 @@ fn render_strategic_action(
                             Some(PlannerRewardDescriptor::SapphireKey)
                         ) =>
                     {
-                        label.push_str(" (alternative to Sapphire Key)");
+                        label.push_str(&text("action.alternativeKey", &[]));
                     }
                     _ => {}
                 }
             }
             label
         }
-        TaskStrategicActionV1::Rest => "rest".to_string(),
+        TaskStrategicActionV1::Rest => text("action.restSimple", &[]),
         TaskStrategicActionV1::Smith {
             card_ordinal,
             card,
             upgrades,
-        } => {
-            format!(
-                "smith {}@deck[{card_ordinal}]",
-                format_card(*card, *upgrades)
-            )
-        }
-        TaskStrategicActionV1::Dig => "dig".to_string(),
-        TaskStrategicActionV1::Lift => "lift".to_string(),
+        } => text(
+            "action.smith",
+            &[
+                ("card", &locale.card_name(card.stable_id(), *upgrades)),
+                ("index", &card_ordinal.to_string()),
+            ],
+        ),
+        TaskStrategicActionV1::Dig => text("action.dig", &[]),
+        TaskStrategicActionV1::Lift => text("action.lift", &[]),
         TaskStrategicActionV1::Toke {
             card_ordinal,
             card,
             upgrades,
-        } => {
-            format!(
-                "toke {}@deck[{card_ordinal}]",
-                format_card(*card, *upgrades)
-            )
-        }
-        TaskStrategicActionV1::Recall => "recall".to_string(),
+        } => text(
+            "action.toke",
+            &[
+                ("card", &locale.card_name(card.stable_id(), *upgrades)),
+                ("index", &card_ordinal.to_string()),
+            ],
+        ),
+        TaskStrategicActionV1::Recall => text("action.recall", &[]),
         TaskStrategicActionV1::BuyCard {
             card,
             upgrades,
             price,
             ..
-        } => format!("buy {} {price}g", format_card(*card, *upgrades)),
-        TaskStrategicActionV1::BuyRelic { relic, price, .. } => {
-            format!("buy {} {price}g", format_identity(*relic))
-        }
-        TaskStrategicActionV1::BuyPotion { potion, price, .. } => {
-            format!("buy {} {price}g", format_identity(*potion))
-        }
-        TaskStrategicActionV1::UseRunPotion { slot, potion } => {
-            format!("use potion[{slot}] {}", format_identity(*potion))
-        }
-        TaskStrategicActionV1::DiscardRunPotion { slot, potion } => {
-            format!("discard potion[{slot}] {}", format_identity(*potion))
-        }
+        } => text(
+            "action.buy",
+            &[
+                ("name", &locale.card_name(card.stable_id(), *upgrades)),
+                ("price", &price.to_string()),
+            ],
+        ),
+        TaskStrategicActionV1::BuyRelic { relic, price, .. } => text(
+            "action.buy",
+            &[
+                ("name", locale.entity("relic", relic.stable_id())),
+                ("price", &price.to_string()),
+            ],
+        ),
+        TaskStrategicActionV1::BuyPotion { potion, price, .. } => text(
+            "action.buy",
+            &[
+                ("name", locale.entity("potion", potion.stable_id())),
+                ("price", &price.to_string()),
+            ],
+        ),
+        TaskStrategicActionV1::UseRunPotion { slot, potion } => text(
+            "action.usePotion",
+            &[
+                ("slot", &slot.to_string()),
+                ("name", locale.entity("potion", potion.stable_id())),
+            ],
+        ),
+        TaskStrategicActionV1::DiscardRunPotion { slot, potion } => text(
+            "action.discardPotion",
+            &[
+                ("slot", &slot.to_string()),
+                ("name", locale.entity("potion", potion.stable_id())),
+            ],
+        ),
         TaskStrategicActionV1::RemoveCard {
             card_ordinal,
             card,
             upgrades,
             price,
             ..
-        } => format!(
-            "remove {}@deck[{card_ordinal}] {price}g",
-            format_card(*card, *upgrades)
+        } => text(
+            "action.remove",
+            &[
+                ("card", &locale.card_name(card.stable_id(), *upgrades)),
+                ("index", &card_ordinal.to_string()),
+                ("price", &price.to_string()),
+            ],
         ),
-        TaskStrategicActionV1::OpenPendingRewards => "open pending rewards".to_string(),
-        TaskStrategicActionV1::LeaveShop => "leave shop".to_string(),
-        TaskStrategicActionV1::TakeBossRelic { relic, .. } => {
-            format!("take {}", format_identity(*relic))
-        }
-        TaskStrategicActionV1::SkipBossRelic => "skip boss relic".to_string(),
+        TaskStrategicActionV1::OpenPendingRewards => text("action.pendingRewards", &[]),
+        TaskStrategicActionV1::LeaveShop => text("action.leaveShop", &[]),
+        TaskStrategicActionV1::TakeBossRelic { relic, .. } => text(
+            "action.take",
+            &[("name", locale.entity("relic", relic.stable_id()))],
+        ),
+        TaskStrategicActionV1::SkipBossRelic => text("action.skipBossRelic", &[]),
         TaskStrategicActionV1::BeginRunCardSelection {
             reason,
             min_choices,
@@ -2849,24 +2895,27 @@ fn render_strategic_action(
                 });
             format!("submit {selected}")
         }
-        TaskStrategicActionV1::OpenChest => "open chest".to_string(),
+        TaskStrategicActionV1::OpenChest => text("action.openChest", &[]),
         TaskStrategicActionV1::Proceed {
             site: sts_oracle_learning::ai::planner_core::PlannerDecisionSite::Treasure,
-        } => "Leave chest unopened".into(),
+        } => text("action.leaveChest", &[]),
         TaskStrategicActionV1::Proceed {
             site: sts_oracle_learning::ai::planner_core::PlannerDecisionSite::RunTransition,
         } => match observation {
             Some(TaskPublicObservationV1::Strategic { observation }) => match &observation.context {
                 sts_oracle_learning::ai::planner_core::PlannerDecisionContext::RunTransition {
                     stage,
-                } => crate::decision::run_transition_label_v1(*stage, sts_presentation::Locale::En)
-                    .into(),
-                _ => "Proceed".into(),
+                } => crate::decision::run_transition_label_v1(*stage, locale).into(),
+                _ => text("action.proceed", &[]),
             },
-            _ => "Proceed".into(),
+            _ => text("action.proceed", &[]),
         },
-        TaskStrategicActionV1::Proceed { site } => format!("proceed {site:?}"),
-        TaskStrategicActionV1::Cancel { site } => format!("cancel {site:?}"),
+        TaskStrategicActionV1::Proceed { site } => {
+            text("action.proceedSite", &[("site", &format!("{site:?}"))])
+        }
+        TaskStrategicActionV1::Cancel { site } => {
+            text("action.cancel", &[("site", &format!("{site:?}"))])
+        }
     }
 }
 
@@ -3045,24 +3094,40 @@ fn render_indexed_choice_candidate(candidate: PublicCombatIndexedChoiceCandidate
     }
 }
 
-pub(crate) fn render_reward_descriptor(reward: &PlannerRewardDescriptor) -> String {
+pub(crate) fn render_reward_descriptor(reward: &PlannerRewardDescriptor, locale: Locale) -> String {
+    let text = |key: &str, parameters: &[(&str, &str)]| {
+        locale
+            .text("decision", key, parameters)
+            .expect("reward message")
+    };
     match reward {
-        PlannerRewardDescriptor::Gold { amount } => format!("{amount} gold"),
-        PlannerRewardDescriptor::StolenGold { amount } => format!("{amount} stolen gold"),
-        PlannerRewardDescriptor::CardReward { cards } => format!(
-            "card reward [{}]",
-            cards
-                .iter()
-                .map(|card| format_card(card.card, card.upgrades))
-                .collect::<Vec<_>>()
-                .join(", ")
-        ),
-        PlannerRewardDescriptor::Relic { relic } => format!("relic {}", format_identity(*relic)),
-        PlannerRewardDescriptor::Potion { potion } => {
-            format!("potion {}", format_identity(*potion))
+        PlannerRewardDescriptor::Gold { amount } => {
+            text("reward.gold", &[("amount", &amount.to_string())])
         }
-        PlannerRewardDescriptor::EmeraldKey => "emerald key".to_string(),
-        PlannerRewardDescriptor::SapphireKey => "sapphire key".to_string(),
+        PlannerRewardDescriptor::StolenGold { amount } => {
+            text("reward.stolenGold", &[("amount", &amount.to_string())])
+        }
+        PlannerRewardDescriptor::CardReward { cards } => text(
+            "reward.card",
+            &[(
+                "cards",
+                &cards
+                    .iter()
+                    .map(|card| locale.card_name(card.card.stable_id(), card.upgrades))
+                    .collect::<Vec<_>>()
+                    .join(", "),
+            )],
+        ),
+        PlannerRewardDescriptor::Relic { relic } => text(
+            "reward.relic",
+            &[("name", locale.entity("relic", relic.stable_id()))],
+        ),
+        PlannerRewardDescriptor::Potion { potion } => text(
+            "reward.potion",
+            &[("name", locale.entity("potion", potion.stable_id()))],
+        ),
+        PlannerRewardDescriptor::EmeraldKey => text("reward.emeraldKey", &[]),
+        PlannerRewardDescriptor::SapphireKey => text("reward.sapphireKey", &[]),
     }
 }
 
@@ -3394,6 +3459,7 @@ mod tests {
                 },
             },
             None,
+            Locale::En,
         );
 
         assert!(rendered.contains("label=\"Take Shrug It Off+.\""));
@@ -3420,6 +3486,7 @@ mod tests {
                 },
             },
             None,
+            Locale::En,
         );
 
         assert!(rendered.contains("hp=-5"));

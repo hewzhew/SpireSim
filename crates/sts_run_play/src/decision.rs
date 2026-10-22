@@ -18,7 +18,7 @@ use sts_oracle_learning::content::identity::gameplay_display_label_v1;
 use sts_oracle_learning::eval::run_control::ExactRunDecisionSourceV1;
 
 use crate::model::{RunPlayEventV1, RunPlayHeadV1, RunPlayPositionV1};
-use crate::render::{format_card, render_candidate_with_observation, render_reward_descriptor};
+use crate::render::{render_candidate_with_observation, render_reward_descriptor};
 use crate::run_selection::{project_deck_cards_v1, project_run_selection_family_v1};
 
 pub(crate) mod combat;
@@ -322,7 +322,7 @@ fn read_public_decision_v1(
                                 format!(
                                     "{} | {}",
                                     run_selection_card_label(card, observation, locale),
-                                    smith::changes_for(*card)?
+                                    smith::changes_for(*card, locale)?
                                 )
                             } else {
                                 run_selection_card_label(card, observation, locale)
@@ -335,7 +335,7 @@ fn read_public_decision_v1(
         }
         options.push(DecisionOptionV1 {
             choice: TaskPublicChoiceV1::one(ordinal),
-            label: option_label(candidate, observation, &decision.observation, true)?,
+            label: option_label(candidate, observation, &decision.observation, true, locale)?,
             candidate: candidate.clone(),
         });
     }
@@ -766,7 +766,15 @@ fn read_public_decision_v1(
     let bound = result.source.is_some();
     let shop_choices = if let PlannerDecisionContext::Shop { inventory, .. } = &observation.context
     {
-        render_shop(out, decision, inventory, &result.options, brief, bound)?
+        render_shop(
+            out,
+            decision,
+            inventory,
+            &result.options,
+            brief,
+            bound,
+            locale,
+        )?
     } else {
         BTreeSet::new()
     };
@@ -783,8 +791,12 @@ fn read_public_decision_v1(
             if !has_choice {
                 writeln!(
                     out,
-                    "Unavailable reward: {}",
-                    render_reward_descriptor(reward)
+                    "{}",
+                    text(
+                        locale,
+                        "reward.unavailable",
+                        &[("reward", &render_reward_descriptor(reward, locale))]
+                    )
                 )
                 .unwrap();
                 if matches!(
@@ -796,9 +808,9 @@ fn read_public_decision_v1(
                         .iter()
                         .any(|r| r.relic == sts_oracle_learning::content::relics::RelicId::Sozu)
                     {
-                        writeln!(out, "  Sozu prevents obtaining potions.").unwrap();
+                        writeln!(out, "{}", text(locale, "reward.sozu", &[])).unwrap();
                     } else if observation.potions.iter().all(|slot| slot.potion.is_some()) {
-                        writeln!(out, "  Potion slots full. Choose a use/discard command below, then claim this reward from the updated reading.").unwrap();
+                        writeln!(out, "{}", text(locale, "reward.slotsFull", &[])).unwrap();
                     }
                 }
                 write_choice_mechanics(
@@ -808,12 +820,13 @@ fn read_public_decision_v1(
                         reward: reward.clone(),
                     },
                     brief,
+                    locale,
                 );
             }
         }
     }
     render_selections(out, decision, &result.selections, bound, locale)?;
-    let upgrades = smith::comparisons(observation, &result.options)?;
+    let upgrades = smith::comparisons(observation, &result.options, locale)?;
     let route_choices: Vec<_> = result
         .options
         .iter()
@@ -825,7 +838,16 @@ fn read_public_decision_v1(
         })
         .collect();
     if bound && !route_choices.is_empty() {
-        writeln!(out, "Next rooms: {}", route_choices.len()).unwrap();
+        writeln!(
+            out,
+            "{}",
+            text(
+                locale,
+                "nextRooms",
+                &[("count", &route_choices.len().to_string())]
+            )
+        )
+        .unwrap();
     }
     for (ordinal, option) in result.options.iter().enumerate() {
         if shop_choices.contains(&ordinal) {
@@ -842,7 +864,11 @@ fn read_public_decision_v1(
                 let count = if !details.contains(&DecisionDetailV1::Options)
                     && upgrade.ordinals.len() > 1
                 {
-                    format!(" (choose 1 of {} copies)", upgrade.ordinals.len())
+                    text(
+                        locale,
+                        "copies",
+                        &[("count", &upgrade.ordinals.len().to_string())],
+                    )
                 } else {
                     String::new()
                 };
@@ -851,17 +877,23 @@ fn read_public_decision_v1(
                 action: TaskStrategicActionV1::ChooseRouteNode { x, y, flight, .. },
             } = &option.candidate
             {
-                route_option_label(observation, *x, *y, *flight, "")
+                route_option_label(observation, *x, *y, *flight, "", locale)
             } else {
-                option_label(&option.candidate, observation, &decision.observation, false)?
+                option_label(
+                    &option.candidate,
+                    observation,
+                    &decision.observation,
+                    false,
+                    locale,
+                )?
             }
         } else {
             option.label.clone()
         };
-        render_option_row(out, decision, option, ordinal, &label, bound)?;
+        render_option_row(out, decision, option, ordinal, &label, bound, locale)?;
         if let TaskPublicCandidateV1::Strategic { action } = &option.candidate {
-            write_choice_mechanics(out, action, brief);
-            write_event_resource_modifiers(out, action, observation);
+            write_choice_mechanics(out, action, brief, locale);
+            write_event_resource_modifiers(out, action, observation, locale);
         }
     }
     if !brief
@@ -902,7 +934,7 @@ fn read_public_decision_v1(
     // Whole-inventory mechanics have one owner: inventory --effects, also
     // injected by the player when it establishes a fresh decision context.
     if !brief {
-        smith::write_full(out, &upgrades);
+        smith::write_full(out, &upgrades, locale);
     }
     if brief && !route_choices.is_empty() {
         out.push_str(&crate::public_map_reading::route_examples(
@@ -1092,12 +1124,14 @@ fn render_option_row(
     ordinal: usize,
     label: &str,
     bound: bool,
+    locale: Locale,
 ) -> Result<(), String> {
     if bound {
         writeln!(
             out,
-            "./p {}  |  Effect: {label}",
-            choice_command(decision, &option.choice)?
+            "./p {}  |  {}",
+            choice_command(decision, &option.choice)?,
+            text(locale, "effect", &[("label", label)])
         )
         .unwrap();
     } else {
@@ -1192,12 +1226,13 @@ fn option_label(
     observation: &TaskStrategicObservationV1,
     public: &TaskPublicObservationV1,
     include_preparation_routes: bool,
+    locale: Locale,
 ) -> Result<String, String> {
     Ok(match candidate {
         TaskPublicCandidateV1::Strategic {
             action: TaskStrategicActionV1::Proceed { .. },
         } if matches!(observation.context, PlannerDecisionContext::Reward { .. }) => {
-            "leave rewards".into()
+            text(locale, "action.leaveRewards", &[])
         }
         TaskPublicCandidateV1::Strategic {
             action:
@@ -1210,9 +1245,10 @@ fn option_label(
             .iter()
             .any(|relic| relic.relic == sts_oracle_learning::content::relics::RelicId::Sozu) =>
         {
-            format!(
-                "{} (Sozu: clear reward; potion gain prevented)",
-                render_reward_descriptor(reward)
+            text(
+                locale,
+                "action.sozuReward",
+                &[("reward", &render_reward_descriptor(reward, locale))],
             )
         }
         TaskPublicCandidateV1::Strategic {
@@ -1227,17 +1263,18 @@ fn option_label(
             sts_oracle_learning::content::relics::mechanics::relic_prevents_gold_gain(relic.relic)
         }) =>
         {
-            format!(
-                "{} (Gold gain prevented by Ectoplasm)",
-                render_reward_descriptor(reward)
+            text(
+                locale,
+                "action.ectoplasmReward",
+                &[("reward", &render_reward_descriptor(reward, locale))],
             )
         }
         TaskPublicCandidateV1::Strategic {
             action: TaskStrategicActionV1::ClaimReward { reward, .. },
-        } => render_reward_descriptor(reward),
+        } => render_reward_descriptor(reward, locale),
         TaskPublicCandidateV1::Strategic {
             action: TaskStrategicActionV1::OpenCardReward { .. },
-        } => "card reward".into(),
+        } => text(locale, "action.cardReward", &[]),
         TaskPublicCandidateV1::Strategic {
             action: TaskStrategicActionV1::Rest,
         } => {
@@ -1252,18 +1289,25 @@ fn option_label(
                     run.max_hp, &relics,
                 );
             let healed_hp = run.current_hp.saturating_add(capacity).min(run.max_hp);
-            format!(
-                "Rest | HP {} -> {} (+{})",
-                run.current_hp,
-                healed_hp,
-                healed_hp - run.current_hp
+            text(
+                locale,
+                "action.rest",
+                &[
+                    ("before", &run.current_hp.to_string()),
+                    ("after", &healed_hp.to_string()),
+                    ("healed", &(healed_hp - run.current_hp).to_string()),
+                ],
             )
         }
         TaskPublicCandidateV1::Strategic {
             action: TaskStrategicActionV1::Smith { card_ordinal, .. },
         } => {
             let card = project_deck_cards_v1(&observation.cards, &[*card_ordinal])?[0];
-            format!("Upgrade one {}", deck_card_label(&card, Locale::En))
+            text(
+                locale,
+                "action.upgrade",
+                &[("card", &deck_card_label(&card, locale))],
+            )
         }
         TaskPublicCandidateV1::Strategic {
             action:
@@ -1280,20 +1324,24 @@ fn option_label(
                     ..
                 }
             );
-            format!(
-                "Select {}",
-                cards
-                    .iter()
-                    .map(|card| {
-                        let label = run_selection_card_label(card, observation, Locale::En);
-                        if upgrading {
-                            Ok(format!("{label} | {}", smith::changes_for(*card)?))
-                        } else {
-                            Ok(label)
-                        }
-                    })
-                    .collect::<Result<Vec<_>, String>>()?
-                    .join(", ")
+            text(
+                locale,
+                "action.select",
+                &[(
+                    "cards",
+                    &cards
+                        .iter()
+                        .map(|card| {
+                            let label = run_selection_card_label(card, observation, locale);
+                            if upgrading {
+                                Ok(format!("{label} | {}", smith::changes_for(*card, locale)?))
+                            } else {
+                                Ok(label)
+                            }
+                        })
+                        .collect::<Result<Vec<_>, String>>()?
+                        .join(", "),
+                )],
             )
         }
         TaskPublicCandidateV1::Strategic {
@@ -1324,7 +1372,10 @@ fn option_label(
             } else {
                 String::new()
             };
-            route_option_label(observation, *x, *y, *flight, &outlook)
+            route_option_label(observation, *x, *y, *flight, &outlook, locale)
+        }
+        TaskPublicCandidateV1::Strategic { action } => {
+            crate::render::render_strategic_action(action, Some(public), locale)
         }
         _ => render_candidate_with_observation(candidate, Some(public)),
     })
@@ -1336,21 +1387,41 @@ fn route_option_label(
     y: i32,
     flight: bool,
     outlook: &str,
+    locale: Locale,
 ) -> String {
     let room = observation
         .public_map
         .nodes
         .iter()
         .find(|n| n.x == x && n.y == y)
-        .map_or("Unknown", |n| room_label(n.room, Locale::En));
-    format!(
-        "Go ({x},{y}) {room}{}{}",
-        if flight { " using Wing Boots" } else { "" },
-        if outlook.is_empty() {
-            String::new()
-        } else {
-            format!(" · {outlook}")
-        }
+        .map_or_else(
+            || text(locale, "action.unknownRoom", &[]),
+            |n| room_label(n.room, locale).to_string(),
+        );
+    text(
+        locale,
+        "action.go",
+        &[
+            ("x", &x.to_string()),
+            ("y", &y.to_string()),
+            ("room", &room),
+            (
+                "flight",
+                &if flight {
+                    text(locale, "action.flight", &[])
+                } else {
+                    String::new()
+                },
+            ),
+            (
+                "outlook",
+                &if outlook.is_empty() {
+                    String::new()
+                } else {
+                    format!(" | {outlook}")
+                },
+            ),
+        ],
     )
 }
 
@@ -1358,6 +1429,7 @@ fn write_event_resource_modifiers(
     out: &mut String,
     action: &TaskStrategicActionV1,
     observation: &TaskStrategicObservationV1,
+    locale: Locale,
 ) {
     use sts_oracle_learning::ai::planner_core::PlannerEventPublicEffectV1 as Effect;
     let TaskStrategicActionV1::ChooseEventOption {
@@ -1396,7 +1468,16 @@ fn write_event_resource_modifiers(
             .sum::<i32>()
             .min(observation.run.gold)
             .max(0);
-        writeln!(out, "  With Ectoplasm: Gold received 0; Gold paid {paid}.").unwrap();
+        writeln!(
+            out,
+            "  {}",
+            text(
+                locale,
+                "mechanics.ectoplasm",
+                &[("paid", &paid.to_string())]
+            )
+        )
+        .unwrap();
     }
     if observation.relics.iter().any(|relic| {
         relic.relic == sts_oracle_learning::content::relics::RelicId::Sozu && retains(relic.relic)
@@ -1405,21 +1486,28 @@ fn write_event_resource_modifiers(
         .iter()
         .any(|effect| matches!(effect, Effect::ObtainRandomPotions { count } if *count > 0))
     {
-        writeln!(out, "  With Sozu: potions obtained 0.").unwrap();
+        writeln!(out, "  {}", text(locale, "mechanics.sozu", &[])).unwrap();
     }
 }
 
 /// The choice's typed identity supplies its category and rules. Do not make
 /// players infer a potion/relic distinction from a shared `buy` label.
-fn write_choice_mechanics(out: &mut String, action: &TaskStrategicActionV1, brief: bool) {
-    use sts_oracle_learning::content::{cards, potions, relics};
-    if brief {
-        if let TaskStrategicActionV1::TakeCard { card, upgrades, .. }
-        | TaskStrategicActionV1::BuyCard { card, upgrades, .. } = action
-        {
-            crate::mechanics_info::write_card_offer(out, *card, *upgrades, Locale::En);
-            return;
+fn write_choice_mechanics(
+    out: &mut String,
+    action: &TaskStrategicActionV1,
+    brief: bool,
+    locale: Locale,
+) {
+    use sts_oracle_learning::content::relics;
+    if let TaskStrategicActionV1::TakeCard { card, upgrades, .. }
+    | TaskStrategicActionV1::BuyCard { card, upgrades, .. } = action
+    {
+        if brief {
+            crate::mechanics_info::write_card_offer(out, *card, *upgrades, locale);
+        } else {
+            crate::mechanics_info::write_card_rule(out, *card, *upgrades, locale);
         }
+        return;
     }
     let key_query = match action {
         TaskStrategicActionV1::Recall => Some("RubyKey"),
@@ -1436,22 +1524,13 @@ fn write_choice_mechanics(out: &mut String, action: &TaskStrategicActionV1, brie
     if let Some(query) = key_query {
         if brief {
             if query == "RubyKey" {
-                writeln!(
-                    out,
-                    "  Gain the Ruby Key instead of another campfire action."
-                )
-                .unwrap();
+                writeln!(out, "  {}", text(locale, "keys.recall", &[])).unwrap();
             } else if query == "EmeraldKey" {
-                writeln!(
-                    out,
-                    "  {}",
-                    crate::mechanics_info::EMERALD_KEY_REWARD_RELATIONSHIP
-                )
-                .unwrap();
+                writeln!(out, "  {}", text(locale, "keys.eliteRewards", &[])).unwrap();
             }
             return;
         }
-        let mechanics = crate::mechanics_info::render(None, query, Locale::En)
+        let mechanics = crate::mechanics_info::render(None, query, locale)
             .expect("key choices have shared mechanics definitions");
         for line in mechanics.lines() {
             writeln!(out, "  {line}").unwrap();
@@ -1465,15 +1544,25 @@ fn write_choice_mechanics(out: &mut String, action: &TaskStrategicActionV1, brie
         if let Some(semantics) = &public_semantics.structured_semantics {
             writeln!(
                 out,
-                "  Effects: {}",
-                crate::render::render_event_structured_semantics_v1(Some(semantics))
+                "  {}",
+                text(
+                    locale,
+                    "mechanics.eventEffectsEnglish",
+                    &[(
+                        "effects",
+                        &crate::render::render_event_structured_semantics_v1(Some(semantics))
+                    )]
+                )
             )
             .unwrap();
         }
         let mut resources = Vec::new();
         for (label, delta) in [
-            ("HP", public_semantics.hp_delta),
-            ("Max HP", public_semantics.max_hp_delta),
+            (text(locale, "mechanics.hp", &[]), public_semantics.hp_delta),
+            (
+                text(locale, "mechanics.maxHp", &[]),
+                public_semantics.max_hp_delta,
+            ),
         ] {
             if delta != 0 {
                 resources.push(format!("{label} {delta:+}"));
@@ -1485,16 +1574,28 @@ fn write_choice_mechanics(out: &mut String, action: &TaskStrategicActionV1, brie
         );
         if min != 0 || max != 0 {
             resources.push(if min == max {
-                format!("Gold {min:+}")
+                text(
+                    locale,
+                    "mechanics.goldDelta",
+                    &[("amount", &format!("{min:+}"))],
+                )
             } else {
-                format!("Gold {min:+}..{max:+}")
+                text(
+                    locale,
+                    "mechanics.goldDelta",
+                    &[("amount", &format!("{min:+}..{max:+}"))],
+                )
             });
         }
         if !resources.is_empty() {
             writeln!(
                 out,
-                "  Resources (base effect summary): {}",
-                resources.join("; ")
+                "  {}",
+                text(
+                    locale,
+                    "mechanics.resources",
+                    &[("resources", &resources.join("; "))]
+                )
             )
             .unwrap();
         }
@@ -1543,9 +1644,9 @@ fn write_choice_mechanics(out: &mut String, action: &TaskStrategicActionV1, brie
         for (card, upgrades) in cards {
             if seen_cards.insert((card, upgrades)) {
                 if brief {
-                    crate::mechanics_info::write_card_offer(out, card, upgrades, Locale::En);
+                    crate::mechanics_info::write_card_offer(out, card, upgrades, locale);
                 } else {
-                    crate::mechanics_info::write_card_rule(out, card, upgrades, Locale::En);
+                    crate::mechanics_info::write_card_rule(out, card, upgrades, locale);
                 }
             }
         }
@@ -1554,11 +1655,10 @@ fn write_choice_mechanics(out: &mut String, action: &TaskStrategicActionV1, brie
             if seen_relics.insert(relic) {
                 writeln!(
                     out,
-                    "  Relic {}: {}",
-                    gameplay_display_label_v1(relic),
-                    relics::mechanics::explanation(relic).unwrap_or(
-                        "Effect explanation unavailable; query info relic or report the gap."
-                    )
+                    "  {}", text(locale, "mechanics.eventRelicEnglish", &[
+                        ("name", locale.entity("relic", relic.stable_id())),
+                        ("effect", relics::mechanics::explanation(relic).unwrap_or("Effect explanation unavailable; query info relic or report the gap.")),
+                    ])
                 )
                 .unwrap();
             }
@@ -1566,63 +1666,45 @@ fn write_choice_mechanics(out: &mut String, action: &TaskStrategicActionV1, brie
         return;
     }
     let (category, explanation) = match action {
-        TaskStrategicActionV1::TakeCard { card, upgrades, .. }
-        | TaskStrategicActionV1::BuyCard { card, upgrades, .. } => {
-            writeln!(
-                out,
-                "  Card: {}",
-                crate::mechanics_info::card_attributes(*card, *upgrades, 0, Locale::En)
-            )
-            .unwrap();
-            let mut blueprint = sts_oracle_learning::runtime::combat::CardBlueprint::fresh(*card);
-            blueprint.upgrades = *upgrades;
-            let numbers = cards::mechanics::card_blueprint_persistent_base_numbers_v1(&blueprint);
-            let mut stats = Vec::new();
-            if numbers.damage > 0 {
-                stats.push(format!("damage {}", numbers.damage));
-            }
-            if numbers.block > 0 {
-                stats.push(format!("Block {}", numbers.block));
-            }
-            if !stats.is_empty() {
-                writeln!(
-                    out,
-                    "  Printed base stats at this upgrade: {}",
-                    stats.join("; ")
-                )
-                .unwrap();
-            }
-            (
-                "Printed rule (base/upgraded)",
-                cards::mechanics::explanation(*card),
-            )
-        }
         TaskStrategicActionV1::TakeBossRelic { relic, .. }
         | TaskStrategicActionV1::BuyRelic { relic, .. }
         | TaskStrategicActionV1::ClaimReward {
             reward: PlannerRewardDescriptor::Relic { relic },
             ..
-        } => ("Relic", relics::mechanics::explanation(*relic)),
+        } => (
+            "mechanics.relicEnglish",
+            relics::mechanics::explanation(*relic),
+        ),
         TaskStrategicActionV1::BuyPotion { potion, .. }
         | TaskStrategicActionV1::ClaimReward {
             reward: PlannerRewardDescriptor::Potion { potion },
             ..
         } => (
-            "Potion (base rule)",
-            potions::mechanics::explanation(*potion),
+            "mechanics.potion",
+            locale.entry("game", &format!("potionRule.{}", potion.stable_id())),
         ),
         _ => return,
     };
-    writeln!(out, "  {category}: {}", explanation.unwrap_or("Effect explanation unavailable; query info for this category or report the gap. This does not mean unsupported gameplay.")).unwrap();
-    if let TaskStrategicActionV1::TakeCard { card, upgrades, .. }
-    | TaskStrategicActionV1::BuyCard { card, upgrades, .. } = action
-    {
-        crate::mechanics_info::write_card_fixed_requests(out, *card, *upgrades, Locale::En);
-    }
+    writeln!(
+        out,
+        "  {}",
+        text(
+            locale,
+            category,
+            &[(
+                "effect",
+                explanation.unwrap_or_else(|| locale
+                    .entry("inventory", "unknown")
+                    .expect("missing rule message"))
+            )]
+        )
+    )
+    .unwrap();
 }
 
 fn shop_offers(
     inventory: &PlannerShopInventoryV1,
+    locale: Locale,
 ) -> Vec<(
     TaskStrategicActionV1,
     String,
@@ -1640,7 +1722,7 @@ fn shop_offers(
                     upgrades: x.upgrades,
                     price: x.price,
                 },
-                format_card(x.card, x.upgrades),
+                locale.card_name(x.card.stable_id(), x.upgrades),
                 x.price,
                 &x.purchase_status,
             )
@@ -1652,7 +1734,7 @@ fn shop_offers(
                     relic: x.relic,
                     price: x.price,
                 },
-                gameplay_display_label_v1(x.relic).to_string(),
+                locale.entity("relic", x.relic.stable_id()).to_string(),
                 x.price,
                 &x.purchase_status,
             )
@@ -1664,7 +1746,7 @@ fn shop_offers(
                     potion: x.potion,
                     price: x.price,
                 },
-                gameplay_display_label_v1(x.potion).to_string(),
+                locale.entity("potion", x.potion.stable_id()).to_string(),
                 x.price,
                 &x.purchase_status,
             )
@@ -1679,8 +1761,9 @@ fn render_shop(
     options: &[DecisionOptionV1],
     brief: bool,
     bound: bool,
+    locale: Locale,
 ) -> Result<BTreeSet<usize>, String> {
-    let offers = shop_offers(inventory);
+    let offers = shop_offers(inventory, locale);
     let purchasable = offers
         .iter()
         .filter(|(_, _, _, status)| matches!(status, PlannerShopPurchaseStatusV1::Purchasable))
@@ -1689,21 +1772,34 @@ fn render_shop(
     if !brief {
         writeln!(
             out,
-            "Purchasable now: {}",
-            if purchasable.is_empty() {
-                "none".into()
-            } else {
-                purchasable.join(", ")
-            }
+            "{}",
+            text(
+                locale,
+                "shop.purchasable",
+                &[(
+                    "offers",
+                    &if purchasable.is_empty() {
+                        text(locale, "none", &[])
+                    } else {
+                        purchasable.join(", ")
+                    }
+                )]
+            )
         )
         .unwrap();
     }
     if let Some(purge) = &inventory.purge {
         writeln!(
             out,
-            "Removal: {}g{}",
-            purge.price,
-            purchase_suffix(&purge.purchase_status),
+            "{}",
+            text(
+                locale,
+                "shop.removal",
+                &[
+                    ("price", &purge.price.to_string()),
+                    ("status", &purchase_suffix(&purge.purchase_status, locale))
+                ]
+            ),
         )
         .unwrap();
     }
@@ -1719,10 +1815,31 @@ fn render_shop(
                 if !shown.insert(*ordinal) {
                     return Err("Duplicate shop offer in public inventory".into());
                 }
-                render_option_row(out, decision, option, *ordinal, &option.label, bound)?;
+                render_option_row(
+                    out,
+                    decision,
+                    option,
+                    *ordinal,
+                    &option.label,
+                    bound,
+                    locale,
+                )?;
             }
             (PlannerShopPurchaseStatusV1::Blocked { .. }, []) => {
-                writeln!(out, "  {name} {price}g{}", purchase_suffix(status)).unwrap();
+                writeln!(
+                    out,
+                    "  {}",
+                    text(
+                        locale,
+                        "shop.price",
+                        &[
+                            ("name", &name),
+                            ("price", &price.to_string()),
+                            ("status", &purchase_suffix(status, locale))
+                        ]
+                    )
+                )
+                .unwrap();
             }
             _ => return Err("Shop inventory and supplied purchase choices disagree".into()),
         }
@@ -1735,7 +1852,7 @@ fn render_shop(
                 }
             )
         {
-            write_choice_mechanics(out, &offer, brief);
+            write_choice_mechanics(out, &offer, brief, locale);
         }
     }
     if inventory.potions.iter().any(|potion| {
@@ -1746,24 +1863,28 @@ fn render_shop(
             }
         )
     }) {
-        writeln!(out, "Potion replacement: use options to inspect held-potion discard commands. Discard the bottle you choose to replace, then read the updated offers and buy the replacement at its current price.").unwrap();
+        writeln!(out, "{}", text(locale, "shop.replacement", &[])).unwrap();
     }
     Ok(shown)
 }
 
-pub(crate) fn purchase_suffix(status: &PlannerShopPurchaseStatusV1) -> String {
+pub(crate) fn purchase_suffix(status: &PlannerShopPurchaseStatusV1, locale: Locale) -> String {
     let PlannerShopPurchaseStatusV1::Blocked { reason } = status else {
         return String::new();
     };
     let reason = match reason {
         PlannerShopPurchaseBlockReasonV1::MerchantUnavailable { .. } => "unavailable",
-        PlannerShopPurchaseBlockReasonV1::NotEnoughGold { .. } => "insufficient gold",
-        PlannerShopPurchaseBlockReasonV1::BlockedBySozu => "Sozu",
-        PlannerShopPurchaseBlockReasonV1::NoEmptyPotionSlot => "slots full",
-        PlannerShopPurchaseBlockReasonV1::PurgeAlreadyUsed => "already removed a card",
-        PlannerShopPurchaseBlockReasonV1::NoEligiblePurgeTarget => "no removable card",
+        PlannerShopPurchaseBlockReasonV1::NotEnoughGold { .. } => "gold",
+        PlannerShopPurchaseBlockReasonV1::BlockedBySozu => "sozu",
+        PlannerShopPurchaseBlockReasonV1::NoEmptyPotionSlot => "slots",
+        PlannerShopPurchaseBlockReasonV1::PurgeAlreadyUsed => "usedRemoval",
+        PlannerShopPurchaseBlockReasonV1::NoEligiblePurgeTarget => "noRemoval",
     };
-    format!(" ({reason})")
+    text(
+        locale,
+        "shop.blocked",
+        &[("reason", &text(locale, &format!("shop.{reason}"), &[]))],
+    )
 }
 
 fn room_label(room: PlannerMapRoom, locale: Locale) -> &'static str {

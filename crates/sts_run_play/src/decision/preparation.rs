@@ -89,7 +89,7 @@ pub(crate) fn reading(
         false,
         locale,
     )?;
-    let upgrades = super::smith::comparisons(observation, &rendered.options)?;
+    let upgrades = super::smith::comparisons(observation, &rendered.options, locale)?;
     let mut candidates = Vec::new();
     for (ordinal, option) in rendered.options.iter().enumerate() {
         let TaskPublicCandidateV1::Strategic { action } = &option.candidate else {
@@ -103,9 +103,12 @@ pub(crate) fn reading(
         {
             write!(label, " | {}", upgrade.changes).unwrap();
         }
-        let mut view = format!("  Effect label: {label}\n");
-        super::write_choice_mechanics(&mut view, action, false);
-        super::write_event_resource_modifiers(&mut view, action, observation);
+        let mut view = format!(
+            "{}\n",
+            super::text(locale, "effectLabel", &[("label", &label)])
+        );
+        super::write_choice_mechanics(&mut view, action, false, locale);
+        super::write_event_resource_modifiers(&mut view, action, observation, locale);
         candidates.push(CandidateReadingV1 {
             command,
             label,
@@ -115,7 +118,7 @@ pub(crate) fn reading(
     }
     let mut stock = Vec::new();
     if let PlannerDecisionContext::Shop { inventory, .. } = &observation.context {
-        for (action, name, price, status) in super::shop_offers(inventory) {
+        for (action, name, price, status) in super::shop_offers(inventory, locale) {
             let legal = rendered.options.iter().filter(|option|
                 matches!(&option.candidate, TaskPublicCandidateV1::Strategic { action: supplied } if *supplied == action)
             ).collect::<Vec<_>>();
@@ -126,12 +129,20 @@ pub(crate) fn reading(
                 (PlannerShopPurchaseStatusV1::Blocked { .. }, []) => None,
                 _ => return Err("Shop presentation and supplied purchase choices disagree".into()),
             };
-            let label = format!("{name} {price}g{}", super::purchase_suffix(status));
+            let label = super::text(
+                locale,
+                "shop.price",
+                &[
+                    ("name", &name),
+                    ("price", &price.to_string()),
+                    ("status", &super::purchase_suffix(status, locale)),
+                ],
+            );
             let mut view = format!("  {label}\n");
             if let TaskStrategicActionV1::BuyCard { card, upgrades, .. } = &action {
                 crate::mechanics_info::write_printed_card_rule(&mut view, *card, *upgrades, locale);
             } else {
-                super::write_choice_mechanics(&mut view, &action, false);
+                super::write_choice_mechanics(&mut view, &action, false, locale);
             }
             stock.push(ShopOfferReadingV1 {
                 command,
@@ -200,6 +211,12 @@ mod tests {
         assert_eq!(en.public_snapshot_id, zh.public_snapshot_id);
         assert!(en.inventory.view.starts_with("Deck ("));
         assert!(zh.inventory.view.starts_with("永久卡组（"));
+        assert!(zh
+            .candidates
+            .iter()
+            .any(|candidate| candidate.label.contains("购买")));
+        assert!(zh.stock.iter().all(|offer| offer.label.contains("金币")));
+        assert!(zh.stock.iter().any(|offer| offer.view.contains("卡牌")));
         assert_eq!(
             en.candidates
                 .iter()

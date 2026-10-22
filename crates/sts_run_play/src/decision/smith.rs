@@ -9,11 +9,13 @@ pub(super) struct SmithComparison {
     bottled_by: Option<sts_oracle_learning::content::relics::RelicId>,
     pub ordinals: Vec<usize>,
     pub changes: String,
+    includes_rule: bool,
 }
 
 pub(super) fn comparisons(
     observation: &TaskStrategicObservationV1,
     options: &[DecisionOptionV1],
+    locale: Locale,
 ) -> Result<Vec<SmithComparison>, String> {
     let mut groups: Vec<SmithComparison> = Vec::new();
     for (ordinal, option) in options.iter().enumerate() {
@@ -36,13 +38,14 @@ pub(super) fn comparisons(
         if !cards::upgrade_card_blueprint_once_java(&mut after) {
             return Err("Legal upgrade candidate could not be upgraded".into());
         }
-        let changes = changes(&before, &after).join("; ");
+        let (changes, includes_rule) = changes(&before, &after, locale);
         groups.push(SmithComparison {
             before,
             after,
             bottled_by: card.bottled_by,
             ordinals: vec![ordinal],
-            changes,
+            changes: changes.join("; "),
+            includes_rule,
         });
     }
     Ok(groups)
@@ -59,36 +62,52 @@ fn blueprint(card: TaskStrategicCardV1) -> CardBlueprint {
     }
 }
 
-pub(super) fn changes_for(card: TaskStrategicCardV1) -> Result<String, String> {
+pub(super) fn changes_for(card: TaskStrategicCardV1, locale: Locale) -> Result<String, String> {
     let before = blueprint(card);
     let mut after = before.clone();
     if !cards::upgrade_card_blueprint_once_java(&mut after) {
         return Err("Legal upgrade candidate could not be upgraded".into());
     }
-    Ok(changes(&before, &after).join("; "))
+    Ok(changes(&before, &after, locale).0.join("; "))
 }
 
-fn changes(before: &CardBlueprint, after: &CardBlueprint) -> Vec<String> {
+fn changes(before: &CardBlueprint, after: &CardBlueprint, locale: Locale) -> (Vec<String>, bool) {
     let mut changes = Vec::new();
     let old_cost = before.combat_cost_without_turn_override_java();
     let new_cost = after.combat_cost_without_turn_override_java();
     if old_cost != new_cost {
         let label = |cost| match cost {
-            -2 => "unplayable".into(),
+            -2 => text(locale, "smith.unplayable", &[]),
             -1 => "X".into(),
-            n => format!("{n}c"),
+            n => text(locale, "smith.energyCost", &[("amount", &n.to_string())]),
         };
-        changes.push(format!("cost {} -> {}", label(old_cost), label(new_cost)));
+        changes.push(text(
+            locale,
+            "smith.change",
+            &[
+                ("name", &text(locale, "smith.cost", &[])),
+                ("before", &label(old_cost)),
+                ("after", &label(new_cost)),
+            ],
+        ));
     }
     let mut number = |name: &str, a: i32, b: i32| {
         if a != b {
-            changes.push(format!("{name} {a} -> {b}"));
+            changes.push(text(
+                locale,
+                "smith.change",
+                &[
+                    ("name", &text(locale, &format!("smith.{name}"), &[])),
+                    ("before", &a.to_string()),
+                    ("after", &b.to_string()),
+                ],
+            ));
         }
     };
     let old = mechanics::card_blueprint_persistent_base_numbers_v1(before);
     let new = mechanics::card_blueprint_persistent_base_numbers_v1(after);
-    number("base damage/hit", old.damage, new.damage);
-    number("Block", old.block, new.block);
+    number("damage", old.damage, new.damage);
+    number("block", old.block, new.block);
     let definition = cards::get_card_definition(before.id);
     let magic =
         |upgrades| definition.base_magic + i32::from(upgrades > 0) * definition.upgrade_magic;
@@ -109,10 +128,10 @@ fn changes(before: &CardBlueprint, after: &CardBlueprint) -> Vec<String> {
         use mechanics::CardPlayerStrengthDeliveryV1::*;
         number(
             match delivery {
-                OnPlay => "Strength",
-                IfTargetIntentBaseDamageNonnegativeAtResolution => "Strength if target attacks",
-                OnPlayWithSeparateLoseStrength => "temporary Strength",
-                EachPlayerTurnStartPostDraw => "Strength/turn",
+                OnPlay => "strength",
+                IfTargetIntentBaseDamageNonnegativeAtResolution => "strengthIfAttack",
+                OnPlayWithSeparateLoseStrength => "temporaryStrength",
+                EachPlayerTurnStartPostDraw => "strengthTurn",
             },
             a,
             b,
@@ -120,12 +139,12 @@ fn changes(before: &CardBlueprint, after: &CardBlueprint) -> Vec<String> {
         magic_named = true;
     }
     let magic_name = match before.id {
-        CardId::Bash | CardId::ThunderClap => Some("Vulnerable"),
-        CardId::Clothesline | CardId::Intimidate => Some("Weak"),
-        CardId::Uppercut | CardId::Shockwave => Some("Weak/Vulnerable"),
-        CardId::Disarm => Some("Strength reduction"),
-        CardId::FlameBarrier => Some("retaliation/hit"),
-        CardId::PerfectedStrike => Some("damage/Strike card"),
+        CardId::Bash | CardId::ThunderClap => Some("vulnerable"),
+        CardId::Clothesline | CardId::Intimidate => Some("weak"),
+        CardId::Uppercut | CardId::Shockwave => Some("weakVulnerable"),
+        CardId::Disarm => Some("strengthReduction"),
+        CardId::FlameBarrier => Some("retaliation"),
+        CardId::PerfectedStrike => Some("damagePerStrike"),
         _ => None,
     };
     if let Some(name) = magic_name {
@@ -161,11 +180,11 @@ fn changes(before: &CardBlueprint, after: &CardBlueprint) -> Vec<String> {
         use mechanics::CardEnergyDeliveryV1::*;
         number(
             match a.delivery {
-                OnPlay => "Energy on play",
-                EachPlayerTurnStart => "Energy/turn",
-                NextPlayerEnergyRecharge => "Energy next turn",
-                OnExhaust => "Energy on Exhaust",
-                IfTargetVulnerableAtResolution => "Energy if target Vulnerable",
+                OnPlay => "energyPlay",
+                EachPlayerTurnStart => "energyTurn",
+                NextPlayerEnergyRecharge => "energyNext",
+                OnExhaust => "energyExhaust",
+                IfTargetVulnerableAtResolution => "energyVulnerable",
             },
             a.amount,
             b.amount,
@@ -176,67 +195,94 @@ fn changes(before: &CardBlueprint, after: &CardBlueprint) -> Vec<String> {
     }
     for (name, a, b) in [
         (
-            "Exhaust on play",
+            "exhaust",
             mechanics::card_exhausts_when_played(before.id, before.upgrades),
             mechanics::card_exhausts_when_played(after.id, after.upgrades),
         ),
         (
-            "Ethereal",
+            "ethereal",
             mechanics::card_is_ethereal(before.id, before.upgrades),
             mechanics::card_is_ethereal(after.id, after.upgrades),
         ),
         (
-            "Innate",
+            "innate",
             cards::is_innate_card_for(before.id, before.upgrades),
             cards::is_innate_card_for(after.id, after.upgrades),
         ),
     ] {
         if a != b {
-            changes.push(format!("{name} {a} -> {b}"));
+            changes.push(text(
+                locale,
+                "smith.change",
+                &[
+                    ("name", &text(locale, &format!("smith.{name}"), &[])),
+                    (
+                        "before",
+                        &text(locale, if a { "smith.true" } else { "smith.false" }, &[]),
+                    ),
+                    (
+                        "after",
+                        &text(locale, if b { "smith.true" } else { "smith.false" }, &[]),
+                    ),
+                ],
+            ));
         }
     }
     if mechanics::combat_upgrade_scope_for_card_v1(before.id, before.upgrades)
         != mechanics::combat_upgrade_scope_for_card_v1(after.id, after.upgrades)
     {
-        changes.push("combat upgrade: one card in hand -> whole hand".into());
+        changes.push(text(locale, "smith.wholeHand", &[]));
     }
     if before.id == CardId::TrueGrit && before.upgrades == 0 {
-        changes.push("Exhaust target: random -> chosen".into());
+        changes.push(text(locale, "smith.chosenExhaust", &[]));
     }
     // Keep the actual rule where a secondary upgrade effect is not yet named.
     // A shorter numeric list must not claim to be a complete upgrade summary.
-    if (a != b && !magic_named) || changes.is_empty() {
-        changes.push(format!(
-            "Rule: {}",
-            mechanics::explanation(before.id).unwrap_or("Upgrade effect unknown; query info card")
+    let includes_rule = (a != b && !magic_named) || changes.is_empty();
+    if includes_rule {
+        changes.push(text(
+            locale,
+            "smith.ruleEnglish",
+            &[(
+                "effect",
+                mechanics::explanation(before.id)
+                    .unwrap_or("Upgrade effect unknown; query info card"),
+            )],
         ));
     }
-    changes
+    (changes, includes_rule)
 }
 
-pub(super) fn write_full(out: &mut String, groups: &[SmithComparison]) {
+pub(super) fn write_full(out: &mut String, groups: &[SmithComparison], locale: Locale) {
     if groups.is_empty() {
         return;
     }
-    writeln!(out, "Smith upgrades:").unwrap();
+    writeln!(out, "{}", text(locale, "smith.heading", &[])).unwrap();
     for group in groups {
         let binding = group.bottled_by.map_or_else(String::new, |relic| {
-            format!(" [{}]", gameplay_display_label_v1(relic))
+            format!(" [{}]", locale.entity("relic", relic.stable_id()))
         });
         writeln!(
             out,
             "  {} -> {}{binding} | {}",
-            format_card(group.before.id, group.before.upgrades),
-            format_card(group.after.id, group.after.upgrades),
+            locale.card_name(group.before.id.stable_id(), group.before.upgrades),
+            locale.card_name(group.after.id.stable_id(), group.after.upgrades),
             group.changes
         )
         .unwrap();
-        if !group.changes.contains("Rule:") {
+        if !group.includes_rule {
             writeln!(
                 out,
-                "    Printed rule (base/upgraded): {}",
-                mechanics::explanation(group.before.id)
-                    .unwrap_or("Effect unknown; query info card")
+                "    {}",
+                text(
+                    locale,
+                    "smith.printedRuleEnglish",
+                    &[(
+                        "effect",
+                        mechanics::explanation(group.before.id)
+                            .unwrap_or("Effect unknown; query info card")
+                    )]
+                )
             )
             .unwrap();
         }

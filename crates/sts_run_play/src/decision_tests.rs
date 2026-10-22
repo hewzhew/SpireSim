@@ -1610,9 +1610,7 @@ fn event_choices_expand_identified_item_rules_before_the_player_chooses() {
         .contains("Block does not prevent the self HP loss"));
     assert!(reading.view.contains(&format!(
         "Relic {}:",
-        sts_oracle_learning::content::identity::gameplay_display_label_v1(
-            RelicId::MutagenicStrength
-        )
+        Locale::En.entity("relic", "MutagenicStrength")
     )));
     assert!(reading
         .view
@@ -2919,7 +2917,7 @@ fn choice_readings_expose_typed_items_and_rules_without_changing_choices() {
     let reading = game.decision_reading_v1(&[], None, Locale::En).unwrap();
     assert!(reading
         .view
-        .contains("buy Corruption+ 60g\n  Card: Power | 2c"));
+        .contains("buy Corruption+ 60g\n  Card Corruption+ | Power | 2c"));
     assert!(reading.view.contains("buy Sling of Courage 150g\n  Relic:"));
     assert!(reading.view.contains("elite combats only"));
     assert!(reading.view.contains("including the Heart"));
@@ -2969,15 +2967,21 @@ fn choice_readings_expose_typed_items_and_rules_without_changing_choices() {
     let reading = game.decision_reading_v1(&[], None, Locale::En).unwrap();
     assert!(reading
         .view
-        .contains("take Uppercut+\n  Card: Attack | 2c | tags: none"));
+        .contains("take Uppercut+\n  Card Uppercut+ | Attack | 2c | tags: none"));
     assert!(reading
         .view
         .contains(sts_oracle_learning::content::cards::ironclad::uppercut::MECHANICS));
     assert!(reading
         .view
-        .contains("take Anger\n  Card: Attack | 0c | tags: none"));
-    assert!(reading.view.contains("take Blood for Blood+\n  Card: Attack | 3c | tags: none\n  Printed base stats at this upgrade: damage 22"));
-    assert!(reading.view.contains("take Shrug It Off+\n  Card: Skill | 1c | tags: none\n  Printed base stats at this upgrade: Block 11"));
+        .contains("take Anger\n  Card Anger | Attack | 0c | tags: none"));
+    assert!(reading
+        .view
+        .contains("take Blood for Blood+\n  Card Blood for Blood+ | Attack | 3c | tags: none"));
+    assert!(reading.view.contains("Deal 22 damage."));
+    assert!(reading
+        .view
+        .contains("take Shrug It Off+\n  Card Shrug It Off+ | Skill | 1c | tags: none"));
+    assert!(reading.view.contains("Gain 11 Block."));
     assert!(!reading.view.contains("Owned deck rules"));
     let expanded = game
         .decision_reading_v1(&[DecisionDetailV1::State], None, Locale::En)
@@ -2985,7 +2989,8 @@ fn choice_readings_expose_typed_items_and_rules_without_changing_choices() {
     assert!(expanded
         .view
         .contains("Owned deck rules (deduplicated by card and upgrade; Power effects apply after deployment):"));
-    assert_eq!(expanded.view.matches("  Card Anger | Attack").count(), 1);
+    let (_, owned_rules) = expanded.view.split_once("Owned deck rules (deduplicated by card and upgrade; Power effects apply after deployment):").unwrap();
+    assert_eq!(owned_rules.matches("  Card Anger | Attack").count(), 1);
     assert!(expanded.view.contains("  Card Body Slam | Attack"));
     assert!(reading
         .view

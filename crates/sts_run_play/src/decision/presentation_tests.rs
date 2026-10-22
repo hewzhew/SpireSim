@@ -3,6 +3,76 @@ use crate::decision_tests::{controller_with_session, fixture, TestDirectory};
 use sts_presentation::Locale;
 
 #[test]
+fn campfire_locales_keep_upgrade_values_copy_groups_and_legal_bindings() {
+    use sts_oracle_learning::content::cards::CardId;
+    use sts_oracle_learning::state::core::EngineState;
+    let directory = TestDirectory::new();
+    let mut session = fixture("reward");
+    session.engine_state = EngineState::Campfire;
+    session.run_state.master_deck.clear();
+    for card in [
+        CardId::Prepared,
+        CardId::Prepared,
+        CardId::TrueGrit,
+        CardId::Armaments,
+        CardId::Adrenaline,
+        CardId::LimitBreak,
+        CardId::DoubleTap,
+    ] {
+        session.run_state.add_card_to_deck(card);
+    }
+    let mut game = controller_with_session(&directory.0, "upgrade-locale", &session);
+    let before = game.head().clone();
+    let en = game
+        .decision_reading_v1(&[DecisionDetailV1::Brief], None, Locale::En)
+        .unwrap();
+    let zh = game
+        .decision_reading_v1(&[DecisionDetailV1::Brief], None, Locale::ZhCn)
+        .unwrap();
+    let full = game.decision_reading_v1(&[], None, Locale::ZhCn).unwrap();
+    assert!(en.view.contains("draw 1 -> 2; discard 1 -> 2"));
+    assert!(zh.view.contains("抽牌 1 -> 2; 弃牌 1 -> 2"));
+    assert!(zh.view.contains("2 张同效果副本中选 1 张"));
+    assert!(zh.view.contains("消耗目标：随机 -> 自选"));
+    assert!(zh.view.contains("战斗中升级：一张手牌 -> 所有手牌"));
+    assert!(zh.view.contains("打出后消耗 是 -> 否"));
+    assert!(zh.view.contains("机制补充（英文）"));
+    assert!(full.view.contains("可升级效果："));
+    let public = before
+        .current_decision
+        .as_ref()
+        .unwrap()
+        .public_decision_v1()
+        .unwrap();
+    let TaskPublicObservationV1::Strategic { observation } = &public.observation else {
+        panic!("strategic fixture")
+    };
+    let en_groups = smith::comparisons(observation, &en.options, Locale::En).unwrap();
+    let zh_groups = smith::comparisons(observation, &zh.options, Locale::ZhCn).unwrap();
+    assert_eq!(
+        en_groups
+            .iter()
+            .map(|group| &group.ordinals)
+            .collect::<Vec<_>>(),
+        zh_groups
+            .iter()
+            .map(|group| &group.ordinals)
+            .collect::<Vec<_>>()
+    );
+    assert_eq!(
+        en.options
+            .iter()
+            .map(|option| &option.choice)
+            .collect::<Vec<_>>(),
+        zh.options
+            .iter()
+            .map(|option| &option.choice)
+            .collect::<Vec<_>>()
+    );
+    assert_eq!(*game.head(), before);
+}
+
+#[test]
 fn strategic_locales_preserve_public_choices_and_share_preparation_overviews() {
     for kind in [
         "reward",
