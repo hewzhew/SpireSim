@@ -1,7 +1,7 @@
 // Room and map commands: go (route), map (routes/grid and
 // preferences), loot (routine reward claiming), info (mechanics),
 // cancel (back into the room), use (switch the default session).
-import { writeText, mapGraphFromObservation, renderMapGrid, MAP_LETTER_ORDER, MAP_LETTER_EN } from '../render.mjs';
+import { writeText } from '../render.mjs';
 import { resolveSession } from '../session.mjs';
 import { isRewardReading, assertCurrentDecision, decisionObservation, readingOptionCommands } from '../contract.mjs';
 import { engineOutput } from './navigation.mjs';
@@ -109,16 +109,17 @@ export async function go(ctx, parameters) {
 }
 
 export async function mapView(ctx, parameters) {
-  const { game, repository, join } = ctx;
+  const { repository, join } = ctx;
   const write = ctx.write ?? writeText;
+  const mapArguments = ['map', '--locale', ctx.agentLocale ?? 'en'];
   if (!parameters.length) {
-    return write(await engineOutput(ctx, ['map']));
+    return write(await engineOutput(ctx, mapArguments));
   }
   if (parameters[0] === 'elites' && parameters.length === 1) {
-    return write(await engineOutput(ctx, ['map', 'elites']));
+    return write(await engineOutput(ctx, [...mapArguments, 'elites']));
   }
   if (parameters[0] === 'route' && parameters.length === 3 && parameters.slice(1).every(p => /^\d+$/.test(p))) {
-    return write(await engineOutput(ctx, ['map', ...parameters]));
+    return write(await engineOutput(ctx, [...mapArguments, ...parameters]));
   }
   if (parameters.length && !(
     (parameters.length === 1 && ['full', 'flip', 'normal'].includes(parameters[0]))
@@ -126,9 +127,8 @@ export async function mapView(ctx, parameters) {
   )) {
     throw new Error('map [full | flip | normal | set flip | set normal | elites | route X Y]');
   }
-  // One-letter grid from the executable's full map, current cell marked
-  // with *, and structural tags on rows the map rules fix (boss-approach
-  // rests, chest band) so planning starts from known ground.
+  // Rust owns the grid, names, legend and structural row labels as well as
+  // grouped routes. Node only supplies the existing direction preference.
   // `map flip` renders small-y-on-top once (forward travel reads
   // downward — nicer for forward planning and for the strong-player
   // habit of planning backward from the boss); `map set flip|normal`
@@ -145,13 +145,10 @@ export async function mapView(ctx, parameters) {
       throw new Error('usage: map set flip|normal - stores the default map direction');
     }
     await writePrefs(mapPrefsFile, parameters[1]).catch(() => {});
-    write(`⇢ map default: ${parameters[1]}\n`);
+    write(`map set ${parameters[1]}\n`);
     return;
   }
-  const { nodes, current, boss } = mapGraphFromObservation(await game.observe());
-  write(boss ? `Boss: ${boss}\n` : 'Boss not revealed\n');
-  write(`legend: ${MAP_LETTER_ORDER.map(l => `${l}=${MAP_LETTER_EN.get(l)}`).join(' ')}; *=current; ->(x,y)/(x,y) lists separate destinations${flipped ? '; forward travel is downward' : ''}\n`);
-  write(`${renderMapGrid(nodes, current, { flipped })}\n`);
+  write(await engineOutput(ctx, [...mapArguments, 'full', ...(flipped ? ['--flipped'] : [])]));
   // The grid already carries every connection. Do not repeat grouped routes
   // or the room's unrelated decisions after an explicit full-map request.
 }

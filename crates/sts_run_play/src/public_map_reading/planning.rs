@@ -221,46 +221,51 @@ fn paired(bounds: &Extremes, nodes: &Nodes<'_>) -> Vec<String> {
     ]
 }
 
-fn caption(profile: Profile, bounds: &Extremes) -> String {
+fn caption(profile: Profile, bounds: &Extremes, locale: Locale) -> String {
     let elites = if bounds.min.elites == bounds.max.elites {
         format!("{}E", bounds.min.elites)
     } else {
         format!("{}-{}E", bounds.min.elites, bounds.max.elites)
     };
     let prep = match profile.preparation {
-        0 => "no R/S",
-        REST => "R",
-        SHOP => "S",
-        _ => "R+S",
+        0 => text(locale, "noPreparation", &[]),
+        REST => "R".into(),
+        SHOP => "S".into(),
+        _ => "R+S".into(),
     };
-    format!(
-        "{elites}, {prep} before {}{}",
+    text(
+        locale,
         if profile.has_elite {
-            "first elite"
+            "beforeElite"
         } else {
-            "end"
+            "beforeEnd"
         },
-        if profile.complete {
-            ""
-        } else {
-            ", later Unknown"
-        },
+        &[
+            ("elites", &elites),
+            ("preparation", &prep),
+            (
+                "later",
+                &if profile.complete {
+                    String::new()
+                } else {
+                    text(locale, "later", &[])
+                },
+            ),
+        ],
     )
 }
 
-fn legend(map: &PlannerPublicMap, unpublished: bool) -> String {
-    let mut result =
-        "Legend: M fight  ? unknown room  E elite  K key elite  R rest  S shop  T chest  B boss"
-            .to_owned();
+fn legend(map: &PlannerPublicMap, unpublished: bool, locale: Locale) -> String {
+    let mut result = text(locale, "legend", &[]);
     if unpublished {
-        result.push_str("  U unpublished");
+        result.push_str(&text(locale, "legendUnpublished", &[]));
     }
     if map
         .nodes
         .iter()
         .any(|node| node.room == PlannerMapRoom::Victory)
     {
-        result.push_str("  V victory");
+        result.push_str(&text(locale, "legendVictory", &[]));
     }
     result
 }
@@ -287,7 +292,7 @@ fn shop_reachable(point: Point, nodes: &Nodes<'_>, memo: &mut BTreeMap<Point, bo
     found
 }
 
-fn branch_caption(classes: &Classes, shop: bool) -> String {
+fn branch_caption(classes: &Classes, shop: bool, locale: Locale) -> String {
     let min = classes
         .values()
         .map(|bounds| bounds.min.elites)
@@ -300,39 +305,64 @@ fn branch_caption(classes: &Classes, shop: bool) -> String {
         .unwrap();
     let complete = classes.keys().all(|profile| profile.complete);
     let elites = if !complete {
-        format!(
-            "at least {min} elite{}, later Unknown",
-            if min == 1 { "" } else { "s" }
+        text(
+            locale,
+            if min == 1 {
+                "branchElitesPartial_one"
+            } else {
+                "branchElitesPartial_other"
+            },
+            &[("count", &min.to_string())],
         )
     } else if min == max {
-        format!("{min} elite{}", if min == 1 { "" } else { "s" })
+        text(
+            locale,
+            if min == 1 {
+                "branchElites_one"
+            } else {
+                "branchElites_other"
+            },
+            &[("count", &min.to_string())],
+        )
     } else {
-        format!("{min}-{max} elites")
+        text(
+            locale,
+            "branchElitesRange",
+            &[("min", &min.to_string()), ("max", &max.to_string())],
+        )
     };
     let key = if !complete {
         if classes.keys().any(|profile| profile.key) {
-            "key reachable"
+            "keyReachable"
         } else {
-            "key Unknown"
+            "keyUnknown"
         }
     } else if classes.keys().all(|profile| profile.key) {
-        "key required"
+        "keyRequired"
     } else if classes.keys().any(|profile| profile.key) {
-        "key optional"
+        "keyOptional"
     } else {
-        "no key"
+        "noKey"
     };
     let shop = if shop {
-        "shop reachable"
+        "shopReachable"
     } else if complete {
-        "no shop"
+        "noShop"
     } else {
-        "shop Unknown"
+        "shopUnknown"
     };
-    format!("{elites}, {key}, {shop}")
+    text(
+        locale,
+        "branchCaption",
+        &[
+            ("elites", &elites),
+            ("key", &text(locale, key, &[])),
+            ("shop", &text(locale, shop, &[])),
+        ],
+    )
 }
 
-fn preparation_caption(classes: &Classes) -> String {
+fn preparation_caption(classes: &Classes, locale: Locale) -> String {
     let preparations: BTreeSet<_> = classes
         .keys()
         .filter(|p| p.has_elite)
@@ -344,14 +374,18 @@ fn preparation_caption(classes: &Classes) -> String {
     let alternatives = preparations
         .into_iter()
         .map(|prep| match prep {
-            0 => "no R/S",
-            REST => "R",
-            SHOP => "S",
-            _ => "R+S",
+            0 => text(locale, "noPreparation", &[]),
+            REST => "R".into(),
+            SHOP => "S".into(),
+            _ => "R+S".into(),
         })
         .collect::<Vec<_>>()
-        .join(" or ");
-    format!("{alternatives} before first elite")
+        .join(&text(locale, "or", &[]));
+    text(
+        locale,
+        "beforeFirstElite",
+        &[("preparation", &alternatives)],
+    )
 }
 
 /// The explicit anchor is context, not a future room. Whole-route examples
@@ -361,8 +395,9 @@ pub(crate) fn route_from(
     map: &PlannerPublicMap,
     legal_routes: &[Point],
     point: Point,
+    locale: Locale,
 ) -> Result<String, String> {
-    let reading = PublicRouteReading::new(map, point)?;
+    let reading = PublicRouteReading::new(map, point, locale)?;
     let anchor = reading
         .nodes
         .get(&point)
@@ -374,18 +409,22 @@ pub(crate) fn route_from(
     };
     roots.sort_by_key(|point| (point.1, point.0));
     let mut lines = vec![
-        boss_heading(map),
-        format!("Routes after {}", located(point, &reading.nodes)),
+        boss_heading(map, locale),
+        text(
+            locale,
+            "routesAfter",
+            &[("node", &located(point, &reading.nodes))],
+        ),
     ];
     if !reachable_from_current(map, legal_routes, point)? {
-        lines.push("Outside the current ordinary reachable routes.".to_owned());
+        lines.push(text(locale, "outside", &[]));
     }
     if roots.is_empty() {
         lines.push(
             if matches!(anchor.room, PlannerMapRoom::Boss | PlannerMapRoom::Victory) {
-                "No next room.".to_owned()
+                text(locale, "noNext", &[])
             } else {
-                "No published next room; later Unknown.".to_owned()
+                text(locale, "noPublishedNext", &[])
             },
         );
         return Ok(lines.join("\n") + "\n");
@@ -396,6 +435,7 @@ pub(crate) fn route_from(
             .reachable
             .iter()
             .any(|p| !reading.nodes.contains_key(p)),
+        locale,
     ));
     let mut memo = BTreeMap::new();
     let mut shops = BTreeMap::new();
@@ -404,7 +444,11 @@ pub(crate) fn route_from(
         lines.push(format!(
             "  {}  {}",
             located(root, &reading.nodes),
-            branch_caption(&classes, shop_reachable(root, &reading.nodes, &mut shops))
+            branch_caption(
+                &classes,
+                shop_reachable(root, &reading.nodes, &mut shops),
+                locale
+            )
         ));
         let mut shown = BTreeSet::new();
         for bounds in classes.values() {
@@ -445,9 +489,9 @@ pub(crate) fn route_from(
                 format!(
                     "{} {}",
                     located(exit, &reading.nodes),
-                    branch_caption(&classes, shop)
+                    branch_caption(&classes, shop, locale)
                 ),
-                preparation_caption(&classes),
+                preparation_caption(&classes, locale),
             ));
         }
         // Equivalent topology profiles need no extra prose. Coordinates and
@@ -477,20 +521,24 @@ pub(crate) fn route_from(
         }
     }
     if !tradeoffs.is_empty() {
-        lines.push("Later choices:".to_owned());
+        lines.push(text(locale, "laterChoices", &[]));
         lines.extend(tradeoffs);
     }
     Ok(lines.join("\n") + "\n")
 }
 
-pub(crate) fn route_examples(map: &PlannerPublicMap, roots: &[Point]) -> Result<String, String> {
+pub(crate) fn route_examples(
+    map: &PlannerPublicMap,
+    roots: &[Point],
+    locale: Locale,
+) -> Result<String, String> {
     let mut memo = BTreeMap::new();
     let mut whole_paths = BTreeSet::new();
     // Group equal rendered examples across entrances; each entrance still has
     // its own real full-coordinate witness, never a fabricated edge/merge.
     let mut examples = BTreeMap::<(Profile, String, Vec<String>), BTreeSet<Point>>::new();
     for &root in roots {
-        let reading = PublicRouteReading::new(map, root)?;
+        let reading = PublicRouteReading::new(map, root, locale)?;
         if roots.len() == 1
             && reading
                 .nodes
@@ -498,15 +546,27 @@ pub(crate) fn route_examples(map: &PlannerPublicMap, roots: &[Point]) -> Result<
                 .is_some_and(|node| node.room == PlannerMapRoom::Boss)
         {
             let boss = map.boss.map_or_else(
-                || "Boss (name not revealed)".to_owned(),
+                || text(locale, "bossNextHidden", &[]),
                 |boss| {
-                    format!(
-                        "Boss {}",
-                        sts_oracle_learning::content::identity::gameplay_display_label_v1(boss)
+                    text(
+                        locale,
+                        "bossNext",
+                        &[("name", locale.entity("encounter", boss.stable_id()))],
                     )
                 },
             );
-            return Ok(format!("Next room: {boss} at ({},{})\n", root.0, root.1));
+            return Ok(format!(
+                "{}\n",
+                text(
+                    locale,
+                    "nextBoss",
+                    &[
+                        ("boss", &boss),
+                        ("x", &root.0.to_string()),
+                        ("y", &root.1.to_string())
+                    ]
+                )
+            ));
         }
         for (profile, bounds) in suffixes(root, &reading.nodes, &mut memo) {
             whole_paths.insert(bounds.min.points.clone());
@@ -514,7 +574,7 @@ pub(crate) fn route_examples(map: &PlannerPublicMap, roots: &[Point]) -> Result<
             examples
                 .entry((
                     profile,
-                    caption(profile, &bounds),
+                    caption(profile, &bounds, locale),
                     paired(&bounds, &reading.nodes),
                 ))
                 .or_default()
@@ -524,28 +584,35 @@ pub(crate) fn route_examples(map: &PlannerPublicMap, roots: &[Point]) -> Result<
     let unpublished = examples
         .keys()
         .any(|(_, _, paths)| paths.iter().any(|path| path.contains("U(")));
-    let mut lines = vec![boss_heading(map), legend(map, unpublished)];
+    let mut lines = vec![boss_heading(map, locale), legend(map, unpublished, locale)];
     for ((_, caption, paths), roots) in examples {
-        lines.push(format!(
-            "  From {}  {caption}",
-            roots
-                .iter()
-                .map(|p| format!("({},{})", p.0, p.1))
-                .collect::<Vec<_>>()
-                .join("/"),
+        lines.push(text(
+            locale,
+            "from",
+            &[
+                ("caption", &caption),
+                (
+                    "roots",
+                    &roots
+                        .iter()
+                        .map(|p| format!("({},{})", p.0, p.1))
+                        .collect::<Vec<_>>()
+                        .join("/"),
+                ),
+            ],
         ));
         lines.extend(paths.into_iter().map(|path| format!("    {path}")));
     }
     if roots.is_empty() {
-        lines.push("  No published next room.".to_owned());
+        lines.push(text(locale, "noNextIndented", &[]));
     }
     let ordinary = lines.join("\n") + "\n";
     let Some(&root) = roots.first() else {
         return Ok(ordinary);
     };
-    let reading = PublicRouteReading::new(map, root)?;
+    let reading = PublicRouteReading::new(map, root, locale)?;
     Ok(
-        shared_routes(map, roots, &reading.nodes, &memo, &whole_paths)
+        shared_routes(map, roots, &reading.nodes, &memo, &whole_paths, locale)
             .filter(|factored| factored.len() < ordinary.len())
             .unwrap_or(ordinary),
     )
@@ -568,13 +635,14 @@ fn shared_routes(
     nodes: &Nodes<'_>,
     memo: &BTreeMap<Point, Classes>,
     paths: &BTreeSet<Vec<Point>>,
+    locale: Locale,
 ) -> Option<String> {
     let mut outlooks = BTreeMap::<String, BTreeSet<Point>>::new();
     let mut shops = BTreeMap::new();
     for &root in roots {
         let classes = memo.get(&root)?;
-        let mut outlook = branch_caption(classes, shop_reachable(root, nodes, &mut shops));
-        let prep = preparation_caption(classes);
+        let mut outlook = branch_caption(classes, shop_reachable(root, nodes, &mut shops), locale);
+        let prep = preparation_caption(classes, locale);
         if !prep.is_empty() {
             outlook.push_str(&format!(", {prep}"));
         }
@@ -623,23 +691,39 @@ fn shared_routes(
             continue;
         }
         let mut lines = vec![
-            boss_heading(map),
-            legend(map, paths.iter().flatten().any(|p| !nodes.contains_key(p))),
+            boss_heading(map, locale),
+            legend(
+                map,
+                paths.iter().flatten().any(|p| !nodes.contains_key(p)),
+                locale,
+            ),
         ];
         for (outlook, roots) in &outlooks {
-            lines.push(format!("  From {}  {outlook}", root_list(roots)));
+            lines.push(text(
+                locale,
+                "from",
+                &[("roots", &root_list(roots)), ("caption", outlook)],
+            ));
         }
         let anchor = located(pivot, nodes);
-        lines.push(format!("Approaches to {anchor}:"));
+        lines.push(text(locale, "approaches", &[("node", &anchor)]));
         for (path, roots) in approaches {
-            lines.push(format!("  From {}  {path}", root_list(&roots)));
+            lines.push(text(
+                locale,
+                "from",
+                &[("roots", &root_list(&roots)), ("caption", &path)],
+            ));
         }
-        lines.push(format!("After {anchor} (each approach can use these):"));
+        lines.push(text(locale, "continuations", &[("node", &anchor)]));
         lines.extend(continuations.into_iter().map(|path| format!("  {path}")));
         if !other.is_empty() {
-            lines.push(format!("Routes bypassing {anchor}:"));
+            lines.push(text(locale, "bypass", &[("node", &anchor)]));
             for (path, roots) in other {
-                lines.push(format!("  From {}  {path}", root_list(&roots)));
+                lines.push(text(
+                    locale,
+                    "from",
+                    &[("roots", &root_list(&roots)), ("caption", &path)],
+                ));
             }
         }
         let rendered = lines.join("\n") + "\n";

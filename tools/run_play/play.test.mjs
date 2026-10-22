@@ -5,7 +5,7 @@ import { mkdtemp, mkdir, readFile, realpath, rm, writeFile } from 'node:fs/promi
 import { tmpdir } from 'node:os';
 import { basename, join, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { actTrimmingEndedCombat, applyPotionSkin, decisionDocumentFromObservation, expandRepeatSugar, freshRecordDirectory, mapGraphFromObservation, normalizeActionTokens, parseChoiceToken, parseDecisionPotions, renderMapGrid, resolvePotionToken, resolveSession, summarizeDecisionJson } from './play.mjs';
+import { actTrimmingEndedCombat, applyPotionSkin, decisionDocumentFromObservation, expandRepeatSugar, freshRecordDirectory, mapGraphFromObservation, normalizeActionTokens, parseChoiceToken, parseDecisionPotions, resolvePotionToken, resolveSession, summarizeDecisionJson } from './play.mjs';
 
 test('CLI help prints usage without opening a game connection', () => {
   const entry = fileURLToPath(new URL('../../scripts/p.mjs', import.meta.url));
@@ -136,19 +136,8 @@ test('typed public map renders from a strategic decision away from the map scree
   assert.equal(nodes.size, 18);
   assert.equal(nodes.get('1,5').type, 'Elite');
   assert.equal(nodes.get('4,7').type, 'Elite+key');
-  const grid = renderMapGrid(nodes, current);
-  assert.match(grid, /R\(1,6\)->\(1,7\)/);
-  assert.match(grid, /\*M\(5,6\)->\(4,7\)\/\(5,7\)\/\(6,7\)/);
-  assert.match(grid, /\?\(6,7\)->\(5,8\)/);
-  // Flipped rendering puts small y first so forward travel reads downward,
-  // and structurally fixed rows carry their tags.
-  const flipped = renderMapGrid(nodes, current, { flipped: true });
-  const y5Index = flipped.indexOf('y05');
-  const y9Index = flipped.indexOf('y09');
-  assert.ok(y5Index < y9Index, 'y05 should precede y09 when flipped');
-  assert.match(flipped, /treasure row/);
-  // Boss-approach rest band tags when every cell on the row below the boss rests.
-  assert.match(flipped, /pre-boss rest row/);
+  assert.equal(current, '5,6');
+  assert.deepEqual(nodes.get('5,6').edges, ['4,7', '5,7', '6,7']);
 });
 
 const POTION_DOC = {

@@ -940,15 +940,25 @@ fn read_public_decision_v1(
         out.push_str(&crate::public_map_reading::route_examples(
             &observation.public_map,
             &route_choices,
+            locale,
         )?);
     } else if brief && matches!(observation.context, PlannerDecisionContext::Map { .. }) {
         if let Some(boss) = observation.public_map.boss {
             let scope = if run.pending_act_entry.is_some() {
-                "Completed"
+                "completedBoss"
             } else {
-                "Published"
+                "publishedBoss"
             };
-            writeln!(out, "{scope} Boss: {}", gameplay_display_label_v1(boss)).unwrap();
+            writeln!(
+                out,
+                "{}",
+                crate::public_map_reading::text(
+                    locale,
+                    scope,
+                    &[("boss", locale.entity("encounter", boss.stable_id()))]
+                )
+            )
+            .unwrap();
         }
     }
     if !brief {
@@ -971,7 +981,7 @@ fn read_public_decision_v1(
         )
     {
         if let Some(routes) =
-            crate::public_map_reading::preparation_routes(&observation.public_map)?
+            crate::public_map_reading::preparation_routes(&observation.public_map, locale)?
         {
             writeln!(out, "{routes}").unwrap();
         }
@@ -979,8 +989,15 @@ fn read_public_decision_v1(
     if details.contains(&DecisionDetailV1::Map) {
         writeln!(
             out,
-            "Map (x,y); current ({},{})",
-            observation.public_map.current_x, observation.public_map.current_y
+            "{}",
+            crate::public_map_reading::text(
+                locale,
+                "coordinates",
+                &[
+                    ("x", &observation.public_map.current_x.to_string()),
+                    ("y", &observation.public_map.current_y.to_string())
+                ]
+            )
         )
         .unwrap();
         for node in &observation.public_map.nodes {
@@ -991,7 +1008,9 @@ fn read_public_decision_v1(
                 node.y,
                 room_label(node.room, locale),
                 if node.has_emerald_key {
-                    " + Emerald Key"
+                    locale
+                        .entry("map", "emeraldSuffix")
+                        .expect("map key suffix")
                 } else {
                     ""
                 },
@@ -1366,6 +1385,7 @@ fn option_label(
                 crate::public_map_reading::PublicRouteReading::new(
                     &observation.public_map,
                     (*x, *y),
+                    locale,
                 )
                 .map(|route| route.summary())
                 .unwrap_or_else(|error| format!("Route analysis error: {error}"))

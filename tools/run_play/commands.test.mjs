@@ -299,29 +299,29 @@ test('grouped smith rows retain exact command bindings across omitted copies', a
   assert.equal(resolveOptionName('smith:Strike+0#6', reading, doc), 7);
 });
 
-test('full map includes the boss identity and every connection without unrelated room choices', async () => {
+test('map commands forward the connection language and display native output without extra observation', async () => {
   let output = '';
-  let boss = 'TheCollector';
-  const ctx = { repository: 'D:/rust/sts_simulator', join, write(text) { output += text; },
+  const calls = [];
+  const native = '地图位置 (1,0)  Boss 收藏家\ny00 *M(1,0)->(0,1)/(2,1)\n';
+  const ctx = { repository: 'D:/rust/sts_simulator', binary: 'run_play.exe', session: 'test-session',
+    agentLocale: 'zh-CN', join, write(text) { output += text; },
+    async runEngine(_binary, args) { calls.push(args); return { status: 0, stdout: native }; },
     game: {
-      async observe() { return { position: { kind: 'decision', observation: { domain: 'strategic', observation: { public_map: {
-        current: [-1, -1], boss, nodes: [[1, 0, 'monster', false, [[0, 1], [2, 1]]],
-          [0, 1, 'elite', true, []], [2, 1, 'rest', false, []]],
-      } } } } }; },
-      async decision() { assert.fail('explicit full map must not repeat decision context'); },
-    }, async printCurrentReading() { assert.fail('full map must not print unrelated room choices'); },
+      async observe() { assert.fail('map output belongs to the native map owner'); },
+      async decision() { assert.fail('map must not fetch unrelated choices'); },
+    },
   };
-  await mapView(ctx, ['full']);
-  assert.match(output, /M\(1,0\)->\(0,1\)\/\(2,1\)/);
-  assert.match(output, /K\(0,1\)/);
-  assert.equal((output.match(/Boss: TheCollector/g) ?? []).length, 1);
-  assert.equal((output.match(/All next-room choices:/g) ?? []).length, 0);
-  assert.doesNotMatch(output, /Connected paths to the first Elite|First landmarks/);
-  boss = null;
-  output = '';
-  await mapView(ctx, ['full']);
-  assert.match(output, /^Boss not revealed\n/);
-  assert.doesNotMatch(output, /TheCollector/);
+  for (const parameters of [[], ['elites'], ['route', '1', '0'], ['normal']]) {
+    output = '';
+    await mapView(ctx, parameters);
+    assert.equal(output, native);
+  }
+  assert.deepEqual(calls, [
+    ['map', '--session', 'test-session', '--locale', 'zh-CN'],
+    ['map', '--session', 'test-session', '--locale', 'zh-CN', 'elites'],
+    ['map', '--session', 'test-session', '--locale', 'zh-CN', 'route', '1', '0'],
+    ['map', '--session', 'test-session', '--locale', 'zh-CN', 'full'],
+  ]);
 });
 
 test('relic, removal, event and route choices print actual executable commands', () => {

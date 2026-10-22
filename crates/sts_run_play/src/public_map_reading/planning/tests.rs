@@ -102,7 +102,7 @@ fn representatives_match_exhaustive_routes_and_preserve_preparation_order() {
         // (3,3) is an unpublished endpoint.
         node((1, 4), Boss, &[]),
     ]);
-    let reading = PublicRouteReading::new(&map, (1, 0)).unwrap();
+    let reading = PublicRouteReading::new(&map, (1, 0), sts_presentation::Locale::En).unwrap();
     let paths = enumerate((1, 0), &reading.nodes);
     let mut expected = BTreeMap::<Profile, (usize, usize)>::new();
     for path in &paths {
@@ -130,7 +130,7 @@ fn representatives_match_exhaustive_routes_and_preserve_preparation_order() {
             );
         }
     }
-    let view = route_examples(&map, &[(1, 0)]).unwrap();
+    let view = route_examples(&map, &[(1, 0)], sts_presentation::Locale::En).unwrap();
     assert!(view.contains("R+S before first elite"));
     assert!(view.contains("no R/S or ")); // Rest after elite is not preparation.
     assert!(view.contains("later Unknown"));
@@ -140,7 +140,10 @@ fn representatives_match_exhaustive_routes_and_preserve_preparation_order() {
     for node in &mut reordered.nodes {
         node.edges.reverse();
     }
-    assert_eq!(view, route_examples(&reordered, &[(1, 0), (1, 0)]).unwrap());
+    assert_eq!(
+        view,
+        route_examples(&reordered, &[(1, 0), (1, 0)], sts_presentation::Locale::En).unwrap()
+    );
 }
 
 #[test]
@@ -155,7 +158,7 @@ fn compression_factors_real_merge_and_locates_ordinary_fork_exits() {
         node((1, 3), Monster, &[(1, 4)]),
         node((1, 4), Boss, &[]),
     ]);
-    let reading = PublicRouteReading::new(&map, (1, 0)).unwrap();
+    let reading = PublicRouteReading::new(&map, (1, 0), sts_presentation::Locale::En).unwrap();
     let bounds = Extremes {
         min: Path {
             points: vec![(1, 0), (0, 1), (0, 2), (1, 3), (1, 4)],
@@ -177,7 +180,7 @@ fn compression_factors_real_merge_and_locates_ordinary_fork_exits() {
         .find(|n| (n.x, n.y) == (2, 2))
         .unwrap()
         .room = Elite;
-    let multi = PublicRouteReading::new(&multi, (1, 0)).unwrap();
+    let multi = PublicRouteReading::new(&multi, (1, 0), sts_presentation::Locale::En).unwrap();
     assert_eq!(
         paired(&bounds, &multi.nodes).len(),
         2,
@@ -195,7 +198,8 @@ fn compression_factors_real_merge_and_locates_ordinary_fork_exits() {
         destination_y: 3,
     }];
     separate.nodes.push(node((2, 3), Monster, &[(1, 4)]));
-    let separate = PublicRouteReading::new(&separate, (1, 0)).unwrap();
+    let separate =
+        PublicRouteReading::new(&separate, (1, 0), sts_presentation::Locale::En).unwrap();
     let mut changed = bounds.clone();
     changed.max.points[3] = (2, 3);
     let lines = paired(&changed, &separate.nodes);
@@ -211,7 +215,8 @@ fn compression_factors_real_merge_and_locates_ordinary_fork_exits() {
         .find(|n| (n.x, n.y) == (1, 0))
         .unwrap()
         .room = Monster;
-    let ordinary = PublicRouteReading::new(&ordinary, (1, 0)).unwrap();
+    let ordinary =
+        PublicRouteReading::new(&ordinary, (1, 0), sts_presentation::Locale::En).unwrap();
     let line = &paired(&bounds, &ordinary.nodes)[0];
     assert_eq!(line, "M(1,0) [R(0,1) M | E(2,1) R(2,2)] M(1,3) B");
 }
@@ -239,7 +244,7 @@ fn shared_approaches_and_continuations_use_one_exact_room_and_keep_each_entrance
         node((1, 11), Boss, &[]),
     ]);
     map.boss = Some(sts_oracle_learning::content::monsters::factory::EncounterId::TimeEater);
-    let reading = PublicRouteReading::new(&map, (0, 0)).unwrap();
+    let reading = PublicRouteReading::new(&map, (0, 0), sts_presentation::Locale::En).unwrap();
     let roots = [(0, 0), (2, 0)];
     let all: BTreeSet<_> = roots
         .iter()
@@ -249,7 +254,7 @@ fn shared_approaches_and_continuations_use_one_exact_room_and_keep_each_entrance
     for root in roots {
         suffixes(root, &reading.nodes, &mut memo);
     }
-    let view = shared_routes(&map, &roots, &reading.nodes, &memo, &all).unwrap();
+    let view = shared_routes(&map, &roots, &reading.nodes, &memo, &all, Locale::En).unwrap();
     assert!(view.starts_with("Boss: Time Eater\nLegend:"));
     assert!(view.contains("From (0,0)  0-1 elites, key optional, no shop, R before first elite"));
     assert!(
@@ -287,13 +292,13 @@ fn shared_approaches_and_continuations_use_one_exact_room_and_keep_each_entrance
             );
         }
     }
-    let public = route_examples(&map, &roots).unwrap();
+    let public = route_examples(&map, &roots, sts_presentation::Locale::En).unwrap();
     assert!(public.contains("Approaches to"));
     let mut reordered = map.clone();
     reordered.nodes.reverse();
     assert_eq!(
         public,
-        route_examples(&reordered, &[(2, 0), (0, 0)]).unwrap()
+        route_examples(&reordered, &[(2, 0), (0, 0)], sts_presentation::Locale::En).unwrap()
     );
 }
 
@@ -311,7 +316,7 @@ fn equal_room_letters_on_disjoint_legs_do_not_create_a_shared_ending() {
         node((2, 3), Monster, &[(1, 4)]),
         node((1, 4), Boss, &[]),
     ]);
-    let view = route_examples(&map, &[(0, 0), (2, 0)]).unwrap();
+    let view = route_examples(&map, &[(0, 0), (2, 0)], sts_presentation::Locale::En).unwrap();
     assert!(!view.contains("Approaches to"));
     assert!(view.contains("R(0,1) E(0,2)"));
     assert!(view.contains("R(2,1) E(2,2)"));
@@ -329,7 +334,12 @@ fn future_roots_exclude_current_room_and_preserve_wing_boots_choices() {
     map.current_x = 0;
     map.current_y = 0;
     assert_eq!(planning_roots(&map, &[]), vec![(0, 1)]);
-    let view = route_examples(&map, &planning_roots(&map, &[])).unwrap();
+    let view = route_examples(
+        &map,
+        &planning_roots(&map, &[]),
+        sts_presentation::Locale::En,
+    )
+    .unwrap();
     assert!(!view.contains("S(0,0)"));
     assert_eq!(
         planning_roots(&map, &[(2, 1), (0, 1)]),
@@ -357,7 +367,7 @@ fn exponential_routes_have_bounded_classes_without_path_enumeration() {
         }
     }
     let map = map(nodes);
-    let reading = PublicRouteReading::new(&map, (0, 0)).unwrap();
+    let reading = PublicRouteReading::new(&map, (0, 0), sts_presentation::Locale::En).unwrap();
     let mut memo = BTreeMap::new();
     let classes = suffixes((0, 0), &reading.nodes, &mut memo);
     assert_eq!(memo.len(), 161);
@@ -384,17 +394,18 @@ fn a_single_next_boss_is_named_without_a_route_planning_legend() {
     map.boss = Some(sts_oracle_learning::content::monsters::factory::EncounterId::TimeEater);
     let roots = planning_roots(&map, &[]);
     assert_eq!(
-        route_examples(&map, &roots).unwrap(),
+        route_examples(&map, &roots, sts_presentation::Locale::En).unwrap(),
         "Next room: Boss Time Eater at (0,15)\n"
     );
     map.boss = None;
     assert_eq!(
-        route_examples(&map, &roots).unwrap(),
+        route_examples(&map, &roots, sts_presentation::Locale::En).unwrap(),
         "Next room: Boss (name not revealed) at (0,15)\n"
     );
     // Two distinct legal entrances still need their separate coordinates.
     map.nodes.push(node((2, 15), Boss, &[]));
-    let alternatives = route_examples(&map, &[(0, 15), (2, 15)]).unwrap();
+    let alternatives =
+        route_examples(&map, &[(0, 15), (2, 15)], sts_presentation::Locale::En).unwrap();
     assert!(alternatives.contains("From (0,15)/(2,15)"));
     assert!(!alternatives.starts_with("Next room:"));
 }
@@ -404,17 +415,17 @@ fn unknown_end_is_not_replaced_by_the_published_boss_name() {
     use PlannerMapRoom::*;
     let mut partial = map(vec![node((0, 0), Rest, &[])]);
     partial.boss = Some(sts_oracle_learning::content::monsters::factory::EncounterId::TimeEater);
-    let view = route_examples(&partial, &[(0, 0)]).unwrap();
+    let view = route_examples(&partial, &[(0, 0)], sts_presentation::Locale::En).unwrap();
     assert!(view.starts_with("Boss: Time Eater\nLegend:"));
     assert!(view.contains("later Unknown"));
     assert!(view.contains("R(0,0)"));
     assert!(!view.lines().any(|line| line.trim() == "R(0,0) B"));
     partial.boss = None;
-    let hidden = route_examples(&partial, &[(0, 0)]).unwrap();
+    let hidden = route_examples(&partial, &[(0, 0)], sts_presentation::Locale::En).unwrap();
     assert!(hidden.starts_with("Boss not revealed\nLegend:"));
     assert!(!hidden.contains("Time Eater"));
     let cycle = map(vec![node((0, 0), Monster, &[(0, 0)])]);
-    assert!(route_examples(&cycle, &[(0, 0)]).is_err());
+    assert!(route_examples(&cycle, &[(0, 0)], sts_presentation::Locale::En).is_err());
 }
 
 #[test]
@@ -439,7 +450,7 @@ fn local_routes_show_complete_examples_and_the_later_key_commitment() {
         node((4, 14), Rest, &[(0, 15)]),
         node((0, 15), Boss, &[]),
     ]);
-    let view = route_from(&map, &[], (5, 8)).unwrap();
+    let view = route_from(&map, &[], (5, 8), sts_presentation::Locale::En).unwrap();
     assert!(view.starts_with("Boss not revealed\nRoutes after T(5,8)"));
     assert!(view.contains("R(4,9)  0-1 elites, key optional, shop reachable"));
     assert!(view.contains("E(5,9)  2 elites, key required, no shop"));
@@ -449,7 +460,7 @@ fn local_routes_show_complete_examples_and_the_later_key_commitment() {
     assert!(view.contains("R(4,9) -> S(3,10) 0 elites, no key, shop reachable | M(4,10) 1 elite, key required, no shop"));
     assert!(!view.contains("Outside"));
     // Once the rest is the anchor, it is no longer future preparation.
-    let after_rest = route_from(&map, &[], (4, 9)).unwrap();
+    let after_rest = route_from(&map, &[], (4, 9), sts_presentation::Locale::En).unwrap();
     assert_eq!(after_rest.matches("R(4,9)").count(), 1);
     assert!(!after_rest.contains("key optional"));
     let mut reordered = map.clone();
@@ -457,7 +468,10 @@ fn local_routes_show_complete_examples_and_the_later_key_commitment() {
     for node in &mut reordered.nodes {
         node.edges.reverse();
     }
-    assert_eq!(view, route_from(&reordered, &[], (5, 8)).unwrap());
+    assert_eq!(
+        view,
+        route_from(&reordered, &[], (5, 8), sts_presentation::Locale::En).unwrap()
+    );
 }
 
 #[test]
@@ -470,14 +484,14 @@ fn local_route_keeps_the_single_exit_corridor_and_excludes_the_anchor_elite() {
         node((0, 3), Elite, &[(0, 4)]),
         node((0, 4), Boss, &[]),
     ]);
-    let view = route_from(&map, &[], (0, 0)).unwrap();
+    let view = route_from(&map, &[], (0, 0), sts_presentation::Locale::En).unwrap();
     assert!(view.contains("M(0,1)  1 elite, no key, no shop"));
     assert!(view.contains("M R(0,2) E(0,3) B"));
     assert_eq!(view.matches("E(0,0)").count(), 1);
     assert!(!view.contains("Later choices"));
-    let end = route_from(&map, &[], (0, 4)).unwrap();
+    let end = route_from(&map, &[], (0, 4), sts_presentation::Locale::En).unwrap();
     assert!(end.contains("No next room."));
-    assert!(route_from(&map, &[], (9, 9)).is_err());
+    assert!(route_from(&map, &[], (9, 9), sts_presentation::Locale::En).is_err());
 }
 
 #[test]
@@ -489,14 +503,16 @@ fn local_route_unknown_and_disconnected_queries_do_not_invent_choices() {
         node((2, 0), Rest, &[(2, 1)]),
         node((2, 1), Elite, &[(2, 2)]), // Unpublished end.
     ]);
-    let view = route_from(&map, &[(0, 0)], (2, 0)).unwrap();
+    let view = route_from(&map, &[(0, 0)], (2, 0), sts_presentation::Locale::En).unwrap();
     assert!(view.contains("Outside the current ordinary reachable routes."));
     assert!(view.contains("at least 1 elite, later Unknown, key Unknown, shop Unknown"));
     assert!(view.contains("E(2,1) U(2,2)"));
     assert!(!view.contains("key optional"));
     assert!(!view.contains("no key"));
     assert!(!view.contains("no shop"));
-    assert!(route_from(&map, &[], (2, 1)).unwrap().contains("U(2,2)"));
+    assert!(route_from(&map, &[], (2, 1), sts_presentation::Locale::En)
+        .unwrap()
+        .contains("U(2,2)"));
 }
 
 #[test]
@@ -513,12 +529,12 @@ fn local_fork_retains_shop_access_after_the_first_elite() {
         node((2, 4), Monster, &[(1, 5)]),
         node((1, 5), Boss, &[]),
     ]);
-    let reading = PublicRouteReading::new(&map, (1, 1)).unwrap();
+    let reading = PublicRouteReading::new(&map, (1, 1), sts_presentation::Locale::En).unwrap();
     let mut memo = BTreeMap::new();
     let a = suffixes((0, 2), &reading.nodes, &mut memo);
     let b = suffixes((2, 2), &reading.nodes, &mut memo);
     assert_eq!(a.keys().collect::<Vec<_>>(), b.keys().collect::<Vec<_>>());
-    let view = route_from(&map, &[], (1, 0)).unwrap();
+    let view = route_from(&map, &[], (1, 0), sts_presentation::Locale::En).unwrap();
     assert!(view.contains(
         "M(1,1) -> M(0,2) 1 elite, no key, shop reachable | M(2,2) 1 elite, no key, no shop"
     ));
@@ -537,6 +553,6 @@ fn local_fork_explains_preparation_when_the_counts_are_equal() {
         node((1, 4), Elite, &[(1, 5)]),
         node((1, 5), Boss, &[]),
     ]);
-    let view = route_from(&map, &[], (1, 0)).unwrap();
+    let view = route_from(&map, &[], (1, 0), sts_presentation::Locale::En).unwrap();
     assert!(view.contains("M(1,1) -> M(0,2) 1 elite, no key, no shop, R before first elite | M(2,2) 1 elite, no key, no shop, no R/S before first elite"));
 }

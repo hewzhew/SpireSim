@@ -154,7 +154,8 @@ pub(crate) fn reading(
         }
     }
     let routes = if observation.run.pending_act_entry.is_none() {
-        crate::public_map_reading::preparation_routes(&observation.public_map)?.unwrap_or_default()
+        crate::public_map_reading::preparation_routes(&observation.public_map, locale)?
+            .unwrap_or_default()
     } else {
         String::new()
     };

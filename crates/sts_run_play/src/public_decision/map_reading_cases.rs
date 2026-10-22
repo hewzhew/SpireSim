@@ -149,6 +149,7 @@ fn public_route_reading_preserves_candidate_order_and_uses_one_topology_owner() 
                 match crate::public_map_reading::PublicRouteReading::new(
                     &observation.public_map,
                     (*x, *y),
+                    sts_presentation::Locale::En,
                 ) {
                     Ok(reading) => {
                         assert!(summaries[ordinal].contains(&reading.summary()));

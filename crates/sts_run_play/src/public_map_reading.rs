@@ -2,6 +2,7 @@
 //! connections only; they do not predict room outcomes or future flight.
 
 use std::collections::{BTreeMap, BTreeSet};
+use sts_presentation::Locale;
 
 use sts_oracle_learning::ai::planner_core::{
     public_map_preparation_paths, PlannerMapRoom, PlannerPublicMap, PlannerPublicMapNode,
@@ -10,13 +11,20 @@ use sts_oracle_learning::ai::planner_core::{
 
 type Point = (i32, i32);
 
-fn boss_heading(map: &PlannerPublicMap) -> String {
+pub(crate) fn text(locale: Locale, key: &str, parameters: &[(&str, &str)]) -> String {
+    locale
+        .text("map", key, parameters)
+        .expect("public map message")
+}
+
+fn boss_heading(map: &PlannerPublicMap, locale: Locale) -> String {
     map.boss.map_or_else(
-        || "Boss not revealed".to_owned(),
+        || text(locale, "bossHidden", &[]),
         |boss| {
-            format!(
-                "Boss: {}",
-                sts_oracle_learning::content::identity::gameplay_display_label_v1(boss)
+            text(
+                locale,
+                "boss",
+                &[("name", locale.entity("encounter", boss.stable_id()))],
             )
         },
     )
@@ -26,6 +34,7 @@ mod planning;
 pub(crate) use planning::{planning_roots, route_examples, route_from};
 
 pub(crate) struct PublicRouteReading<'a> {
+    locale: Locale,
     root: Point,
     nodes: BTreeMap<Point, &'a PlannerPublicMapNode>,
     reachable: BTreeSet<Point>,
@@ -37,7 +46,11 @@ pub(crate) struct PublicRouteReading<'a> {
 }
 
 impl<'a> PublicRouteReading<'a> {
-    pub(crate) fn new(map: &'a PlannerPublicMap, root: Point) -> Result<Self, String> {
+    pub(crate) fn new(
+        map: &'a PlannerPublicMap,
+        root: Point,
+        locale: Locale,
+    ) -> Result<Self, String> {
         let mut nodes = BTreeMap::new();
         for node in &map.nodes {
             if nodes.insert((node.x, node.y), node).is_some() {
@@ -127,6 +140,7 @@ impl<'a> PublicRouteReading<'a> {
             }
         }
         Ok(Self {
+            locale,
             root,
             nodes,
             reachable,
@@ -138,19 +152,23 @@ impl<'a> PublicRouteReading<'a> {
 
     fn label(&self, point: Point) -> String {
         match self.nodes.get(&point) {
-            None => format!("({},{}) Unknown [unpublished endpoint]", point.0, point.1),
+            None => text(
+                self.locale,
+                "nodeUnknown",
+                &[("x", &point.0.to_string()), ("y", &point.1.to_string())],
+            ),
             Some(node) => format!(
                 "({},{}) {}{}{}",
                 point.0,
                 point.1,
-                room_label(node.room),
+                room_label(node.room, self.locale),
                 if node.has_emerald_key {
-                    " +Emerald key"
+                    self.locale.entry("map", "keyNode").unwrap()
                 } else {
                     ""
                 },
                 if node.edges.is_empty() {
-                    " [recorded endpoint]"
+                    self.locale.entry("map", "endpoint").unwrap()
                 } else {
                     ""
                 },
@@ -160,7 +178,7 @@ impl<'a> PublicRouteReading<'a> {
 
     /// Render the shared public-map owner's connected preparation examples.
     fn preparation_windows(&self) -> String {
-        let mut lines = vec!["Connected paths to the first Elite, Boss or map end: one per endpoint and Rest/Shop combination. A ? room's type is revealed on entry.".to_owned()];
+        let mut lines = vec![text(self.locale, "windows", &[])];
         for path in &self.preparation_paths {
             let points = &path.nodes;
             let point = *points.last().unwrap();
@@ -183,28 +201,44 @@ impl<'a> PublicRouteReading<'a> {
                     .map(|point| format!("({},{})", point.0, point.1))
                     .collect();
                 if sites.is_empty() {
-                    "none".to_owned()
+                    text(self.locale, "none", &[])
                 } else {
                     sites.join(", ")
                 }
             };
-            lines.push(format!(
-                "  {}: {}; approach: {} Monster, {} ?; Rest {}; Shop {}; path: {}",
-                if first_elite {
-                    "First Elite"
-                } else {
-                    "Elite-free prefix to endpoint"
-                },
-                self.label(point),
-                count(PlannerMapRoom::Monster),
-                count(PlannerMapRoom::QuestionMark),
-                sites(PlannerMapRoom::Rest),
-                sites(PlannerMapRoom::Shop),
-                points
-                    .iter()
-                    .map(|point| self.label(*point))
-                    .collect::<Vec<_>>()
-                    .join(" -> "),
+            lines.push(text(
+                self.locale,
+                "window",
+                &[
+                    (
+                        "scope",
+                        &text(
+                            self.locale,
+                            if first_elite {
+                                "firstElite"
+                            } else {
+                                "eliteFree"
+                            },
+                            &[],
+                        ),
+                    ),
+                    ("node", &self.label(point)),
+                    ("monsters", &count(PlannerMapRoom::Monster).to_string()),
+                    (
+                        "questions",
+                        &count(PlannerMapRoom::QuestionMark).to_string(),
+                    ),
+                    ("rests", &sites(PlannerMapRoom::Rest)),
+                    ("shops", &sites(PlannerMapRoom::Shop)),
+                    (
+                        "path",
+                        &points
+                            .iter()
+                            .map(|point| self.label(*point))
+                            .collect::<Vec<_>>()
+                            .join(" -> "),
+                    ),
+                ],
             ));
         }
         lines.join("\n")
@@ -212,14 +246,25 @@ impl<'a> PublicRouteReading<'a> {
 
     pub(crate) fn summary(&self) -> String {
         let [elites, shop, keys, boss] = self.summary_parts();
-        format!(
-            "{elites}; {shop}; First landmarks: {}; {keys}; {boss}\n{}",
-            self.first_landmarks
-                .iter()
-                .map(|point| self.label(*point))
-                .collect::<Vec<_>>()
-                .join(" / "),
-            self.preparation_windows()
+        text(
+            self.locale,
+            "summary",
+            &[
+                ("elites", &elites),
+                ("shop", &shop),
+                ("keys", &keys),
+                ("boss", &boss),
+                (
+                    "landmarks",
+                    &self
+                        .first_landmarks
+                        .iter()
+                        .map(|point| self.label(*point))
+                        .collect::<Vec<_>>()
+                        .join(" / "),
+                ),
+                ("windows", &self.preparation_windows()),
+            ],
         )
     }
 
@@ -227,12 +272,27 @@ impl<'a> PublicRouteReading<'a> {
         let range = elite_range(self.root, &self.nodes, &mut BTreeMap::new());
         let elites = if range.complete {
             if range.min_elites == range.max_elites {
-                format!("Elites={}", range.min_elites)
+                text(
+                    self.locale,
+                    "elites",
+                    &[("count", &range.min_elites.to_string())],
+                )
             } else {
-                format!("Elites={}..{}", range.min_elites, range.max_elites)
+                text(
+                    self.locale,
+                    "elites",
+                    &[(
+                        "count",
+                        &format!("{}..{}", range.min_elites, range.max_elites),
+                    )],
+                )
             }
         } else {
-            format!("Elites>={} [later Unknown]", range.min_elites)
+            text(
+                self.locale,
+                "elitesPartial",
+                &[("count", &range.min_elites.to_string())],
+            )
         };
         let first_shop = self
             .reachable
@@ -245,9 +305,9 @@ impl<'a> PublicRouteReading<'a> {
             .map(|point| point.1)
             .min();
         let shop = match first_shop {
-            Some(row) => format!("map y{row} reachable"),
-            None if range.complete => "none".to_owned(),
-            None => "Unknown".to_owned(),
+            Some(row) => text(self.locale, "reachableRow", &[("row", &row.to_string())]),
+            None if range.complete => text(self.locale, "none", &[]),
+            None => text(self.locale, "unknown", &[]),
         };
         let bosses = self
             .reachable
@@ -261,33 +321,41 @@ impl<'a> PublicRouteReading<'a> {
             .collect::<Vec<_>>();
         let boss = if bosses.is_empty() {
             if range.complete {
-                "none on published routes".to_owned()
+                text(self.locale, "nonePublished", &[])
             } else {
-                "Unknown beyond published map".to_owned()
+                text(self.locale, "unpublished", &[])
             }
         } else {
-            format!("{} reachable", bosses.join(" / "))
+            text(self.locale, "reachable", &[("nodes", &bosses.join(" / "))])
         };
         let keys = match (range.complete, range.min_keys > 0, range.max_keys > 0) {
-            (true, _, false) => "none",
-            (true, true, _) => "on every route",
-            (true, false, true) => "on some routes",
-            (false, _, true) => "reachable; later map unpublished",
-            (false, _, false) => "Unknown beyond published map",
+            (true, _, false) => "keyNone",
+            (true, true, _) => "keyEvery",
+            (true, false, true) => "keySome",
+            (false, _, true) => "keyPartial",
+            (false, _, false) => "unpublished",
         };
         [
             elites,
-            format!("shop {shop}"),
-            format!("Emerald elite: {keys}"),
-            format!("Boss {boss}"),
+            text(self.locale, "shopSummary", &[("summary", &shop)]),
+            text(
+                self.locale,
+                "keySummary",
+                &[("summary", &text(self.locale, keys, &[]))],
+            ),
+            text(self.locale, "bossSummary", &[("summary", &boss)]),
         ]
     }
 
     pub(crate) fn detail(&self) -> String {
         let mut lines = vec![
             self.summary(),
-            "Landmarks: rest, elite, shop, treasure, boss, key or recorded endpoint. ? outcomes remain unknown.".to_owned(),
-            format!("All reachable ordinary connections ({} nodes); segments split at forks and merges. Matching coordinates connect. Flight choices, rest eligibility, combat losses and victory beyond unpublished endpoints are not inferred.", self.reachable.len()),
+            text(self.locale, "landmarks", &[]),
+            text(
+                self.locale,
+                "connections",
+                &[("count", &self.reachable.len().to_string())],
+            ),
         ];
         lines.extend(self.segments.iter().map(|segment| {
             segment
@@ -304,26 +372,44 @@ impl<'a> PublicRouteReading<'a> {
         let mut steps = Vec::new();
         let stop = loop {
             let Some(node) = self.nodes.get(&point) else {
-                break format!("Unknown@({},{})", point.0, point.1);
+                break text(
+                    self.locale,
+                    "unknownAt",
+                    &[("x", &point.0.to_string()), ("y", &point.1.to_string())],
+                );
             };
             match destinations(node).as_slice() {
-                [] => break format!("recorded endpoint ({},{})", point.0, point.1),
+                [] => {
+                    break text(
+                        self.locale,
+                        "endpointAt",
+                        &[("x", &point.0.to_string()), ("y", &point.1.to_string())],
+                    )
+                }
                 [next] => {
                     point = *next;
                     steps.push(self.label(point));
                 }
                 edges => {
-                    break format!(
-                        "fork ({},{}) with {} connections",
-                        point.0,
-                        point.1,
-                        edges.len()
+                    break text(
+                        self.locale,
+                        "forkAt",
+                        &[
+                            ("x", &point.0.to_string()),
+                            ("y", &point.1.to_string()),
+                            ("count", &edges.len().to_string()),
+                        ],
                     )
                 }
             }
         };
-        (!steps.is_empty())
-            .then(|| format!("Route via ordinary connections: {}\n  Until {stop}; flight choices are separate. This is map topology, not a committed plan.", steps.join(" -> ")))
+        (!steps.is_empty()).then(|| {
+            text(
+                self.locale,
+                "singlePath",
+                &[("path", &steps.join(" -> ")), ("stop", &stop)],
+            )
+        })
     }
 }
 
@@ -334,7 +420,10 @@ fn destinations(node: &PlannerPublicMapNode) -> Vec<Point> {
         .collect()
 }
 
-pub(crate) fn preparation_routes(map: &PlannerPublicMap) -> Result<Option<String>, String> {
+pub(crate) fn preparation_routes(
+    map: &PlannerPublicMap,
+    locale: Locale,
+) -> Result<Option<String>, String> {
     let current = (map.current_x, map.current_y);
     let Some(node) = map.nodes.iter().find(|node| (node.x, node.y) == current) else {
         return Ok(None);
@@ -342,35 +431,44 @@ pub(crate) fn preparation_routes(map: &PlannerPublicMap) -> Result<Option<String
     if node.edges.is_empty() {
         return Ok(None);
     }
-    let mut lines = vec![format!(
-        "Published routes after current room ({},{}) {} (ordinary connections):",
-        node.x,
-        node.y,
-        room_label(node.room)
+    let mut lines = vec![text(
+        locale,
+        "afterRoom",
+        &[
+            ("x", &node.x.to_string()),
+            ("y", &node.y.to_string()),
+            ("room", room_label(node.room, locale)),
+        ],
     )];
-    lines.push("After leaving this room, choose one next branch. Each summary below describes that alternative's ordinary routes.".into());
+    lines.push(text(locale, "branchChoice", &[]));
     for next in destinations(node) {
-        let route = PublicRouteReading::new(map, next)?;
-        lines.push(format!(
-            "  via {}: {}",
-            route.label(next),
-            route.summary().replace('\n', "\n    ")
+        let route = PublicRouteReading::new(map, next, locale)?;
+        lines.push(text(
+            locale,
+            "via",
+            &[
+                ("node", &route.label(next)),
+                ("summary", &route.summary().replace('\n', "\n    ")),
+            ],
         ));
     }
     Ok(Some(lines.join("\n")))
 }
 
-fn room_label(room: PlannerMapRoom) -> &'static str {
-    match room {
-        PlannerMapRoom::Monster => "Monster",
-        PlannerMapRoom::QuestionMark => "?",
-        PlannerMapRoom::Elite => "Elite",
-        PlannerMapRoom::Rest => "Rest",
-        PlannerMapRoom::Shop => "Shop",
-        PlannerMapRoom::Treasure => "Treasure",
-        PlannerMapRoom::Boss => "Boss",
-        PlannerMapRoom::Victory => "Victory",
-    }
+fn room_label(room: PlannerMapRoom, locale: Locale) -> &'static str {
+    let key = match room {
+        PlannerMapRoom::Monster => "monster",
+        PlannerMapRoom::QuestionMark => "question",
+        PlannerMapRoom::Elite => "elite",
+        PlannerMapRoom::Rest => "rest",
+        PlannerMapRoom::Shop => "shop",
+        PlannerMapRoom::Treasure => "treasure",
+        PlannerMapRoom::Boss => "boss",
+        PlannerMapRoom::Victory => "victory",
+    };
+    locale
+        .entry("map", &format!("room.{key}"))
+        .expect("map room label")
 }
 
 fn room_letter(node: &PlannerPublicMapNode) -> char {
@@ -389,31 +487,66 @@ fn room_letter(node: &PlannerPublicMapNode) -> char {
     }
 }
 
-pub(crate) fn map_grid(map: &PlannerPublicMap, legal_routes: &[Point]) -> String {
+pub(crate) fn map_grid(
+    map: &PlannerPublicMap,
+    legal_routes: &[Point],
+    locale: Locale,
+    flipped: bool,
+) -> String {
     let cells: BTreeMap<_, _> = map
         .nodes
         .iter()
         .map(|node| ((node.x, node.y), node))
         .collect();
     let mut lines = vec![
-        format!(
-            "Map at ({},{})  Boss {}",
-            map.current_x,
-            map.current_y,
-            map.boss.map_or(
-                "Unknown",
-                sts_oracle_learning::content::identity::gameplay_display_label_v1
-            )
+        text(
+            locale,
+            "gridHeading",
+            &[
+                ("x", &map.current_x.to_string()),
+                ("y", &map.current_y.to_string()),
+                (
+                    "boss",
+                    &map.boss.map_or_else(
+                        || text(locale, "unknown", &[]),
+                        |boss| locale.entity("encounter", boss.stable_id()).to_string(),
+                    ),
+                ),
+            ],
         ),
-        "M fight  E elite  K key elite  R rest  S shop  T chest  ? unknown room  B boss  V victory"
-            .to_owned(),
-        "* current  > legal next room  ->(x,y)/(x,y) lists separate destinations".to_owned(),
+        text(locale, "gridLegend", &[]),
+        text(locale, "gridSymbols", &[]),
     ];
     let mut rows: Vec<_> = map.nodes.iter().map(|node| node.y).collect();
     rows.sort_unstable();
     rows.dedup();
+    if !flipped {
+        rows.reverse();
+    }
+    if flipped {
+        lines.push(text(locale, "gridDownward", &[]));
+    }
     for y in rows {
         let mut line = format!("y{y:02}");
+        let row = map
+            .nodes
+            .iter()
+            .filter(|node| node.y == y)
+            .collect::<Vec<_>>();
+        let has_boss = map
+            .nodes
+            .iter()
+            .any(|node| node.room == PlannerMapRoom::Boss);
+        if has_boss && row.iter().all(|node| node.room == PlannerMapRoom::Treasure) {
+            line.push_str(&text(locale, "treasureRow", &[]));
+        } else if row.iter().all(|node| node.room == PlannerMapRoom::Rest)
+            && map
+                .nodes
+                .iter()
+                .any(|node| node.room == PlannerMapRoom::Boss && node.y == y + 1)
+        {
+            line.push_str(&text(locale, "bossRestRow", &[]));
+        }
         for (&(x, _), node) in cells.iter().filter(|(point, _)| point.1 == y) {
             let point = (x, y);
             let prefix = if point == (map.current_x, map.current_y) {
@@ -428,7 +561,7 @@ pub(crate) fn map_grid(map: &PlannerPublicMap, legal_routes: &[Point]) -> String
             let mut next = destinations(node);
             next.sort_by_key(|point| (point.1, point.0));
             let exits = if next.is_empty() {
-                "[end]".to_owned()
+                text(locale, "gridEnd", &[])
             } else {
                 next.iter()
                     .map(|p| format!("({},{})", p.0, p.1))
@@ -439,10 +572,7 @@ pub(crate) fn map_grid(map: &PlannerPublicMap, legal_routes: &[Point]) -> String
         }
         lines.push(line.trim_end().to_owned());
     }
-    lines.push(
-        "map shows current-map routes, map elites compares counts, map route X Y inspects a fork"
-            .to_owned(),
-    );
+    lines.push(text(locale, "gridHelp", &[]));
     lines.join("\n") + "\n"
 }
 
@@ -577,13 +707,17 @@ fn format_path(points: &[Point], nodes: &BTreeMap<Point, &PlannerPublicMapNode>)
         .join(" → ")
 }
 
-fn first_elite_context(points: &[Point], nodes: &BTreeMap<Point, &PlannerPublicMapNode>) -> String {
+fn first_elite_context(
+    points: &[Point],
+    nodes: &BTreeMap<Point, &PlannerPublicMapNode>,
+    locale: Locale,
+) -> String {
     let Some(index) = points.iter().position(|point| {
         nodes
             .get(point)
             .is_some_and(|node| node.room == PlannerMapRoom::Elite)
     }) else {
-        return "first elite: none on this path".to_owned();
+        return text(locale, "firstEliteNone", &[]);
     };
     let before = &points[..index];
     let monsters = before
@@ -610,7 +744,10 @@ fn first_elite_context(points: &[Point], nodes: &BTreeMap<Point, &PlannerPublicM
                 .get(point)
                 .is_some_and(|node| node.room == PlannerMapRoom::Rest)
         })
-        .map_or_else(|| "none".to_owned(), |point| format!("map y{}", point.1));
+        .map_or_else(
+            || text(locale, "none", &[]),
+            |point| text(locale, "mapRow", &[("row", &point.1.to_string())]),
+        );
     let rest_after = points[index + 1..]
         .iter()
         .find(|point| {
@@ -618,10 +755,20 @@ fn first_elite_context(points: &[Point], nodes: &BTreeMap<Point, &PlannerPublicM
                 .get(point)
                 .is_some_and(|node| node.room == PlannerMapRoom::Rest)
         })
-        .map_or_else(|| "none".to_owned(), |point| format!("map y{}", point.1));
-    format!(
-        "first elite map y{}; before M{monsters} ?{questions}, last rest {rest_before}; next rest {rest_after}",
-        points[index].1
+        .map_or_else(
+            || text(locale, "none", &[]),
+            |point| text(locale, "mapRow", &[("row", &point.1.to_string())]),
+        );
+    text(
+        locale,
+        "firstEliteContext",
+        &[
+            ("row", &points[index].1.to_string()),
+            ("monsters", &monsters.to_string()),
+            ("questions", &questions.to_string()),
+            ("before", &rest_before),
+            ("after", &rest_after),
+        ],
     )
 }
 
@@ -631,6 +778,7 @@ fn recovery_after_elite(
     elite: Point,
     forced: &[Point],
     nodes: &BTreeMap<Point, &PlannerPublicMapNode>,
+    locale: Locale,
 ) -> String {
     let is_frontier = |point: &Point| {
         nodes.get(point).is_none_or(|node| {
@@ -688,9 +836,10 @@ fn recovery_after_elite(
     let alternatives = frontier
         .iter()
         .map(|point| {
-            let room = nodes
-                .get(point)
-                .map_or("Unknown endpoint", |node| room_label(node.room));
+            let room = nodes.get(point).map_or_else(
+                || text(locale, "unknownEndpoint", &[]),
+                |node| room_label(node.room, locale).to_string(),
+            );
             let mut path = vec![*point];
             let mut cursor = *point;
             while cursor != elite {
@@ -698,25 +847,35 @@ fn recovery_after_elite(
                 path.push(cursor);
             }
             path.reverse();
-            format!(
-                "{room} map y{} ({},{}) via {}",
-                point.1,
-                point.0,
-                point.1,
-                format_path(&path, nodes)
+            text(
+                locale,
+                "recoveryNode",
+                &[
+                    ("room", &room),
+                    ("row", &point.1.to_string()),
+                    ("x", &point.0.to_string()),
+                    ("y", &point.1.to_string()),
+                    ("path", &format_path(&path, nodes)),
+                ],
             )
         })
         .collect::<Vec<_>>()
         .join(" / ");
-    format!(
-        "after elite ({},{}), first rest/elite/boss/end across all continuations: {}",
-        elite.0,
-        elite.1,
-        if alternatives.is_empty() {
-            "recorded endpoint"
-        } else {
-            &alternatives
-        }
+    text(
+        locale,
+        "recovery",
+        &[
+            ("x", &elite.0.to_string()),
+            ("y", &elite.1.to_string()),
+            (
+                "alternatives",
+                &if alternatives.is_empty() {
+                    text(locale, "recordedEndpoint", &[])
+                } else {
+                    alternatives
+                },
+            ),
+        ],
     )
 }
 
@@ -727,6 +886,7 @@ pub(crate) fn elite_routes(
     map: &PlannerPublicMap,
     roots: &[Point],
     corridor: &[Point],
+    locale: Locale,
 ) -> Result<String, String> {
     let nodes: BTreeMap<_, _> = map
         .nodes
@@ -735,7 +895,7 @@ pub(crate) fn elite_routes(
         .collect();
     let mut readings = BTreeMap::new();
     for root in roots {
-        readings.insert(*root, PublicRouteReading::new(map, *root)?);
+        readings.insert(*root, PublicRouteReading::new(map, *root, locale)?);
     }
     let mut path_memo = BTreeMap::new();
     let mut minimum_path_memo = BTreeMap::new();
@@ -755,7 +915,11 @@ pub(crate) fn elite_routes(
             .then_with(|| b.key_elites.cmp(&a.key_elites))
             .then_with(|| a.points.cmp(&b.points))
     });
-    let mut output = format!("{}\nMap routes (E=elite, K=burning elite; counts include both). Map y starts at 0 in this Act; F is the run floor.\nCount ranges cover every continuation after the shared corridor. Unavoidable means every continuation visits a burning elite.\nRoute timing includes the query anchor and shared corridor.\n", boss_heading(map));
+    let mut output = format!(
+        "{}\n{}\n",
+        boss_heading(map, locale),
+        text(locale, "eliteHeader", &[])
+    );
     for (range, path) in &branches {
         let counts = if range.complete {
             let elites = if range.min_elites == range.max_elites {
@@ -769,48 +933,79 @@ pub(crate) fn elite_routes(
                 format!("{}..{}", range.min_keys, range.max_keys)
             };
             let key_status = if range.min_keys > 0 {
-                "; burning elite unavoidable on this branch"
+                text(locale, "burningRequired", &[])
             } else if range.max_keys > 0 {
-                "; burning elite avoidable on this branch"
+                text(locale, "burningOptional", &[])
             } else {
-                ""
+                String::new()
             };
-            format!("Elites={elites}; Burning elites={keys}{key_status}")
+            text(
+                locale,
+                "eliteCounts",
+                &[
+                    ("elites", &elites),
+                    ("keys", &keys),
+                    ("status", &key_status),
+                ],
+            )
         } else {
-            format!(
-                "Elites>={}; Burning elites>={} [Unknown beyond published map]",
-                range.min_elites, range.min_keys
+            text(
+                locale,
+                "eliteCountsPartial",
+                &[
+                    ("elites", &range.min_elites.to_string()),
+                    ("keys", &range.min_keys.to_string()),
+                ],
             )
         };
         let mut full_path = corridor.to_vec();
         full_path.extend_from_slice(&path.points);
         output.push_str(&format!(
-            "  {}: {counts}\n    Most-elite route: {}; via {}{}\n",
+            "  {}: {counts}\n{}\n",
             format_path(&path.points[..1], &nodes),
-            first_elite_context(&full_path, &nodes),
-            format_path(&path.points, &nodes),
-            if path.unknown_end {
-                " [unpublished end]"
-            } else {
-                ""
-            }
+            text(
+                locale,
+                "mostElites",
+                &[
+                    ("context", &first_elite_context(&full_path, &nodes, locale)),
+                    ("path", &format_path(&path.points, &nodes)),
+                    (
+                        "end",
+                        &if path.unknown_end {
+                            text(locale, "unpublishedEnd", &[])
+                        } else {
+                            String::new()
+                        }
+                    )
+                ]
+            )
         ));
         if range.min_elites != range.max_elites {
             let minimum = extreme_elite_path(path.points[0], &nodes, &mut minimum_path_memo, false);
             let mut minimum_full = corridor.to_vec();
             minimum_full.extend_from_slice(&minimum.points);
-            output.push_str(&format!(
-                "    Fewest-elite route: Elites={}; Burning elites={}; {}; via {}{}\n",
-                minimum.elites,
-                minimum.key_elites,
-                first_elite_context(&minimum_full, &nodes),
-                format_path(&minimum.points, &nodes),
-                if minimum.unknown_end {
-                    " [unpublished end]"
-                } else {
-                    ""
-                },
+            output.push_str(&text(
+                locale,
+                "fewestElites",
+                &[
+                    ("elites", &minimum.elites.to_string()),
+                    ("keys", &minimum.key_elites.to_string()),
+                    (
+                        "context",
+                        &first_elite_context(&minimum_full, &nodes, locale),
+                    ),
+                    ("path", &format_path(&minimum.points, &nodes)),
+                    (
+                        "end",
+                        &if minimum.unknown_end {
+                            text(locale, "unpublishedEnd", &[])
+                        } else {
+                            String::new()
+                        },
+                    ),
+                ],
             ));
+            output.push('\n');
         }
         if let Some(index) = full_path.iter().position(|point| {
             nodes
@@ -827,6 +1022,7 @@ pub(crate) fn elite_routes(
                         &[]
                     },
                     &nodes,
+                    locale,
                 )
             ));
         }
@@ -838,7 +1034,7 @@ pub(crate) fn elite_routes(
         ));
     }
     if branches.is_empty() {
-        output.push_str("  No published next node.\n");
+        output.push_str(&text(locale, "noNextNode", &[]));
     }
     Ok(output)
 }
@@ -855,7 +1051,7 @@ pub(crate) fn next_nodes(
     if from.is_none() && !map.nodes.iter().any(|node| (node.x, node.y) == current) {
         return Ok((current, entrance_nodes(map), vec![current]));
     }
-    PublicRouteReading::new(map, current)?;
+    PublicRouteReading::new(map, current, Locale::En)?;
     let mut cursor = current;
     let mut corridor = vec![current];
     loop {
@@ -919,7 +1115,7 @@ pub(crate) fn reachable_from_current(
         roots = entrance_nodes(map);
     }
     for root in roots {
-        if PublicRouteReading::new(map, root)?
+        if PublicRouteReading::new(map, root, Locale::En)?
             .reachable
             .contains(&target)
         {

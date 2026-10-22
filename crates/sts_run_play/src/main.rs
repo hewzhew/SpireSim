@@ -289,7 +289,11 @@ enum HandoffCommandV2 {
 #[derive(Subcommand)]
 enum MapQueryV1 {
     /// Expand all published map nodes (grouped connected routes are the default).
-    Full,
+    Full {
+        /// Put small map y first, so forward travel reads downward.
+        #[arg(long)]
+        flipped: bool,
+    },
     /// Compare the maximum number of elites on published ordinary paths.
     Elites,
     /// Inspect the next ordinary branches from one published map coordinate.
@@ -502,6 +506,8 @@ enum Command {
     Map {
         #[arg(long, global = true)]
         session: Option<PathBuf>,
+        #[arg(long, global = true, default_value = "en")]
+        locale: sts_presentation::Locale,
         #[command(subcommand)]
         query: Option<MapQueryV1>,
     },
@@ -2159,7 +2165,11 @@ fn run(cli: Cli) -> Result<(), String> {
                 }
             }
         }
-        Command::Map { session, query } => {
+        Command::Map {
+            session,
+            query,
+            locale,
+        } => {
             let session =
                 session.ok_or("map requires --session (or a focused session via p.ps1)")?;
             let paths = RunPlayPathsV1::new(session);
@@ -2199,10 +2209,14 @@ fn run(cli: Cli) -> Result<(), String> {
                     public_map_reading::route_examples(
                         map,
                         &public_map_reading::planning_roots(map, &legal_routes),
+                        locale
                     )?
                 ),
-                Some(MapQueryV1::Full) => {
-                    print!("{}", public_map_reading::map_grid(map, &legal_routes))
+                Some(MapQueryV1::Full { flipped }) => {
+                    print!(
+                        "{}",
+                        public_map_reading::map_grid(map, &legal_routes, locale, flipped)
+                    )
                 }
                 Some(MapQueryV1::Elites) => {
                     let (from, next, corridor) =
@@ -2210,26 +2224,42 @@ fn run(cli: Cli) -> Result<(), String> {
                     if legal_routes.is_empty()
                         && !map.nodes.iter().any(|node| (node.x, node.y) == from)
                     {
-                        println!("Published entrances before a route decision:");
+                        println!("{}", public_map_reading::text(locale, "entrances", &[]));
                     } else if from == (map.current_x, map.current_y) {
-                        println!("From ({},{}):", from.0, from.1);
+                        println!(
+                            "{}",
+                            public_map_reading::text(
+                                locale,
+                                "fromPoint",
+                                &[("x", &from.0.to_string()), ("y", &from.1.to_string())]
+                            )
+                        );
                     } else {
                         println!(
-                            "Next fork ({},{}); shared corridor excluded from counts: {}",
-                            from.0,
-                            from.1,
-                            public_map_reading::format_corridor(map, &corridor)
+                            "{}",
+                            public_map_reading::text(
+                                locale,
+                                "nextFork",
+                                &[
+                                    ("x", &from.0.to_string()),
+                                    ("y", &from.1.to_string()),
+                                    (
+                                        "corridor",
+                                        &public_map_reading::format_corridor(map, &corridor)
+                                    )
+                                ]
+                            )
                         );
                     }
                     print!(
                         "{}",
-                        public_map_reading::elite_routes(map, &next, &corridor)?
+                        public_map_reading::elite_routes(map, &next, &corridor, locale)?
                     );
                 }
                 Some(MapQueryV1::Route { x, y }) => {
                     print!(
                         "{}",
-                        public_map_reading::route_from(map, &legal_routes, (x, y))?
+                        public_map_reading::route_from(map, &legal_routes, (x, y), locale)?
                     );
                 }
             }
@@ -5279,8 +5309,27 @@ mod tests {
         ] {
             let cli = Cli::try_parse_from(arguments).unwrap();
             assert!(matches!(cli.command, Command::Map { query, .. }
-                if matches!(query, Some(MapQueryV1::Full)) == full));
+                if matches!(query, Some(MapQueryV1::Full { .. })) == full));
         }
+        let localized = Cli::try_parse_from([
+            "run_play",
+            "map",
+            "--session",
+            "scratch",
+            "--locale",
+            "zh-CN",
+            "full",
+            "--flipped",
+        ])
+        .unwrap();
+        assert!(matches!(
+            localized.command,
+            Command::Map {
+                locale: sts_presentation::Locale::ZhCn,
+                query: Some(MapQueryV1::Full { flipped: true }),
+                ..
+            }
+        ));
     }
 
     #[test]

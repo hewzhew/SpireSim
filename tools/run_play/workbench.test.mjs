@@ -344,7 +344,7 @@ test('inventory and route analysis expose existing Rust owners without changing 
   }
   assert.deepEqual(calls, [
     ['inventory', '--session', '--locale', 'en'], ['inventory', '--session', '--locale', 'en', '--effects'],
-    ['map', '--session'], ['map', '--session', 'elites'], ['map', '--session', 'route', '2', '4'],
+    ['map', '--session', '--locale', 'en'], ['map', '--session', '--locale', 'en', 'elites'], ['map', '--session', '--locale', 'en', 'route', '2', '4'],
   ]);
   for (const command of ['inventory unknown', 'map route', 'map route 2 4 extra', 'map elites extra', 'map unknown']) {
     await assert.rejects(wb.execute(command), /inventory \[effects\]|map \[/);

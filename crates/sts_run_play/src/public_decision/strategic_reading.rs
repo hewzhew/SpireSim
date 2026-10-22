@@ -65,7 +65,7 @@ pub(super) fn project(decision: &TaskPublicDecisionV1) -> Result<Value, String> 
             let mut detail = rendered.clone();
             let brief = match action {
                 TaskStrategicActionV1::ChooseRouteNode { x, y, .. } => {
-                    match crate::public_map_reading::PublicRouteReading::new(&observation.public_map, (*x, *y)) {
+                    match crate::public_map_reading::PublicRouteReading::new(&observation.public_map, (*x, *y), sts_presentation::Locale::En) {
                         Ok(route) => {
                             detail.push('\n');
                             detail.push_str(&route.detail());

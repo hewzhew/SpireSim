@@ -1522,7 +1522,11 @@ fn render_shop_purchase_block_reason_v1(reason: &PlannerShopPurchaseBlockReasonV
 }
 
 pub(crate) fn render_single_route_v1(map: &PlannerPublicMap) -> Option<String> {
-    match crate::public_map_reading::PublicRouteReading::new(map, (map.current_x, map.current_y)) {
+    match crate::public_map_reading::PublicRouteReading::new(
+        map,
+        (map.current_x, map.current_y),
+        sts_presentation::Locale::En,
+    ) {
         Ok(route) => route.single_path(),
         Err(error) => Some(format!("route topology Unknown: {error}")),
     }
@@ -1543,7 +1547,11 @@ pub(crate) fn render_route_options_v1<'a>(
             else {
                 return None;
             };
-            let summary = match crate::public_map_reading::PublicRouteReading::new(map, (*x, *y)) {
+            let summary = match crate::public_map_reading::PublicRouteReading::new(
+                map,
+                (*x, *y),
+                sts_presentation::Locale::En,
+            ) {
                 Ok(route) => route.summary(),
                 Err(error) => format!("topology Unknown: {error}"),
             };

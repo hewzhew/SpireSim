@@ -4,15 +4,6 @@
 // ---------------------------------------------------------------------------
 // Map graph helpers use the typed public observation, which is available
 // while choosing at a campfire or shop as well as on the map screen.
-const MAP_TYPE_LETTER = new Map([
-  ['Monster', 'M'], ['Elite', 'E'], ['Elite+key', 'K'], ['Rest', 'R'],
-  ['Shop', 'S'], ['Treasure', 'T'], ['QuestionMark', '?'], ['Boss', 'B'],
-]);
-export const MAP_LETTER_ORDER = ['M', 'E', 'K', 'R', 'S', 'T', '?', 'B'];
-export const MAP_LETTER_EN = new Map([
-  ['M', 'fight'], ['E', 'elite'], ['K', 'key-elite'], ['R', 'rest'],
-  ['S', 'shop'], ['T', 'chest'], ['?', 'unknown'], ['B', 'boss'],
-]);
 
 export function mapGraphFromObservation(observation) {
   const position = observation?.position;
@@ -39,45 +30,6 @@ export function mapGraphFromObservation(observation) {
     });
   }
   return { nodes, current: map.current.join(','), boss: map.boss };
-}
-
-// Each cell carries its own edges so connections stay visible without a
-// separate verbose listing: R(1,6)->(1,7) means that rest leads to (1,7).
-//
-// Direction: the game's own view puts large y on top (you walk upward);
-// flip puts small y on top so forward travel reads top-to-bottom — the
-// friendlier orientation for planning forward, and for the backward-from-
-// boss habit strong players use. Rows that are structurally fixed by the
-// map rules (all-rest boss approach, mid-act chest band) get a tag so the
-// planner does not have to remember them.
-export function mapRowTag(nodes, y) {
-  const cells = [...nodes.entries()].filter(([key]) => key.split(',')[1] === String(y));
-  if (cells.length === 0) return '';
-  const types = new Set(cells.map(([, node]) => node.type));
-  const bossRow = [...nodes.values()].some(node => node.type === 'Boss');
-  const bossY = [...nodes.entries()].find(([, node]) => node.type === 'Boss')?.[0].split(',')[1];
-  if (types.size === 1 && types.has('Rest') && bossRow && String(y + 1) === bossY) return ' pre-boss rest row';
-  if (types.size === 1 && types.has('Treasure') && bossRow) return ' treasure row';
-  return '';
-}
-
-export function renderMapGrid(nodes, current, { flipped = false } = {}) {
-  const rows = [...new Set([...nodes.keys()].map(k => Number.parseInt(k.split(',')[1], 10)))]
-    .sort((a, b) => (flipped ? a - b : b - a));
-  const lines = [];
-  for (const y of rows) {
-    const cells = [...nodes.entries()]
-      .filter(([key]) => key.split(',')[1] === String(y))
-      .sort((a, b) => Number.parseInt(a[0].split(',')[0], 10) - Number.parseInt(b[0].split(',')[0], 10))
-      .map(([key, node]) => {
-        const letter = MAP_TYPE_LETTER.get(node.type) ?? node.type[0];
-        const edges = node.edges.map(e => `(${e})`).join('/');
-        const cell = `${letter}(${key})->${edges || '[end]'}`;
-        return key === current ? `*${cell}` : cell;
-      });
-    lines.push(`y${String(y).padStart(2, '0')}${mapRowTag(nodes, y)} ${cells.join(' ')}`);
-  }
-  return lines.join('\n');
 }
 
 export function writeText(text) { return process.stdout.write(text); }
