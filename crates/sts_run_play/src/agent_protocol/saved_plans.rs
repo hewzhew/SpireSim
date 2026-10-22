@@ -112,6 +112,7 @@ impl SavedPlans {
         &self,
         controller: &RunPlayControllerV1,
         diagnostics: bool,
+        locale: Locale,
     ) -> Result<String, String> {
         let decision = controller
             .head()
@@ -140,6 +141,7 @@ impl SavedPlans {
             .satisfaction,
             self.max_generation_work,
             diagnostics,
+            locale,
         ))
     }
 

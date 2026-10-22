@@ -5172,13 +5172,23 @@ fn handle_valid_request_v1(
             {
                 match SavedPlans::current_if_present(controller) {
                     Ok(Some(saved)) if !saved.artifact.candidates.is_empty() => {
-                        reading.view.push_str(
-                            "\nSaved combat wins (already replayed; plans/review/commit):\n",
-                        );
-                        reading.view.push_str(&saved.view(controller, false)?);
+                        reading.view.push_str(&format!(
+                            "\n{}\n",
+                            crate::combat_reading::research_message(locale, "savedHeading", &[])
+                        ));
+                        reading
+                            .view
+                            .push_str(&saved.view(controller, false, locale)?);
                     }
                     Err(error) => {
-                        reading.view.push_str(&format!("\nSaved plan cache unavailable: {error}. Run research explicitly to replace it.\n"));
+                        reading.view.push_str(&format!(
+                            "\n{}\n",
+                            crate::combat_reading::research_message(
+                                locale,
+                                "cacheUnavailable",
+                                &[("error", &error)]
+                            )
+                        ));
                     }
                     _ => {}
                 }
@@ -5532,9 +5542,15 @@ fn handle_valid_request_v1(
                             requested_satisfaction,
                             work_limit,
                             false,
+                            locale,
                         );
                         if reused_cached_frontier {
-                            view.push_str("Same position and budget: returned the saved result; no additional search work.\n");
+                            view.push_str(&crate::combat_reading::research_message(
+                                locale,
+                                "cached",
+                                &[],
+                            ));
+                            view.push('\n');
                         }
                         view
                     },
@@ -5565,7 +5581,7 @@ fn handle_valid_request_v1(
                 AgentShellResultV1::CombatPlans {
                     report_id: report_id.clone(),
                     effort: saved.artifact.effort,
-                    view: saved.view(controller, *diagnostics)?,
+                    view: saved.view(controller, *diagnostics, locale)?,
                     candidates: project_live_combat_research_candidates_v1(
                         &saved.artifact.candidates,
                         &report_id,

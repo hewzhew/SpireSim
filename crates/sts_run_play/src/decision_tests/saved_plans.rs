@@ -4,7 +4,11 @@ use serde_json::{json, Value};
 use sts_presentation::Locale;
 
 // Each exchange starts a new transport/cache, as separate ./p invocations do.
-fn exchange(game: &mut RunPlayControllerV1, mut request: Value) -> Value {
+fn exchange(game: &mut RunPlayControllerV1, request: Value) -> Value {
+    exchange_locale(game, request, Locale::En)
+}
+
+fn exchange_locale(game: &mut RunPlayControllerV1, mut request: Value, locale: Locale) -> Value {
     request["schema"] = "sts-run-play-agent-request-v1".into();
     request["request_id"] = "saved-plans-test".into();
     let mut output = Vec::new();
@@ -13,7 +17,7 @@ fn exchange(game: &mut RunPlayControllerV1, mut request: Value) -> Value {
         AgentCapabilitiesV1::new(AgentPermissionEnvelopeV1::a20_first_unrestricted_v1(None)),
         std::io::Cursor::new(format!("{request}\n")),
         &mut output,
-        Locale::En,
+        locale,
     )
     .unwrap();
     serde_json::from_slice(&output).unwrap()
@@ -129,6 +133,26 @@ fn ordinary_read_exposes_current_saved_wins_without_search_or_publication() {
         .unwrap();
     assert!(view.contains(&format!("./p commit {selector}")));
     assert!(selector.starts_with("c0@") && selector.len() == 15);
+    assert_eq!(*game.head(), before);
+    assert_eq!(fs::read(&path).unwrap(), bytes);
+    let localized_plans =
+        exchange_locale(&mut game, json!({"command":"combat_plans"}), Locale::ZhCn);
+    assert_eq!(localized_plans["status"], "ok");
+    assert_eq!(
+        localized_plans["result"]["report_id"],
+        plans["result"]["report_id"]
+    );
+    assert_eq!(
+        localized_plans["result"]["candidates"],
+        plans["result"]["candidates"]
+    );
+    let localized_reading = exchange_locale(&mut game, json!({"command":"decision"}), Locale::ZhCn);
+    let localized_view = localized_reading["result"]["reading"]["view"]
+        .as_str()
+        .unwrap();
+    assert!(localized_view.contains("已保存的战斗胜线（已回放验证；plans/review/commit）"));
+    assert!(localized_view.contains(localized_plans["result"]["view"].as_str().unwrap()));
+    assert!(localized_view.contains(&format!("./p commit {selector}")));
     assert_eq!(*game.head(), before);
     assert_eq!(fs::read(&path).unwrap(), bytes);
     let mut public_permission = AgentPermissionEnvelopeV1::a20_first_unrestricted_v1(None);
