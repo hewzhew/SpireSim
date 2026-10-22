@@ -225,7 +225,7 @@ pub(crate) fn write_card_offer(out: &mut String, card: cards::CardId, upgrades: 
     .unwrap();
 }
 
-pub(crate) fn write_card_rule(out: &mut String, card: cards::CardId, upgrades: u8) {
+pub(crate) fn write_printed_card_rule(out: &mut String, card: cards::CardId, upgrades: u8) {
     writeln!(
         out,
         "  Card {} | {} | printed, {}",
@@ -246,6 +246,10 @@ pub(crate) fn write_card_rule(out: &mut String, card: cards::CardId, upgrades: u
     )
     .unwrap();
     write_card_fixed_requests(out, card, upgrades);
+}
+
+pub(crate) fn write_card_rule(out: &mut String, card: cards::CardId, upgrades: u8) {
+    write_printed_card_rule(out, card, upgrades);
     let definition = cards::get_card_definition(card);
     let play = if definition.cost == -2 {
         "printed unplayable; a combat effect must provide playability"

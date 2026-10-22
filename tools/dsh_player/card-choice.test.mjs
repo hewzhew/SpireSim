@@ -31,8 +31,10 @@ function window(owned, offers) {
     deck_evidence: { schema: 'sts-agent-deck-evidence-v1', public_snapshot_id: 'choice-root', cards: owned },
     decision_evidence: { kind: 'card_acquisition_options', candidates: slots.map(({ row, command }) => ({
       semantic_action: command, cards: [{ current: row.mechanics }] })) },
-    candidateReadings: Object.fromEntries(slots.map(({ row, command }) => [command,
-      `  Card ${row.card.card} | ${row.mechanics.card_type} | ${row.persistent_cost}c\n    Printed rule (base/upgraded): supplied ${row.card.card} rule.\n    At this upgrade, printed lifecycle: repeated explanation.`])) };
+    candidateReadings: Object.fromEntries(slots.map(({ row, command }) => [command, { card_rules: [{
+      card: row.card.card, upgrades: row.card.upgrades, available: true,
+      view: `  Card ${row.card.card} | ${row.mechanics.card_type} | ${row.persistent_cost}c\n    Printed rule (base/upgraded): supplied ${row.card.card} rule.`,
+    }] }])) };
 }
 
 const growth = () => card('DemonForm', 'Power', 3, { strength_gain: 2, strength_gain_delivery: 'each_player_turn_start_post_draw' });
@@ -415,7 +417,7 @@ test('first lasting Strength remains a stable default while HP payment and copyi
 test('a checked new function takes priority over optional free-Attack synergy while the standalone synergy remains a small comparison', () => {
   const input = lastingStrengthReward();
   input.position.observation.observation.relics = [{ relic: 'Kunai' }];
-  input.ownedResourceReading = 'Relics (1):\n  Kunai\n    Every 3 Attack cards played in a single turn, gain 1 Dexterity. Counts cards, not hits.\n';
+  input.ownedRelicReadings = { Kunai: '苦无\n每打出三张攻击牌，获得一点敏捷。按出牌次数计数。' };
   for (const reverse of [false, true]) {
     if (reverse) input.position.actions.reverse();
     const frame = preparationCardChoice(input);
@@ -430,7 +432,7 @@ test('a checked new function takes priority over optional free-Attack synergy wh
   const solo = window(input.deck_evidence.cards, [copyingFreeAttack()]);
   solo.position.observation.observation.relics = [{ relic: 'Kunai' }];
   assert.throws(() => renderPreparationCardChoice(preparationCardChoice(solo)), /native rules of the owned supporting relics/);
-  solo.ownedResourceReading = input.ownedResourceReading;
+  solo.ownedRelicReadings = input.ownedRelicReadings;
   for (const reverse of [false, true]) {
     if (reverse) solo.position.actions.reverse();
     const frame = preparationCardChoice(solo);
@@ -438,7 +440,7 @@ test('a checked new function takes priority over optional free-Attack synergy wh
     assert.deepEqual(frame.route.commands.sort(), ['skip-card#0', 'take:Anger#0']);
     assert.deepEqual(frame.defaultCommands, ['skip-card#0']);
     const text = renderPreparationCardChoice(frame);
-    assert.match(text, /Every 3 Attack cards.*Counts cards, not hits/);
+    assert.match(text, /每打出三张攻击牌.*按出牌次数计数/);
     assert.match(text, /one combat-only copy to Discard/);
     assert.match(text, /Permanent deck size:[^\n]*\nMaintainer default: skip-card#0\./);
     assert.equal(text.split('Maintainer default:').length - 1, 1);
@@ -526,7 +528,7 @@ test('first free random Attack preserves a bounded relic comparison and requires
     assert.deepEqual(frame.route.commands, ['take:InfernalBlade#0', 'skip-card#0']);
     assert.deepEqual(frame.defaultCommands, ['skip-card#0']);
     assert.throws(() => renderPreparationCardChoice(frame), /native rules of the owned supporting relics/);
-    input.ownedResourceReading = 'Relics (1):\n  Kunai\n    Every time you play 3 Attacks in a single turn, gain 1 Dexterity.\n';
+    input.ownedRelicReadings = { Kunai: 'Kunai\nEvery time you play 3 Attacks in a single turn, gain 1 Dexterity.' };
     const reading = renderPreparationCardChoice(preparationCardChoice(input));
     assert.match(reading, /Every time you play 3 Attacks/);
     assert.match(reading, /one actual Attack play.*each hit.*one play/);
@@ -955,7 +957,7 @@ test('protective replacement and free Hand planning form a small order-independe
 test('a draw comparison supplies declared native facts without unrelated inventory and resource rules', () => {
   const input = window([growth(), card('Defend', 'Skill', 1)], [pact(), card('BattleTrance', 'Skill', 0, { draw_cards: 3 })]);
   input.position.observation.observation.relics = [{ relic: 'MummifiedHand' }];
-  input.ownedResourceReading = 'Relics (1):\n  Mummified Hand\n    Playing a Power sets one random Hand card to 0 Energy for the turn.\nPotions (1 slots; availability comes from current legal options):\n  P0 empty';
+  input.ownedRelicReadings = { MummifiedHand: 'Mummified Hand\nPlaying a Power sets one random Hand card to 0 Energy for the turn.' };
   const frame = preparationCardChoice(input), reading = renderPreparationCardChoice(frame);
   assert.match(reading, /DemonForm: Power, 3 Energy/);
   assert.match(reading, /Mummified Hand.*\n.*Playing a Power sets one random Hand card to 0 Energy/);
@@ -972,7 +974,7 @@ test('owned Power payment retains the complete native random-reduction rule in a
   assert.throws(() => renderPreparationCardChoice(preparationCardChoice(input)),
     error => error.preparationGap?.reason === 'missing-payment-relic-rules');
   const rule = '    Whenever you play a Power, one randomly chosen eligible card remaining in your hand costs 0 for this turn. Positive printed/current cost required; X-cost, unplayable and already-free cards are ineligible.';
-  input.ownedResourceReading = 'Relics (2):\n  Burning Blood\n    Heal 6 after victory.\n  Mummified Hand\n' + rule + '\nPotions (2):\n  P0 empty';
+  input.ownedRelicReadings = { MummifiedHand: '木乃伊之手\n' + rule };
   const frame = preparationCardChoice(input), reading = renderPreparationCardChoice(frame);
   assert.ok(reading.includes(rule));
   assert.doesNotMatch(reading, /Burning Blood|P0 empty/);
@@ -1193,7 +1195,7 @@ test('early damage, missing Strength, Hand clearing and temporary Strength combi
 
 test('input above the byte target preserves native rules and the supplied comparison route', () => {
   const input = window([growth()], [pact(), card('BattleTrance', 'Skill', 0, { draw_cards: 3 })]);
-  input.candidateReadings['take:BattleTrance#0'] += '\nPrinted rule: ' + '机制'.repeat(TARGET_CARD_CHOICE_INPUT_BYTES);
+  input.candidateReadings['take:BattleTrance#0'].card_rules[0].view += '\nPrinted rule: ' + '机制'.repeat(TARGET_CARD_CHOICE_INPUT_BYTES);
   const frame = preparationCardChoice(input);
   frame.rules = frame.rules.filter(rule => rule.id === 'reach-owned-functions');
   frame.rules[0].question = 'Fixture comparison with two explicitly supplied acceptable choices.';

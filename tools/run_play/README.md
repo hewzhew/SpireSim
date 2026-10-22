@@ -3,6 +3,8 @@
 `client.mjs` 通过 stdin/stdout 直连 `run_play.exe agent-shell`，没有 PTY 标题序列和命令回显。
 Rust 拥有状态、来源检查、真实执行和提交；客户端只保存返回对象和传输记录。
 
+`observe()` 的战略观察另含 `preparation_reading`（`sts-preparation-reading-v1`），与 `position.public_snapshot_id` 绑定同一公开帧。它提供概要、选项、选牌提示、库存、商店商品和路线的文字块。候选通过完整命令定位，卡牌规则通过稳定 ID 和升级等级定位，遗物通过稳定 ID 定位；商品包含 typed action、槽位和价格，买不起或其他受阻商品的 `command` 为 `null`。`card_rules.available` 来自源端规则覆盖。消费者按这些字段选择完整文字，不解析展示标题或译名。战斗和终局不提供这份战略准备投影；普通 `read` 和 `inventory effects` 的文字仍由原有 renderer 输出。
+
 `workbench.mjs` 是命令行与 [dsh 玩家插件](../dsh_player/README.md) 共用的命令 owner。
 `openWorkbench` 固定绑定一个会话，`execute` 接收短命令并返回 `{ text }`，输出不写到全局 stdout。
 本次返回实际展示了当前读数时，结果另带 `currentReading: { control, summary, text }`：摘要来自 Rust，文字是本次返回中保留的最后一份实际局面读数，使用同样的命令前缀。私下预演和纯规则查询不生成它，失败调用也不借早先的读数生成当前边界。此数据用于日志与上下文压缩，不应重复渲染到模型消息。

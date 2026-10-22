@@ -87,17 +87,13 @@ export function preparationCardChoice(observation, normalize = command => comman
   const relicRules = [];
   if (dependencies.size && (state.relics ?? []).some(row => row.relic === 'MummifiedHand')
       && owned.some(row => row.mechanics.card_type === 'Power')) {
-    // Select the complete native display block for this known payment relic.
-    // Its random eligible-Hand condition remains part of the supplied rule.
-    const native = /^  Mummified Hand\r?\n(?: {4}[^\r\n]+(?:\r?\n|$))+/m.exec(observation.ownedResourceReading ?? '')?.[0]?.trim();
+    const native = observation.ownedRelicReadings?.MummifiedHand?.trim();
     relicRules.push({ relic: 'MummifiedHand', native });
   }
   if (dependencies.has('attack-play')) {
-    for (const [relic, name] of Object.entries({ Kunai: 'Kunai', Shuriken: 'Shuriken',
-      OrnamentalFan: 'Ornamental Fan', Nunchaku: 'Nunchaku', PenNib: 'Pen Nib' })) {
+    for (const relic of ['Kunai', 'Shuriken', 'OrnamentalFan', 'Nunchaku', 'PenNib']) {
       if (!(state.relics ?? []).some(row => row.relic === relic)) continue;
-      const native = new RegExp(`^  ${name}\\r?\\n(?: {4}[^\\r\\n]+(?:\\r?\\n|$))+`, 'm')
-        .exec(observation.ownedResourceReading ?? '')?.[0]?.trim();
+      const native = observation.ownedRelicReadings?.[relic]?.trim();
       relicRules.push({ relic, native });
     }
   }
@@ -153,7 +149,10 @@ export function preparationCardChoice(observation, normalize = command => comman
     if (m.temporary_strength_gain > 0) facts.push(`Same-turn attack support uses only owned attacks: ${profile.attackCopies}.`);
     return { command, kind: 'gain', card: grant.card, upgrades: grant.upgrades, facts,
       comparisonGuidance,
-      nativeReading: observation.candidateReadings?.[command] };
+      nativeReading: observation.candidateReadings?.[command]?.card_rules
+        ?.find(rule => rule.card === grant.card && rule.upgrades === grant.upgrades)?.view,
+      nativeRuleAvailable: observation.candidateReadings?.[command]?.card_rules
+        ?.some(rule => rule.card === grant.card && rule.upgrades === grant.upgrades && rule.available) === true };
   });
   const factGroups = {
     strength: [`Enduring Strength: ${profile.strengthSources.map(row => `${row.card}: ${row.type}, ${row.cost} Energy; gain ${row.amount} Strength ${strengthTiming(row.delivery)}; ${playedCardLifecycle(row)}`).join('; ') || 'none from the supplied native cards'}.`],
@@ -177,9 +176,8 @@ export function preparationCardChoice(observation, normalize = command => comman
 }
 
 function nativeRuleLines(text) {
-  // Keep the original full printed rule and exact upgraded requests. Remove
-  // repeated instructions for interpreting it, not parts of the card effect.
-  return (text ?? '').split('\n').filter(line => /^\s*Card |^\s*Printed rule|^\s*Printed (Block|draw|base damage|damage) request/.test(line)).map(line => line.trim());
+  // Align the complete source block; no heading or rule-language recognition.
+  return (text ?? '').split('\n').map(line => line.trim()).filter(Boolean);
 }
 
 export function renderPreparationCardChoice(frame) {
@@ -191,7 +189,7 @@ export function renderPreparationCardChoice(frame) {
     'Card comparison needs the native rules of the owned supporting relics.',
     { relics: missingRelics.map(row => row.relic) });
   const missingRules = options.filter(row => row.kind === 'gain'
-    && !nativeRuleLines(row.nativeReading).some(line => /^Printed rule/.test(line)));
+    && (!row.nativeRuleAvailable || !row.nativeReading?.trim()));
   if (missingRules.length) throw gapError('facts', 'missing-candidate-rules',
     'Card comparison needs the full native printed rule for each supplied gain.',
     { commands: missingRules.map(row => row.command) });

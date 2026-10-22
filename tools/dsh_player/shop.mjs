@@ -104,27 +104,15 @@ export function bindShopPotionPlan(scope, selected, reading, normalize = command
 
 // The native shelf and held-resource effects supply this small question. The
 // permanent inventory stays visible as names/counts; full evidence is host-owned.
-export function shopPotionComparisonReading(text, reading) {
+export function shopPotionComparisonReading(native, reading) {
   if (!shopPotionReplacementScope(reading)) return;
   const state = stateOf(reading);
-  let shelf = /^Potions for sale:\r?\n(?:[ \t].*\r?\n?)*/m.exec(text)?.[0]?.trimEnd();
-  // read supplies the full decision renderer; its stock rows pair a native
-  // offer header with Potion (base rule). The brief renderer uses a shelf.
-  if (!shelf) {
-    const lines = text.split(/\r?\n/), offers = [];
-    for (let i = 1; i < lines.length; i++) if (/^  Potion \(base rule\): /.test(lines[i])) {
-      if (!/^(?:  \S|\d+: )/.test(lines[i - 1])) return;
-      offers.push(lines[i - 1], lines[i]);
-    }
-    if (offers.length !== state.context.inventory.potions.length * 2) return;
-    shelf = ['Potions for sale:', ...offers].join('\n');
-  }
-  const resources = /^Relics \(\d+\):\r?\n(?:[ \t].*\r?\n?)*Potions \([^\n]*\):\r?\n(?:[ \t].*\r?\n?)*/m.exec(text)?.[0]?.trimEnd();
-  if (!shelf || !resources) return;
-  return [text.split('\n')[0], /^Boss: .*$/m.exec(text)?.[0],
+  const offers = native?.stock?.filter(row => row.action.kind === 'buy_potion');
+  if (!offers || offers.length !== state.context.inventory.potions.length || !native.inventory?.resources) return;
+  return [native.overview,
     `Owned permanent cards: ${(state.cards ?? []).map(row => `${row.count}x ${row.card}${row.upgrades > 0 ? '+' : ''}`).join(', ') || 'none'}.`,
     ...(Number.isSafeInteger(state.base_energy_per_turn) ? [`Base Energy: ${state.base_energy_per_turn}/turn.`] : []),
-    shelf, resources].filter(Boolean).join('\n');
+    ...offers.map(row => row.view), native.inventory.resources].filter(Boolean).join('\n');
 }
 
 function offer(action, inventory) {
@@ -350,20 +338,13 @@ export function renderShopSpendingComparison(reading, scope, groups, draft) {
 
 // Preserve full printed rules and current instance numbers. Remove repeated
 // explanatory scaffolding rather than asking Flash to assemble those facts.
-export function shopSpendingReading(text, reading, normalize = command => command) {
+export function shopSpendingReading(native, reading, normalize = command => command) {
   const scope = shopSpendingScope(reading, normalize);
   if (!scope) return;
-  const lines = text.split(/\r?\n/);
-  const ownedStart = lines.findIndex(line => /^Deck \(\d+\):/.test(line));
-  const relicStart = lines.findIndex(line => /^Relics \(\d+\):/.test(line));
   const missing = () => { throw Object.assign(new Error('Small shop comparison needs the complete native stock, owned rules and resource effects.'),
     { preparationGap: { kind: 'facts', reason: 'shop-spending-native-rules' } }); };
-  if (ownedStart < 0 || relicStart < ownedStart) return missing();
-  const owned = lines.slice(ownedStart + 1, relicStart);
-  const isOwnedHeader = line => /^  \S.*\| (?:Attack|Skill|Power|Curse|Status) \|/.test(line);
-  const headers = owned.filter(isOwnedHeader);
-  if (headers.length !== reading.deck_evidence.cards.length) return missing();
-  const ownedRules = owned.slice(owned.findIndex(isOwnedHeader)).filter(line => !/^\s+Ordinary draw accounting:/.test(line));
+  if (!native?.inventory?.cards || !native.inventory.resources || !Array.isArray(native.stock)) return missing();
+  if (native.inventory.cards.reduce((n, row) => n + row.count, 0) !== scope.profile.size) return missing();
   // Attack costs, hits and targets use the shared typed inventory summary.
   // Keep full rules for support and attacks with additional/conditional effects.
   const related = reading.deck_evidence.cards.filter(row => {
@@ -375,50 +356,31 @@ export function shopSpendingReading(text, reading, normalize = command => comman
       || m.vulnerable > 0 || m.copy_to_discard_after_damage > 0 || m.damage_growth_on_play > 0
       || m.has_conditional_playability || m.damage?.delivery?.amount?.kind !== 'base';
   });
-  // Native headers are renderer text; use the typed catalogue only to locate
-  // related rule blocks. This is display selection, not instance identity.
-  const displayId = text => text.replace(/^\s*(?:\d+[x×]\s*)?/, '').split('|')[0].trim().replace(/\+$/, '');
-  const relatedNames = new Set(related.map(row => row.mechanics.name));
-  const relatedRules = [];
-  let relevant = false;
-  for (const line of ownedRules) {
-    if (isOwnedHeader(line)) relevant = relatedNames.has(displayId(line));
-    if (relevant) relatedRules.push(line);
-  }
-  if (related.some(row => !relatedRules.some(line => isOwnedHeader(line)
-      && displayId(line) === row.mechanics.name))) return missing();
-  const stockStart = lines.findIndex(line => /^Purchasable now:/.test(line));
-  if (stockStart < 0 || stockStart >= ownedStart) return missing();
+  const relatedCards = new Set(related.map(row => `${row.card.card}:${row.card.upgrades}`));
+  const relatedRules = native.inventory.cards.filter(row => relatedCards.has(`${row.card}:${row.upgrades}`));
+  if (related.some(row => !relatedRules.some(native => native.card === row.card.card && native.upgrades === row.card.upgrades && native.view))) return missing();
   const inventory = stateOf(reading).context.inventory;
   const offered = { buy_card: inventory.cards, buy_relic: inventory.relics, buy_potion: inventory.potions };
   const visible = new Set(reading.shopBudget.starts.flatMap(first =>
     [first.identity, ...first.continuations.map(next => identity(next.action))]));
-  const blocks = [];
-  let block;
   const buyCommands = new Set(reading.shopBudget.starts.filter(row => row.action.kind !== 'remove_card').map(row => row.command));
-  for (let i = stockStart + 1; i < ownedStart; i++) {
-    const line = lines[i], command = /^(\S.*?)\s{2,}\|\s/.exec(line)?.[1];
-    const header = command || (/^  \S/.test(line) && /^  (?:Card:|Relic:|Potion \(base rule\):)/.test(lines[i + 1] ?? ''));
-    if (header) { block = { command, lines: [line] }; blocks.push(block); }
-    else if (!/^\s/.test(line)) block = undefined;
-    else if (block && !/^\s+(?:Permanent-card acquisition|Ordinary draw accounting|Printed base stats at this upgrade):/.test(line)) block.lines.push(line);
-  }
   const counts = { buy_card: 0, buy_relic: 0, buy_potion: 0 }, stock = [], inactive = [];
-  // The native shelf renderer preserves each typed stock list's order. This
-  // mapping selects display blocks; execution still binds typed source/slots.
-  for (const row of blocks) {
-    const rule = row.lines.find(line => /^  (?:Card:|Relic:|Potion \(base rule\):)/.test(line));
-    if (!rule) continue;
-    const kind = rule.startsWith('  Card:') ? 'buy_card' : rule.startsWith('  Relic:') ? 'buy_relic' : 'buy_potion';
-    const item = offered[kind][counts[kind]++];
-    if (!item) return missing();
-    const action = { kind, ...item };
-    if (row.command && !buyCommands.has(row.command)) return missing();
+  const seen = new Set();
+  for (const row of native.stock) {
+    const action = row.action, kind = action.kind, key = `${kind}:${action.shop_slot}`;
+    const item = offered[kind]?.find(item => item.slot === action.shop_slot);
+    if (!item || seen.has(key) || item.price !== action.price
+        || (kind === 'buy_card' && (item.card !== action.card || item.upgrades !== action.upgrades))
+        || (kind === 'buy_relic' && item.relic !== action.relic)
+        || (kind === 'buy_potion' && item.potion !== action.potion)) return missing();
+    seen.add(key); counts[kind]++;
+    const command = row.command && normalize(row.command, reading);
+    if (command && !buyCommands.has(command)) return missing();
     if (visible.has(identity(action))) {
-      if (kind === 'buy_card' && !row.lines.some(line => /^\s+Printed rule/.test(line))) return missing();
-      stock.push(...row.lines);
+      if (kind === 'buy_card' && !row.card_rules?.some(rule => rule.card === action.card && rule.upgrades === action.upgrades && rule.available)) return missing();
+      stock.push(command ? `${command}  |  ${row.view.trimStart()}` : row.view);
     }
-    else inactive.push(row.lines[0].trim());
+    else inactive.push(row.label);
   }
   if (Object.entries(counts).some(([kind, count]) => count !== offered[kind].length)) return missing();
   const adviceReading = { ...reading, position: { ...reading.position, actions: inventory.cards.filter(item =>
@@ -429,18 +391,18 @@ export function shopSpendingReading(text, reading, normalize = command => comman
       ?? { semantic_action: `public-card:${item.slot}`, candidate: { action: { kind: 'buy_card', card: item.card, upgrades: item.upgrades } } }) } };
   const advice = preparationCardExpertGuidance(adviceReading).map(row =>
     renderCandidateExpertGuidance(row).replace(` (${row.command})`, '')).filter(Boolean);
-  return [lines[0], ...lines.filter(line => /^(Boss:|Keys:)/.test(line)),
+  return [native.overview,
     `Owned ${scope.profile.size} originals: ${reading.deck_evidence.cards.map(row => `${row.card.count}x ${row.card.card}${row.card.upgrades > 0 ? '+' : ''}`).join(', ')}.`,
     ...reading.deck_evidence.cards.filter(row => row.card.cost_modifier || row.card.base_damage_override !== null
       || row.card.base_block_override !== null || row.card.misc_value)
       .map(row => `Current ${row.card.card}${row.card.upgrades > 0 ? '+' : ''}: ${row.persistent_cost} Energy, ${row.persistent_damage} damage, ${row.persistent_block} Block; misc ${row.card.misc_value}.`),
     attackInventoryText(scope.profile),
-    'Related owned rules (before combat modifiers):', ...relatedRules,
+    'Related owned rules (before combat modifiers):', ...relatedRules.map(row => row.view),
     'Public stock and legal choices:', ...stock,
     ...scope.candidates.filter(row => row.command === 'leave').map(row => `${row.command}  |  ${row.fact}`),
     ...(inactive.length ? [`Other public stock: ${inactive.join('; ')}.`] : []),
     'Strategy (maintainer preferences):', ...advice,
-    ...lines.slice(relicStart),
-    'Connected preparation routes:', ...lines.filter(line => /^\s+First (?:Elite|Boss|endpoint):/.test(line)),
+    native.inventory.resources,
+    native.routes,
   ].join('\n');
 }

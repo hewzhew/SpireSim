@@ -7,6 +7,7 @@ import { shopSpendingScope, shopSpendingReading, measureShopSpendingInputBudget,
 import { parsePreparationClassification, collectPreparationClassification, preparationCommandBasis, preparationReading,
   preparationProceduralAction, preparationClassificationContext, preparationRecordedTable, preparationStageGuide } from './preparation.mjs';
 import { preparationReadingSupply } from './preparation.mjs';
+import { preparationFixture } from './preparation-fixture.test.mjs';
 
 const card = (id, price, slot = 0) => ({ command: `buy:${id}#0`, action: { kind: 'buy_card', card: id, upgrades: 0, price, shop_slot: slot } });
 const relic = (id, price, slot = 0) => ({ command: `buy:${id}#0`, action: { kind: 'buy_relic', relic: id, price, shop_slot: slot } });
@@ -243,17 +244,18 @@ test('single replacement supplies a bottle tradeoff and binds factual columns in
 
 test('bottle comparison preserves complete native shelf and resource effects and requires a narrow legal window', () => {
   const current = bottleReading();
-  const text = 'Act 2 F21 | Gold 40 | Shop\nBoss: Collector\nPotions for sale:\n  Block Potion 40g (slots full) · Gain 12 Block.\n'
-    + 'Remove card: 75g\nDeck (1):\n  Strike\n    Deal 6 damage.\nRelics (1):\n  Sacred Bark\n    Double potion effectiveness.\n'
-    + 'Potions (2 slots; availability comes from current legal options):\n  P0 Speed Potion\n    Temporary Dexterity.\n  P1 Fear Potion\n    Apply Vulnerable.\n';
-  const compact = shopPotionComparisonReading(text, current);
+  const native = preparationFixture(current, { overview: 'Act 2 F21 | Shop\nBoss: Collector',
+    stockViews: { BlockPotion: 'Block Potion 40g (slots full)\nGain 12 Block.' } });
+  native.inventory.resources = 'Sacred Bark\nDouble potion effectiveness.\nTemporary Dexterity.\nApply Vulnerable.';
+  const compact = shopPotionComparisonReading(native, current);
   assert.match(compact, /Gain 12 Block[\s\S]*Double potion effectiveness[\s\S]*Temporary Dexterity[\s\S]*Apply Vulnerable/);
   assert.doesNotMatch(compact, /Deal 6 damage|Remove card/);
   assert.equal(shopPotionComparisonReading('Incomplete reading', current), undefined);
-  const detailed = text.replace('Potions for sale:\n  Block Potion 40g (slots full) · Gain 12 Block.',
-    'Purchasable now: none\n  Block Potion 40g (slots full)\n  Potion (base rule): Gain 12 Block.');
-  assert.match(shopPotionComparisonReading(detailed, current), /Block Potion 40g[\s\S]*Potion \(base rule\): Gain 12 Block/);
-  assert.equal(shopPotionComparisonReading(detailed.replace('  Block Potion 40g (slots full)\n', ''), current), undefined);
+  const localized = structuredClone(native);
+  localized.stock[0].view = '格挡药水\n获得 12 点格挡。';
+  assert.match(shopPotionComparisonReading(localized, current), /格挡药水[\s\S]*获得 12 点格挡/);
+  localized.stock = [];
+  assert.equal(shopPotionComparisonReading(localized, current), undefined);
   for (const change of [
     input => { input.position.actions.push({ semantic_action: 'use-potion:SpeedPotion#0', candidate: { action: { kind: 'use_run_potion' } } }); },
     input => { input.position.observation.observation.context.inventory.potions.push({ slot: 1, potion: 'SwiftPotion', price: 20,
@@ -312,13 +314,25 @@ async function smallShop() {
   return { original, afterMembership };
 }
 
-const smallShopText = 'Act 2 F21 | Gold 165 | Shop\nBoss: Collector\nPurchasable now: Shrug It Off, Membership Card\n'
-  + 'buy:ShrugItOff#0  |  buy Shrug It Off 80g\n  Card: Skill | 1c\n  Printed rule: Gain 8 Block, then draw 1 card.\n'
-  + '  Dark Embrace 170g (insufficient gold)\n  Card: Power | 2c\n  Printed rule: After deployment, draw 1 for each Exhaust.\n'
-  + 'buy:MembershipCard#0  |  buy Membership Card 50g\n  Relic: All shop prices are halved, including removal.\n'
-  + 'leave  |  leave shop\nDeck (4):\n  Strike | Attack | 1c\n    Deal 6 damage.\n'
-  + '  Inflame | Power | 1c\n    Gain 2 Strength for the rest of combat.\nRelics (0):\n'
-  + 'Potions (2 slots):\n  P0 empty\n  P1 empty\n';
+function smallShopNative(current) {
+  const native = preparationFixture(current, { overview: 'Act 2 F21 | Shop\nBoss: Collector', cardViews: {
+    Strike: 'Strike | Attack | 1c\nDeal 6 damage.',
+    Inflame: 'Inflame | Power | 1c\nGain 2 Strength for the rest of combat.',
+    Anger: 'Anger | Attack | 0c\nDeal 6 damage, then add a copy to Discard.',
+  } });
+  const rules = { ShrugItOff: 'Gain 8 Block, then draw 1 card.', DarkEmbrace: 'After deployment, draw 1 for each Exhaust.',
+    MembershipCard: 'All shop prices are halved, including removal.',
+    Combust: 'Lose 1 HP and deal 5 damage to each enemy at each turn end.',
+    PaperFrog: 'Attacks deal more damage against Vulnerable.' };
+  const names = { ShrugItOff: 'Shrug It Off', DarkEmbrace: 'Dark Embrace', MembershipCard: 'Membership Card', PaperFrog: 'Paper Frog' };
+  for (const row of native.stock) {
+    const id = row.action.card ?? row.action.relic ?? row.action.potion;
+    row.label = `${names[id] ?? id} ${row.action.price}g${row.command ? '' : ' (insufficient gold)'}`;
+    row.view = `${row.label}\n${rules[id] ?? `complete ${id} rule`}`;
+  }
+  native.inventory.resources = 'Relics (0):\nPotions (2 slots):\nP0 empty\nP1 empty';
+  return native;
+}
 
 test('small shop advice preserves legal acquisition evidence for owned-copy increments', async () => {
   const combust = card('Combust', 41), original = reading(157, [combust]);
@@ -334,13 +348,10 @@ test('small shop advice preserves legal acquisition evidence for owned-copy incr
   original.decision_evidence = { kind: 'card_acquisition_options', candidates: [{ semantic_action: combust.command,
     cards: [{ current: owned.mechanics }] }] };
   original.shopBudget = await preparationShopBudget(original, previews({ [combust.command]: reading(116, []) }).preview);
-  const text = 'Act 2 F20 | Gold 157 | Shop\nPurchasable now: Combust\n'
-    + 'buy:Combust#0  |  buy Combust 41g\n  Card: Power | 1c\n  Printed rule: Lose 1 HP and deal 5 damage to each enemy at each turn end.\n'
-    + 'leave  |  leave shop\nDeck (1):\n  Combust | Power | 1c\n    Lose 1 HP and deal 5 damage to each enemy at each turn end.\nRelics (0):\n';
-  const rendered = shopSpendingReading(text, original);
+  const rendered = shopSpendingReading(smallShopNative(original), original);
   assert.match(rendered, /Owned Combust copies 1->2.*HP loss 1->2.*damage per enemy 5->10/);
   assert.doesNotMatch(rendered, /public-card:/);
-  assert.match(rendered, /buy:Combust#0  \|  buy Combust 41g/);
+  assert.match(rendered, /buy:Combust#0  \|  Combust 41g/);
 });
 
 test('small shopping rates one dimension and binds optional follow-up to native prices', async () => {
@@ -392,8 +403,9 @@ test('clear shop recommendations survive appended prose without importing it int
 
 test('small shop supply keeps independent blocked stock, enabled support and full native rules', async () => {
   const { original } = await smallShop();
-  const supply = preparationReadingSupply(smallShopText, original);
-  assert.doesNotMatch(supply.candidates['buy:ShrugItOff#0'], /Dark Embrace|Exhaust/);
+  original.preparation_reading = smallShopNative(original);
+  const supply = preparationReadingSupply(original);
+  assert.doesNotMatch(supply.candidates['buy:ShrugItOff#0'].view, /Dark Embrace|Exhaust/);
   assert.match(supply.reading, /Dark Embrace 170g[\s\S]*draw 1 for each Exhaust/);
   assert.match(supply.reading, /3x Strike.*1x Inflame[\s\S]*Gain 2 Strength[\s\S]*Gain 8 Block[\s\S]*All shop prices are halved/);
   const context = preparationClassificationContext(original);
@@ -404,7 +416,9 @@ test('small shop supply keeps independent blocked stock, enabled support and ful
   assert.match(context, /buy:DarkEmbrace#0 \(85, 30\)/);
   const budget = measureShopSpendingInputBudget([supply.reading, SHOP_SPENDING_GUIDE, context, 'Shop task: submit rows.']);
   assert.ok(budget.bytes < 4096);
-  assert.throws(() => shopSpendingReading(smallShopText.replace('  Inflame | Power | 1c\n', ''), original), error =>
+  const incomplete = smallShopNative(original);
+  incomplete.inventory.cards = incomplete.inventory.cards.filter(row => row.card !== 'Inflame');
+  assert.throws(() => shopSpendingReading(incomplete, original), error =>
     error.preparationGap.reason === 'shop-spending-native-rules');
   assert.equal(measureShopSpendingInputBudget(['x'.repeat(4097)]).exceeded, true);
   assert.equal(measureShopSpendingInputBudget(['x'.repeat(4096)]).exceeded, false);
@@ -425,17 +439,22 @@ test('ordinary broader stock keeps one recommendation per spend and summarizes c
   assert.equal(shopSpendingScope(original).candidates.length, 7);
   const rows = items.map(item => `${item.command} | medium`).concat('leave | high').join('\n');
   assert.equal(parsePreparationClassification(rows, original).length, 7);
-  const text = `Act 2 F21 | Gold 200 | Shop\nPurchasable now: six cards\n${items.map(item =>
-    `${item.command}  |  buy ${item.action.card} 20g\n  Card: Attack | 1c\n  Printed rule: complete ${item.action.card} rule.`).join('\n')}\n`
-    + '  Paper Frog 900g (insufficient gold)\n  Relic: Attacks deal more damage against Vulnerable.\nleave  |  leave shop\n'
-    + smallShopText.slice(smallShopText.indexOf('Deck (4):'));
-  const supply = preparationReadingSupply(text, original);
-  for (const item of items) assert.match(supply.reading, new RegExp(`complete ${item.action.card} rule`));
+  original.preparation_reading = smallShopNative(original);
+  original.preparation_reading.stock.reverse();
+  original.preparation_reading.inventory.cards.reverse();
+  const supply = preparationReadingSupply(original);
+  for (const row of original.preparation_reading.stock.filter(row => row.command)) {
+    assert.ok(supply.reading.includes(row.view.trimStart()), row.action.card);
+  }
   assert.match(supply.reading, /Other public stock: Paper Frog 900g \(insufficient gold\)/);
   assert.doesNotMatch(supply.reading, /Attacks deal more damage against Vulnerable/);
   assert.doesNotMatch(preparationClassificationContext(original), /Condition references|direct\/sequence|Whole-deck/);
-  assert.throws(() => shopSpendingReading(text.replace('  Printed rule: complete Immolate rule.\n', ''), original),
+  const incomplete = smallShopNative(original);
+  incomplete.stock.find(row => row.action.card === 'Immolate').card_rules[0].available = false;
+  assert.throws(() => shopSpendingReading(incomplete, original),
     error => error.preparationGap.reason === 'shop-spending-native-rules');
+  incomplete.stock[0].action.shop_slot = 99;
+  assert.throws(() => shopSpendingReading(incomplete, original), /complete native stock/);
   const attached = structuredClone(original); attached.shopBudget.starts[0].boundary = 'run_choice';
   assert.equal(shopSpendingScope(attached), undefined);
 });
@@ -456,10 +475,7 @@ test('shop attack comparison retains owned payment, hits, targeting and generate
   original.deck_evidence.cards = [make('Anger', 0, 6, 1, 'selected_enemy', { copy_to_discard_after_damage: 1 }),
     make('SwordBoomerang', 1, 3, 3, 'random_enemy_per_hit'), original.deck_evidence.cards[1]];
   original.position.observation.observation.cards = original.deck_evidence.cards.map(row => row.card);
-  const text = smallShopText.replace('Deck (4):\n  Strike | Attack | 1c\n    Deal 6 damage.',
-    'Deck (3):\n  Anger | Attack | 0c\n    Deal 6 damage, then add a copy to Discard.\n'
-    + '  SwordBoomerang | Attack | 1c\n    Deal 3 damage to a random enemy 3 times.');
-  const supplied = shopSpendingReading(text, original);
+  const supplied = shopSpendingReading(smallShopNative(original), original);
   assert.match(supplied, /1x Anger: 0 Energy; 1 hit\(s\); targets selected_enemy; 6 base damage\/hit/);
   assert.match(supplied, /1x SwordBoomerang: 1 Energy; 3 hit\(s\); targets random_enemy_per_hit; 3 base damage\/hit/);
   assert.match(supplied, /Deal 6 damage, then add a copy to Discard/);

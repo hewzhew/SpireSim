@@ -1921,6 +1921,8 @@ pub struct AgentObservationV1 {
     pub decision_evidence: Option<AgentDecisionEvidenceV1>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub deck_evidence: Option<AgentDeckEvidenceV1>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub preparation_reading: Option<crate::decision::preparation::PreparationReadingV1>,
     pub position: AgentPositionV1,
 }
 
@@ -3370,6 +3372,12 @@ pub fn project_agent_observation_v1(
         )),
         _ => None,
     };
+    let preparation_reading = head
+        .current_decision
+        .as_ref()
+        .map(|inventory| crate::decision::preparation::reading(&inventory.public_decision_v1()?))
+        .transpose()?
+        .flatten();
     Ok(AgentObservationV1 {
         schema: AGENT_OBSERVATION_SCHEMA_V3,
         session_id: head.session_id.clone(),
@@ -3378,6 +3386,7 @@ pub fn project_agent_observation_v1(
         capabilities,
         decision_evidence,
         deck_evidence,
+        preparation_reading,
         position,
     })
 }
@@ -3465,7 +3474,7 @@ fn project_agent_campfire_mechanics_v1(
     Ok(Some(mechanics))
 }
 
-fn acquired_card_mechanics_for_action_v1(
+pub(crate) fn acquired_card_mechanics_for_action_v1(
     action: &TaskStrategicActionV1,
 ) -> Vec<CardAcquisitionMechanicsFactsV1> {
     let cards = match action {

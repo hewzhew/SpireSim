@@ -39,48 +39,32 @@ export const PREPARATION_SHOP_TOOL_PARAMETERS = { ...PREPARATION_TOOL_PARAMETERS
 
 const DUPLICATION_CHECK = 'Permanent duplication: assess the change from the current copy count to one more. Separate earlier access to the first useful play from actually playing the extra copy. Each normal Power play requires that copy in Hand and its own payment. First compare the next hard fight\'s early output, protection and access; then compare later output. When existing sustained growth is available and an extra slow deployment uses all base Energy, rate that extra setup as a small marginal gain until an owned payment/protection arrangement makes it useful in time. Protection or draw can improve use of the existing growth engine.';
 
-export function preparationReadingText(text) {
-  return text.split('\n').filter(line => !line.startsWith('More: ')).join('\n');
-}
-
-function preparationEffectReading(command, text) {
-  const lines = text.split('\n');
-  const header = /^(\S.*?)\s{2,}\|\s(.*)$/.exec(lines[0]);
-  if (header?.[1] === command) lines[0] = `  Effect label: ${header[2].trim().replace(/^Effect: /, '')}`;
-  return lines.join('\n');
-}
-
-// Reposition source-bound rendered option blocks beside their own conditions.
-// Match only exact legal command headers; inventory and route text stay intact.
-export function preparationReadingSupply(text, observation, normalize = command => command) {
+// The native frame binds rule blocks to actions and entity IDs. Display text is
+// opaque; it never identifies a command, card, relic or section boundary.
+export function preparationReadingSupply(observation, normalize = command => command) {
+  const native = observation.preparation_reading;
+  if (native?.schema !== 'sts-preparation-reading-v1'
+      || !native.public_snapshot_id || native.public_snapshot_id !== observation.position?.public_snapshot_id) {
+    throw Object.assign(new Error('Preparation reading is not bound to the current public snapshot.'),
+      { preparationGap: { kind: 'facts', reason: 'preparation-reading-source' } });
+  }
   const commands = new Set(preparationCandidates(observation, normalize));
   const omissions = sameGameContextSource(observation.preparationOmissions?.source, observation)
     ? new Set(observation.preparationOmissions.commands.map(command => normalize(command, observation))) : new Set();
   const candidates = {}, reading = [];
-  let current, omitted = false;
-  const lines = preparationReadingText(text).split('\n');
-  for (const [index, line] of lines.entries()) {
-    const header = /^(\S.*?)\s{2,}\|\s/.exec(line)?.[1];
-    // A blocked native stock header is indented just like effect details.
-    // Keep that public offer independent of the preceding legal command.
-    const stockHeader = observation.position?.observation?.observation?.context?.kind === 'shop'
-      && /^  \S/.test(line) && /^  (?:Card:|Relic:|Potion \(base rule\):)/.test(lines[index + 1] ?? '');
-    if (stockHeader) {
-      current = undefined; omitted = false; reading.push(line);
-    } else if (header && omissions.has(header)) {
-      current = undefined; omitted = true;
-    } else if (header && commands.has(header)) {
-      omitted = false;
-      if (Object.hasOwn(candidates, header)) throw new Error(`Duplicate rendered preparation command: ${header}`);
-      current = header;
-      candidates[current] = [line];
-    } else if (omitted && (/^\s/.test(line) || !line.trim())) continue;
-    else if (current && (/^\s/.test(line) || !line.trim())) candidates[current].push(line);
-    else { current = undefined; omitted = false; reading.push(line); }
+  reading.push(native.overview, native.selections);
+  for (const block of native.candidates) {
+    const command = normalize(block.command, observation);
+    if (omissions.has(command)) continue;
+    if (commands.has(command)) {
+      if (Object.hasOwn(candidates, command)) throw new Error(`Duplicate rendered preparation command: ${command}`);
+      candidates[command] = block;
+    } else reading.push(`${command}  |  ${block.label}\n${block.view}`);
   }
-  const resourceReading = /^Relics \(\d+\):\r?\n(?:[ \t].*\r?\n?)*(?:Potions \([^\n]*\):\r?\n(?:[ \t].*\r?\n?)*)?/m.exec(text)?.[0]?.trimEnd();
-  return { reading: shopPotionComparisonReading(text, observation) ?? shopSpendingReading(text, observation, normalize) ?? reading.join('\n'), resourceReading, candidates: Object.fromEntries(Object.entries(candidates)
-    .map(([command, lines]) => [command, lines.join('\n').trimEnd()])) };
+  reading.push(...native.stock.filter(row => !row.command).map(row => row.view), native.inventory.view, native.routes);
+  return { reading: shopPotionComparisonReading(native, observation) ?? shopSpendingReading(native, observation, normalize)
+    ?? reading.filter(Boolean).join('\n'),
+    relicReadings: Object.fromEntries(native.inventory.relics.map(row => [row.relic, row.view])), candidates };
 }
 
 export function preparationStageGuide(progress, classification, context, draft) {
@@ -921,7 +905,7 @@ export function preparationClassificationContext(observation, normalize, draft) 
       ...(group.members.length > 1 ? [`  Shared one-copy evaluation: ${group.members.length} copies with identical public attributes.`] : []),
       ...(copyFacts.has(group.command) ? [`  ${copyFacts.get(group.command).join(' ')}`] : []),
       ...(observation.candidateReadings?.[binding.command]
-        ? [preparationEffectReading(binding.command, observation.candidateReadings[binding.command])] : []),
+        ? [observation.candidateReadings[binding.command].view] : []),
       ...[renderCandidateExpertGuidance(adviceByCommand.get(binding.command))].filter(Boolean).map(text => `  ${text}`),
       ...binding.fixedMechanics.map(text => `  Fixed mechanics: ${text}`),
       ...binding.choices.map(choice => `  ${choice.id}${choice.realizations ? ` [realization: ${choice.realizations.join('/')}]` : ''}: ${choice.text}`),

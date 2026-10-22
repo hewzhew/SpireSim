@@ -1,16 +1,17 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { preparationReading, preparationReadingText, preparationReadingSupply, preparationRewardProgress, preparationCandidateGroups, preparationConditionBindings, preparationClassificationContext, preparationProceduralAction,
+import { preparationReading, preparationReadingSupply, preparationRewardProgress, preparationCandidateGroups, preparationConditionBindings, preparationClassificationContext, preparationProceduralAction,
   preparationCandidates, assertPreparationCommand, parsePreparationClassification, collectPreparationClassification,
   preparationClassificationReceipt, preparationCommandBasis, preparationRecordedTable, preparationStageGuide } from './preparation.mjs';
 import { conciseCardCommand, strategicOptionCommand } from '../run_play/contract.mjs';
+import { preparationFixture } from './preparation-fixture.test.mjs';
 
 // These tests exercise specialized mechanics; every other candidate gets the shared effect contract.
 const specificBindings = (observation, normalize) => preparationConditionBindings(observation, normalize)
   .filter(row => row.id !== 'preparation-effect-tradeoff-v1');
 
 const observation = cards => ({ schema: 'sts-run-play-agent-observation-v3', session_id: 'unit', head_revision: 0, state_revision: 0,
-  position: { observation: { domain: 'strategic', observation: { cards } }, actions: [
+  position: { public_snapshot_id: 'unit-snapshot', observation: { domain: 'strategic', observation: { cards } }, actions: [
     { semantic_action: 'buy:Armaments+0#0', candidate: { action: { kind: 'buy_card', card: 'Armaments' } } },
     { semantic_action: 'leave', candidate: { action: { kind: 'leave_shop' } } },
   ] } });
@@ -19,21 +20,25 @@ const table = (current, text) => ({ source: current, rows: parsePreparationClass
 
 test('rendered candidate effects move intact beside their own conditions while inventory and routes retain their place', () => {
   const current = observation([]);
-  const effect = 'buy:Armaments#0  |  Effect: Armaments\n  Card Armaments | 1c\n    Gain Block and upgrade a Hand card.';
-  const text = `Act 2 F21\nOwned: Strike\n${effect}\nPublic route\n  Shop before Elite\nunknown  |  Unrecognized UI control\n  Kept in original reading\nMore: diagnostic`;
-  const supplied = preparationReadingSupply(text, current, conciseCardCommand);
-  assert.equal(supplied.candidates['buy:Armaments#0'], effect);
-  assert.match(supplied.reading, /Act 2 F21\nOwned: Strike\nPublic route\n  Shop before Elite/);
-  assert.match(supplied.reading, /unknown.*Unrecognized UI control/);
-  assert.doesNotMatch(supplied.reading, /Card Armaments|More:/);
+  const effect = '  效果：武装\n  Card Armaments | 1c\n    Gain Block and upgrade a Hand card.';
+  current.preparation_reading = preparationFixture(current, { overview: 'Act 2 F21\nOwned: Strike',
+    routes: 'Public route\n  Shop before Elite\nMore: 不按标题删除任何规则',
+    candidateViews: { 'buy:Armaments+0#0': effect } });
+  const supplied = preparationReadingSupply(current, conciseCardCommand);
+  assert.equal(supplied.candidates['buy:Armaments#0'].view, effect);
+  assert.match(supplied.reading, /Act 2 F21\nOwned: Strike/);
+  assert.match(supplied.reading, /Public route\n  Shop before Elite/);
+  assert.match(supplied.reading, /More: 不按标题删除/);
+  assert.doesNotMatch(supplied.reading, /Card Armaments/);
   current.candidateReadings = supplied.candidates;
   const context = preparationClassificationContext(current, conciseCardCommand);
   assert.match(context, /^Current classification candidates:[^\n]*\nPending commands: buy:Armaments#0; leave\./);
   assert.match(context, /Condition references for buy:Armaments#0[^]*Card Armaments[^]*@effect/);
-  assert.match(context, /Effect label: Armaments/);
+  assert.match(context, /效果：武装/);
   assert.doesNotMatch(context, /buy:Armaments#0\s+\|\s+Armaments/);
   assert.equal(context.split('Card Armaments').length - 1, 1);
-  assert.throws(() => preparationReadingSupply(`${effect}\n${effect}`, current, conciseCardCommand), /Duplicate rendered preparation command/);
+  current.preparation_reading.candidates.push(current.preparation_reading.candidates[0]);
+  assert.throws(() => preparationReadingSupply(current, conciseCardCommand), /Duplicate rendered preparation command/);
 });
 
 test('a native Boss reward display label stays separate from the exact adoption command', () => {
@@ -42,13 +47,15 @@ test('a native Boss reward display label stays separate from the exact adoption 
   current.position.actions = [{ semantic_action: 'boss-relic:PhilosopherStone#0',
     candidate: { action: { kind: 'take_boss_relic', relic: 'PhilosopherStone' } } }];
   const native = 'boss-relic:PhilosopherStone#0  |  take Philosopher\'s Stone\n  Gain 1 Energy; enemies gain 1 Strength.';
-  const supply = preparationReadingSupply(native, current);
+  const effect = "  Effect label: take Philosopher's Stone\n  Gain 1 Energy; enemies gain 1 Strength.";
+  current.preparation_reading = preparationFixture(current, { candidateViews: { 'boss-relic:PhilosopherStone#0': effect } });
+  const supply = preparationReadingSupply(current);
   current.candidateReadings = supply.candidates;
   const context = preparationClassificationContext(current);
   assert.match(context, /Condition references for boss-relic:PhilosopherStone#0:/);
   assert.match(context, /Effect label: take Philosopher's Stone\n  Gain 1 Energy; enemies gain 1 Strength/);
   assert.doesNotMatch(context, /boss-relic:PhilosopherStone#0\s+\|\s+take/);
-  assert.equal(supply.candidates['boss-relic:PhilosopherStone#0'], native, 'native host evidence remains intact');
+  assert.equal(supply.candidates['boss-relic:PhilosopherStone#0'].view, effect, 'native host evidence remains intact');
   assertPreparationCommand(['boss-relic:PhilosopherStone#0', []], 'pending', current);
   assert.throws(() => assertPreparationCommand(['boss-relic:PhilosopherStone#0', ['|', 'take', 'Philosopher\'s', 'Stone']], 'pending', current),
     /Copy the command boss-relic:PhilosopherStone#0 into choice/);
@@ -57,7 +64,7 @@ test('a native Boss reward display label stays separate from the exact adoption 
 test('classification supplies its row format once and keeps candidate facts/references in actual choice order', () => {
   const current = observation([]);
   current.position.actions.reverse();
-  current.candidateReadings = { 'buy:Armaments#0': 'Card Armaments | 1c\nPrinted rule: Gain Block and upgrade a Hand card.' };
+  current.candidateReadings = { 'buy:Armaments#0': { view: 'Card Armaments | 1c\nPrinted rule: Gain Block and upgrade a Hand card.' } };
   const context = preparationClassificationContext(current, conciseCardCommand);
   assert.equal(context.split('high/medium/low/review').length - 1, 1);
   assert.equal(context.split('direct/sequence/future/review').length - 1, 1);
@@ -69,24 +76,32 @@ test('classification supplies its row format once and keeps candidate facts/refe
 test('source-bound omitted option blocks stay out of decision text while inventory rules and unknown controls remain', () => {
   const current = observation([]);
   current.preparationOmissions = { source: { ...current }, commands: ['remove:Inflame+0#0'] };
-  const text = 'Owned: Inflame\n  Playing Inflame grants 2 Strength.\nremove:Inflame#0  |  Remove Inflame\n'
-    + '  Removal changes the deck.\n\nunknown  |  Keep this control\n  Its detail\n'
-    + 'buy:Armaments#0  |  Armaments\n  Printed rule: Gain Block and upgrade a Hand card.';
-  const supplied = preparationReadingSupply(text, current, conciseCardCommand);
+  current.preparation_reading = preparationFixture(current, { overview: 'Owned: Inflame\n  Playing Inflame grants 2 Strength.',
+    selections: 'unknown  |  Keep this control\n  Its detail',
+    candidateViews: { 'buy:Armaments+0#0': 'Printed rule: Gain Block and upgrade a Hand card.' } });
+  current.preparation_reading.candidates.push({ command: 'remove:Inflame#0', label: 'Remove Inflame', view: 'Removal changes the deck.', card_rules: [] });
+  const supplied = preparationReadingSupply(current, conciseCardCommand);
   assert.match(supplied.reading, /Owned: Inflame\n  Playing Inflame grants 2 Strength/);
   assert.doesNotMatch(supplied.reading, /remove:Inflame|Removal changes/);
   assert.match(supplied.reading, /unknown.*Keep this control\n  Its detail/);
-  assert.match(supplied.candidates['buy:Armaments#0'], /Printed rule: Gain Block and upgrade a Hand card/);
+  assert.match(supplied.candidates['buy:Armaments#0'].view, /Printed rule: Gain Block and upgrade a Hand card/);
   current.state_revision = 1;
-  assert.match(preparationReadingSupply(text, current, conciseCardCommand).reading, /remove:Inflame/);
+  assert.match(preparationReadingSupply(current, conciseCardCommand).reading, /remove:Inflame/);
 });
 
 test('small choice resource supply retains native owned relic and potion rules as one separate block', () => {
   const resources = 'Relics (1):\n  Mummified Hand\n    Power play changes one Hand card cost.\nPotions (2 slots; availability comes from current legal options):\n  P0 Fear Potion\n    Apply Vulnerable to enemies.\n  P1 empty';
-  const text = 'Deck (1):\n  Strike\n    Deal damage.\n' + resources + '\nNext section\n  separate';
-  const supplied = preparationReadingSupply(text, observation([]), conciseCardCommand);
-  assert.equal(supplied.resourceReading, resources);
-  assert.doesNotMatch(supplied.resourceReading, /Strike|Next section/);
+  const current = observation([]);
+  current.preparation_reading = preparationFixture(current);
+  current.preparation_reading.inventory.resources = resources;
+  current.preparation_reading.inventory.view = resources;
+  current.preparation_reading.inventory.relics = [{ relic: 'MummifiedHand', view: '木乃伊之手：随机改变一张手牌费用。' }];
+  const supplied = preparationReadingSupply(current, conciseCardCommand);
+  assert.ok(supplied.reading.includes(resources));
+  assert.doesNotMatch(supplied.reading, /Strike|Next section/);
+  assert.equal(supplied.relicReadings.MummifiedHand, '木乃伊之手：随机改变一张手牌费用。');
+  current.preparation_reading.public_snapshot_id = 'another-position';
+  assert.throws(() => preparationReadingSupply(current), /not bound/);
 });
 
 test('classification records benefit independently of realization and covers all current commands', () => {
@@ -522,11 +537,6 @@ test('post-boss classification targets the upcoming Act instead of early Act dev
   assert.doesNotMatch(text, /Act 1 development/);
   current.position.observation.observation.run.pending_act_entry = null;
   assert.match(preparationClassificationContext(current), /Act 1 development/);
-});
-
-test('preparation readings keep actual options and effects while removing the auxiliary options hint', () => {
-  const text = 'HP 49/80\ngo 4,5 | Rest\nMore: discard potion x1 (options)\nPotion rule: Gain Thorns 3.';
-  assert.equal(preparationReadingText(text), 'HP 49/80\ngo 4,5 | Rest\nPotion rule: Gain Thorns 3.');
 });
 
 test('permanent duplication supplies access and repeated-payment comparisons before and during target selection', () => {

@@ -21,6 +21,7 @@ use crate::render::{format_card, render_candidate_with_observation, render_rewar
 use crate::run_selection::{project_deck_cards_v1, project_run_selection_family_v1};
 
 pub(crate) mod combat;
+pub(crate) mod preparation;
 mod smith;
 
 #[cfg(test)]
@@ -1422,15 +1423,15 @@ fn write_choice_mechanics(out: &mut String, action: &TaskStrategicActionV1, brie
     }
 }
 
-fn render_shop(
-    out: &mut String,
-    decision: &TaskPublicDecisionV1,
+fn shop_offers(
     inventory: &PlannerShopInventoryV1,
-    options: &[DecisionOptionV1],
-    brief: bool,
-    bound: bool,
-) -> Result<BTreeSet<usize>, String> {
-    let offers = inventory
+) -> Vec<(
+    TaskStrategicActionV1,
+    String,
+    i32,
+    &PlannerShopPurchaseStatusV1,
+)> {
+    inventory
         .cards
         .iter()
         .map(|x| {
@@ -1470,7 +1471,18 @@ fn render_shop(
                 &x.purchase_status,
             )
         }))
-        .collect::<Vec<_>>();
+        .collect()
+}
+
+fn render_shop(
+    out: &mut String,
+    decision: &TaskPublicDecisionV1,
+    inventory: &PlannerShopInventoryV1,
+    options: &[DecisionOptionV1],
+    brief: bool,
+    bound: bool,
+) -> Result<BTreeSet<usize>, String> {
+    let offers = shop_offers(inventory);
     let purchasable = offers
         .iter()
         .filter(|(_, _, _, status)| matches!(status, PlannerShopPurchaseStatusV1::Purchasable))

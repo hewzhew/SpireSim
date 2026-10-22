@@ -24,7 +24,7 @@ import { readPlayerReview, adoptPlayerProposal, setPlayerGuidance } from './supe
 function decisionPosition(act = 1, boss = 'TheGuardian', domain = 'strategic', keys = [false, false, false]) {
   const context = { act, ascension_level: 20, run_goal: 'heart_victory',
     public_map: { boss }, keys };
-  return { kind: 'decision', observation: domain === 'strategic'
+  return { kind: 'decision', public_snapshot_id: 'fixture-position', observation: domain === 'strategic'
     ? { domain, observation: { run: context, run_goal: context.run_goal, public_map: context.public_map } }
     : { domain, run_context: { status: 'available', ...context }, observation: { player: { ascension_level: 20 } } } };
 }
@@ -35,7 +35,10 @@ async function fixture(t, rules, fail = false, behavior = {}) {
   await mkdir(join(repository, 'tools/run_play'), { recursive: true });
   await mkdir(session);
   const positionFile = join(repository, 'position.json');
-  const setPosition = position => writeFile(positionFile, JSON.stringify(position));
+  const setPosition = position => {
+    if (position.kind === 'decision') position.public_snapshot_id ??= 'fixture-position';
+    return writeFile(positionFile, JSON.stringify(position));
+  };
   await setPosition(decisionPosition());
   await writeFile(join(repository, 'tools/run_play/session.mjs'),
     'export const freshRecordDirectory = repository => repository + "/records";\n'
@@ -68,10 +71,19 @@ async function fixture(t, rules, fail = false, behavior = {}) {
             }
           }
           const current = await position();
-          return { schema: 'sts-run-play-agent-observation-v3', session_id: 'fixture',
+          const observed = { schema: 'sts-run-play-agent-observation-v3', session_id: 'fixture',
             head_revision: current.revision ?? 1, state_revision: current.revision ?? 1,
             position: current, ...(current.decisionEvidence ? { decision_evidence: current.decisionEvidence } : {}),
             ...(current.deckEvidence ? { deck_evidence: current.deckEvidence } : {}) };
+          if (current.observation?.domain === 'strategic') {
+            const { preparationFixture } = await import(${JSON.stringify(new URL('./preparation-fixture.test.mjs', import.meta.url).href)});
+            const state = current.observation.observation;
+            observed.preparation_reading = preparationFixture(observed, {
+              overview: 'Act ' + state.run.act + ' F' + (state.run.floor ?? 0) + ' | ' + (state.context?.kind ?? 'decision'),
+              ...(current.preparationOptions ?? {}),
+            });
+          }
+          return observed;
         },
         async preview(commands) {
           const endpoint = ${JSON.stringify(behavior.previews ?? {})}[commands.join(' / ')];
@@ -1044,6 +1056,7 @@ function checkedCardPosition() {
     cards: [{ current: { card: 'BurningPact', upgrades: 0, card_type: 'Skill', cost: 1, draw_cards: 2,
       exhausts_other_cards: true, exhausts: false } }] }] };
   current.reading = 'Act 2 F21\ntake:BurningPact#0  |  Burning Pact\n  Card Burning Pact | Skill | 1c\n    Printed rule (base/upgraded): Exhaust one other Hand card, then draw 2.\nskip-card#0  |  Skip\n';
+  current.preparationOptions = { cardRuleViews: { BurningPact: 'Card Burning Pact | Skill | 1c\nPrinted rule: Exhaust one other Hand card, then draw 2.' } };
   return current;
 }
 
@@ -1429,6 +1442,8 @@ test('official preparation assembly supplies one small bottle comparison and bin
     + 'Deck (4):\n  ' + 'old full card discussion '.repeat(300)
     + '\nRelics (1):\n  Sacred Bark\n    Double potion effectiveness.\nPotions (2 slots; availability comes from current legal options):\n'
     + '  P0 Speed Potion\n    Temporary Dexterity.\n  P1 Fear Potion\n    Apply Vulnerable.\n';
+  current.preparationOptions = { stockViews: { BlockPotion: 'Block Potion 40g (slots full)\nGain 12 Block.' },
+    resources: 'Sacred Bark\nDouble potion effectiveness.\nSpeed Potion\nTemporary Dexterity.\nFear Potion\nApply Vulnerable.' };
   const after = structuredClone(current); after.revision = 2; after.public_snapshot_id = 'after-discard';
   after.observation.observation.potions[0].potion = null;
   after.observation.observation.context.inventory.potions[0].purchase_status = { status: 'purchasable' };
@@ -1492,6 +1507,9 @@ test('small shop assembly saves the native follow-up and measures supply above t
     + 'buy:ShrugItOff#0  |  buy Shrug It Off 80g\n  Card: Skill | 1c\n  Printed rule: Gain 8 Block, then draw 1 card.\n'
     + 'buy:MembershipCard#0  |  buy Membership Card 50g\n  Relic: Halve shop prices.\nleave  |  leave shop\n'
     + 'Deck (1):\n  Inflame | Power | 1c\n    Gain 2 Strength for the rest of combat.\nRelics (0):\nPotions (0 slots):\n';
+  current.preparationOptions = { stockViews: { ShrugItOff: 'Shrug It Off\nGain 8 Block, then draw 1 card.',
+    MembershipCard: 'Membership Card\nHalve shop prices.' },
+    cardViews: { Inflame: 'Inflame\nGain 2 Strength for the rest of combat.' } };
   const after = (gold, cards, relics, snapshot) => {
     const next = structuredClone(current); next.revision = 2; next.public_snapshot_id = snapshot;
     next.observation.observation.run.gold = gold;
@@ -1540,7 +1558,7 @@ test('small shop assembly saves the native follow-up and measures supply above t
   assert.ok(!(await f.calls()).includes('buy:ShrugItOff#0'));
 
   await handle.dispose();
-  current.reading = current.reading.replace('Halve shop prices.', 'Large native rule '.repeat(400));
+  current.preparationOptions.stockViews.MembershipCard = 'Membership Card\n' + 'Large native rule '.repeat(400);
   await f.setPosition(current);
   const tooLarge = await f.create({ taskScope: 'preparation' }); t.after(() => tooLarge.dispose());
   tooLarge.agent.followup(createUserMessage({ source: { kind: 'user' }, content: [{ type: 'text', text: 'Complete one preparation.' }] }));
@@ -1607,6 +1625,7 @@ test('native bottle facts above the byte target reach the model intact with a re
     kind: 'discard_run_potion', slot: 0, potion: 'SpeedPotion' } } }, { semantic_action: 'leave', candidate: { action: { kind: 'leave_shop' } } }];
   current.reading = 'Act 2 F21 | Shop\nPotions for sale:\n  Block Potion 40g · Gain Block.\nRelics (1):\n'
     + '  Native relic\n    ' + 'full effect '.repeat(800) + '\nPotions (1 slot):\n  P0 Speed Potion\n    Full native effect.\n';
+  current.preparationOptions = { resources: 'Native relic\n' + 'full effect '.repeat(800) + '\nSpeed Potion\nFull native effect.' };
   await f.setPosition(current);
   let requests = 0;
   class Adapter extends LlmAdapter {

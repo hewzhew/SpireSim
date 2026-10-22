@@ -594,17 +594,11 @@ export async function runPreparationFlow(options, display = console.log) {
         try {
           cardFrame = preparationCardChoice(policyReading, strategicOptionCommand);
           if (cardFrame?.route.kind === 'model') {
-            const workbench = await openWorkbench({ repository, session, binary,
-              recordDirectory: join(folder, 'card-reading-wire'), commandPrefix: '' });
-            try {
-              const fresh = await workbench.execute('read, inventory effects');
-              if (!sameGameContextSource(before, await workbench.observe())) throw new Error('Card-choice source changed while reading its rules.');
-              const supply = preparationReadingSupply(fresh.text, policyReading, strategicOptionCommand);
-              policyReading.candidateReadings = supply.candidates;
-              policyReading.ownedResourceReading = supply.resourceReading;
-              cardFrame = preparationCardChoice(policyReading, strategicOptionCommand);
-              renderPreparationCardChoice(cardFrame);
-            } finally { await workbench.close(); }
+            const supply = preparationReadingSupply(policyReading, strategicOptionCommand);
+            policyReading.candidateReadings = supply.candidates;
+            policyReading.ownedRelicReadings = supply.relicReadings;
+            cardFrame = preparationCardChoice(policyReading, strategicOptionCommand);
+            renderPreparationCardChoice(cardFrame);
           }
         }
         catch (error) {

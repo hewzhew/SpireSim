@@ -20,6 +20,7 @@
   },
   "files": [
     "*.mjs",
+    "strategy-roles.json",
     "!*.test.mjs",
     "!build-client.mjs",
     "client.js",

@@ -1,3 +1,4 @@
+use serde::Serialize;
 use std::collections::BTreeMap;
 use std::fmt::Write as _;
 
@@ -286,11 +287,41 @@ pub fn render_inventory_v1(
     render_inventory_decision_v1(decision, effects, combat)
 }
 
+#[derive(Clone, Debug, PartialEq, Serialize)]
+pub struct InventoryCardReadingV1 {
+    pub card: cards::CardId,
+    pub upgrades: u8,
+    pub count: usize,
+    pub view: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize)]
+pub struct InventoryRelicReadingV1 {
+    pub relic: relics::RelicId,
+    pub view: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize)]
+pub struct InventoryReadingV1 {
+    pub view: String,
+    pub cards: Vec<InventoryCardReadingV1>,
+    pub relics: Vec<InventoryRelicReadingV1>,
+    pub resources: String,
+}
+
 pub(crate) fn render_inventory_decision_v1(
     decision: TaskPublicDecisionV1,
     effects: bool,
     combat: Option<sts_oracle_learning::sim::combat::CombatPosition>,
 ) -> Result<String, String> {
+    Ok(inventory_reading_decision_v1(decision, effects, combat)?.view)
+}
+
+pub(crate) fn inventory_reading_decision_v1(
+    decision: TaskPublicDecisionV1,
+    effects: bool,
+    combat: Option<sts_oracle_learning::sim::combat::CombatPosition>,
+) -> Result<InventoryReadingV1, String> {
     let potion_slots: Vec<_> = match &decision.observation {
         TaskPublicObservationV1::Strategic { observation } => observation
             .potions
@@ -374,7 +405,9 @@ pub(crate) fn render_inventory_decision_v1(
             .or_insert((0, card, upgrades, cost_modifier))
             .0 += 1;
     }
+    let mut card_readings = Vec::new();
     for (card, &(count, id, upgrades, cost_modifier)) in &counts {
+        let start = output.len();
         if count == 1 {
             write!(output, "  {card}").expect("string write");
         } else {
@@ -400,6 +433,12 @@ pub(crate) fn render_inventory_decision_v1(
             .expect("string write");
             crate::mechanics_info::write_card_fixed_requests(&mut output, id, upgrades);
         }
+        card_readings.push(InventoryCardReadingV1 {
+            card: id,
+            upgrades,
+            count,
+            view: output[start..].to_owned(),
+        });
     }
     if effects {
         crate::mechanics_info::write_owned_card_links(
@@ -409,8 +448,11 @@ pub(crate) fn render_inventory_decision_v1(
                 .map(|&(count, id, upgrades, modifier)| (id, upgrades, modifier, count)),
         );
     }
+    let resources_start = output.len();
+    let mut relic_readings = Vec::new();
     writeln!(output, "Relics ({}):", relics.len()).expect("string write");
     for (relic, id) in relics {
+        let start = output.len();
         writeln!(output, "  {relic}").expect("string write");
         if effects {
             writeln!(
@@ -422,6 +464,10 @@ pub(crate) fn render_inventory_decision_v1(
             )
             .expect("string write");
         }
+        relic_readings.push(InventoryRelicReadingV1 {
+            relic: id,
+            view: output[start..].to_owned(),
+        });
     }
     if effects {
         writeln!(
@@ -447,7 +493,12 @@ pub(crate) fn render_inventory_decision_v1(
             }
         }
     }
-    Ok(output)
+    Ok(InventoryReadingV1 {
+        resources: output[resources_start..].to_owned(),
+        view: output,
+        cards: card_readings,
+        relics: relic_readings,
+    })
 }
 
 fn combat_deck_card_label_v1(card: &sts_oracle_learning::runtime::combat::CombatCard) -> String {

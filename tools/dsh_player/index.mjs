@@ -19,7 +19,7 @@ import { gameContextSource, sameGameContextSource, requestBranchReset, requestDe
   contextQueryCommand, decisionContextSource, decisionQueryReferences } from './context.mjs';
 import { needsMaintainerReview, proposePlayerCommand, readPlayerReview,
   playerReviewOutstanding, playerPauseText, currentPlayerGuidance, currentPlayerAdoption } from './supervision.mjs';
-import { preparationReading, preparationReadingText, preparationReadingSupply, preparationStageGuide, PREPARATION_PROCEDURE, PREPARATION_TOOL_PARAMETERS, PREPARATION_SHOP_TOOL_PARAMETERS, PREPARATION_TOOL_DESCRIPTION, preparationTaskRoot, preparationTaskProgress,
+import { preparationReading, preparationReadingSupply, preparationStageGuide, PREPARATION_PROCEDURE, PREPARATION_TOOL_PARAMETERS, PREPARATION_SHOP_TOOL_PARAMETERS, PREPARATION_TOOL_DESCRIPTION, preparationTaskRoot, preparationTaskProgress,
   preparationProgressText, assertPreparationCommand, restoredPreparationDecision, preparationCommandBasis,
   preparationClassificationContext, preparationCandidateGroups, preparationConditionBindings, collectPreparationClassification,
   preparationClassificationReceipt, preparationRecordedTable } from './preparation.mjs';
@@ -112,15 +112,15 @@ export async function apply(ctx, config) {
   let preparationRoot = config.preparationRoot, taskProgress = '', adoptedDecision, classification, classificationDraft, preparationFailures = 0;
   let preparationReviewCandidate, preparationContext;
   let shopBudget;
-  let presentation;
   let cardChoiceFrame;
   let rulesKey, rulesText = '';
   const shopPlanFile = join(config.session, 'dsh-shop-plan.json');
   async function prepareReading(raw, game, signal) {
     const reading = { ...preparationReading(raw, config.rewardProgress) };
-    if (sameGameContextSource(presentation?.source, reading)) {
-      reading.candidateReadings = presentation.candidates;
-      reading.ownedResourceReading = presentation.resourceReading;
+    if (reading.preparation_reading) {
+      const supply = preparationReadingSupply(reading, strategicOptionCommand);
+      reading.candidateReadings = supply.candidates;
+      reading.ownedRelicReadings = supply.relicReadings;
     }
     if (reading.position?.observation?.observation?.context?.kind !== 'shop'
         || (preparationRoot && preparationTaskProgress(preparationRoot, reading) !== 'pending')) return reading;
@@ -272,14 +272,6 @@ export async function apply(ctx, config) {
               const frame = taskProgress === 'pending' ? preparationCardChoice(reading, strategicOptionCommand) : undefined;
               if (frame) {
                 if (['read', 'options'].includes(group[0])) {
-                  const fresh = await game.execute('read, inventory effects', { signal: exec.signal });
-                  if (!sameGameContextSource(reading, await game.observe({ signal: exec.signal }))) {
-                    throw new Error('Game position changed while supplying the card choice; read the current step.');
-                  }
-                  const supply = preparationReadingSupply(fresh.text, reading, strategicOptionCommand);
-                  presentation = { source: gameContextSource(reading), candidates: supply.candidates, resourceReading: supply.resourceReading };
-                  reading.candidateReadings = supply.candidates;
-                  reading.ownedResourceReading = supply.resourceReading;
                   cardChoiceFrame = preparationCardChoice(reading, strategicOptionCommand);
                   return { text: renderPreparationCardChoice(cardChoiceFrame) };
                 }
@@ -297,11 +289,7 @@ export async function apply(ctx, config) {
               }
               if (taskProgress === 'pending' && (shopPotionReplacementScope(reading, strategicOptionCommand) || shopSpendingScope(reading, strategicOptionCommand))
                   && ['read', 'options'].includes(group[0])) {
-                const fresh = await game.execute('read, inventory effects', { signal: exec.signal });
-                if (!sameGameContextSource(reading, await game.observe({ signal: exec.signal }))) {
-                  throw new Error('Game position changed while supplying the bottle comparison; read the current step.');
-                }
-                const supply = preparationReadingSupply(fresh.text, reading, strategicOptionCommand);
+                const supply = preparationReadingSupply(reading, strategicOptionCommand);
                 const context = preparationClassificationContext(reading, strategicOptionCommand, classificationDraft);
                 return { text: `${supply.reading}\n${context}` };
               }
@@ -395,7 +383,7 @@ export async function apply(ctx, config) {
                 preparationExecution = { adopted: { command: adoptedCommand, renderedBasis: comparison?.renderedBasis }, receipt: result };
               }
               if (comparison || taskProgress === 'selection') preparationFailures = 0;
-              texts.push(preparationReadingText(result.text));
+              texts.push(result.text);
               const successor = await game.observe({ signal: exec.signal });
               if (preparationExecution) preparationExecution.successor = successor;
               updateTaskProgress(successor, adoptedCommand, comparison?.renderedBasis);
@@ -537,7 +525,8 @@ export async function apply(ctx, config) {
       if (!sameGameDecisionTask(decisionTask, task) || hasPendingGameContextReset(owner)) {
         const game = await openPlayer();
         const command = reading.position.kind === 'terminal' ? 'read' : 'read, inventory effects';
-        const fresh = await game.execute(command, { signal: context.signal });
+        const fresh = taskScope === 'preparation' && reading.position.kind !== 'terminal'
+          ? null : await game.execute(command, { signal: context.signal });
         const queries = [], queryRefs = [];
         for (const query of taskScope === 'run' ? decisionQueryReferences(owner, task, normalizeContextQuery) : []) {
           try {
@@ -552,15 +541,14 @@ export async function apply(ctx, config) {
             queries.push({ command: query.command, text: `Earlier query could not be refreshed: ${error.message}\nIts old answer was not retained.` });
           }
         }
-        if (!sameGameContextSource(reading, await game.observe({ signal: context.signal }))) {
+        if (fresh && !sameGameContextSource(reading, await game.observe({ signal: context.signal }))) {
           throw new Error('Game position changed while rebuilding decision context; reconnect to read the actual state.');
         }
         const supply = taskScope === 'preparation' && reading.position.kind !== 'terminal'
-          ? preparationReadingSupply(fresh.text, reading, strategicOptionCommand) : { reading: fresh.text };
+          ? preparationReadingSupply(reading, strategicOptionCommand) : { reading: fresh.text };
         if (supply.candidates) {
-          presentation = { source: gameContextSource(reading), candidates: supply.candidates, resourceReading: supply.resourceReading };
           reading.candidateReadings = supply.candidates;
-          reading.ownedResourceReading = supply.resourceReading;
+          reading.ownedRelicReadings = supply.relicReadings;
           if (cardChoiceFrame) cardChoiceFrame = preparationCardChoice(reading, strategicOptionCommand);
           classificationText = currentClassificationText(reading);
         }
