@@ -96,7 +96,7 @@ export async function apply(ctx, config) {
   let rulesKey, rulesText = '';
   const shopPlanFile = join(config.session, 'dsh-shop-plan.json');
   async function prepareReading(raw, game, signal) {
-    const reading = { ...preparationReading(raw, config.rewardProgress) };
+    const reading = { ...preparationReading(raw, config.rewardProgress, presentation.locale) };
     if (reading.preparation_reading) {
       const supply = preparationReadingSupply(reading, strategicOptionCommand, presentation.locale);
       reading.candidateReadings = supply.candidates;

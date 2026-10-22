@@ -413,48 +413,48 @@ export function preparationExpertGuidance(observation, normalize = command => co
   const state = observation.position?.observation?.observation;
   if (!state || !Array.isArray(state.cards)) return undefined;
   const owned = state.cards.filter(row => row.count > 0);
-  const format = rows => rows.map(row => `${row.count}x ${row.card}${row.upgrades > 0 ? '+' : ''}`).join(', ') || 'none';
+  const format = rows => rows.map(row => `${row.count}x ${row.card}${row.upgrades > 0 ? '+' : ''}`).join(', ') || strategyText(locale, 'none');
   const owns = id => owned.some(row => row.card === id);
   const occupied = (state.potions ?? []).filter(slot => slot?.potion != null);
   const strengthCards = owned.filter(row => strength.has(row.card) || (row.card === 'Rupture' && owned.some(row => selfLoss.has(row.card))));
   const strengthItems = (state.relics ?? []).filter(row => strengthRelics.has(row.relic)).map(row => row.relic);
   const inventory = [
-    `Starter attacks: ${format(owned.filter(row => row.card === 'Strike' || row.card === 'Bash'))}. Additional damage cards in this handbook: ${format(owned.filter(row => damage.has(row.card)))}.`,
-    `Owned Strength-source cards in this handbook: ${format(strengthCards)}. Relevant relics: ${strengthItems.join(', ') || 'none'}. Each source uses its supplied trigger and timing.`,
-    `Owned draw/Hand-planning cards in this handbook: ${format(owned.filter(row => access.has(row.card)))}. Triggered or targeted access: ${format(owned.filter(row => triggeredAccess.has(row.card)))}.`,
+    strategyText(locale, 'inventoryAttacks', { starters: format(owned.filter(row => row.card === 'Strike' || row.card === 'Bash')), damage: format(owned.filter(row => damage.has(row.card))) }),
+    strategyText(locale, 'inventoryStrength', { cards: format(strengthCards), relics: strengthItems.join(', ') || strategyText(locale, 'none') }),
+    strategyText(locale, 'inventoryAccess', { cards: format(owned.filter(row => access.has(row.card))), triggered: format(owned.filter(row => triggeredAccess.has(row.card))) }),
   ];
   if ((state.relics ?? []).some(row => row.relic === 'ToyOrnithopter')) {
-    inventory.push(`ToyOrnithopter recovery is supplied by drinking an owned potion. Current occupied potion slots: ${occupied.length}; healing per use follows the supplied relic rule. Future potion acquisition adds later opportunities.`);
+    inventory.push(strategyText(locale, 'ornithopterRecovery', { occupiedSlots: occupied.length }));
   }
   if ((state.relics ?? []).some(row => row.relic === 'Ectoplasm')) {
-    inventory.push(`Ectoplasm spending budget: retained current Gold ${state.run?.gold ?? 'Unknown'} funds later shopping and removal. Future Gold rewards supply 0 additional spending budget. Ordinary and elite victories still offer card choices and permitted potion rewards; elite victories also offer relic rewards. PeacePipe, when owned, uses a campfire action for its separate 0-Gold removal.`);
+    inventory.push(strategyText(locale, 'ectoplasmBudget', { gold: state.run?.gold ?? 'Unknown' }));
   }
   const selected = [];
   const site = state.context?.kind;
   const removalPrice = state.context?.inventory?.purge?.price;
   if (site === 'shop' && Number.isSafeInteger(removalPrice) && removalPrice >= 0) {
-    inventory.push(`Current offered removal price: ${removalPrice} Gold. A successful shop-removal purchase increases the base removal price; entering another shop keeps that base price. Shop discounts apply their own modifiers.`);
+    inventory.push(strategyText(locale, 'offeredRemovalPrice', { price: removalPrice }));
   }
   if (sitePolicies[site]) selected.push(sitePolicies[site]);
   const apparitionOffer = apparitionPreparationOffers(observation, normalize);
   if (apparitionOffer.length) {
-    inventory.push(...apparitionOffer.map(row => `${row.command}: obtain ${row.count} Apparition; `
-      + `HP ${row.hpBefore}->${row.hpAfter}; Max HP ${row.maxHpBefore}->${row.maxHpAfter}`));
-    const profile = preparationDeckComparison(observation);
+    inventory.push(...apparitionOffer.map(row => strategyText(locale, 'apparitionAcquisition', { command: row.command, count: row.count })
+      + strategyText(locale, 'hpAndMaxHpChange', { hpBefore: row.hpBefore, hpAfter: row.hpAfter, maxHpBefore: row.maxHpBefore, maxHpAfter: row.maxHpAfter })));
+    const profile = preparationDeckComparison(observation, undefined, locale);
     const intangible = profile ? observation.deck_evidence.cards.filter(row => row.mechanics.intangible_gain > 0) : [];
     const act = state.run?.act;
     selected.push(policy('apparition-protection-window', [],
-      `Maintainer preference for this package: ${act === 2 && profile && !intangible.length
-        ? 'favor accepting the first Intangible package during Act 2 development'
-        : 'compare the added Intangible coverage with the current protected turns and remaining development window'}. `
-        + 'Each later combat starts with the acquired copies available again. This low-cost per-hit cap protects high-pressure turns while reaching and deploying useful functions. Ordinary Block, Weak and Strength reduction are complementary layers with their own access, payment and coverage. Compare the immediate HP change separately from the permanent Max HP reduction. Fixed healing retains its amount subject to that lower cap.',
-      'Use named constraints for a lower priority: already-owned Intangible coverage, actual HP-payment demands under the new cap, a card-play restriction that crowds out needed protection, or access/payment that makes the offered copies unusable in time. Ethereal rewards using an unupgraded drawn copy; upgrades and useful draw improve timing. These constraints are weighed against the new protected turns across remaining combats.'));
+      strategyText(locale, 'apparitionPreference', { preference: act === 2 && profile && !intangible.length
+        ? strategyText(locale, 'firstIntangibleActTwo')
+        : strategyText(locale, 'compareIntangibleCoverage') })
+        + strategyText(locale, 'apparitionLongTermPlan'),
+      strategyText(locale, 'apparitionConstraints')));
   }
   if (site === 'run_choice') {
     const reason = state.context.reason;
     selected.push(reason === 'Duplicate'
-      ? policy('copy', ['cx', 'jorbs'], 'Prefer an extra useful play or better access to an important function. Protecting and reaching an existing engine often takes priority over another slow setup copy.', 'A cheap actual instance or insufficient existing output can make the extra copy valuable.')
-      : policy('cleanup', ['cx', 'equation'], 'Default to giving up a weak recurring draw while preserving useful damage, protection, access and enabling cards.', 'An obstructive curse, redundant function or actual replacement distribution can change the best target.'));
+      ? policy('copy', ['cx', 'jorbs'], strategyText(locale, 'copyPreference'), strategyText(locale, 'copyConditions'))
+      : policy('cleanup', ['cx', 'equation'], strategyText(locale, 'cleanupPreference'), strategyText(locale, 'cleanupConditions')));
   }
   const candidates = preparationCardExpertGuidance(observation, normalize, locale);
   if (!selected.length && !candidates.length) return undefined;
@@ -477,12 +477,12 @@ export function preparationCardExpertGuidance(observation, normalize = command =
     const card = acquisition?.card, role = catalogue.cards[card];
     if (!acquisition || (!cardPolicies[card] && !role)) return [];
     const advice = cardPolicies[card] ?? { id: `role-${card}`, sources: ['cx'] };
-    const combust = card === 'Combust' ? repeatedCombustAdvice(observation, acquisition) : undefined;
+    const combust = card === 'Combust' ? repeatedCombustAdvice(observation, acquisition, locale) : undefined;
     let conversion;
     if (card === 'BodySlam' && acquisition.mechanics && observation.deck_evidence) {
-      const profile = preparationDeckComparison(observation, normalize);
+      const profile = preparationDeckComparison(observation, normalize, locale);
       const offer = profile?.candidates.find(candidate => candidate.command === normalize(row.semantic_action, observation));
-      const checked = offer && paidBlockConversionDefault(state, observation.deck_evidence.cards, profile, offer);
+      const checked = offer && paidBlockConversionDefault(state, observation.deck_evidence.cards, profile, offer, locale);
       if (checked) conversion = { preference: checked.preference, change: checked.facts.join(' ') };
     }
     return [{ command: normalize(row.semantic_action, observation), card, ...advice,
@@ -490,12 +490,12 @@ export function preparationCardExpertGuidance(observation, normalize = command =
       ...(conversion ?? {}),
       ...(role ? { sourceRole: role, familyIds: families.filter(family => family.cards.has(card)).map(family => family.id) } : {}),
       ...(card === 'Evolve' && state.run?.act === 4 ? {
-        preference: `${advice.preference} Heart supplies early Statuses, creating early access value after deployment.`,
+        preference: strategyText(locale, 'evolveHeartAccess', { preference: advice.preference }),
       } : {}) }];
   });
 }
 
-function repeatedCombustAdvice(observation, acquisition) {
+function repeatedCombustAdvice(observation, acquisition, locale = 'en') {
   if (observation.deck_evidence?.public_snapshot_id !== observation.position?.public_snapshot_id) return;
   const effect = acquisition.mechanics?.end_of_turn_hp_loss_and_damage;
   const owned = observation.deck_evidence?.cards?.filter(row => row.card.card === 'Combust'
@@ -509,8 +509,8 @@ function repeatedCombustAdvice(observation, acquisition) {
   const hpLoss = owned.reduce((n, row) => n + row.card.count * row.mechanics.end_of_turn_hp_loss_and_damage.hp_loss_per_application, 0);
   const damage = owned.reduce((n, row) => n + row.card.count * row.mechanics.end_of_turn_hp_loss_and_damage.damage_per_enemy_per_application, 0);
   return {
-    preference: 'Prefer useful protection, access or recovery over a repeated HP-funded area setup; keeping the draw slot and shopping Gold is also a useful continuation.',
-    change: `Owned Combust copies ${copies}->${copies + 1}. If all owned copies and the addition deploy, each later player turn-end requests HP loss ${hpLoss}->${hpLoss + effect.hp_loss_per_application} and damage per enemy ${damage}->${damage + effect.damage_per_enemy_per_application}, before modifiers. Each copy needs actual access and its own payment. More area output arriving in time can justify the added setup and recurring HP cost.`,
+    preference: strategyText(locale, 'repeatedCombustPreference'),
+    change: strategyText(locale, 'repeatedCombustConditions', { beforeCopies: copies, afterCopies: copies + 1, beforeHpLoss: hpLoss, afterHpLoss: hpLoss + effect.hp_loss_per_application, beforeDamage: damage, afterDamage: damage + effect.damage_per_enemy_per_application }),
   };
 }
 
@@ -528,42 +528,42 @@ const payableTransitions = (cards, energy) => cards.filter(row => damage.has(row
 
 // A starting-inventory request, not a combat forecast. Strike counts change
 // when cards are created or leave Hand/Draw/Discard during the actual fight.
-function retrievalOutput(source, profile) {
+function retrievalOutput(source, profile, locale = 'en') {
   const delivery = source.mechanics.damage?.delivery;
   if (delivery?.kind !== 'attack' || delivery.targets !== 'selected_enemy'
       || delivery.hits?.kind !== 'fixed' || !Number.isSafeInteger(delivery.hits.count)
       || delivery.hits.count <= 0 || !Number.isSafeInteger(source.persistent_damage)
       || delivery.play_condition) return;
   let perHit = source.persistent_damage;
-  let basis = `${perHit} base damage per hit`;
+  let basis = strategyText(locale, 'retrievalBaseDamage', { damage: perHit });
   if (delivery.amount?.kind === 'base_plus_strike_cards') {
     if (!profile.strikeTags || !Number.isSafeInteger(delivery.amount.per_card)) return;
     perHit += delivery.amount.per_card * profile.strikeTags.copies;
-    basis += ` + ${delivery.amount.per_card} x ${profile.strikeTags.copies} original Strike-tagged copies`;
+    basis += strategyText(locale, 'retrievalStrikeBonus', { perCard: delivery.amount.per_card, copies: profile.strikeTags.copies });
   } else if (delivery.amount?.kind !== 'base') return;
   return { total: perHit * delivery.hits.count,
-    fact: `${labelCard(source)}: ${basis}, ${delivery.hits.count} hits, ${source.persistent_cost} Energy; before modifiers and combat pile changes.` };
+    fact: strategyText(locale, 'retrievalOutputFact', { card: labelCard(source), basis: basis, hits: delivery.hits.count, cost: source.persistent_cost }) };
 }
 
-function laterOutputCoverage(state, cards, profile) {
+function laterOutputCoverage(state, cards, profile, locale = 'en') {
   const transitions = payableTransitions(cards, profile.baseEnergy);
   const focused = cards.flatMap(source => {
     if (source.persistent_cost < 0 || source.persistent_cost > profile.baseEnergy
         || source.mechanics.exhausts !== false) return [];
-    const output = retrievalOutput(source, profile);
+    const output = retrievalOutput(source, profile, locale);
     return output?.total >= 18 ? [{ source, ...output }] : [];
   });
   const count = transitions.reduce((n, row) => n + row.card.count, 0);
   return { supported: state.run.act >= 2 && state.run.act <= 3 && profile.baseEnergy >= 3
     && !(state.relics ?? []).some(row => ['SneckoEye', 'VelvetChoker'].includes(row.relic))
     && count >= 4 && focused.length > 0,
-    facts: [`Owned payable transition attacks: ${count}.`, ...focused.map(row => row.fact)] };
+    facts: [strategyText(locale, 'ownedPayableAttackCount', { count: count }), ...focused.map(row => row.fact)] };
 }
 
 // Shared by free rewards and purchases. The output default concerns adding
 // this paid conversion; shop Gold and survival resources still compete.
-function paidBlockConversionDefault(state, cards, profile, offer) {
-  const coverage = laterOutputCoverage(state, cards, profile);
+function paidBlockConversionDefault(state, cards, profile, offer, locale = 'en') {
+  const coverage = laterOutputCoverage(state, cards, profile, locale);
   const block = profile.fixedPlayedBlock;
   if (!coverage.supported || offer.card !== 'BodySlam' || offer.upgrades !== 0
       || offer.type !== 'Attack' || offer.cost !== 1 || offer.exhausts !== false
@@ -580,10 +580,10 @@ function paidBlockConversionDefault(state, cards, profile, offer) {
   if (!example) return;
   return { policy: 'covered-output-paid-block-conversion', disposition: 'preserve', facts: [
     ...coverage.facts,
-    `Owned fixed on-play Block: ${block.map(source => `${source.card} (${source.block} Block, ${source.cost} Energy)`).join('; ')} before combat modifiers.`,
-    `Same-Hand example: ${example.card} + BodySlam costs ${example.cost + offer.cost} Energy and converts the ${example.block}-Block request into base damage while preserving Block. Other Block plays can add requests when actually reached and paid; this example is not a turn-output bound.`,
-    'Ordinary Block lasts for the current turn. A combat upgrade can lower BodySlam payment after actual shared-Hand access and upgrade payment.',
-  ], preference: 'Preserve existing output access over an extra paid Block-conversion attack in this foundation. In shops, prioritize useful protection, access, recovery or Gold retained. Larger, free, retained or triggered Block and a zero-cost conversion need their own comparison.' };
+    strategyText(locale, 'ownedFixedBlockBeforeModifiers', { cards: block.map(source => strategyText(locale, 'ownedBlockAndCost', { card: source.card, block: source.block, cost: source.cost })).join('; ') }),
+    strategyText(locale, 'sameHandBlockConversion', { card: example.card, cost: example.cost + offer.cost, block: example.block }),
+    strategyText(locale, 'ordinaryBlockLifetime'),
+  ], preference: strategyText(locale, 'paidBlockConversionPreference') };
 }
 
 function ownedDrawPaymentBundle(cards, profile, extraEnergy) {
@@ -629,21 +629,21 @@ function handUpgradeTargets(cards, energy) {
 // Pick a removal target before comparing the shop's spending alternatives.
 // The rule concerns the target only; buying removal still competes with the
 // other purchases and keeping Gold in the current classification.
-export function preparationShopRemovalPolicy(observation) {
+export function preparationShopRemovalPolicy(observation, locale = 'en') {
   const state = observation.position?.observation?.observation;
   const purge = state?.context?.inventory?.purge;
   if (state?.context?.kind !== 'shop' || !observation.deck_evidence
       || purge?.purchase_status?.status !== 'purchasable' || !Number.isSafeInteger(purge.price)
       || purge.price < 0 || !Number.isSafeInteger(state.run?.gold) || purge.price > state.run.gold
       || !Number.isSafeInteger(state.run?.act) || state.run.act < 2) return;
-  const profile = preparationDeckComparison(observation);
+  const profile = preparationDeckComparison(observation, undefined, locale);
   if (!profile) return;
   const cards = observation.deck_evidence.cards;
   const strength = profile.strengthSources.filter(row => row.cost >= 0 && row.cost <= profile.baseEnergy);
   const transitions = payableTransitions(cards, profile.baseEnergy);
   const count = transitions.reduce((n, row) => n + row.card.count, 0);
   const strikes = cards.filter(row => row.card.card === 'PerfectedStrike');
-  const covered = laterOutputCoverage(state, cards, profile);
+  const covered = laterOutputCoverage(state, cards, profile, locale);
   if ((!strength.length && !covered.supported) || count < 3
       || (strikes.length && (!profile.strikeTags
         || transitions.filter(row => row.card.card !== 'PerfectedStrike').reduce((n, row) => n + row.card.count, 0) < 3))
@@ -665,13 +665,13 @@ export function preparationShopRemovalPolicy(observation) {
   if (!commands.length) return;
   return { id: strength.length ? 'established-strength-basic-removal' : 'covered-output-basic-removal', origin: 'maintainer_strategy_default',
     sources: ['cx', 'equation'], commands,
-    conditions: [`Preparation Act ${state.run.act}.`,
-      `Owned payable enduring Strength: ${strength.map(row => row.card).join(', ') || 'none'}.`,
+    conditions: [strategyText(locale, 'removalPreparationAct', { act: state.run.act }),
+      strategyText(locale, 'removalOwnedStrength', { cards: strength.map(row => row.card).join(', ') || strategyText(locale, 'none') }),
       ...(!strength.length ? covered.facts : []),
-      `Owned payable transition attacks: ${count} (${transitions.map(labelCard).join(', ')}).`,
-      `Ordinary Strike${upgrades ? '+' : ''}: ${original.card.count} copies, 1 Energy, ${original.persistent_damage} base damage. Current removal: ${purge.price} Gold.`,
-      ...(strikes.length ? [`The original Strike-tagged pool changes ${profile.strikeTags.copies}->${profile.strikeTags.copies - 1}; owned PerfectedStrike uses that smaller pool. Other payable transition attacks: ${transitions.filter(row => row.card.card !== 'PerfectedStrike').reduce((n, row) => n + row.card.count, 0)}.`] : [])],
-    preference: `Use an ordinary Strike${upgrades ? '+' : ''} as the removal target with the checked owned output. Compare that spend with the offered purchases and keeping Gold.` };
+      strategyText(locale, 'removalOwnedAttacks', { count: count, cards: transitions.map(labelCard).join(', ') }),
+      strategyText(locale, 'ordinaryStrikeRemoval', { upgradeSuffix: upgrades ? '+' : '', copies: original.card.count, damage: original.persistent_damage, price: purge.price }),
+      ...(strikes.length ? [strategyText(locale, 'removalStrikePool', { before: profile.strikeTags.copies, after: profile.strikeTags.copies - 1, otherAttacks: transitions.filter(row => row.card.card !== 'PerfectedStrike').reduce((n, row) => n + row.card.count, 0) })] : [])],
+    preference: strategyText(locale, 'ordinaryStrikeRemovalPreference', { upgradeSuffix: upgrades ? '+' : '' }) };
 }
 
 function ordinaryRewardPolicy(state, cards, offers, profile) {
@@ -1626,25 +1626,25 @@ export function preparationCardPolicies(observation, profile, normalize = comman
 
 const labelCard = row => `${row.card.count}x ${row.card.card}${row.card.upgrades > 0 ? '+' : ''}`;
 
-export function renderCandidateExpertGuidance(candidate, { includeCommand = true } = {}) {
+export function renderCandidateExpertGuidance(candidate, { includeCommand = true, locale = 'en' } = {}) {
   return candidate?.preference
-    ? `Offered ${candidate.card}${includeCommand ? ` (${candidate.command})` : ''}: ${candidate.preference} Adjust using current conditions: ${candidate.change}` : '';
+    ? strategyText(locale, 'offeredCardGuidance', { card: candidate.card, commandSuffix: includeCommand ? ` (${candidate.command})` : '', preference: candidate.preference, change: candidate.change }) : '';
 }
 
-export function renderExpertGuidance(guidance, { includeCandidates = true } = {}) {
+export function renderExpertGuidance(guidance, { includeCandidates = true, locale = 'en' } = {}) {
   if (!guidance) return '';
   // Matching IDs stay in structured audit data. The player receives the actual
   // relationship once, rather than candidate tags that resemble a ranking.
-  const lines = ['Strategy guidance for the current preparation:',
-    ...guidance.inventory.map(text => `  Current facts: ${text}`),
-    ...guidance.policies.map(row => `  Current site: ${row.preference} Adjust using current conditions: ${row.change}`),
-    ...(guidance.construction?.priorities.length ? ['Owned functions and their development conditions:',
+  const lines = [strategyText(locale, 'guidanceHeading'),
+    ...guidance.inventory.map(text => strategyText(locale, 'guidanceCurrentFacts', { text: text })),
+    ...guidance.policies.map(row => strategyText(locale, 'guidanceCurrentSite', { preference: row.preference, change: row.change })),
+    ...(guidance.construction?.priorities.length ? [strategyText(locale, 'guidanceOwnedFunctions'),
       ...guidance.construction.priorities.flatMap(row => [
-        ...(row.ownedFacts.length ? [`  Owned basis: ${row.ownedFacts.join('; ')}.`] : []),
-        `  Development rule: ${row.preference}`,
+        ...(row.ownedFacts.length ? [strategyText(locale, 'guidanceOwnedBasis', { facts: row.ownedFacts.join('; ') })] : []),
+        strategyText(locale, 'guidanceDevelopmentRule', { preference: row.preference }),
       ])] : []),
     ...(guidance.families ?? []).map(row => `  ${row.text}`),
-    ...(includeCandidates ? guidance.candidates.map(renderCandidateExpertGuidance).filter(Boolean).map(text => `  ${text}`) : []),
-    `  Expert basis: ${Object.values(guidance.sources).map(row => row.author).join(', ')}; maintained synthesis. Exact effects come from the current simulator reading.`];
+    ...(includeCandidates ? guidance.candidates.map(candidate => renderCandidateExpertGuidance(candidate, { locale })).filter(Boolean).map(text => `  ${text}`) : []),
+    strategyText(locale, 'guidanceExpertBasis', { authors: Object.values(guidance.sources).map(row => row.author).join(', ') })];
   return lines.join('\n');
 }

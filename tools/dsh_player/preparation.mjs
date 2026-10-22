@@ -181,7 +181,7 @@ export function preparationProceduralAction(observation) {
 
 // Skip closes a card page without consuming its reward. This bounded cursor
 // belongs to reward navigation, and is valid only at its exact adopted source.
-export function preparationReading(observation, progress) {
+export function preparationReading(observation, progress, locale = 'en') {
   if (observation.position?.observation?.domain !== 'strategic') return observation;
   const state = observation.position.observation.observation;
   const hasEmptySlot = state?.potions?.some(slot => slot.potion === null);
@@ -189,7 +189,7 @@ export function preparationReading(observation, progress) {
   // or surrounding reward; Rust retains the complete legal action inventory.
   const hideDiscard = ['card_reward', 'campfire', 'map'].includes(state?.context?.kind)
     || hasEmptySlot || shopNeedsPotionSlot(observation) === false;
-  const shopRemovalPolicy = preparationShopRemovalPolicy(observation);
+  const shopRemovalPolicy = preparationShopRemovalPolicy(observation, locale);
   // Closing the route overlay preserves the same preparation. Supply the
   // actual destinations to classification and leave UI navigation in Rust.
   const hasRoutes = state?.context?.kind === 'map'
@@ -877,7 +877,7 @@ export function preparationClassificationContext(observation, normalize, draft, 
     ...(groups.some(group => group.members.length > 1)
       ? [preparationText(locale, 'groupedRowInstruction')] : []),
     renderDeckComparison(preparationDeckComparison(observation, normalize, locale), { candidateCommands: allGroups.map(group => group.command), locale }),
-    renderExpertGuidance(guidance, { includeCandidates: false }),
+    renderExpertGuidance(guidance, { includeCandidates: false, locale }),
     renderShopBudget(observation.shopBudget, observation.shopPlan, locale),
     ...(observation.shopRemovalPolicy ? [
       preparationText(locale, 'removalTargetStrategy', { preference: observation.shopRemovalPolicy.preference }),
@@ -892,7 +892,7 @@ export function preparationClassificationContext(observation, normalize, draft, 
       ...(copyFacts.has(group.command) ? [`  ${copyFacts.get(group.command).join(' ')}`] : []),
       ...(observation.candidateReadings?.[binding.command]
         ? [observation.candidateReadings[binding.command].view] : []),
-      ...[renderCandidateExpertGuidance(adviceByCommand.get(binding.command))].filter(Boolean).map(text => `  ${text}`),
+      ...[renderCandidateExpertGuidance(adviceByCommand.get(binding.command), { locale })].filter(Boolean).map(text => `  ${text}`),
       ...binding.fixedMechanics.map(text => preparationText(locale, 'fixedMechanics', { text: text })),
       ...binding.choices.map(choice => `  ${choice.id}${choice.realizations ? preparationText(locale, 'realizationLabel', { realizations: choice.realizations.join('/') }) : ''}: ${choice.text}`),
       ];
@@ -1049,7 +1049,7 @@ export function preparationRecordedTable(classification, observation, normalize,
     const row = classification.rows.find(row => row.command === group.command);
     return `  ${row.command} | ${row.category} | ${row.realization} | ${row.conditionIds?.join(',') ?? preparationText(locale, 'basisBelow')}`;
   }), renderDeckComparison(preparationDeckComparison(observation, normalize, locale), { candidateCommands: representatives.map(group => group.command), locale }),
-  renderExpertGuidance(preparationExpertGuidance(observation, normalize, locale)),
+  renderExpertGuidance(preparationExpertGuidance(observation, normalize, locale), { locale }),
   preparationText(locale, 'recordedFacts'), ...[...shared].flatMap(([commands, texts]) => [
     preparationText(locale, 'appliesTo', { commands: commands }), ...texts.map(text => `    ${text}`),
   ]),

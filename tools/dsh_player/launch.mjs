@@ -604,7 +604,7 @@ export async function runPreparationFlow(options, display = console.log) {
         result.outcome = 'checkpoint'; break;
       }
       display(launcherText(locale, 'flowStep', { step: step, act: run.act, floor: run.floor, context: combat ? 'combat' : visible.observation.context.kind }));
-      const policyReading = preparationReading(before, rewardProgress);
+      const policyReading = preparationReading(before, rewardProgress, agentLocale);
       const procedural = combat ? undefined : preparationProceduralAction(policyReading);
       let cardFrame;
       if (!combat && !procedural) {

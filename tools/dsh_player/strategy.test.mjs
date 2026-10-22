@@ -11,6 +11,8 @@ test('candidate guidance hides only its command label and keeps the supplied pre
   const candidate = { card: 'Strike', command: 'take:Strike#0', preference: 'Keep (take:Strike#0) {{raw}} in this recorded explanation.', change: '原始 🐈' };
   assert.equal(renderCandidateExpertGuidance(candidate, { includeCommand: false }), 'Offered Strike: Keep (take:Strike#0) {{raw}} in this recorded explanation. Adjust using current conditions: 原始 🐈');
   assert.match(renderCandidateExpertGuidance(candidate), /^Offered Strike \(take:Strike#0\):/);
+  const chinese = renderCandidateExpertGuidance(candidate, { includeCommand: false, locale: 'zh-CN' });
+  assert.equal(chinese, '候选 Strike：Keep (take:Strike#0) {{raw}} in this recorded explanation. 根据当前条件调整：原始 🐈');
 });
 
 const root = () => ({ schema: 'sts-run-play-agent-observation-v3', session_id: 'strategy-unit', head_revision: 0, state_revision: 0,
@@ -21,6 +23,38 @@ const root = () => ({ schema: 'sts-run-play-agent-observation-v3', session_id: '
   ], relics: [{ relic: 'ToyOrnithopter' }], potions: [null, null],
 } }, actions: ['Bloodletting', 'PerfectedStrike'].map(card => ({ semantic_action: `take:${card}#0`,
   candidate: { action: { kind: 'take_card', card } } })) } });
+
+function assertExpertLanguageContract(observation, normalize) {
+  const saved = structuredClone(observation);
+  const english = preparationExpertGuidance(observation, normalize);
+  const chinese = preparationExpertGuidance(observation, normalize, 'zh-CN');
+  const decisions = guidance => ({ ...guidance, inventory: guidance.inventory.length,
+    policies: guidance.policies.map(({ preference, change, ...row }) => row),
+    candidates: guidance.candidates.map(({ preference, change, ...row }) => row),
+    families: guidance.families.map(({ text, ...row }) => row),
+    ...(guidance.construction ? { construction: { ...guidance.construction,
+      priorities: guidance.construction.priorities.map(({ ownedFacts, preference, ...row }) => ({ ...row, factCount: ownedFacts.length })) } } : {}) });
+  assert.deepEqual(decisions(chinese), decisions(english));
+  assert.match(renderExpertGuidance(chinese, { locale: 'zh-CN' }), /^当前准备的策略指导：/);
+  assert.deepEqual(preparationExpertGuidance(observation, normalize), english);
+  assert.deepEqual(observation, saved);
+  return { english, chinese };
+}
+
+test('Heart access advice and candidate rendering share the requested language without changing source roles', () => {
+  const observation = root();
+  observation.position.observation.observation.run = { act: 4 };
+  observation.position.actions = ['Evolve', 'Combust'].map(card => ({ semantic_action: `take:${card}#0`,
+    candidate: { action: { kind: 'take_card', card } } }));
+  const { english, chinese } = assertExpertLanguageContract(observation);
+  assert.match(english.candidates[0].preference, /Heart supplies early Statuses/);
+  assert.match(chinese.candidates[0].preference, /心脏早期加入状态牌/);
+  assert.deepEqual(chinese.candidates.map(row => row.sourceRole), english.candidates.map(row => row.sourceRole));
+  const text = renderExpertGuidance(chinese, { locale: 'zh-CN' });
+  assert.match(text, /候选 Evolve \(take:Evolve#0\)/);
+  assert.match(text, /候选 Combust \(take:Combust#0\)/);
+  assert.doesNotMatch(renderExpertGuidance(chinese, { includeCandidates: false, locale: 'zh-CN' }), /候选 Evolve/);
+});
 
 test('static strategy languages preserve card identities families source roles and site policy identities', () => {
   const cards = 'SwordBoomerang Combust Headbutt PerfectedStrike SeverSoul Bloodletting Flex Clash DemonForm LimitBreak DarkEmbrace Corruption Sentinel BattleTrance Metallicize Clothesline DualWield Evolve Armaments TrueGrit FeelNoPain Barricade Entrench BodySlam'.split(' ');
@@ -57,6 +91,9 @@ test('static strategy languages preserve card identities families source roles a
 test('the handbook supplies only current candidates and refreshes owned support after an inventory change', () => {
   const observation = root();
   const before = preparationExpertGuidance(observation);
+  const localized = assertExpertLanguageContract(observation);
+  assert.match(localized.chinese.inventory.join('\n'), /初始攻击：5x Strike/);
+  assert.match(localized.chinese.inventory.join('\n'), /当前占用的药水栏位：0/);
   assert.deepEqual(before.candidates.map(row => row.command), ['take:Bloodletting#0', 'take:PerfectedStrike#0']);
   const text = renderExpertGuidance(before);
   assert.match(text, /Starter attacks: 5x Strike, 1x Bash/);
@@ -132,6 +169,9 @@ test('Apparition event preference binds the actual package and HP tradeoff', () 
   const before = structuredClone(observation);
   const guidance = preparationExpertGuidance(observation);
   const preference = guidance.policies.find(row => row.id === 'apparition-protection-window');
+  const localized = assertExpertLanguageContract(observation);
+  assert.match(localized.chinese.inventory.join('\n'), /生命 48->37；生命上限 75->37/);
+  assert.match(localized.chinese.policies.find(row => row.id === preference.id).preference, /第二幕发展阶段接受首个幽灵组合/);
   assert.deepEqual(preference.sources, [], 'the maintenance preference is separate from quoted expert sources');
   assert.match(renderExpertGuidance(guidance), /obtain 3 Apparition; HP 48->37; Max HP 75->37/);
   assert.match(preference.preference, /favor accepting the first Intangible package during Act 2/);
@@ -255,6 +295,7 @@ test('established Strength shopping supplies a basic removal target and preserve
       fact('Inflame', 'Power', 1, { strength_gain: 2, strength_gain_delivery: 'on_play' }),
       fact('Anger', 'Attack', 0), fact('TwinStrike', 'Attack', 1), fact('Carnage', 'Attack', 2)], 'shop', []);
     const state = current.position.observation.observation;
+    state.potions = [{ slot: 0, potion: null }, { slot: 1, potion: null }];
     state.context.inventory = { purge: { price: 75, purchase_status: { status: 'purchasable' } } };
     let ordinal = 0;
     for (const row of current.deck_evidence.cards) for (let i = 0; i < row.card.count; i++) {
@@ -265,6 +306,13 @@ test('established Strength shopping supplies a basic removal target and preserve
     return current;
   };
   const input = build(), policy = preparationShopRemovalPolicy(input);
+  const chinesePolicy = preparationShopRemovalPolicy(input, 'zh-CN');
+  const { conditions: englishConditions, preference: englishPreference, ...englishIdentity } = policy;
+  const { conditions: chineseConditions, preference: chinesePreference, ...chineseIdentity } = chinesePolicy;
+  assert.deepEqual(chineseIdentity, englishIdentity);
+  assert.match(chineseConditions.join(' '), /准备幕数 2/);
+  assert.notEqual(chinesePreference, englishPreference);
+  assert.deepEqual(preparationReading(input, undefined, 'zh-CN').position.actions, preparationReading(input).position.actions);
   assert.deepEqual(policy.commands, ['remove:Strike#0', 'remove:Strike#1', 'remove:Strike#2']);
   assert.match(policy.conditions.join(' '), /Inflame.*transition attacks: 3/);
   assert.match(policy.preference, /offered purchases and keeping Gold/);
@@ -350,6 +398,10 @@ test('covered output supplies a removal class without Strength and keeps the Str
   };
   const current = build(), policy = preparationShopRemovalPolicy(current);
   assert.equal(policy.id, 'covered-output-basic-removal');
+  const chinesePolicy = preparationShopRemovalPolicy(current, 'zh-CN');
+  assert.deepEqual(chinesePolicy.commands, policy.commands);
+  assert.match(chinesePolicy.conditions.join(' '), /每段基础伤害 6 \+ 3 x 6/);
+  assert.match(chinesePolicy.conditions.join(' '), /6->5/);
   assert.deepEqual(policy.commands, ['remove:Strike#0']);
   assert.match(policy.conditions.join(' '), /enduring Strength: none.*6 base damage per hit \+ 3 x 6.*6->5/);
   assert.match(policy.preference, /offered purchases and keeping Gold/);
@@ -374,6 +426,8 @@ test('repeated Combust advice binds the actual owned and offered turn-end reques
     cards: [{ current: { card: 'Combust', upgrades: 0, card_type: 'Power', cost: 1,
       end_of_turn_hp_loss_and_damage: effect(1, 5) } }] }] };
   let advice = preparationExpertGuidance(current).candidates[0];
+  const localized = assertExpertLanguageContract(current);
+  assert.match(localized.chinese.candidates[0].change, /数量 2->3.*生命损失 2->3.*伤害 14->19/);
   assert.match(advice.preference, /protection, access or recovery.*shopping Gold/);
   assert.match(advice.change, /copies 2->3.*HP loss 2->3.*damage per enemy 14->19.*actual access/);
   current.decision_evidence.candidates[0].cards[0].current.end_of_turn_hp_loss_and_damage = effect(1, 7);
@@ -382,6 +436,25 @@ test('repeated Combust advice binds the actual owned and offered turn-end reques
   assert.match(preparationCardExpertGuidance(current)[0].preference, /first affordable/);
   current.deck_evidence.cards = []; current.position.observation.observation.cards = [];
   assert.match(preparationCardExpertGuidance(current)[0].preference, /first affordable/);
+});
+
+test('paid Block conversion advice uses the same owned coverage and concrete Hand costs in both languages', () => {
+  const strike = fact('Strike', 'Attack', 1, { tags: ['Strike'] }, 5); strike.persistent_damage = 6;
+  const perfected = fact('PerfectedStrike', 'Attack', 2, { tags: ['Strike'], damage: { delivery: { kind: 'attack',
+    amount: { kind: 'base_plus_strike_cards', per_card: 3 }, hits: { kind: 'fixed', count: 1 }, targets: 'selected_enemy' } } });
+  perfected.persistent_damage = 6;
+  const defend = fact('Defend', 'Skill', 1, { tags: [], block: 5, base_block_delivery: 'once_on_play' }); defend.persistent_block = 5;
+  const current = planRoot([strike, perfected, defend,
+    ...['Uppercut', 'Headbutt', 'IronWave'].map(card => fact(card, 'Attack', 1, { tags: [] }))], 'card_reward', ['BodySlam']);
+  current.decision_evidence = { candidates: [{ semantic_action: 'take:BodySlam#0', cards: [{ current: {
+    card: 'BodySlam', upgrades: 0, card_type: 'Attack', cost: 1, exhausts: false, ethereal: false, draw_cards: 0,
+    damage: { delivery: { kind: 'attack', amount: { kind: 'player_block' } } },
+  } }] }] };
+  const { english, chinese } = assertExpertLanguageContract(current);
+  assert.match(english.candidates[0].preference, /extra paid Block-conversion attack/);
+  assert.match(chinese.candidates[0].preference, /付费格挡转伤攻击/);
+  assert.match(chinese.candidates[0].change, /Defend \+ BodySlam 共需 2 点能量.*5 点格挡/);
+  assert.deepEqual(chinese.candidates[0].priorityIds, english.candidates[0].priorityIds);
 });
 
 test('independent access remains a comparison as existing draw quantity changes', () => {
