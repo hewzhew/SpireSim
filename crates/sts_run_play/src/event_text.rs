@@ -6,6 +6,7 @@ use sts_oracle_learning::ai::planner_core::{
     PlannerEventCardPoolV1, PlannerEventOptionPublicSemanticsV1, PlannerEventPublicEffectV1,
     PlannerEventRelicPoolV1,
 };
+use sts_oracle_learning::content::cards::CardId;
 use sts_oracle_learning::content::events::face_trader::FaceTraderResult;
 use sts_oracle_learning::state::events::EventId;
 use sts_presentation::Locale;
@@ -18,6 +19,8 @@ enum Amount {
     LoseGold,
     LoseHp,
     LoseMaxHp,
+    GainGoldMinimum,
+    GainGoldMaximum,
 }
 
 impl Amount {
@@ -30,11 +33,49 @@ impl Amount {
             | (Self::LoseGold, Effect::LoseGold { amount })
             | (Self::LoseHp, Effect::LoseHp { amount }) => Some(*amount),
             (Self::LoseMaxHp, Effect::LoseMaxHp { amount }) => Some(*amount),
+            (Self::GainGoldMinimum, Effect::GainGoldRange { min, .. }) => Some(*min),
+            (Self::GainGoldMaximum, Effect::GainGoldRange { max, .. }) => Some(*max),
             _ => None,
         });
         let value = values.next()?;
         values.next().is_none().then_some(value)
     }
+}
+
+fn unique_count(mut values: impl Iterator<Item = usize>) -> Option<usize> {
+    let value = values.next()?;
+    values.next().is_none().then_some(value)
+}
+
+fn specific_card_count(effects: &[PlannerEventPublicEffectV1], card: CardId) -> Option<usize> {
+    unique_count(effects.iter().filter_map(|effect| match effect {
+        PlannerEventPublicEffectV1::ObtainCard {
+            count,
+            pool: PlannerEventCardPoolV1::Specific { card: id, .. },
+        }
+        | PlannerEventPublicEffectV1::ObtainColorlessCard {
+            count,
+            pool: PlannerEventCardPoolV1::Specific { card: id, .. },
+        } if *id == card => Some(*count),
+        _ => None,
+    }))
+}
+
+fn specific_curse_count(effects: &[PlannerEventPublicEffectV1], card: CardId) -> Option<usize> {
+    unique_count(effects.iter().filter_map(|effect| match effect {
+        PlannerEventPublicEffectV1::ObtainCurse {
+            count,
+            pool: PlannerEventCardPoolV1::Specific { card: id, .. },
+        } if *id == card => Some(*count),
+        _ => None,
+    }))
+}
+
+fn potion_count(effects: &[PlannerEventPublicEffectV1]) -> Option<usize> {
+    unique_count(effects.iter().filter_map(|effect| match effect {
+        PlannerEventPublicEffectV1::ObtainRandomPotions { count } => Some(*count),
+        _ => None,
+    }))
 }
 
 #[derive(Clone, Copy)]
@@ -44,6 +85,7 @@ enum Part {
     NeowUniqueReward(usize),
     Amount(Amount),
     Literal(&'static str),
+    Message(&'static str),
 }
 
 /// Neow's button ordinal identifies a rolled offer, not a fixed reward. Match
@@ -140,7 +182,7 @@ pub(crate) fn option_label(
     public: &PlannerEventOptionPublicSemanticsV1,
     locale: Locale,
 ) -> Result<Option<String>, String> {
-    use Part::{Amount as Value, Original as Text};
+    use Part::{Amount as Value, Message, Original as Text};
     let Some(semantics) = &public.structured_semantics else {
         return Ok(None);
     };
@@ -150,6 +192,64 @@ pub(crate) fn option_label(
         None
     };
     let recipe: &[Part] = match (event, screen, option) {
+        (EventId::Cleric, 0, 0) if Amount::LoseGold.read(&semantics.effects) == Some(35) => &[Text(0), Value(Amount::Heal), Text(8)],
+        // The legal empty-deck branch advances without payment or selection.
+        (EventId::Cleric, 0, 1) if semantics.effects.is_empty()
+            && semantics.transition == sts_oracle_learning::ai::planner_core::PlannerEventTransitionV1::AdvanceScreen => &[Message("event.clericEmptyPurify")],
+        (EventId::Cleric, 0, 1) => &[Text(3), Value(Amount::LoseGold), Text(4)],
+        (EventId::Cleric, 0, 2) | (EventId::Cleric, 1, 0) => &[Text(6)],
+        (EventId::Addict, 0, 0) => &[Text(0), Value(Amount::LoseGold), Text(1)],
+        (EventId::Addict, 0, 1) => &[Text(4)],
+        (EventId::Addict, 0, 2) | (EventId::Addict, 1, 0) => &[Text(5)],
+        (EventId::Beggar, 0, 0) => &[Text(0), Value(Amount::LoseGold), Text(1)],
+        (EventId::Beggar, 0, 1) | (EventId::Beggar, 1, 0) => &[Text(5)],
+        (EventId::Beggar, 2, 0) => &[Text(4)],
+        (EventId::Ghosts, 0, 0) if specific_card_count(&semantics.effects, CardId::Apparition) == Some(3) => &[Text(3), Value(Amount::LoseMaxHp), Text(1)],
+        (EventId::Ghosts, 0, 0) if specific_card_count(&semantics.effects, CardId::Apparition) == Some(5) => &[Text(0), Value(Amount::LoseMaxHp), Text(1)],
+        (EventId::Ghosts, 0, 1) => &[Text(2)],
+        (EventId::Ghosts, 1 | 2, 0) => &[Text(5)],
+        (EventId::Nest, 0, 0) => &[Text(5)],
+        (EventId::Nest, 1, 0) => &[Text(2), Value(Amount::GainGold), Text(3)],
+        (EventId::Nest, 1, 1) => &[Text(0), Value(Amount::LoseHp), Text(1)],
+        (EventId::Nest, 2, 0) => &[Text(4)],
+        (EventId::MindBloom, 0, 0) => &[Text(0)],
+        (EventId::MindBloom, 0, 1) => &[Text(3)],
+        (EventId::MindBloom, 0, 2) if Amount::GainGold.read(&semantics.effects) == Some(999)
+            && specific_curse_count(&semantics.effects, CardId::Normality) == Some(2) => &[Text(1)],
+        (EventId::MindBloom, 0, 2) if specific_curse_count(&semantics.effects, CardId::Doubt) == Some(1) => &[Text(2)],
+        (EventId::MindBloom, 1, 0) => &[Text(4)],
+        (EventId::MoaiHead, 0, 0) => &[Text(0), Value(Amount::LoseMaxHp), Text(1)],
+        (EventId::MoaiHead, 0, 1) if Amount::GainGold.read(&semantics.effects) == Some(333) => &[Text(2)],
+        (EventId::MoaiHead, 0, 2) | (EventId::MoaiHead, 1, 0) => &[Text(4)],
+        (EventId::WindingHalls, 0, 0) => &[Text(0)],
+        (EventId::WindingHalls, 1, 0) if specific_card_count(&semantics.effects, CardId::Madness) == Some(2) => &[Text(1), Value(Amount::LoseHp), Text(2)],
+        (EventId::WindingHalls, 1, 1) => &[Text(3), Value(Amount::Heal), Text(5)],
+        (EventId::WindingHalls, 1, 2) => &[Text(6), Value(Amount::LoseMaxHp), Text(7)],
+        (EventId::WindingHalls, 2, 0) => &[Text(4)],
+        (EventId::WomanInBlue, 0, 0..=2) if potion_count(&semantics.effects) == Some(option + 1) => &[Text(option), Value(Amount::LoseGold), Text(3)],
+        (EventId::WomanInBlue, 0, 3) if Amount::LoseHp.read(&semantics.effects).is_some() => &[Text(5), Value(Amount::LoseHp), Text(6)],
+        (EventId::WomanInBlue, 0, 3) | (EventId::WomanInBlue, 1, 0) => &[Text(4)],
+        (EventId::SecretPortal, 0, 0) => &[Text(0)],
+        (EventId::SecretPortal, 0, 1) | (EventId::SecretPortal, 2, 0) => &[Text(1)],
+        (EventId::SecretPortal, 1, 0) => &[Message("event.continueToBoss")],
+        (EventId::Purifier, 0, 0) | (EventId::FountainOfCurseCleansing, 0, 0) => &[Text(0)],
+        (EventId::Purifier | EventId::FountainOfCurseCleansing, 0, 1)
+            | (EventId::Purifier | EventId::FountainOfCurseCleansing, 1, 0) => &[Text(1)],
+        (EventId::ForgottenAltar, 0, 0) => &[Text(0)],
+        (EventId::ForgottenAltar, 0, 1) => &[Text(2), Value(Amount::GainMaxHp), Text(3), Value(Amount::LoseHp), Text(4)],
+        (EventId::ForgottenAltar, 0, 2) => &[Text(6)],
+        (EventId::ForgottenAltar, 1, 0) => &[Message("event.leave")],
+        (EventId::TombRedMask, 0, 0) if Amount::GainGold.read(&semantics.effects) == Some(222) => &[Text(0)],
+        (EventId::TombRedMask, 0, 1) if Amount::LoseGold.read(&semantics.effects).is_some() => &[Text(2), Value(Amount::LoseGold), Text(3)],
+        (EventId::TombRedMask, 0, 1) if semantics.effects.is_empty() => &[Text(4)],
+        (EventId::TombRedMask, 0, 2) | (EventId::TombRedMask, 1, 0) => &[Text(4)],
+        (EventId::GoldenWing, 0, 0) => &[Text(0), Value(Amount::LoseHp), Text(1)],
+        (EventId::GoldenWing, 0, 1) => &[Text(2), Value(Amount::GainGoldMinimum), Text(3), Value(Amount::GainGoldMaximum), Text(4)],
+        (EventId::GoldenWing, 0, 2) | (EventId::GoldenWing, 2, 0) => &[Text(7)],
+        (EventId::GoldenWing, 1, 0) => &[Text(8)],
+        (EventId::MysteriousSphere, 0, 0) => &[Text(0)],
+        (EventId::MysteriousSphere, 0, 1) | (EventId::MysteriousSphere, 2, 0) => &[Text(1)],
+        (EventId::MysteriousSphere, 1, 0) => &[Text(2)],
         (EventId::Neow, 0, 0) => &[Text(0)],
         (EventId::Neow, 1, _) => match neow.as_deref() {
             Some(parts) => parts,
@@ -251,6 +351,7 @@ pub(crate) fn option_label(
                 })?)
             }
             Part::Literal(text) => output.push_str(text),
+            Part::Message(key) => output.push_str(&locale.text("decision", key, &[])?),
         }
     }
     Ok(Some(clean_text(&output)))
@@ -326,6 +427,74 @@ mod tests {
             }),
             ..Default::default()
         }
+    }
+
+    #[test]
+    fn original_quantity_variants_require_the_matching_public_effects() {
+        use PlannerEventPublicEffectV1 as Effect;
+        let apparition = |count| {
+            public(vec![
+                Effect::LoseMaxHp { amount: 41 },
+                Effect::ObtainCard {
+                    count,
+                    pool: PlannerEventCardPoolV1::Specific {
+                        card: CardId::Apparition,
+                        upgrades: 0,
+                    },
+                },
+            ])
+        };
+        for count in [3, 5] {
+            for locale in [Locale::En, Locale::ZhCn] {
+                let label = option_label(EventId::Ghosts, 0, 0, &apparition(count), locale)
+                    .unwrap()
+                    .unwrap();
+                assert!(
+                    label.contains(&count.to_string()) && label.contains("41"),
+                    "{label}"
+                );
+            }
+        }
+        assert_eq!(
+            option_label(EventId::Ghosts, 0, 0, &apparition(4), Locale::ZhCn).unwrap(),
+            None
+        );
+        let riches = |amount| {
+            public(vec![
+                Effect::GainGold { amount },
+                Effect::ObtainCurse {
+                    count: 2,
+                    pool: PlannerEventCardPoolV1::Specific {
+                        card: CardId::Normality,
+                        upgrades: 0,
+                    },
+                },
+            ])
+        };
+        assert!(
+            option_label(EventId::MindBloom, 0, 2, &riches(999), Locale::ZhCn)
+                .unwrap()
+                .unwrap()
+                .contains("999")
+        );
+        assert_eq!(
+            option_label(EventId::MindBloom, 0, 2, &riches(998), Locale::ZhCn).unwrap(),
+            None
+        );
+        let potions = public(vec![
+            Effect::LoseGold { amount: 40 },
+            Effect::ObtainRandomPotions { count: 3 },
+        ]);
+        assert!(
+            option_label(EventId::WomanInBlue, 0, 2, &potions, Locale::ZhCn)
+                .unwrap()
+                .unwrap()
+                .contains("3")
+        );
+        assert_eq!(
+            option_label(EventId::WomanInBlue, 0, 1, &potions, Locale::ZhCn).unwrap(),
+            None
+        );
     }
 
     #[test]

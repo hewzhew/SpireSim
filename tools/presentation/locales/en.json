@@ -2971,7 +2971,10 @@
     "scene": "Scene: {{scene}}",
     "event": {
       "unknownFaceTraderResult": "Unknown (Face Trader result choice unavailable)",
-      "sceneUnavailable": "Unknown (original event scene unavailable)"
+      "sceneUnavailable": "Unknown (original event scene unavailable)",
+      "leave": "[Leave]",
+      "continueToBoss": "[Continue] Enter the Boss battle.",
+      "clericEmptyPurify": "[Purify] No removable cards."
     },
     "otherCommands": "Other commands in options: {{commands}}",
     "commandKind": {

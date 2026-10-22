@@ -114,7 +114,7 @@ view.text('game:effect.draw', { count: 2 }); // Draw 2 cards.
 
 卡牌、遗物使用现有身份 owner 提供的原版 ID；本地化键与协议 ID 不同的项在导入器中显式列出，不用译名、英文显示名或模糊匹配反查。例如稳定 ID `Elixir` 对应原版当前药水键 `ElixirPotion`，原版同名 `Elixir` 条目已经废弃。来源 [original-names.json](original-names.json) 记录语言、资源文件摘要、生成名称摘要与明确遗漏；逐项来源可以用 `--report <新 artifact JSON 路径>` 保存。`Impulse` 没有对应语言条目，`GuardianThreshold` 是模拟器辅助状态，`GenericStrengthUp` 的名称由遭遇在构造时传入，原版中立姿态的名称为空；这些情况明确记录并保留身份回退或现有领域标签。普通安装、构建和运行只消费已生成的 JSON，不依赖本机游戏；npm 和 Cargo 包保留来源摘要。
 
-[original-event-text.json](original-event-text.json) 保存已有消费者使用的原版正文、按钮片段及来源摘要，并通过 npm 和 Cargo 随包分发。[event_text](../../crates/sts_run_play/src/event_text.rs) 拥有原生展示绑定：换脸商正文按当前事件阶段与已公开结果选择原版段落；按钮按事件、阶段和选项编号明确组装 `OPTIONS`，动态数值直接取该候选已公开的 typed 效果。按钮的原始记录、执行身份和候选来源保持不变。未接入的阶段、缺失或重复的所需数值保留源端标签；实际替代奖励不套用不相符的原版概率说明。清理排版标记发生在模板组装之后。运行时不打开本机 JAR，也不依赖 `STS_GAME_JAR`。新增字段或数组布局变化需先在导入器和对应 renderer 核对，不按屏幕号猜正文索引，也不复制游戏数值公式。
+[original-event-text.json](original-event-text.json) 保存已有消费者使用的原版正文、按钮片段及来源摘要，并通过 npm 和 Cargo 随包分发。[event_text](../../crates/sts_run_play/src/event_text.rs) 拥有原生展示绑定：换脸商正文按当前事件阶段与已公开结果选择原版段落；按钮按事件、阶段和选项编号明确组装 `OPTIONS`，动态数值直接取该候选已公开的 typed 效果。按钮的原始记录、执行身份和候选来源保持不变。未接入的阶段、缺失或重复的所需数值保留源端标签；实际替代奖励不套用不相符的原版概率说明。数量不同且写死在原版片段中的按钮（例如灵体数量），先按公开效果选择对应变体；金翼的金币区间也直接取公开范围。原版预留的空文本格按固定位置校验，不作为按钮使用。牧师没有可删牌时的空净化流程，以及传送门的中间确认步骤，使用项目消息描述实际转换。清理排版标记发生在模板组装之后。运行时不打开本机 JAR，也不依赖 `STS_GAME_JAR`。新增字段或数组布局变化需先在导入器和对应 renderer 核对，不按屏幕号猜正文索引，也不复制游戏数值公式。
 
 涅奥的对话按钮取 `characters.json` 的 `Neow Event.OPTIONS`，奖惩片段取 `Neow Reward.TEXT` 与 `UNIQUE_REWARDS`，输出字段 `REWARD_TEXT` 明确记录这层来源。一个编号在不同新局里可以对应不同奖励，因此奖励页按完整公开效果序列绑定，先组装代价、再组装奖励；生命与金币数值仍取该选项的公开效果。不支持的组合保留原始标签，不按初始随机数或未来结果补猜。
 

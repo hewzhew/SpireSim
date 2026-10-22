@@ -7,8 +7,8 @@
     "localization/zhs/characters.json": "dfe855326e920fcb0b240d3d9866279a21dee13e3c60413143a85062a2092b4d"
   },
   "bindings_sha256": {
-    "en": "08ac007337fd88ce9c12f9cc6caac3e7b5ef249db7ca7ca4bbbef42932ec7361",
-    "zh-CN": "7fbaf23318cbe75805c8619b7a87f37078eb8f88edfac3ceb07c7518bbef122a"
+    "en": "96f083c5ce230e5706347f4ac216d08b9a44900786576e224bf078378ad4b8ec",
+    "zh-CN": "2428178e5d9fb84f61bd877ad31c768615b2c35b28a0db9c852d6166e862b925"
   },
   "events": {
     "en": {
@@ -21,12 +21,35 @@
           "[Locked] Requires: Upgradeable Cards"
         ]
       },
+      "Addict": {
+        "OPTIONS": [
+          "[Offer Gold] #y",
+          " #yGold: #gObtain #ga #gRelic.",
+          "[Locked] Requires: ",
+          " Gold.",
+          "[Rob] #gObtain #ga #gRelic. #rBecome #rCursed #r- #rShame.",
+          "[Leave]",
+          "",
+          ""
+        ]
+      },
       "BackTotheBasics": {
         "OPTIONS": [
           "[Elegance] #gRemove #ga #gcard #gfrom #gyour #gdeck.",
           "[Simplicity] #gUpgrade #gall #gStrikes #gand #gDefends.",
           "Select a Card to Remove.",
           "[Leave]"
+        ]
+      },
+      "Beggar": {
+        "OPTIONS": [
+          "[Offer Gold] #y",
+          " #yGold: #gRemove #ga #gcard #gfrom #gyour #gdeck.",
+          "[Locked] Requires: ",
+          " Gold.",
+          "[Continue]",
+          "[Leave]",
+          "Select a Card to Remove."
         ]
       },
       "BigFish": {
@@ -37,6 +60,19 @@
           ".",
           "[Box] #gObtain #ga #gRelic. #rBecome #rCursed #r- #rRegret.",
           "[Leave]"
+        ]
+      },
+      "Cleric": {
+        "OPTIONS": [
+          "[Heal] #y35 #yGold: #gHeal #g",
+          "[Locked] Requires: ",
+          " Gold.",
+          "[Purify] #y",
+          " #yGold: #gRemove #ga #gcard #gfrom #gyour #gdeck.",
+          "[Locked] Requires: 50 Gold.",
+          "[Leave]",
+          "Select a Card to Remove.",
+          " #gHP."
         ]
       },
       "Duplicator": {
@@ -63,12 +99,53 @@
           " #rHP, #ggain #g"
         ]
       },
+      "ForgottenAltar": {
+        "OPTIONS": [
+          "[Offer: Golden Idol] #gObtain #ga #gspecial #gRelic. #rLose #rGolden #rIdol.",
+          "[Locked] Requires: Golden Idol.",
+          "[Sacrifice] #gGain #g",
+          " #gMax #gHP. #rLose #r",
+          " #rHP.",
+          "[Locked] Requires: Humanity.",
+          "[Desecrate] #rBecome #rCursed #r- #rDecay."
+        ]
+      },
+      "FountainOfCurseCleansing": {
+        "OPTIONS": [
+          "[Drink] #gRemove #gall #gCurses #gfrom #gyour #gdeck.",
+          "[Leave]"
+        ]
+      },
+      "Ghosts": {
+        "OPTIONS": [
+          "[Accept] #gReceive #g5 Apparition. #rLose #r",
+          " #rMax #rHP.",
+          "[Refuse]",
+          "[Accept] #gReceive #g3 Apparition. #rLose #r",
+          "",
+          "[Leave]"
+        ]
+      },
       "GoldenShrine": {
         "OPTIONS": [
           "[Pray] #gGain #g",
           " #gGold.",
           "[Desecrate] #gGain #g275 #gGold. #rBecome #rCursed #r- #rRegret.",
           "[Leave]"
+        ]
+      },
+      "GoldenWing": {
+        "OPTIONS": [
+          "[Pray] #gRemove #ga #gcard #gfrom #gyour #gdeck. #rLose #r",
+          " #rHP.",
+          "[Destroy] #gGain #g",
+          " #g- #g",
+          " #gGold.",
+          "[Locked] Requires: Card with ",
+          " or more damage.",
+          "[Leave]",
+          "[Continue]",
+          "Select a Card to Remove."
         ]
       },
       "Lab": {
@@ -88,12 +165,60 @@
           "[Locked] Requires: Upgradeable Cards"
         ]
       },
+      "MindBloom": {
+        "OPTIONS": [
+          "[I am War] #rFight #ra #rBoss #rfrom #rAct #r1. #gObtain #ga #gRare #gRelic.",
+          "[I am Rich] #gGain #g999 #gGold. #rCursed #r- #r2 #rNormality.",
+          "[I am Healthy] #gHeal #gto #gfull #gHP. #rCursed #r- #rDoubt.",
+          "[I am Awake] #gUpgrade #gall #gCards. #rYou #rcan #rno #rlonger #rheal.",
+          "[Leave]"
+        ]
+      },
+      "MoaiHead": {
+        "OPTIONS": [
+          "[Jump Inside] #gHeal #gto #gfull #gHP. #rLose #r",
+          " #rMax #rHP.",
+          "[Offer: Golden Idol] #gGain #g333 #gGold. #rLose #rGolden #rIdol.",
+          "[Locked] Requires: Golden Idol.",
+          "[Leave]"
+        ]
+      },
       "Mushrooms": {
         "OPTIONS": [
           "[Stomp] #rAnger #rthe #rMushrooms.",
           "[Eat] #gHeal #g",
           " #gHP. #rBecome #rCursed #r- #rParasite.",
           "[Fight]",
+          "[Leave]"
+        ]
+      },
+      "MysteriousSphere": {
+        "OPTIONS": [
+          "[Open Sphere] #rFight. #gReward: #gRare #gRelic.",
+          "[Leave]",
+          "[Fight]"
+        ]
+      },
+      "Nest": {
+        "OPTIONS": [
+          "[Stay in Line] #gObtain Ritual Dagger. #rLose #r",
+          " #rHP.",
+          "[Smash and Grab] #gObtain #g",
+          " #gGold.",
+          "[Leave]",
+          "[Continue]"
+        ]
+      },
+      "Purifier": {
+        "OPTIONS": [
+          "[Pray] #gRemove #ga #gcard #gfrom #gyour #gdeck.",
+          "[Leave]",
+          "Select a Card to Remove."
+        ]
+      },
+      "SecretPortal": {
+        "OPTIONS": [
+          "[Enter the Portal] IMMEDIATELY travel to the boss.",
           "[Leave]"
         ]
       },
@@ -114,6 +239,15 @@
           "[Leave]"
         ]
       },
+      "TombRedMask": {
+        "OPTIONS": [
+          "[Don the Red Mask] #gGain #g222 #gGold.",
+          "[Locked] Requires: Red Mask.",
+          "[Offer: ",
+          " Gold] #rLose #rall #rGold. #gObtain #ga #gRelic.",
+          "[Leave]"
+        ]
+      },
       "Transmorgrifier": {
         "OPTIONS": [
           "[Pray] #gTransform #ga #gcard.",
@@ -127,6 +261,29 @@
           "[Leave]",
           "Select a Card to Upgrade.",
           "[Locked] Requires: Upgradeable Cards"
+        ]
+      },
+      "WindingHalls": {
+        "OPTIONS": [
+          "...",
+          "[Embrace Madness] #gReceive #g2 Madness. #rLose #r",
+          " #rHP.",
+          "[Focus] #rBecome #rCursed #r- #rWrithe. #gHeal #g",
+          "[Leave]",
+          " #gHP.",
+          "[Retrace Your Steps] #rLose #r",
+          " #rMax #rHP."
+        ]
+      },
+      "WomanInBlue": {
+        "OPTIONS": [
+          "[Buy 1 Potion] #y",
+          "[Buy 2 Potions] #y",
+          "[Buy 3 Potions] #y",
+          " #yGold.",
+          "[Leave]",
+          "[Leave] #rTake #r",
+          " #rDamage."
         ]
       },
       "WorldOfGoop": {
@@ -196,12 +353,35 @@
           "[锁定] 需要： 可以升级的牌"
         ]
       },
+      "Addict": {
+        "OPTIONS": [
+          "[给他金币] #y",
+          "  #y金币： #g获得一件遗物。",
+          "[锁定] 需要： ",
+          " 金币。",
+          "[抢夺] #g获得一件遗物。 #r被诅咒——羞耻。",
+          "[离开]",
+          "",
+          ""
+        ]
+      },
       "BackTotheBasics": {
         "OPTIONS": [
           "[简约] #g从你的牌组中移除一张牌。",
           "[质朴] #g升级所有 #g打击 #g与 #g防御 。",
           "选择一张牌移除。",
           "[离开]"
+        ]
+      },
+      "Beggar": {
+        "OPTIONS": [
+          "[给金币] #y",
+          "  #y金币： #g从你的牌组中移除一张牌。",
+          "[锁定] 需要： ",
+          " 金币。",
+          "[继续]",
+          "[离开]",
+          "选择一张牌移除。"
         ]
       },
       "BigFish": {
@@ -212,6 +392,19 @@
           " #g。",
           "[盒子] #g获得一件遗物。 #r被诅咒——悔恨。",
           "[离开]"
+        ]
+      },
+      "Cleric": {
+        "OPTIONS": [
+          "[治疗] #y35 #y金币 ： #g回复 #g",
+          "[锁定] 需要： ",
+          " 金币。",
+          "[净化] #y",
+          " #y金币 : #g从你的牌组中 #g移除一张牌。",
+          "[锁定] 需要： 50 金币。",
+          "[离开]",
+          "选择一张牌移除。",
+          "。"
         ]
       },
       "Duplicator": {
@@ -238,12 +431,53 @@
           " #r生命， #g获得 #g"
         ]
       },
+      "ForgottenAltar": {
+        "OPTIONS": [
+          "[献上：金神像] #g获得一件特别的遗物。 #r失去金神像。",
+          "[锁定] 需要：金神像。",
+          "[献祭] #g获得 ",
+          " #g点最大生命。 #r失去 #r",
+          " #r点生命。",
+          "[锁定] 需要：是人类。",
+          "[亵渎] #r被诅咒——腐朽。"
+        ]
+      },
+      "FountainOfCurseCleansing": {
+        "OPTIONS": [
+          "[喝水] #g移除所有诅咒牌。",
+          "[离开]"
+        ]
+      },
+      "Ghosts": {
+        "OPTIONS": [
+          "[接受] #g获得5张 灵体 #g牌。 #r失去 #r",
+          " #r最大生命。",
+          "[拒绝]",
+          "[接受] #g获得3张 灵体 #g牌。 #r失去 #r",
+          "",
+          "[离开]"
+        ]
+      },
       "GoldenShrine": {
         "OPTIONS": [
           "[祈祷] #g获得 #g",
           " #g金币。",
           "[亵渎] #g获得 #g275 #g金币。 #r被诅咒——悔恨。",
           "[离开]"
+        ]
+      },
+      "GoldenWing": {
+        "OPTIONS": [
+          "[祈祷] #g从你的牌组中移除一张牌。 #r失去 #r",
+          " #r生命。",
+          "[摧毁] #g获得 #g",
+          " #g～ #g",
+          " #g金币。",
+          "[锁定] 需要： 伤害等于或超过 ",
+          " 的牌。",
+          "[离开]",
+          "[继续]",
+          "选择一张牌移除。"
         ]
       },
       "Lab": {
@@ -263,12 +497,60 @@
           "[锁定] 需要： 可以升级的牌"
         ]
       },
+      "MindBloom": {
+        "OPTIONS": [
+          "[我必凯旋] #r与一名第一阶段的 #rBoss #r战斗。 #g获得一件稀有遗物。",
+          "[我将富有] #g获得 #g999 #g金币。 #r被诅咒—— #r2 #r张凡庸。",
+          "[我无伤痛] #g回复所有生命. #r被诅咒——疑虑。",
+          "[我已觉醒] #g升级所有牌。 #r你无法再回复生命。",
+          "[离开]"
+        ]
+      },
+      "MoaiHead": {
+        "OPTIONS": [
+          "[跳进去]  #g回复所有生命。 #r失去 #r",
+          " #r最大生命。",
+          "[献上：金神像] #g获得 #g333 #g金币。 #r失去金神像。",
+          "[锁定] 需要：金神像。",
+          "[离开]"
+        ]
+      },
       "Mushrooms": {
         "OPTIONS": [
           "[踩扁] #r激怒蘑菇们。",
           "[吃下]  #g回复 #g",
           " #g点生命。 #r被诅咒——寄生。",
           "[战斗]",
+          "[离开]"
+        ]
+      },
+      "MysteriousSphere": {
+        "OPTIONS": [
+          "[打开圆球] #r战斗。 #g奖励：稀有遗物。",
+          "[离开]",
+          "[战斗]"
+        ]
+      },
+      "Nest": {
+        "OPTIONS": [
+          "[留在队伍中] #g获得 仪式匕首 #g。 #r失去 #r",
+          " #r生命。",
+          "[抢了钱就跑] #g获得 #g",
+          " #g金币。",
+          "[离开]",
+          "[继续]"
+        ]
+      },
+      "Purifier": {
+        "OPTIONS": [
+          "[祈祷] #g从你的牌组中移除一张牌。",
+          "[离开]",
+          "选择一张牌移除。"
+        ]
+      },
+      "SecretPortal": {
+        "OPTIONS": [
+          "[进入传送门] 立即传送到Boss房间。",
           "[离开]"
         ]
       },
@@ -289,6 +571,15 @@
           "[离开]"
         ]
       },
+      "TombRedMask": {
+        "OPTIONS": [
+          "[戴上红面具] #g获得 #g222 #g金币。",
+          "[锁定] 需要： 红面具。",
+          "[献上: ",
+          " 金币] #r失去所有金币。 #g获得遗物。",
+          "[离开]"
+        ]
+      },
       "Transmorgrifier": {
         "OPTIONS": [
           "[祈祷] #g变化一张牌。",
@@ -302,6 +593,29 @@
           "[离开]",
           "选择一张牌升级。",
           "[锁定] 需要： 可以升级的牌"
+        ]
+      },
+      "WindingHalls": {
+        "OPTIONS": [
+          "……",
+          "[拥抱疯狂] #g获得2张 疯狂 #g。 #r失去 #r",
+          " #r生命。",
+          "[集中精神] #r被诅咒——苦恼。 #g获得 #g",
+          "[离开]",
+          " #g生命。",
+          "[寻找来路] #r失去 #r",
+          " #r点最大生命。"
+        ]
+      },
+      "WomanInBlue": {
+        "OPTIONS": [
+          "[买 1 瓶药水] #y",
+          "[买 2 瓶药水] #y",
+          "[买 3 瓶药水] #y",
+          "  #y金币 。",
+          "[离开]",
+          "[离开] #r受到 #r",
+          " #r点伤害。"
         ]
       },
       "WorldOfGoop": {

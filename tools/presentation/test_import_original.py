@@ -34,6 +34,8 @@ def sources():
         result[f"localization/{language}/events.json"]["FaceTrader"]["DESCRIPTIONS"] = [f'{language}:scene {index} NL ~original~' for index in range(5)]
         for stable, count in owner.EVENT_OPTIONS.items():
             result[f"localization/{language}/events.json"][owner.EVENTS[stable]]["OPTIONS"] = [f'{language}:option {index} #goriginal' for index in range(count)]
+            for index in owner.EVENT_OPTION_EMPTY.get(stable, set()):
+                result[f"localization/{language}/events.json"][owner.EVENTS[stable]]["OPTIONS"][index] = ""
         result[f"localization/{language}/ui.json"] = {"RunHistoryMonsterNames": {"TEXT": [f"{language}:encounter {index}" for index in range(29)]}}
         for key in ["FuzzyLouseNormal", "FuzzyLouseDefensive"]:
             result[f"localization/{language}/monsters.json"][key]["NAME"] = f"{language}:Louse"
@@ -167,6 +169,16 @@ def test_changed_event_scene_layout_requires_review(tmp_path, sources):
     jar = archive(tmp_path, sources)
     _, _, bindings = owner.names_from_archive(jar)
     with pytest.raises(ValueError, match="layout requires review"):
+        owner.event_texts_from_archive(jar, bindings)
+
+
+@pytest.mark.parametrize("change", ["filled_reserved", "empty_consumed"])
+def test_reserved_original_event_cells_are_checked_by_position(tmp_path, sources, change):
+    values = sources["localization/zhs/events.json"]["Addict"]["OPTIONS"]
+    values[6 if change == "filled_reserved" else 0] = "new fragment" if change == "filled_reserved" else ""
+    jar = archive(tmp_path, sources)
+    _, _, bindings = owner.names_from_archive(jar)
+    with pytest.raises(ValueError, match="OPTIONS layout requires review"):
         owner.event_texts_from_archive(jar, bindings)
 
 

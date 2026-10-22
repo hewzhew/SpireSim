@@ -1693,7 +1693,9 @@ fn event_reading_shows_net_hp_cost_after_max_hp_healing() {
     session.run_state.event_state = Some(EventState::new(EventId::ForgottenAltar));
     let mut game = controller_with_session(&dir.0, "altar-resource-cost", &session);
     let reading = game.decision_reading_v1(&[], None, Locale::En).unwrap();
-    assert!(reading.view.contains("[Pray] Gain 5 Max HP. Lose 26 HP."));
+    assert!(reading
+        .view
+        .contains("[Sacrifice] Gain 5 Max HP. Lose 26 HP."));
     assert!(reading
         .view
         .contains("Resources (base effect summary): HP -21; Max HP +5"));

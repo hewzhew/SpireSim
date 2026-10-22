@@ -123,6 +123,22 @@ fn original_event_button_bindings_preserve_public_actions_sources_and_state() {
         (EventId::Transmorgrifier, &[0, 1]),
         (EventId::BackTotheBasics, &[0, 1]),
         (EventId::Mushrooms, &[0, 1, 2]),
+        (EventId::Cleric, &[0, 1]),
+        (EventId::Addict, &[0, 1]),
+        (EventId::Beggar, &[0, 1, 2]),
+        (EventId::Ghosts, &[0, 1, 2]),
+        (EventId::Nest, &[0, 1, 2]),
+        (EventId::MindBloom, &[0, 1]),
+        (EventId::MoaiHead, &[0, 1]),
+        (EventId::WindingHalls, &[0, 1, 2]),
+        (EventId::WomanInBlue, &[0, 1]),
+        (EventId::SecretPortal, &[0, 1, 2]),
+        (EventId::Purifier, &[0, 1]),
+        (EventId::FountainOfCurseCleansing, &[0, 1]),
+        (EventId::ForgottenAltar, &[0, 1]),
+        (EventId::TombRedMask, &[0, 1]),
+        (EventId::GoldenWing, &[0, 1, 2]),
+        (EventId::MysteriousSphere, &[0, 1, 2]),
     ];
     for &(event, screens) in events {
         for &screen in screens {
@@ -171,10 +187,11 @@ fn original_event_button_bindings_preserve_public_actions_sources_and_state() {
                         zh_option.label
                     );
                     assert!(
-                        zh_option
-                            .label
-                            .chars()
-                            .any(|ch| ('\u{4e00}'..='\u{9fff}').contains(&ch)),
+                        zh_option.label == "……"
+                            || zh_option
+                                .label
+                                .chars()
+                                .any(|ch| ('\u{4e00}'..='\u{9fff}').contains(&ch)),
                         "{}",
                         zh_option.label
                     );
@@ -213,7 +230,102 @@ fn original_event_button_bindings_preserve_public_actions_sources_and_state() {
 }
 
 #[test]
+fn original_event_variants_keep_costs_prerequisites_and_late_floor_outcomes() {
+    use sts_oracle_learning::content::{
+        cards::CardId,
+        relics::{RelicId, RelicState},
+    };
+    use sts_oracle_learning::state::{
+        core::EngineState,
+        events::{EventId, EventState},
+    };
+    for (event, variant, expected) in [
+        (EventId::Cleric, "no_removable", "没有可移除的牌"),
+        (EventId::MindBloom, "late_floor", "我无伤痛"),
+        (EventId::TombRedMask, "mask", "222"),
+        (EventId::MoaiHead, "idol", "333"),
+        (EventId::ForgottenAltar, "idol", "金神像"),
+        (EventId::WomanInBlue, "poor", "5 点伤害"),
+        (EventId::Cleric, "poor", "离开"),
+    ] {
+        let directory = TestDirectory::new();
+        let mut session = fixture("reward");
+        session.engine_state = EngineState::EventRoom;
+        session.run_state.current_hp = 17;
+        session.run_state.max_hp = 83;
+        session.run_state.gold = 250;
+        session.run_state.ascension_level = 20;
+        session.run_state.event_state = Some(EventState::new(event));
+        match variant {
+            "no_removable" => session
+                .run_state
+                .master_deck
+                .retain(|card| card.id == CardId::AscendersBane),
+            "late_floor" => session.run_state.floor_num = 44,
+            "mask" => session
+                .run_state
+                .relics
+                .push(RelicState::new(RelicId::RedMask)),
+            "idol" => session
+                .run_state
+                .relics
+                .push(RelicState::new(RelicId::GoldenIdol)),
+            "poor" => session.run_state.gold = 0,
+            _ => unreachable!(),
+        }
+        let mut game = controller_with_session(&directory.0, "event-variant-locale", &session);
+        let before = game.head().clone();
+        let en = game
+            .decision_reading_v1(&[DecisionDetailV1::Options], None, Locale::En)
+            .unwrap();
+        let zh = game
+            .decision_reading_v1(&[DecisionDetailV1::Options], None, Locale::ZhCn)
+            .unwrap();
+        assert_eq!(en.source, zh.source);
+        assert_eq!(en.options.len(), zh.options.len());
+        assert!(
+            zh.options
+                .iter()
+                .any(|option| option.label.contains(expected)),
+            "{event:?}/{variant}: {:?}",
+            zh.options
+        );
+        for (english, chinese) in en.options.iter().zip(&zh.options) {
+            assert_eq!(english.candidate, chinese.candidate);
+            assert_eq!(english.choice, chinese.choice);
+            assert_ne!(english.label, chinese.label, "{event:?}/{variant}");
+        }
+        if variant == "mask" {
+            assert!(
+                zh.options[1].label.contains("离开"),
+                "the second original option is Leave when the mask is held"
+            );
+        }
+        if variant == "poor" {
+            // Original WomanInBlue leaves all potion purchases enabled below price.
+            let (count, position, ordinal) = if event == EventId::WomanInBlue {
+                (4, 3, 3)
+            } else {
+                (1, 0, 2)
+            };
+            assert_eq!(zh.options.len(), count);
+            assert!(matches!(
+                &zh.options[position].candidate,
+                TaskPublicCandidateV1::Strategic {
+                    action: TaskStrategicActionV1::ChooseEventOption {
+                        option_index,
+                        ..
+                    }
+                } if *option_index == ordinal
+            ));
+        }
+        assert_eq!(*game.head(), before);
+    }
+}
+
+#[test]
 fn choices_from_original_translated_buttons_execute_the_same_actions_and_rng() {
+    use sts_oracle_learning::content::{cards::CardId, relics::RelicId};
     use sts_oracle_learning::eval::run_control::RunControlSessionCheckpointV1;
     use sts_oracle_learning::state::{
         core::EngineState,
@@ -226,6 +338,22 @@ fn choices_from_original_translated_buttons_execute_the_same_actions_and_rng() {
         (EventId::LivingWall, 0, 0),
         (EventId::Mushrooms, 0, 1),
         (EventId::Lab, 0, 0),
+        (EventId::Cleric, 0, 0),
+        (EventId::Addict, 0, 0),
+        (EventId::Beggar, 0, 0),
+        (EventId::Ghosts, 0, 0),
+        (EventId::Nest, 1, 1),
+        (EventId::MindBloom, 0, 1),
+        (EventId::MoaiHead, 0, 0),
+        (EventId::WindingHalls, 1, 0),
+        (EventId::WomanInBlue, 0, 2),
+        (EventId::SecretPortal, 0, 0),
+        (EventId::Purifier, 0, 0),
+        (EventId::FountainOfCurseCleansing, 0, 0),
+        (EventId::ForgottenAltar, 0, 2),
+        (EventId::TombRedMask, 0, 1),
+        (EventId::GoldenWing, 0, 0),
+        (EventId::MysteriousSphere, 0, 1),
     ] {
         let mut checkpoints = Vec::new();
         let mut labels = Vec::new();
@@ -240,6 +368,7 @@ fn choices_from_original_translated_buttons_execute_the_same_actions_and_rng() {
             state.current_screen = screen;
             state.internal_state = 23;
             session.run_state.event_state = Some(state);
+            let deck_size = session.run_state.master_deck.len();
             let mut game =
                 controller_with_session(&directory.0, "translated-event-choice", &session);
             let reading = game
@@ -265,7 +394,7 @@ fn choices_from_original_translated_buttons_execute_the_same_actions_and_rng() {
                 }
                 EventId::BigFish => assert_eq!(actual.run_state.current_hp, 40),
                 EventId::WorldOfGoop => assert_eq!(actual.run_state.gold, 227),
-                EventId::LivingWall => assert!(matches!(
+                EventId::LivingWall | EventId::Purifier => assert!(matches!(
                     actual.engine_state,
                     EngineState::RunPendingChoice(_)
                 )),
@@ -281,6 +410,96 @@ fn choices_from_original_translated_buttons_execute_the_same_actions_and_rng() {
                     };
                     assert_eq!(rewards.items.len(), 2);
                 }
+                EventId::Cleric => {
+                    assert_eq!(actual.run_state.current_hp, 37);
+                    assert_eq!(actual.run_state.gold, 215);
+                }
+                EventId::Addict => assert_eq!(actual.run_state.gold, 165),
+                EventId::Beggar => {
+                    assert_eq!(actual.run_state.gold, 175);
+                    assert_eq!(
+                        actual
+                            .run_state
+                            .event_state
+                            .as_ref()
+                            .unwrap()
+                            .current_screen,
+                        2
+                    );
+                }
+                EventId::Ghosts => {
+                    assert_eq!(actual.run_state.max_hp, 41);
+                    assert_eq!(actual.run_state.master_deck.len(), deck_size + 3);
+                    assert!(actual
+                        .run_state
+                        .master_deck
+                        .iter()
+                        .any(|card| card.id == CardId::Apparition));
+                }
+                EventId::Nest => {
+                    assert_eq!(actual.run_state.current_hp, 11);
+                    assert!(actual
+                        .run_state
+                        .master_deck
+                        .iter()
+                        .any(|card| card.id == CardId::RitualDagger));
+                }
+                EventId::MindBloom => assert!(actual
+                    .run_state
+                    .relics
+                    .iter()
+                    .any(|relic| relic.id == RelicId::MarkOfTheBloom)),
+                EventId::MoaiHead => {
+                    assert_eq!(actual.run_state.max_hp, 68);
+                    assert_eq!(actual.run_state.current_hp, 68);
+                }
+                EventId::WindingHalls => {
+                    assert_eq!(actual.run_state.current_hp, 2);
+                    assert_eq!(actual.run_state.master_deck.len(), deck_size + 2);
+                }
+                EventId::WomanInBlue => {
+                    assert_eq!(actual.run_state.gold, 210);
+                    let EngineState::RewardScreen(ref rewards) = actual.engine_state else {
+                        panic!("potions must enter rewards")
+                    };
+                    assert_eq!(rewards.items.len(), 3);
+                }
+                EventId::SecretPortal | EventId::FountainOfCurseCleansing | EventId::GoldenWing => {
+                    assert_eq!(
+                        actual
+                            .run_state
+                            .event_state
+                            .as_ref()
+                            .unwrap()
+                            .current_screen,
+                        1
+                    );
+                    if event == EventId::GoldenWing {
+                        assert_eq!(actual.run_state.current_hp, 10);
+                    }
+                }
+                EventId::ForgottenAltar => assert!(actual
+                    .run_state
+                    .master_deck
+                    .iter()
+                    .any(|card| card.id == CardId::Decay)),
+                EventId::TombRedMask => {
+                    assert_eq!(actual.run_state.gold, 0);
+                    assert!(actual
+                        .run_state
+                        .relics
+                        .iter()
+                        .any(|relic| relic.id == RelicId::RedMask));
+                }
+                EventId::MysteriousSphere => assert_eq!(
+                    actual
+                        .run_state
+                        .event_state
+                        .as_ref()
+                        .unwrap()
+                        .current_screen,
+                    2
+                ),
                 _ => unreachable!(),
             }
             checkpoints.push(

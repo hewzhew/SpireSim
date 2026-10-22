@@ -2971,7 +2971,10 @@
     "scene": "事件正文：{{scene}}",
     "event": {
       "unknownFaceTraderResult": "未知（换脸商结果选项未公开）",
-      "sceneUnavailable": "未知（原版事件正文不可用）"
+      "sceneUnavailable": "未知（原版事件正文不可用）",
+      "leave": "[离开]",
+      "continueToBoss": "[继续] 进入 Boss 战斗。",
+      "clericEmptyPurify": "[净化] 没有可移除的牌。"
     },
     "otherCommands": "其他命令见 options：{{commands}}",
     "commandKind": {

@@ -155,7 +155,14 @@ EVENT_OPTIONS = {
     "GoldenShrine": 4, "AccursedBlacksmith": 5, "Duplicator": 3,
     "UpgradeShrine": 4, "Transmorgrifier": 3, "BackTotheBasics": 4,
     "Mushrooms": 5,
+    "Cleric": 9, "Addict": 8, "Beggar": 7, "Ghosts": 6,
+    "Nest": 6, "MindBloom": 5, "MoaiHead": 5, "WindingHalls": 8,
+    "WomanInBlue": 7, "SecretPortal": 2, "Purifier": 3,
+    "FountainOfCurseCleansing": 2, "ForgottenAltar": 7,
+    "TombRedMask": 5, "GoldenWing": 10, "MysteriousSphere": 3,
 }
+# Original reserved cells are empty; their positions are part of the layout.
+EVENT_OPTION_EMPTY = {"Addict": {6, 7}, "Ghosts": {4}}
 # Neow stores dialog buttons and reward fragments in separate character entries.
 # The output field REWARD_TEXT explicitly refers to Neow Reward.TEXT.
 CHARACTER_EVENT_FIELDS = {
@@ -513,7 +520,10 @@ def event_texts_from_archive(jar: Path, bindings: dict) -> dict:
                     if stable not in consumers:
                         continue
                     texts = source[binding["key"]][field]
-                    if not isinstance(texts, list) or len(texts) != consumers[stable] or not all(isinstance(text, str) and text.strip() for text in texts):
+                    empty = EVENT_OPTION_EMPTY.get(stable, set()) if field == "OPTIONS" else set()
+                    if (not isinstance(texts, list) or len(texts) != consumers[stable]
+                            or not all(isinstance(text, str) for text in texts)
+                            or {index for index, text in enumerate(texts) if not text.strip()} != empty):
                         raise ValueError(f"Original event {field} layout requires review: {locale}/{stable}")
                     events[locale][stable][field] = texts
                     event_bindings[locale][stable][field] = {**binding, "field": field, "index": None}

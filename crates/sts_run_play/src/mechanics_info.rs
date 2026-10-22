@@ -8,8 +8,7 @@ use sts_oracle_learning::agent::information::state::{
 };
 use sts_oracle_learning::agent::task::{TaskPublicDecisionV1, TaskPublicObservationV1};
 use sts_oracle_learning::content::identity::{
-    gameplay_display_label_v1 as label, gameplay_identity_from_input_alias_v1 as resolve,
-    GameplayIdentitySurface,
+    gameplay_identity_from_input_alias_v1 as resolve, GameplayIdentitySurface,
 };
 use sts_oracle_learning::content::monsters::encounter_pool::{
     public_encounter_pool, EncounterPoolTier,
@@ -3946,7 +3945,7 @@ mod tests {
                 assert_eq!(
                     view.matches(&format!(
                         "Enemy definition: {}",
-                        label(EnemyId::CorruptHeart)
+                        Locale::En.entity("enemy", EnemyId::CorruptHeart.stable_id())
                     ))
                     .count(),
                     1
