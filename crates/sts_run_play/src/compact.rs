@@ -41,7 +41,7 @@ pub fn render_status_v1(head: &RunPlayHeadV1) -> Result<String, String> {
     // The normal reading already owns human labels for combat, rewards, and
     // events. Keep status on that surface; `show` retains the exact diagnostic
     // ids, source proof and engine candidate dump when they are needed.
-    let reading = crate::decision::read_decision(head, &[], None)?;
+    let reading = crate::decision::read_decision(head, &[], None, Locale::En)?;
     let decision = head
         .current_decision
         .as_ref()
@@ -1127,9 +1127,16 @@ pub fn render_preview_v1(comparison: &RunPlayComparisonV1, detail: bool) -> Resu
             continue;
         };
         if let Some(next) = &last.next_decision {
-            let before =
-                crate::decision::read_preview_decision_v1(&line.steps[0].source_decision, None)?;
-            let after = crate::decision::read_preview_decision_v1(next, before.context.as_ref())?;
+            let before = crate::decision::read_preview_decision_v1(
+                &line.steps[0].source_decision,
+                None,
+                Locale::En,
+            )?;
+            let after = crate::decision::read_preview_decision_v1(
+                next,
+                before.context.as_ref(),
+                Locale::En,
+            )?;
             let deck_change = preview_deck_change_v1(&line.steps[0].source_decision, next);
             writeln!(output, "Result:").expect("string write");
             output.push_str(&render_reading_status_v1(

@@ -1,5 +1,6 @@
 use std::fs;
 use std::path::{Path, PathBuf};
+use sts_presentation::Locale;
 
 use sts_oracle_learning::agent::task::{
     TaskBudgetV1, TaskPublicCandidateV1, TaskPublicObservationV1, TaskStrategicActionV1,
@@ -435,12 +436,16 @@ fn brief_reading_preserves_choices_resources_and_pending_card_rules() {
     ] {
         let mut game = controller(&dir.0, kind);
         let before = game.head().clone();
-        let full = game.decision_reading_v1(&[], None).unwrap();
+        let full = game.decision_reading_v1(&[], None, Locale::En).unwrap();
         let brief = game
-            .decision_reading_v1(&[DecisionDetailV1::Brief], None)
+            .decision_reading_v1(&[DecisionDetailV1::Brief], None, Locale::En)
             .unwrap();
         let brief_with_state = game
-            .decision_reading_v1(&[DecisionDetailV1::Brief, DecisionDetailV1::State], None)
+            .decision_reading_v1(
+                &[DecisionDetailV1::Brief, DecisionDetailV1::State],
+                None,
+                Locale::En,
+            )
             .unwrap();
         assert_eq!(brief_with_state.view, brief.view);
         assert!(brief_with_state.state.is_some());
@@ -622,7 +627,7 @@ fn map_choice_reading_exposes_when_a_branch_loses_the_key_route() {
     session.run_state.map.graph.push(vec![boss]);
     let mut game = controller_with_session(&dir.0, "key-route-fork", &session);
     let head = game.head().clone();
-    let reading = game.decision_reading_v1(&[], None).unwrap();
+    let reading = game.decision_reading_v1(&[], None, Locale::En).unwrap();
     let left = reading
         .view
         .lines()
@@ -637,7 +642,7 @@ fn map_choice_reading_exposes_when_a_branch_loses_the_key_route() {
     assert!(right.contains("Emerald elite: none"));
     assert!(right.contains("shop map y1 reachable"));
     let brief = game
-        .decision_reading_v1(&[DecisionDetailV1::Brief], None)
+        .decision_reading_v1(&[DecisionDetailV1::Brief], None, Locale::En)
         .unwrap();
     assert_eq!(reading.options, brief.options);
     assert_eq!(reading.source, brief.source);
@@ -686,9 +691,13 @@ fn pick(
 fn context_reuse_is_explicit_and_keeps_choices_state_and_recovery_complete() {
     let dir = TestDirectory::new();
     let mut game = controller(&dir.0, "reward");
-    let full = game.decision_reading_v1(&[], None).unwrap();
+    let full = game.decision_reading_v1(&[], None, Locale::En).unwrap();
     let brief = game
-        .decision_reading_v1(&[DecisionDetailV1::State], full.context.as_ref())
+        .decision_reading_v1(
+            &[DecisionDetailV1::State],
+            full.context.as_ref(),
+            Locale::En,
+        )
         .unwrap();
     assert!(!brief.view.contains("Deck:"));
     assert!(!brief.view.contains("Relics:"));
@@ -697,11 +706,16 @@ fn context_reuse_is_explicit_and_keeps_choices_state_and_recovery_complete() {
     assert_eq!(brief.source, full.source);
     assert_eq!(brief.options, full.options);
     assert!(brief.state.is_some());
-    assert_eq!(game.decision_reading_v1(&[], None).unwrap(), full);
+    assert_eq!(
+        game.decision_reading_v1(&[], None, Locale::En).unwrap(),
+        full
+    );
 
     let mut bad_ack = full.context.clone().unwrap();
     bad_ack.deck = Some("a context the caller does not possess".into());
-    let refreshed = game.decision_reading_v1(&[], Some(&bad_ack)).unwrap();
+    let refreshed = game
+        .decision_reading_v1(&[], Some(&bad_ack), Locale::En)
+        .unwrap();
     assert!(refreshed.view.contains("Deck:"));
     assert!(!refreshed.view.contains("Relics:"));
     let chosen = pick(&full, |a| {
@@ -715,7 +729,7 @@ fn context_reuse_is_explicit_and_keeps_choices_state_and_recovery_complete() {
     });
     game.choose_bound_v1(&chosen).unwrap();
     let after = game
-        .decision_reading_v1(&[], full.context.as_ref())
+        .decision_reading_v1(&[], full.context.as_ref(), Locale::En)
         .unwrap();
     assert!(after.view.contains("Deck:") && after.view.contains("Shrug It Off"));
     assert!(!after.view.contains("Relics:") && !after.view.contains("Potions:"));
@@ -726,7 +740,7 @@ fn context_reuse_is_explicit_and_keeps_choices_state_and_recovery_complete() {
     drop(game);
     let mut reopened =
         RunPlayControllerV1::open(RunPlayPathsV1::new(dir.0.join("reward"))).unwrap();
-    let recovered = reopened.decision_reading_v1(&[], None).unwrap();
+    let recovered = reopened.decision_reading_v1(&[], None, Locale::En).unwrap();
     assert!(
         recovered.view.contains("Deck:")
             && recovered.view.contains("Relics:")
@@ -738,7 +752,7 @@ fn context_reuse_is_explicit_and_keeps_choices_state_and_recovery_complete() {
 fn context_reuse_refreshes_relics_prices_and_potion_contents_independently() {
     let dir = TestDirectory::new();
     let mut game = controller(&dir.0, "shop");
-    let full = game.decision_reading_v1(&[], None).unwrap();
+    let full = game.decision_reading_v1(&[], None, Locale::En).unwrap();
     game.choose_bound_v1(&pick(&full, |a| {
         matches!(
             a,
@@ -750,7 +764,7 @@ fn context_reuse_refreshes_relics_prices_and_potion_contents_independently() {
     }))
     .unwrap();
     let discounted = game
-        .decision_reading_v1(&[], full.context.as_ref())
+        .decision_reading_v1(&[], full.context.as_ref(), Locale::En)
         .unwrap();
     assert!(discounted
         .view
@@ -758,14 +772,14 @@ fn context_reuse_refreshes_relics_prices_and_potion_contents_independently() {
     assert!(discounted.view.contains("Power Potion 50g"));
     assert!(!discounted.view.contains("Deck:") && !discounted.view.contains("Potions:"));
     let management = game
-        .decision_reading_v1(&[DecisionDetailV1::Options], None)
+        .decision_reading_v1(&[DecisionDetailV1::Options], None, Locale::En)
         .unwrap();
     game.choose_bound_v1(&pick(&management, |a| {
         matches!(a, TaskStrategicActionV1::DiscardRunPotion { slot: 0, .. })
     }))
     .unwrap();
     let discarded = game
-        .decision_reading_v1(&[], discounted.context.as_ref())
+        .decision_reading_v1(&[], discounted.context.as_ref(), Locale::En)
         .unwrap();
     assert!(discarded.view.contains("Potions: P0 empty"));
     assert!(!discarded.view.contains("Relics:") && !discarded.view.contains("Deck:"));
@@ -795,7 +809,7 @@ fn different_gold_amounts_have_distinct_claim_commands_and_remain_readable() {
         crate::selector::semantic_action_for_choice_v1(&public, &second_choice).unwrap(),
         "claim:Gold#1"
     );
-    let reading = game.decision_reading_v1(&[], None).unwrap();
+    let reading = game.decision_reading_v1(&[], None, Locale::En).unwrap();
     let gold = game
         .head()
         .current_decision
@@ -812,7 +826,7 @@ fn different_gold_amounts_have_distinct_claim_commands_and_remain_readable() {
         choice: second_choice,
     })
     .unwrap();
-    let reading = game.decision_reading_v1(&[], None).unwrap();
+    let reading = game.decision_reading_v1(&[], None, Locale::En).unwrap();
     assert!(reading.view.contains(&format!("Gold {}", start_gold + 54)));
     assert!(reading.view.contains("11 gold"));
     assert!(!reading.view.contains("54 gold"));
@@ -827,7 +841,7 @@ fn different_gold_amounts_have_distinct_claim_commands_and_remain_readable() {
     }))
     .unwrap();
     assert!(game
-        .decision_reading_v1(&[], None)
+        .decision_reading_v1(&[], None, Locale::En)
         .unwrap()
         .view
         .contains(&format!("Gold {}", start_gold + 65)));
@@ -837,7 +851,7 @@ fn different_gold_amounts_have_distinct_claim_commands_and_remain_readable() {
 fn unclaimable_reward_remains_visible_through_context_reuse_and_reward_reindexing() {
     let dir = TestDirectory::new();
     let mut game = controller(&dir.0, "full_reward");
-    let full = game.decision_reading_v1(&[], None).unwrap();
+    let full = game.decision_reading_v1(&[], None, Locale::En).unwrap();
     let claim_potion = |a: &TaskStrategicActionV1| {
         matches!(
             a,
@@ -881,7 +895,7 @@ fn unclaimable_reward_remains_visible_through_context_reuse_and_reward_reindexin
     }))
     .unwrap();
     let shifted = game
-        .decision_reading_v1(&[], full.context.as_ref())
+        .decision_reading_v1(&[], full.context.as_ref(), Locale::En)
         .unwrap();
     assert!(shifted
         .view
@@ -896,7 +910,7 @@ fn unclaimable_reward_remains_visible_through_context_reuse_and_reward_reindexin
     }))
     .unwrap();
     let available = game
-        .decision_reading_v1(&[], shifted.context.as_ref())
+        .decision_reading_v1(&[], shifted.context.as_ref(), Locale::En)
         .unwrap();
     assert!(available.view.contains("P1 empty"));
     assert!(available.view.contains("Potion (base rule): Gain Artifact"));
@@ -906,7 +920,7 @@ fn unclaimable_reward_remains_visible_through_context_reuse_and_reward_reindexin
     let claim = pick(&available, claim_potion);
     game.choose_bound_v1(&claim).unwrap();
     let taken = game
-        .decision_reading_v1(&[], available.context.as_ref())
+        .decision_reading_v1(&[], available.context.as_ref(), Locale::En)
         .unwrap();
     assert!(taken.view.contains("P1 Ancient Potion"));
     assert!(!taken.view.contains("Unavailable reward:"));
@@ -918,7 +932,7 @@ fn unclaimable_reward_remains_visible_through_context_reuse_and_reward_reindexin
 fn crowded_potion_rewards_offer_management_on_the_default_reading() {
     let dir = TestDirectory::new();
     let mut game = controller(&dir.0, "reward_sequence_crowded");
-    let reading = game.decision_reading_v1(&[], None).unwrap();
+    let reading = game.decision_reading_v1(&[], None, Locale::En).unwrap();
     assert!(reading
         .view
         .contains("Potion choice: 2 rewards, 1 empty slots"));
@@ -934,7 +948,7 @@ fn crowded_potion_rewards_offer_management_on_the_default_reading() {
         .relics
         .push(RelicState::new(RelicId::Sozu));
     let mut game = controller_with_session(&dir.0, "sozu-rewards", &session);
-    let reading = game.decision_reading_v1(&[], None).unwrap();
+    let reading = game.decision_reading_v1(&[], None, Locale::En).unwrap();
     assert!(reading.view.contains("Sozu prevents obtaining potions"));
     assert!(!reading.view.contains("Potion choice:"));
 }
@@ -948,7 +962,7 @@ fn ectoplasm_reward_receipt_distinguishes_face_value_from_actual_gold_gain() {
         .relics
         .push(RelicState::new(RelicId::Ectoplasm));
     let mut game = controller_with_session(&dir.0, "ectoplasm-rewards", &session);
-    let reading = game.decision_reading_v1(&[], None).unwrap();
+    let reading = game.decision_reading_v1(&[], None, Locale::En).unwrap();
     assert!(reading.view.contains("Gold gains: prevented by Ectoplasm"));
     let claim = pick(&reading, |action| {
         matches!(
@@ -970,7 +984,7 @@ fn ectoplasm_reward_receipt_distinguishes_face_value_from_actual_gold_gain() {
     let gold = session.run_state.gold;
     game.choose_bound_v1(&claim).unwrap();
     assert!(game
-        .decision_reading_v1(&[], None)
+        .decision_reading_v1(&[], None, Locale::En)
         .unwrap()
         .view
         .contains(&format!("Gold {gold}")));
@@ -1068,7 +1082,7 @@ fn bonfire_selection_preserves_source_and_exposes_each_offers_executed_reward() 
         session.run_state.event_state = Some(event);
         session.engine_state = EngineState::EventRoom;
         let mut game = controller_with_session(&dir.0, "bonfire", &session);
-        let offer = game.decision_reading_v1(&[], None).unwrap();
+        let offer = game.decision_reading_v1(&[], None, Locale::En).unwrap();
         assert!(
             offer.view.contains("Reward by its rarity"),
             "{}",
@@ -1079,7 +1093,7 @@ fn bonfire_selection_preserves_source_and_exposes_each_offers_executed_reward() 
         }))
         .unwrap();
         let reading = game
-            .decision_reading_v1(&[DecisionDetailV1::State], None)
+            .decision_reading_v1(&[DecisionDetailV1::State], None, Locale::En)
             .unwrap();
         let decision = reading.state.as_ref().unwrap();
         let TaskPublicObservationV1::Strategic { observation } = &decision.observation else {
@@ -1155,7 +1169,7 @@ fn event_reading_uses_public_labels_and_retains_typed_mechanics() {
     .unwrap();
     let mut game = RunPlayControllerV1::open(paths).unwrap();
     let reading = game
-        .decision_reading_v1(&[DecisionDetailV1::State], None)
+        .decision_reading_v1(&[DecisionDetailV1::State], None, Locale::En)
         .unwrap();
     for option in &reading.options {
         if let TaskPublicCandidateV1::Strategic {
@@ -1218,7 +1232,7 @@ fn potion_events_show_delivery_before_choice_and_preserve_full_inventory() {
         let held = session.run_state.potions.clone();
         let mut game = controller_with_session(&dir.0, "potion-event-delivery", &session);
         let before = game.head().clone();
-        let reading = game.decision_reading_v1(&[], None).unwrap();
+        let reading = game.decision_reading_v1(&[], None, Locale::En).unwrap();
         let selected = reading
             .options
             .iter()
@@ -1304,7 +1318,7 @@ fn event_choices_show_joust_odds_from_shared_semantics_without_revealing_the_rol
     session.run_state.event_state = Some(event);
     let mut game = controller_with_session(&dir.0, "joust-odds", &session);
     let before = game.head().clone();
-    let reading = game.decision_reading_v1(&[], None).unwrap();
+    let reading = game.decision_reading_v1(&[], None, Locale::En).unwrap();
     let odds = "Joust odds: Owner wins 30%; Murderer wins 70%";
     assert_eq!(reading.view.matches(odds).count(), 2);
     assert!(reading.view.contains("Gold -50..+50"));
@@ -1343,13 +1357,13 @@ fn event_choices_show_joust_odds_from_shared_semantics_without_revealing_the_rol
         )
     }))
     .unwrap();
-    let pending = game.decision_reading_v1(&[], None).unwrap();
+    let pending = game.decision_reading_v1(&[], None, Locale::En).unwrap();
     assert!(pending.view.contains(odds));
     game.choose_bound_v1(&pick(&pending, |action| {
         matches!(action, TaskStrategicActionV1::ChooseEventOption { .. })
     }))
     .unwrap();
-    let rolled = game.decision_reading_v1(&[], None).unwrap();
+    let rolled = game.decision_reading_v1(&[], None, Locale::En).unwrap();
     assert!(rolled.view.contains("Gold +0..+250"));
     assert!(!rolled.view.contains("Owner wins!"));
     assert!(!rolled.view.contains("Murderer wins!"));
@@ -1371,7 +1385,7 @@ fn ectoplasm_event_reading_preserves_payment_and_blocks_the_actual_joust_payout(
     session.run_state.event_state = Some(event);
     let mut game = controller_with_session(&dir.0, "ecto-joust", &session);
     let before = game.head().clone();
-    let reading = game.decision_reading_v1(&[], None).unwrap();
+    let reading = game.decision_reading_v1(&[], None, Locale::En).unwrap();
     assert_eq!(
         reading
             .view
@@ -1398,12 +1412,12 @@ fn ectoplasm_event_reading_preserves_payment_and_blocks_the_actual_joust_payout(
         .into_session()
         .unwrap();
     assert_eq!(paid.run_state.gold, 50);
-    let pending = game.decision_reading_v1(&[], None).unwrap();
+    let pending = game.decision_reading_v1(&[], None, Locale::En).unwrap();
     game.choose_bound_v1(&pick(&pending, |action| {
         matches!(action, TaskStrategicActionV1::ChooseEventOption { .. })
     }))
     .unwrap();
-    let rolled = game.decision_reading_v1(&[], None).unwrap();
+    let rolled = game.decision_reading_v1(&[], None, Locale::En).unwrap();
     assert!(rolled
         .view
         .contains("With Ectoplasm: Gold received 0; Gold paid 0."));
@@ -1432,7 +1446,7 @@ fn ectoplasm_event_reading_preserves_payment_and_blocks_the_actual_joust_payout(
                 .retain(|relic| relic.id != RelicId::Ectoplasm);
         }
         let mut game = controller_with_session(&dir.0, name, &session);
-        let reading = game.decision_reading_v1(&[], None).unwrap();
+        let reading = game.decision_reading_v1(&[], None, Locale::En).unwrap();
         game.choose_bound_v1(&pick(&reading, |action| {
             matches!(action, TaskStrategicActionV1::ChooseEventOption { .. })
         }))
@@ -1460,7 +1474,7 @@ fn sozu_event_reading_predicts_claims_and_keeps_held_potions() {
     let held = session.run_state.potions.clone();
     let mut game = controller_with_session(&dir.0, "sozu-lab", &session);
     let before = game.head().clone();
-    let reading = game.decision_reading_v1(&[], None).unwrap();
+    let reading = game.decision_reading_v1(&[], None, Locale::En).unwrap();
     assert!(reading.view.contains("With Sozu: potions obtained 0."));
     assert_eq!(*game.head(), before);
     game.choose_bound_v1(&pick(&reading, |action| {
@@ -1468,7 +1482,7 @@ fn sozu_event_reading_predicts_claims_and_keeps_held_potions() {
     }))
     .unwrap();
     loop {
-        let reading = game.decision_reading_v1(&[], None).unwrap();
+        let reading = game.decision_reading_v1(&[], None, Locale::En).unwrap();
         if !reading.options.iter().any(|option| {
             matches!(
                 option.candidate,
@@ -1527,7 +1541,9 @@ fn falling_reading_uses_the_selected_upgraded_card_and_removes_that_copy() {
         } else {
             vec![]
         };
-        let reading = game.decision_reading_v1(&details, None).unwrap();
+        let reading = game
+            .decision_reading_v1(&details, None, Locale::En)
+            .unwrap();
         assert!(
             reading.view.contains("[Power] Remove Dark Embrace+."),
             "{}",
@@ -1550,7 +1566,7 @@ fn falling_reading_uses_the_selected_upgraded_card_and_removes_that_copy() {
         }
         assert_eq!(*game.head(), before);
     }
-    let reading = game.decision_reading_v1(&[], None).unwrap();
+    let reading = game.decision_reading_v1(&[], None, Locale::En).unwrap();
     game.choose_bound_v1(&pick(&reading, |action| {
         matches!(
             action,
@@ -1583,7 +1599,7 @@ fn event_choices_expand_identified_item_rules_before_the_player_chooses() {
     session.run_state.event_state = Some(EventState::new(EventId::DrugDealer));
     let mut game = controller_with_session(&dir.0, "event-item-rules", &session);
     let before = game.head().clone();
-    let reading = game.decision_reading_v1(&[], None).unwrap();
+    let reading = game.decision_reading_v1(&[], None, Locale::En).unwrap();
     assert!(
         reading.view.contains("Card J.A.X. | Skill | 0c"),
         "{}",
@@ -1614,7 +1630,7 @@ fn event_choices_expand_identified_item_rules_before_the_player_chooses() {
         )
     }))
     .unwrap();
-    let after = game.decision_reading_v1(&[], None).unwrap();
+    let after = game.decision_reading_v1(&[], None, Locale::En).unwrap();
     assert!(
         !after.view.contains("Card J.A.X."),
         "Leave has no item effect"
@@ -1628,7 +1644,7 @@ fn event_choices_expand_identified_item_rules_before_the_player_chooses() {
         .unwrap()
         .current_screen = 1;
     let mut game = controller_with_session(&dir.0, "event-curse-rules", &session);
-    let reading = game.decision_reading_v1(&[], None).unwrap();
+    let reading = game.decision_reading_v1(&[], None, Locale::En).unwrap();
     assert!(reading.view.contains("Card Injury | Curse | unplayable"));
     assert!(
         !reading.view.contains("Relic Golden Idol:"),
@@ -1648,7 +1664,7 @@ fn event_reading_shows_net_hp_cost_after_max_hp_healing() {
     session.run_state.current_hp = 63;
     session.run_state.event_state = Some(EventState::new(EventId::ForgottenAltar));
     let mut game = controller_with_session(&dir.0, "altar-resource-cost", &session);
-    let reading = game.decision_reading_v1(&[], None).unwrap();
+    let reading = game.decision_reading_v1(&[], None, Locale::En).unwrap();
     assert!(reading.view.contains("[Pray] Gain 5 Max HP. Lose 26 HP."));
     assert!(reading
         .view
@@ -1664,7 +1680,7 @@ fn event_reading_shows_net_hp_cost_after_max_hp_healing() {
         )
     }))
     .unwrap();
-    let after = game.decision_reading_v1(&[], None).unwrap();
+    let after = game.decision_reading_v1(&[], None, Locale::En).unwrap();
     assert!(after.view.contains("HP 42/80"));
 }
 
@@ -1677,7 +1693,10 @@ fn event_default_reading_exposes_random_rewards_and_colosseum_combat_stages() {
     event.current_screen = 2;
     session.run_state.event_state = Some(event);
     let mut game = controller_with_session(&dir.0, "colosseum-effects", &session);
-    let view = game.decision_reading_v1(&[], None).unwrap().view;
+    let view = game
+        .decision_reading_v1(&[], None, Locale::En)
+        .unwrap()
+        .view;
     assert!(view.contains("ColosseumNobs"), "{view}");
     assert!(view.contains("On victory"), "{view}");
     assert!(view.contains("obtain-relic:1:random-rare"), "{view}");
@@ -1691,7 +1710,10 @@ fn event_default_reading_exposes_random_rewards_and_colosseum_combat_stages() {
         .unwrap()
         .current_screen = 1;
     let mut first = controller_with_session(&dir.0, "colosseum-first", &session);
-    let view = first.decision_reading_v1(&[], None).unwrap().view;
+    let view = first
+        .decision_reading_v1(&[], None, Locale::En)
+        .unwrap()
+        .view;
     assert!(view.contains("ColosseumSlavers"), "{view}");
     assert!(view.contains("No item rewards"), "{view}");
     assert!(
@@ -1718,7 +1740,7 @@ fn brief_smith_rows_preserve_secondary_effects_and_exact_copy_choices() {
     }
     // Obtain the binding through the real on-equip choice, never from an index encoding.
     let mut bottle = controller_with_session(&dir.0, "bottle-copy", &session);
-    let selection = bottle.decision_reading_v1(&[], None).unwrap();
+    let selection = bottle.decision_reading_v1(&[], None, Locale::En).unwrap();
     bottle
         .choose_bound_v1(&RunPlayBoundChoiceV1 {
             source: selection.source.unwrap(),
@@ -1737,13 +1759,17 @@ fn brief_smith_rows_preserve_secondary_effects_and_exact_copy_choices() {
     let mut game = controller_with_session(&dir.0, "smith-copy", &session);
     let head = game.head().clone();
     let brief = game
-        .decision_reading_v1(&[DecisionDetailV1::Brief], None)
+        .decision_reading_v1(&[DecisionDetailV1::Brief], None, Locale::En)
         .unwrap();
     let expanded = game
-        .decision_reading_v1(&[DecisionDetailV1::Brief, DecisionDetailV1::Options], None)
+        .decision_reading_v1(
+            &[DecisionDetailV1::Brief, DecisionDetailV1::Options],
+            None,
+            Locale::En,
+        )
         .unwrap();
     let full = game
-        .decision_reading_v1(&[DecisionDetailV1::State], None)
+        .decision_reading_v1(&[DecisionDetailV1::State], None, Locale::En)
         .unwrap();
     assert_eq!(brief.options, full.options);
     assert_eq!(brief.options, expanded.options);
@@ -1851,7 +1877,7 @@ fn brief_smith_keeps_the_rule_for_an_unnamed_upgrade_effect() {
     session.run_state.add_card_to_deck(CardId::DoubleTap);
     let mut game = controller_with_session(&dir.0, "smith-rule-fallback", &session);
     let reading = game
-        .decision_reading_v1(&[DecisionDetailV1::Brief], None)
+        .decision_reading_v1(&[DecisionDetailV1::Brief], None, Locale::En)
         .unwrap();
     let row = reading
         .view
@@ -1906,7 +1932,7 @@ fn smith_reading_compares_actual_instance_upgrades_and_preserves_each_choice() {
             instance.cost_modifier = modifier;
         }
         let mut game = controller_with_session(&dir.0, "smith-comparison", &session);
-        let before = game.decision_reading_v1(&[], None).unwrap();
+        let before = game.decision_reading_v1(&[], None, Locale::En).unwrap();
         assert!(before.view.contains(fact), "{card:?}: {}", before.view);
         assert!(before.view.contains(mechanics::explanation(card).unwrap()));
         assert_eq!(
@@ -1997,7 +2023,7 @@ fn event_upgrade_reading_compares_instances_for_single_and_multiple_selections()
         let mut game = controller_with_session(&dir.0, "event-upgrade", &session);
         let before_head = game.head().clone();
         let reading = game
-            .decision_reading_v1(&[DecisionDetailV1::Brief], None)
+            .decision_reading_v1(&[DecisionDetailV1::Brief], None, Locale::En)
             .unwrap();
         for fact in [
             "cost 2c -> 1c",
@@ -2066,7 +2092,7 @@ fn late_heart_key_choices_show_missing_keys_without_early_or_collected_tutorials
             controller_with_session(&dir.0, &format!("late-keys-{act}-{keys:?}"), &session);
         let before = game.head().clone();
         let reading = game
-            .decision_reading_v1(&[DecisionDetailV1::Brief], None)
+            .decision_reading_v1(&[DecisionDetailV1::Brief], None, Locale::En)
             .unwrap();
         match expected {
             Some(message) => assert!(reading.view.contains(message), "{}", reading.view),
@@ -2083,7 +2109,7 @@ fn late_heart_key_choices_show_missing_keys_without_early_or_collected_tutorials
     session.run_state.act_num = 3;
     session.run_state.map.graph[0][0].class = Some(RoomType::RestRoom);
     let mut game = controller_with_session(&dir.0, "recall-ruby-effect", &session);
-    let reading = game.decision_reading_v1(&[], None).unwrap();
+    let reading = game.decision_reading_v1(&[], None, Locale::En).unwrap();
     game.choose_bound_v1(&pick(&reading, |action| {
         matches!(
             action,
@@ -2092,7 +2118,7 @@ fn late_heart_key_choices_show_missing_keys_without_early_or_collected_tutorials
     }))
     .unwrap();
     let camp = game
-        .decision_reading_v1(&[DecisionDetailV1::Brief], None)
+        .decision_reading_v1(&[DecisionDetailV1::Brief], None, Locale::En)
         .unwrap();
     assert!(camp
         .view
@@ -2108,7 +2134,7 @@ fn late_heart_key_choices_show_missing_keys_without_early_or_collected_tutorials
         .unwrap();
     assert_eq!(actual.run_state.keys, [true, false, false]);
     let next = game
-        .decision_reading_v1(&[DecisionDetailV1::Brief], None)
+        .decision_reading_v1(&[DecisionDetailV1::Brief], None, Locale::En)
         .unwrap();
     assert!(next
         .view
@@ -2138,12 +2164,10 @@ fn key_status_is_available_in_combat_readings_and_bound_mechanics_queries() {
             let mut game = controller_with_session(&dir.0, "key-status", &session);
             let head = game.head().clone();
             let reading = game
-                .decision_reading_v1(&[DecisionDetailV1::State], None)
+                .decision_reading_v1(&[DecisionDetailV1::State], None, Locale::En)
                 .unwrap();
             let decision = reading.state.as_ref().unwrap();
-            let info =
-                crate::mechanics_info::render(Some(decision), "keys", sts_presentation::Locale::En)
-                    .unwrap();
+            let info = crate::mechanics_info::render(Some(decision), "keys", Locale::En).unwrap();
             for view in [&reading.view, &info] {
                 assert!(view.contains(status), "{kind}: {view}");
                 if let Some(missing) = missing {
@@ -2166,12 +2190,8 @@ fn key_status_is_available_in_combat_readings_and_bound_mechanics_queries() {
                 *run_context = PublicCombatRunContextV1::Unavailable {
                     reason: PublicCombatRunContextGapV1::DetachedExactCombatPosition,
                 };
-                let info = crate::mechanics_info::render(
-                    Some(&detached),
-                    "keys",
-                    sts_presentation::Locale::En,
-                )
-                .unwrap();
+                let info =
+                    crate::mechanics_info::render(Some(&detached), "keys", Locale::En).unwrap();
                 assert!(info.contains("Current key status unavailable"));
                 assert!(
                     !info.contains("Keys:"),
@@ -2202,6 +2222,7 @@ fn potion_info_locales_change_only_text_and_reject_unsupported_languages() {
         AgentCapabilitiesV1::new(AgentPermissionEnvelopeV1::public_manual_v1(None)),
         std::io::Cursor::new(input),
         &mut output,
+        Locale::En,
     )
     .unwrap();
     let responses: Vec<serde_json::Value> = std::str::from_utf8(&output)
@@ -2236,7 +2257,7 @@ fn map_reading_distinguishes_room_actions_completed_nodes_and_overlays() {
     session.run_state.map.graph[0][0].class = Some(RoomType::RestRoom);
     let mut game = controller_with_session(&dir.0, "map-room-stage", &session);
 
-    let entrance = game.decision_reading_v1(&[], None).unwrap();
+    let entrance = game.decision_reading_v1(&[], None, Locale::En).unwrap();
     assert!(entrance.view.contains("| Map · choose next room"));
     assert!(!entrance.view.contains("completed node"));
     assert!(!entrance.view.contains("current node"));
@@ -2247,7 +2268,7 @@ fn map_reading_distinguishes_room_actions_completed_nodes_and_overlays() {
         )
     }))
     .unwrap();
-    let campfire = game.decision_reading_v1(&[], None).unwrap();
+    let campfire = game.decision_reading_v1(&[], None, Locale::En).unwrap();
     assert!(campfire.view.contains("| Campfire"));
     assert!(campfire.options.iter().any(|option| matches!(
         option.candidate,
@@ -2265,7 +2286,9 @@ fn map_reading_distinguishes_room_actions_completed_nodes_and_overlays() {
         .unwrap();
     overlay_session.engine_state = EngineState::map_overlay(EngineState::Campfire);
     let mut overlay_game = controller_with_session(&dir.0, "map-room-overlay", &overlay_session);
-    let overlay = overlay_game.decision_reading_v1(&[], None).unwrap();
+    let overlay = overlay_game
+        .decision_reading_v1(&[], None, Locale::En)
+        .unwrap();
     assert!(overlay.view.contains("| Map overlay · choose next room, or cancel to return to the room screen · current node (0,0) Campfire"));
     assert!(!overlay.view.contains("completed node"));
     overlay_game
@@ -2273,7 +2296,9 @@ fn map_reading_distinguishes_room_actions_completed_nodes_and_overlays() {
             matches!(action, TaskStrategicActionV1::Cancel { .. })
         }))
         .unwrap();
-    let returned = overlay_game.decision_reading_v1(&[], None).unwrap();
+    let returned = overlay_game
+        .decision_reading_v1(&[], None, Locale::En)
+        .unwrap();
     assert!(returned.view.contains("| Campfire"));
     assert!(returned.options.iter().any(|option| matches!(
         option.candidate,
@@ -2286,7 +2311,7 @@ fn map_reading_distinguishes_room_actions_completed_nodes_and_overlays() {
         matches!(action, TaskStrategicActionV1::Rest)
     }))
     .unwrap();
-    let completed = game.decision_reading_v1(&[], None).unwrap();
+    let completed = game.decision_reading_v1(&[], None, Locale::En).unwrap();
     assert!(completed
         .view
         .contains("| Map · choose next room · completed node (0,0) Campfire"));
@@ -2321,7 +2346,7 @@ fn campfire_rest_reading_matches_actual_healing_and_relic_modifiers() {
             session.run_state.relics.push(RelicState::new(relic));
         }
         let mut game = controller_with_session(&dir.0, name, &session);
-        let before = game.decision_reading_v1(&[], None).unwrap();
+        let before = game.decision_reading_v1(&[], None, Locale::En).unwrap();
         assert!(
             before.view.contains(&format!(
                 "Rest | HP {} -> {} (+{})",
@@ -2336,7 +2361,7 @@ fn campfire_rest_reading_matches_actual_healing_and_relic_modifiers() {
             matches!(action, TaskStrategicActionV1::Rest)
         }))
         .unwrap();
-        let after = game.decision_reading_v1(&[], None).unwrap();
+        let after = game.decision_reading_v1(&[], None, Locale::En).unwrap();
         assert!(
             after.view.contains(&format!("HP {expected}/80")),
             "{}",
@@ -2354,7 +2379,7 @@ fn event_reading_distinguishes_repeated_continue_screens() {
     let mut game = controller_with_session(&dir.0, "masked-bandits-dialogue", &session);
 
     for screen in 0..=3 {
-        let reading = game.decision_reading_v1(&[], None).unwrap();
+        let reading = game.decision_reading_v1(&[], None, Locale::En).unwrap();
         assert!(reading
             .view
             .contains(&format!("Masked Bandits | Event screen {screen}")));
@@ -2376,7 +2401,7 @@ fn event_reading_distinguishes_repeated_continue_screens() {
     }
 
     let finished = game
-        .decision_reading_v1(&[DecisionDetailV1::State], None)
+        .decision_reading_v1(&[DecisionDetailV1::State], None, Locale::En)
         .unwrap();
     assert!(finished.view.contains("| Map"));
     assert!(!finished.view.contains("Event screen"));
@@ -2403,7 +2428,7 @@ fn face_trader_result_reading_keeps_the_selected_branch() {
     session.run_state.event_state = Some(event);
     let mut game = controller_with_session(&dir.0, "face-trader-result", &session);
 
-    let choice = game.decision_reading_v1(&[], None).unwrap();
+    let choice = game.decision_reading_v1(&[], None, Locale::En).unwrap();
     assert!(choice.view.contains("Scene: "));
     game.choose_bound_v1(&pick(&choice, |action| {
         matches!(
@@ -2419,7 +2444,7 @@ fn face_trader_result_reading_keeps_the_selected_branch() {
     .unwrap();
 
     let result = game
-        .decision_reading_v1(&[DecisionDetailV1::State], None)
+        .decision_reading_v1(&[DecisionDetailV1::State], None, Locale::En)
         .unwrap();
     let Some(sts_oracle_learning::agent::task::TaskPublicDecisionV1 {
         observation: TaskPublicObservationV1::Strategic { observation },
@@ -2444,7 +2469,7 @@ fn face_trader_result_reading_keeps_the_selected_branch() {
 fn reward_choice_is_executed_once_and_survives_reopen_without_advice() {
     let dir = TestDirectory::new();
     let mut game = controller(&dir.0, "reward");
-    let reading = game.decision_reading_v1(&[], None).unwrap();
+    let reading = game.decision_reading_v1(&[], None, Locale::En).unwrap();
     let command = pick(&reading, |a| {
         matches!(
             a,
@@ -2463,7 +2488,7 @@ fn reward_choice_is_executed_once_and_survives_reopen_without_advice() {
             ..
         })
     ));
-    let after = game.decision_reading_v1(&[], None).unwrap();
+    let after = game.decision_reading_v1(&[], None, Locale::En).unwrap();
     assert!(after.view.contains("Shrug It Off"));
     assert_ne!(after.source, reading.source);
     assert_eq!(
@@ -2483,7 +2508,10 @@ fn reward_choice_is_executed_once_and_survives_reopen_without_advice() {
     let mut reopened =
         RunPlayControllerV1::open(RunPlayPathsV1::new(dir.0.join("reward"))).unwrap();
     assert!(reopened.choose_bound_v1(&command).is_err());
-    assert_eq!(reopened.decision_reading_v1(&[], None).unwrap(), after);
+    assert_eq!(
+        reopened.decision_reading_v1(&[], None, Locale::En).unwrap(),
+        after
+    );
     reopened.back(1).unwrap();
     assert!(
         reopened.choose_bound_v1(&command).is_err(),
@@ -2497,10 +2525,10 @@ fn displayed_choices_are_dense_and_keep_original_execution_paths() {
     for kind in ["reward_potions", "full_reward", "shop", "shop_courier"] {
         let mut game = controller(&dir.0, kind);
         let reading = game
-            .decision_reading_v1(&[DecisionDetailV1::State], None)
+            .decision_reading_v1(&[DecisionDetailV1::State], None, Locale::En)
             .unwrap();
         let expanded = game
-            .decision_reading_v1(&[DecisionDetailV1::Options], None)
+            .decision_reading_v1(&[DecisionDetailV1::Options], None, Locale::En)
             .unwrap();
         if kind == "full_reward" {
             assert_eq!(expanded.options, reading.options);
@@ -2553,7 +2581,7 @@ fn displayed_choices_are_dense_and_keep_original_execution_paths() {
                 choice: first.choice.clone(),
             })
             .unwrap();
-            let after = game.decision_reading_v1(&[], None).unwrap();
+            let after = game.decision_reading_v1(&[], None, Locale::En).unwrap();
             assert!(after.view.contains("Shrug It Off"));
             assert_eq!(
                 after.context.unwrap().potions,
@@ -2582,10 +2610,14 @@ fn reward_progress_distinguishes_empty_loot_from_a_full_slot_potion() {
         );
         let before = game.head().clone();
         let brief = game
-            .decision_reading_v1(&[DecisionDetailV1::Brief], None)
+            .decision_reading_v1(&[DecisionDetailV1::Brief], None, Locale::En)
             .unwrap();
         let expanded = game
-            .decision_reading_v1(&[DecisionDetailV1::Brief, DecisionDetailV1::Options], None)
+            .decision_reading_v1(
+                &[DecisionDetailV1::Brief, DecisionDetailV1::Options],
+                None,
+                Locale::En,
+            )
             .unwrap();
         assert!(brief.view.contains("leave rewards"), "{}", brief.view);
         assert!(!brief.view.contains("proceed Reward"));
@@ -2619,9 +2651,9 @@ fn out_of_combat_potion_use_is_secondary_and_retains_its_bound_choice() {
     let mut session = fixture("reward");
     session.run_state.potions[0] = Some(Potion::new(PotionId::BloodPotion, 0));
     let mut game = controller_with_session(&dir.0, "blood-reward", &session);
-    let reading = game.decision_reading_v1(&[], None).unwrap();
+    let reading = game.decision_reading_v1(&[], None, Locale::En).unwrap();
     let expanded = game
-        .decision_reading_v1(&[DecisionDetailV1::Options], None)
+        .decision_reading_v1(&[DecisionDetailV1::Options], None, Locale::En)
         .unwrap();
     assert!(!reading.view.lines().any(
         |line| line.starts_with(|c: char| c.is_ascii_digit()) && line.contains(": use potion")
@@ -2639,7 +2671,7 @@ fn out_of_combat_potion_use_is_secondary_and_retains_its_bound_choice() {
         matches!(a, TaskStrategicActionV1::UseRunPotion { .. })
     });
     game.choose_bound_v1(&potion).unwrap();
-    let after = game.decision_reading_v1(&[], None).unwrap();
+    let after = game.decision_reading_v1(&[], None, Locale::En).unwrap();
     assert!(after.view.contains("P0 empty"));
     assert_eq!(after.options[0].label, reading.options[0].label);
     assert!(game.choose_bound_v1(&potion).is_err());
@@ -2649,7 +2681,7 @@ fn out_of_combat_potion_use_is_secondary_and_retains_its_bound_choice() {
 fn full_shop_exposes_inventory_and_reprices_before_explicit_replacement() {
     let dir = TestDirectory::new();
     let mut game = controller(&dir.0, "shop");
-    let initial = game.decision_reading_v1(&[], None).unwrap();
+    let initial = game.decision_reading_v1(&[], None, Locale::En).unwrap();
     assert_eq!(initial.control, DecisionControlV1::Strategic);
     for item in [
         "Shrug It Off 60g",
@@ -2687,7 +2719,7 @@ fn full_shop_exposes_inventory_and_reprices_before_explicit_replacement() {
             && line.contains(": discard potion")));
     let before_inspect = game.head().clone();
     let expanded = game
-        .decision_reading_v1(&[DecisionDetailV1::Options], None)
+        .decision_reading_v1(&[DecisionDetailV1::Options], None, Locale::En)
         .unwrap();
     assert!(expanded.view.contains("discard potion"));
     assert_eq!(&expanded.options[..initial.options.len()], &initial.options);
@@ -2714,7 +2746,7 @@ fn full_shop_exposes_inventory_and_reprices_before_explicit_replacement() {
         )
     }))
     .unwrap();
-    let discounted = game.decision_reading_v1(&[], None).unwrap();
+    let discounted = game.decision_reading_v1(&[], None, Locale::En).unwrap();
     let purchasable = discounted
         .view
         .lines()
@@ -2726,13 +2758,13 @@ fn full_shop_exposes_inventory_and_reprices_before_explicit_replacement() {
     assert!(discounted.view.contains("Power Potion 50g"));
     assert!(game.choose_bound_v1(&stale_card).is_err());
     let management = game
-        .decision_reading_v1(&[DecisionDetailV1::Options], None)
+        .decision_reading_v1(&[DecisionDetailV1::Options], None, Locale::En)
         .unwrap();
     game.choose_bound_v1(&pick(&management, |a| {
         matches!(a, TaskStrategicActionV1::DiscardRunPotion { slot: 0, .. })
     }))
     .unwrap();
-    let empty_slot = game.decision_reading_v1(&[], None).unwrap();
+    let empty_slot = game.decision_reading_v1(&[], None, Locale::En).unwrap();
     assert_eq!(empty_slot.view.matches("Power Potion 50g").count(), 1);
     assert!(empty_slot.view.contains("buy Power Potion 50g"));
     assert!(empty_slot.view.contains("P0 empty"));
@@ -2754,7 +2786,7 @@ fn full_shop_exposes_inventory_and_reprices_before_explicit_replacement() {
         )
     });
     game.choose_bound_v1(&potion).unwrap();
-    let bought = game.decision_reading_v1(&[], None).unwrap();
+    let bought = game.decision_reading_v1(&[], None, Locale::En).unwrap();
     assert!(bought.view.contains("P0 Power Potion"));
     assert!(bought.view.contains("Gold 250"));
     assert!(!bought.view.contains("Power Potion 50g"));
@@ -2785,7 +2817,7 @@ fn full_shop_exposes_inventory_and_reprices_before_explicit_replacement() {
     }))
     .unwrap();
     assert!(game.choose_bound_v1(&before_shift).is_err());
-    let shifted = game.decision_reading_v1(&[], None).unwrap();
+    let shifted = game.decision_reading_v1(&[], None, Locale::En).unwrap();
     let pommel = pick(&shifted, |a| {
         matches!(
             a,
@@ -2798,7 +2830,7 @@ fn full_shop_exposes_inventory_and_reprices_before_explicit_replacement() {
     });
     game.choose_bound_v1(&pommel).unwrap();
     assert!(game
-        .decision_reading_v1(&[], None)
+        .decision_reading_v1(&[], None, Locale::En)
         .unwrap()
         .view
         .contains("Gold 180"));
@@ -2808,7 +2840,7 @@ fn full_shop_exposes_inventory_and_reprices_before_explicit_replacement() {
 fn grouped_shop_preserves_identical_offers_and_blocked_stock() {
     let dir = TestDirectory::new();
     let mut game = controller(&dir.0, "shop_twins");
-    let before = game.decision_reading_v1(&[], None).unwrap();
+    let before = game.decision_reading_v1(&[], None, Locale::En).unwrap();
     let first = pick(&before, |a| {
         matches!(a, TaskStrategicActionV1::BuyCard { shop_slot: 0, .. })
     });
@@ -2834,7 +2866,7 @@ fn grouped_shop_preserves_identical_offers_and_blocked_stock() {
     game.choose_bound_v1(&first).unwrap();
     assert!(game.choose_bound_v1(&second).is_err());
     let shifted = game
-        .decision_reading_v1(&[], before.context.as_ref())
+        .decision_reading_v1(&[], before.context.as_ref(), Locale::En)
         .unwrap();
     assert_eq!(shifted.view.matches("buy Shrug It Off 60g").count(), 1);
     game.choose_bound_v1(&pick(&shifted, |a| {
@@ -2850,7 +2882,7 @@ fn grouped_shop_preserves_identical_offers_and_blocked_stock() {
     .unwrap();
 
     let mut poor = controller(&dir.0, "shop_poor");
-    let poor = poor.decision_reading_v1(&[], None).unwrap();
+    let poor = poor.decision_reading_v1(&[], None, Locale::En).unwrap();
     for item in [
         "Shrug It Off 60g",
         "Pommel Strike 80g",
@@ -2884,7 +2916,7 @@ fn choice_readings_expose_typed_items_and_rules_without_changing_choices() {
     shop.potions[0].potion_id = PotionId::HeartOfIron;
     let mut game = controller_with_session(&dir.0, "typed-shop-facts", &session);
     let before = game.head().clone();
-    let reading = game.decision_reading_v1(&[], None).unwrap();
+    let reading = game.decision_reading_v1(&[], None, Locale::En).unwrap();
     assert!(reading
         .view
         .contains("buy Corruption+ 60g\n  Card: Power | 2c"));
@@ -2934,7 +2966,7 @@ fn choice_readings_expose_typed_items_and_rules_without_changing_choices() {
     session.run_state.add_card_to_deck(CardId::BodySlam);
     let mut game = controller_with_session(&dir.0, "typed-reward-facts", &session);
     let before = game.head().clone();
-    let reading = game.decision_reading_v1(&[], None).unwrap();
+    let reading = game.decision_reading_v1(&[], None, Locale::En).unwrap();
     assert!(reading
         .view
         .contains("take Uppercut+\n  Card: Attack | 2c | tags: none"));
@@ -2948,7 +2980,7 @@ fn choice_readings_expose_typed_items_and_rules_without_changing_choices() {
     assert!(reading.view.contains("take Shrug It Off+\n  Card: Skill | 1c | tags: none\n  Printed base stats at this upgrade: Block 11"));
     assert!(!reading.view.contains("Owned deck rules"));
     let expanded = game
-        .decision_reading_v1(&[DecisionDetailV1::State], None)
+        .decision_reading_v1(&[DecisionDetailV1::State], None, Locale::En)
         .unwrap();
     assert!(expanded
         .view
@@ -2967,8 +2999,7 @@ fn choice_readings_expose_typed_items_and_rules_without_changing_choices() {
         .view
         .contains("including upgraded Skills that normally do not Exhaust"));
     assert!(expanded.view.contains("  Card Dark Embrace | Power"));
-    let inventory =
-        crate::compact::render_inventory_v1(&mut game, true, sts_presentation::Locale::En).unwrap();
+    let inventory = crate::compact::render_inventory_v1(&mut game, true, Locale::En).unwrap();
     assert!(inventory.contains("including upgraded Skills that normally do not Exhaust"));
     assert!(inventory.contains("Dark Embrace"));
     assert!(reading.options.iter().any(|option| matches!(
@@ -2985,7 +3016,7 @@ fn brief_shop_keeps_prices_and_replacement_potions_without_unaffordable_rules() 
     let dir = TestDirectory::new();
     let mut poor = controller(&dir.0, "shop_poor");
     let brief = poor
-        .decision_reading_v1(&[DecisionDetailV1::Brief], None)
+        .decision_reading_v1(&[DecisionDetailV1::Brief], None, Locale::En)
         .unwrap();
     assert!(brief.view.contains("Shrug It Off 60g (insufficient gold)"));
     assert!(brief
@@ -2998,14 +3029,14 @@ fn brief_shop_keeps_prices_and_replacement_potions_without_unaffordable_rules() 
         brief.view
     );
     assert!(!brief.view.contains("Gain 8 Block"), "{}", brief.view);
-    let full = poor.decision_reading_v1(&[], None).unwrap();
+    let full = poor.decision_reading_v1(&[], None, Locale::En).unwrap();
     assert!(full.view.contains("  Relic:"));
     assert!(full.view.contains("  Potion (base rule):"));
     assert!(full.view.contains("Gain 8 Block"));
     assert_eq!(brief.options, full.options);
     let mut stocked = controller(&dir.0, "shop");
     let stocked = stocked
-        .decision_reading_v1(&[DecisionDetailV1::Brief], None)
+        .decision_reading_v1(&[DecisionDetailV1::Brief], None, Locale::En)
         .unwrap();
     assert!(stocked.view.contains("Power Potion 100g (slots full)"));
     assert!(
@@ -3036,9 +3067,7 @@ fn compact_shop_shows_executable_offers_and_curse_removal() {
     assert!(!status.contains("buy:PowerPotion"));
     assert!(status.contains("buy:ShrugItOff"));
     assert!(!status.contains("Deck ("));
-    let inventory =
-        crate::compact::render_inventory_v1(&mut game, false, sts_presentation::Locale::En)
-            .unwrap();
+    let inventory = crate::compact::render_inventory_v1(&mut game, false, Locale::En).unwrap();
     assert!(inventory.contains("Deck ("));
     assert!(inventory.lines().any(|line| line.trim() == "Doubt"));
     assert!(inventory.contains("Relics ("));
@@ -3049,7 +3078,7 @@ fn compact_shop_shows_executable_offers_and_curse_removal() {
         .unwrap()
         .public_decision_v1()
         .unwrap();
-    let reading = game.decision_reading_v1(&[], None).unwrap();
+    let reading = game.decision_reading_v1(&[], None, Locale::En).unwrap();
     game.choose_bound_v1(&pick(&reading, |action| {
         matches!(
             action,
@@ -3093,14 +3122,11 @@ fn compact_inventory_reads_combat_master_deck_without_advancing() {
     let dir = TestDirectory::new();
     let mut game = controller(&dir.0, "combat_finish");
     let head = game.head().clone();
-    let inventory =
-        crate::compact::render_inventory_v1(&mut game, false, sts_presentation::Locale::En)
-            .unwrap();
+    let inventory = crate::compact::render_inventory_v1(&mut game, false, Locale::En).unwrap();
     assert!(inventory.contains("Deck ("));
     assert!(inventory.contains("Relics ("));
     assert!(inventory.contains("Strike"));
-    let explained =
-        crate::compact::render_inventory_v1(&mut game, true, sts_presentation::Locale::En).unwrap();
+    let explained = crate::compact::render_inventory_v1(&mut game, true, Locale::En).unwrap();
     assert!(explained.contains("Permanent deck; costs and card faces include permanent instance changes, before combat powers/relics."));
     assert!(explained.contains("Strike | Attack | 1c"));
     assert_eq!(*game.head(), head);
@@ -3128,9 +3154,11 @@ fn fixed_block_requests_reach_inventory_and_acquisition_readings() {
     session.engine_state = EngineState::RewardScreen(rewards);
     let mut game = controller_with_session(&dir.0, "fixed-block-readings", &session);
     let before = game.head().clone();
-    let inventory =
-        crate::compact::render_inventory_v1(&mut game, true, sts_presentation::Locale::En).unwrap();
-    let candidates = game.decision_reading_v1(&[], None).unwrap().view;
+    let inventory = crate::compact::render_inventory_v1(&mut game, true, Locale::En).unwrap();
+    let candidates = game
+        .decision_reading_v1(&[], None, Locale::En)
+        .unwrap()
+        .view;
     for text in [inventory, candidates] {
         for block in [15, 20] {
             assert!(
@@ -3184,8 +3212,7 @@ fn inventory_effects_reports_real_upgrades_and_conditional_engine_rules() {
     let expected_size = session.run_state.master_deck.len();
     let mut game = controller_with_session(&dir.0, "inventory-engine", &session);
     let before = game.head().clone();
-    let explained =
-        crate::compact::render_inventory_v1(&mut game, true, sts_presentation::Locale::En).unwrap();
+    let explained = crate::compact::render_inventory_v1(&mut game, true, Locale::En).unwrap();
     assert!(explained.contains(&format!("Deck ({expected_size}):")));
     assert!(explained.contains("Corruption+ | Power | 2c"));
     assert!(explained.contains("2× Sentinel+ | Skill | 1c"));
@@ -3207,7 +3234,7 @@ fn inventory_effects_reports_real_upgrades_and_conditional_engine_rules() {
     assert!(explained.find("2× Sentinel+ | Skill | 1c").unwrap() < summary);
     assert!(explained.contains("request 3 Energy only when this card is Exhausted"));
     assert!(explained.contains("2x Sentinel+ | Skill | 1c"));
-    let reading = game.decision_reading_v1(&[], None).unwrap();
+    let reading = game.decision_reading_v1(&[], None, Locale::En).unwrap();
     assert!(reading
         .view
         .contains(&format!("Deck: {expected_size} cards |")));
@@ -3224,12 +3251,11 @@ fn deck_rules_distinguish_strike_tags_and_missing_key_sources() {
     session.run_state.keys = [false, true, true];
     let mut game = controller_with_session(&dir.0, "deck-key-facts", &session);
     let before = game.head().clone();
-    let explained =
-        crate::compact::render_inventory_v1(&mut game, true, sts_presentation::Locale::En).unwrap();
+    let explained = crate::compact::render_inventory_v1(&mut game, true, Locale::En).unwrap();
     assert!(explained.contains("Anger | Attack | 0c | tags: none"));
     assert!(explained.contains("Perfected Strike | Attack | 2c | tags: Strike"));
     assert!(explained.contains("Pommel Strike | Attack | 1c | tags: Strike"));
-    let reading = game.decision_reading_v1(&[], None).unwrap();
+    let reading = game.decision_reading_v1(&[], None, Locale::En).unwrap();
     assert!(reading.view.contains("Keys: Sapphire, Emerald"));
     assert!(reading
         .view
@@ -3262,9 +3288,8 @@ fn key_choices_expose_shared_opportunities_without_changing_the_decision() {
         session.engine_state = EngineState::RewardScreen(rewards);
         let mut game = controller_with_session(&dir.0, name, &session);
         let before = game.head().clone();
-        let reading = game.decision_reading_v1(&[], None).unwrap();
-        let mechanics =
-            crate::mechanics_info::render(None, query, sts_presentation::Locale::En).unwrap();
+        let reading = game.decision_reading_v1(&[], None, Locale::En).unwrap();
+        let mechanics = crate::mechanics_info::render(None, query, Locale::En).unwrap();
         for line in mechanics.lines() {
             assert!(
                 reading.view.contains(&format!("  {line}")),
@@ -3292,8 +3317,8 @@ fn key_choices_expose_shared_opportunities_without_changing_the_decision() {
     session.engine_state = EngineState::Campfire;
     let mut game = controller_with_session(&dir.0, "ruby-opportunities", &session);
     let before = game.head().clone();
-    let reading = game.decision_reading_v1(&[], None).unwrap();
-    for line in crate::mechanics_info::render(None, "RubyKey", sts_presentation::Locale::En)
+    let reading = game.decision_reading_v1(&[], None, Locale::En).unwrap();
+    for line in crate::mechanics_info::render(None, "RubyKey", Locale::En)
         .unwrap()
         .lines()
     {
@@ -3327,7 +3352,7 @@ fn brief_emerald_reward_explains_and_preserves_the_other_relic() {
     let mut game = controller_with_session(&dir.0, "emerald-and-relic", &session);
     let before = game.head().clone();
     let reading = game
-        .decision_reading_v1(&[DecisionDetailV1::Brief], None)
+        .decision_reading_v1(&[DecisionDetailV1::Brief], None, Locale::En)
         .unwrap();
     assert!(reading
         .view
@@ -3344,7 +3369,7 @@ fn brief_emerald_reward_explains_and_preserves_the_other_relic() {
     }))
     .unwrap();
     let successor = game
-        .decision_reading_v1(&[DecisionDetailV1::Brief], None)
+        .decision_reading_v1(&[DecisionDetailV1::Brief], None, Locale::En)
         .unwrap();
     let relic = pick(&successor, |action| {
         matches!(
@@ -3358,7 +3383,7 @@ fn brief_emerald_reward_explains_and_preserves_the_other_relic() {
         )
     });
     game.choose_bound_v1(&relic).unwrap();
-    let final_reading = game.decision_reading_v1(&[], None).unwrap();
+    let final_reading = game.decision_reading_v1(&[], None, Locale::En).unwrap();
     assert!(final_reading.view.contains("Letter Opener"));
     assert!(final_reading.view.contains("Keys: Emerald"));
 }
@@ -3393,7 +3418,7 @@ fn shop_and_campfire_readings_show_only_their_connected_preparation_routes() {
         session.run_state.map.current_y = 0;
         let mut game = controller_with_session(&dir.0, name, &session);
         let before = game.head().clone();
-        let reading = game.decision_reading_v1(&[], None).unwrap();
+        let reading = game.decision_reading_v1(&[], None, Locale::En).unwrap();
         if name == "shop" {
             assert!(reading.view.contains("Removal:"));
         }
@@ -3422,7 +3447,7 @@ fn shop_and_campfire_readings_show_only_their_connected_preparation_routes() {
         assert!(!reading.view.contains("Shop (0,0)"));
         assert_eq!(*game.head(), before);
         let reused = game
-            .decision_reading_v1(&[], reading.context.as_ref())
+            .decision_reading_v1(&[], reading.context.as_ref(), Locale::En)
             .unwrap();
         assert!(reused.view.contains("shop map y2 reachable"));
         assert_eq!(reused.options, reading.options);
@@ -3438,7 +3463,7 @@ fn missing_emerald_reading_exposes_later_act_opportunities_without_advancing() {
         session.run_state.keys = [true, true, false];
         let mut game = controller_with_session(&dir.0, &format!("emerald-act-{act}"), &session);
         let before = game.head().clone();
-        let reading = game.decision_reading_v1(&[], None).unwrap();
+        let reading = game.decision_reading_v1(&[], None, Locale::En).unwrap();
         assert!(reading
             .view
             .contains("Missing keys: Emerald: burning elite key reward"));
@@ -3463,7 +3488,7 @@ fn compact_shop_relic_purchase_reports_only_the_new_relic() {
         .unwrap()
         .public_decision_v1()
         .unwrap();
-    let reading = game.decision_reading_v1(&[], None).unwrap();
+    let reading = game.decision_reading_v1(&[], None, Locale::En).unwrap();
     game.choose_bound_v1(&pick(&reading, |action| {
         matches!(
             action,
@@ -3502,7 +3527,7 @@ fn courier_restock_refreshes_bound_offers_and_keeps_full_slot_potions_visible() 
     let dir = TestDirectory::new();
     let mut game = controller(&dir.0, "shop_courier");
     let before = game
-        .decision_reading_v1(&[DecisionDetailV1::State], None)
+        .decision_reading_v1(&[DecisionDetailV1::State], None, Locale::En)
         .unwrap();
     let stale_neighbor = pick(&before, |a| {
         matches!(a, TaskStrategicActionV1::BuyCard { shop_slot: 1, .. })
@@ -3512,7 +3537,11 @@ fn courier_restock_refreshes_bound_offers_and_keeps_full_slot_potions_visible() 
     });
     game.choose_bound_v1(&card).unwrap();
     let restocked = game
-        .decision_reading_v1(&[DecisionDetailV1::State], before.context.as_ref())
+        .decision_reading_v1(
+            &[DecisionDetailV1::State],
+            before.context.as_ref(),
+            Locale::En,
+        )
         .unwrap();
     let original = shop_inventory(&before);
     let current = shop_inventory(&restocked);
@@ -3549,7 +3578,11 @@ fn courier_restock_refreshes_bound_offers_and_keeps_full_slot_potions_visible() 
     });
     game.choose_bound_v1(&potion).unwrap();
     let full = game
-        .decision_reading_v1(&[DecisionDetailV1::State], restocked.context.as_ref())
+        .decision_reading_v1(
+            &[DecisionDetailV1::State],
+            restocked.context.as_ref(),
+            Locale::En,
+        )
         .unwrap();
     assert_eq!(shop_inventory(&full).potions.len(), 1);
     assert_eq!(shop_inventory(&full).cards, current.cards);
@@ -3578,7 +3611,11 @@ fn courier_restock_refreshes_bound_offers_and_keeps_full_slot_potions_visible() 
     assert!(reopened.choose_bound_v1(&potion).is_err());
     assert_eq!(
         reopened
-            .decision_reading_v1(&[DecisionDetailV1::State], restocked.context.as_ref())
+            .decision_reading_v1(
+                &[DecisionDetailV1::State],
+                restocked.context.as_ref(),
+                Locale::En
+            )
             .unwrap(),
         full
     );
@@ -3589,7 +3626,7 @@ fn courier_membership_purchase_reprices_stock_and_replaces_the_relic_together() 
     let dir = TestDirectory::new();
     let mut game = controller(&dir.0, "shop_courier");
     let before = game
-        .decision_reading_v1(&[DecisionDetailV1::State], None)
+        .decision_reading_v1(&[DecisionDetailV1::State], None, Locale::En)
         .unwrap();
     let membership = pick(&before, |a| {
         matches!(
@@ -3602,7 +3639,11 @@ fn courier_membership_purchase_reprices_stock_and_replaces_the_relic_together() 
     });
     game.choose_bound_v1(&membership).unwrap();
     let after = game
-        .decision_reading_v1(&[DecisionDetailV1::State], before.context.as_ref())
+        .decision_reading_v1(
+            &[DecisionDetailV1::State],
+            before.context.as_ref(),
+            Locale::En,
+        )
         .unwrap();
     let old = shop_inventory(&before);
     let new = shop_inventory(&after);
@@ -3652,7 +3693,7 @@ fn courier_membership_purchase_reprices_stock_and_replaces_the_relic_together() 
     }))
     .unwrap();
     assert!(game
-        .decision_reading_v1(&[], None)
+        .decision_reading_v1(&[], None, Locale::En)
         .unwrap()
         .view
         .contains("Gold 298"));
@@ -3664,7 +3705,7 @@ fn route_inspection_preserves_head_and_selection_stops_at_combat() {
     let mut game = controller(&dir.0, "route");
     let before = game.head().clone();
     let reading = game
-        .decision_reading_v1(&[DecisionDetailV1::Map], None)
+        .decision_reading_v1(&[DecisionDetailV1::Map], None, Locale::En)
         .unwrap();
     assert!(reading.view.contains("(0,1) Campfire"));
     assert!(reading.view.contains("(1,1) Shop"));
@@ -3675,7 +3716,7 @@ fn route_inspection_preserves_head_and_selection_stops_at_combat() {
     .unwrap();
     let at_combat = game.head().clone();
     let next = game
-        .decision_reading_v1(&[DecisionDetailV1::State], None)
+        .decision_reading_v1(&[DecisionDetailV1::State], None, Locale::En)
         .unwrap();
     assert_eq!(next.control, DecisionControlV1::Combat);
     let sts_oracle_learning::agent::task::TaskPublicObservationV1::Combat { observation, .. } =
@@ -3696,7 +3737,7 @@ fn route_inspection_preserves_head_and_selection_stops_at_combat() {
     assert!(next.source.is_none());
     assert!(next.context.is_none());
     let cold = game
-        .decision_reading_v1(&[], reading.context.as_ref())
+        .decision_reading_v1(&[], reading.context.as_ref(), Locale::En)
         .unwrap();
     assert_eq!(cold.view, next.view);
     assert!(cold.state.is_none());
@@ -3873,7 +3914,7 @@ fn combat_rules_include_discovery_choices_and_exhaust_selection_cards() {
     for kind in ["combat_discovery", "combat_exhaust"] {
         let mut game = controller(&dir.0, kind);
         let before = game.head().clone();
-        let reading = game.decision_reading_v1(&[], None).unwrap();
+        let reading = game.decision_reading_v1(&[], None, Locale::En).unwrap();
         assert!(
             reading.view.contains("Choice card rules (base/upgraded):"),
             "{}",
@@ -3949,7 +3990,7 @@ fn chest_can_be_left_unopened_without_a_cursed_key_cost() {
     let mut game = controller_with_session(&dir.0, "chest", &session);
     let root = game.head().position.archive_node_id().to_owned();
     let before = game
-        .decision_reading_v1(&[DecisionDetailV1::State], None)
+        .decision_reading_v1(&[DecisionDetailV1::State], None, Locale::En)
         .unwrap();
     assert!(
         before.view.contains("Leave chest unopened"),
@@ -3961,7 +4002,7 @@ fn chest_can_be_left_unopened_without_a_cursed_key_cost() {
     }))
     .unwrap();
     let after = game
-        .decision_reading_v1(&[DecisionDetailV1::State], None)
+        .decision_reading_v1(&[DecisionDetailV1::State], None, Locale::En)
         .unwrap();
     let TaskPublicObservationV1::Strategic { observation: old } =
         &before.state.unwrap().observation
@@ -3977,13 +4018,13 @@ fn chest_can_be_left_unopened_without_a_cursed_key_cost() {
     assert_eq!(new.relics, old.relics);
     assert!(matches!(new.context, PlannerDecisionContext::Map { .. }));
     game.jump(&format!("n{root}")).unwrap();
-    let at_chest = game.decision_reading_v1(&[], None).unwrap();
+    let at_chest = game.decision_reading_v1(&[], None, Locale::En).unwrap();
     game.choose_bound_v1(&pick(&at_chest, |a| {
         matches!(a, TaskStrategicActionV1::OpenChest)
     }))
     .unwrap();
     let opened = game
-        .decision_reading_v1(&[DecisionDetailV1::State], None)
+        .decision_reading_v1(&[DecisionDetailV1::State], None, Locale::En)
         .unwrap();
     let TaskPublicObservationV1::Strategic { observation } = &opened.state.unwrap().observation
     else {
@@ -4011,13 +4052,14 @@ fn act_returns_the_successor_reading_and_selection_jump_renders_after_commit() {
         AgentCapabilitiesV1::new(AgentPermissionEnvelopeV1::a20_first_unrestricted_v1(None)),
         std::io::Cursor::new(format!("{input}\n")),
         &mut output,
+        Locale::En,
     )
     .unwrap();
     let response: serde_json::Value = serde_json::from_slice(&output).unwrap();
     assert_eq!(response["status"], "ok", "{response}");
     assert_eq!(response["result"]["kind"], "acted");
     let reading = game
-        .decision_reading_v1(&[DecisionDetailV1::Brief], None)
+        .decision_reading_v1(&[DecisionDetailV1::Brief], None, Locale::En)
         .unwrap();
     assert_eq!(
         response["result"]["reading"],
@@ -4062,7 +4104,7 @@ fn act_returns_the_successor_reading_and_selection_jump_renders_after_commit() {
     game.jump(&format!("n{root}")).unwrap();
     let rendered = crate::render::render_show_v1(game.head()).unwrap();
     assert!(rendered.contains("<parameterized>"), "{rendered}");
-    let restored = game.decision_reading_v1(&[], None).unwrap();
+    let restored = game.decision_reading_v1(&[], None, Locale::En).unwrap();
     assert_eq!(restored.selections.len(), 1);
     assert!(
         game.choose_bound_v1(&selected).is_err(),
@@ -4074,7 +4116,7 @@ fn act_returns_the_successor_reading_and_selection_jump_renders_after_commit() {
 fn malformed_or_foreign_choices_cannot_change_the_published_head() {
     let dir = TestDirectory::new();
     let mut game = controller(&dir.0, "reward");
-    let reading = game.decision_reading_v1(&[], None).unwrap();
+    let reading = game.decision_reading_v1(&[], None, Locale::En).unwrap();
     let command = pick(&reading, |a| {
         matches!(a, TaskStrategicActionV1::SkipCardReward { .. })
     });
@@ -4099,8 +4141,13 @@ fn malformed_or_foreign_choices_cannot_change_the_published_head() {
             .unwrap(),
         *other_writer.head()
     );
-    let fresh = game.decision_reading_v1(&[], None).unwrap();
-    assert_eq!(fresh, other_writer.decision_reading_v1(&[], None).unwrap());
+    let fresh = game.decision_reading_v1(&[], None, Locale::En).unwrap();
+    assert_eq!(
+        fresh,
+        other_writer
+            .decision_reading_v1(&[], None, Locale::En)
+            .unwrap()
+    );
 }
 
 #[test]
@@ -4110,7 +4157,7 @@ fn jsonl_choices_use_bound_objects_and_duplicate_delivery_does_not_repeat_execut
     };
     let dir = TestDirectory::new();
     let mut game = controller(&dir.0, "reward");
-    let reading = game.decision_reading_v1(&[], None).unwrap();
+    let reading = game.decision_reading_v1(&[], None, Locale::En).unwrap();
     let selection = pick(&reading, |a| {
         matches!(a, TaskStrategicActionV1::SkipCardReward { .. })
     });
@@ -4125,6 +4172,7 @@ fn jsonl_choices_use_bound_objects_and_duplicate_delivery_does_not_repeat_execut
         AgentCapabilitiesV1::new(AgentPermissionEnvelopeV1::a20_first_unrestricted_v1(None)),
         std::io::Cursor::new(input),
         &mut output,
+        Locale::En,
     )
     .unwrap();
     let responses: Vec<serde_json::Value> = std::str::from_utf8(&output)
@@ -4184,6 +4232,7 @@ fn combat_research_cache_is_bound_to_the_potion_contract() {
         AgentCapabilitiesV1::new(AgentPermissionEnvelopeV1::a20_first_unrestricted_v1(None)),
         std::io::Cursor::new(input),
         &mut output,
+        Locale::En,
     )
     .unwrap();
     let responses = std::str::from_utf8(&output)
@@ -4242,6 +4291,7 @@ fn combat_commit_returns_usable_successor_choices_without_an_extra_read() {
         AgentCapabilitiesV1::new(AgentPermissionEnvelopeV1::a20_first_unrestricted_v1(None)),
         std::io::Cursor::new(input),
         &mut output,
+        Locale::En,
     )
     .unwrap();
     let responses: Vec<serde_json::Value> = std::str::from_utf8(&output)
@@ -4349,7 +4399,7 @@ fn pending_combat_choices_are_bound_and_stop_after_the_selected_action() {
     for kind in ["combat_discovery", "combat_exhaust", "combat_discard"] {
         let mut game = controller(&dir.0, kind);
         let reading = game
-            .decision_reading_v1(&[DecisionDetailV1::State], None)
+            .decision_reading_v1(&[DecisionDetailV1::State], None, Locale::En)
             .unwrap();
         assert_eq!(reading.control, DecisionControlV1::Combat);
         let source = reading.source.clone().expect("pending choice source");
@@ -4404,7 +4454,7 @@ fn pending_combat_choices_are_bound_and_stop_after_the_selected_action() {
         };
         game.choose_bound_v1(&selected).unwrap();
         let after = game
-            .decision_reading_v1(&[DecisionDetailV1::State], None)
+            .decision_reading_v1(&[DecisionDetailV1::State], None, Locale::En)
             .unwrap();
         assert_eq!(after.control, DecisionControlV1::Combat);
         assert!(after.options.is_empty());
@@ -4447,7 +4497,7 @@ fn run_selections_preserve_order_instances_and_stop_at_the_return_boundary() {
     ] {
         let mut game = controller(&dir.0, kind);
         let reading = game
-            .decision_reading_v1(&[DecisionDetailV1::State], None)
+            .decision_reading_v1(&[DecisionDetailV1::State], None, Locale::En)
             .unwrap();
         assert_eq!(reading.control, DecisionControlV1::Strategic);
         assert_eq!(reading.selections.len(), 1, "{kind}: {}", reading.view);
@@ -4523,7 +4573,7 @@ fn run_selections_preserve_order_instances_and_stop_at_the_return_boundary() {
         }
         game.choose_bound_v1(&selected).unwrap();
         let after = game
-            .decision_reading_v1(&[DecisionDetailV1::State], None)
+            .decision_reading_v1(&[DecisionDetailV1::State], None, Locale::En)
             .unwrap();
         assert!(after.selections.is_empty());
         assert_eq!(
@@ -4584,7 +4634,7 @@ fn run_selections_preserve_order_instances_and_stop_at_the_return_boundary() {
         assert_eq!(*reopened.head(), committed);
         assert_eq!(
             reopened
-                .decision_reading_v1(&[DecisionDetailV1::State], None)
+                .decision_reading_v1(&[DecisionDetailV1::State], None, Locale::En)
                 .unwrap(),
             after
         );
@@ -4602,7 +4652,7 @@ fn bottled_single_card_choices_keep_the_filtered_instances_and_upgrades() {
         ("bottled_tornado", vec![6], 0),
     ] {
         let mut game = controller(&dir.0, kind);
-        let reading = game.decision_reading_v1(&[], None).unwrap();
+        let reading = game.decision_reading_v1(&[], None, Locale::En).unwrap();
         assert!(
             reading.selections.is_empty(),
             "single choices use ordinary bound options"
@@ -4722,7 +4772,7 @@ fn draft_readings_keep_turn_choices_private_until_a_verified_win_is_adopted() {
         &candidate_id,
     )
     .unwrap();
-    let after = game.decision_reading_v1(&[], None).unwrap();
+    let after = game.decision_reading_v1(&[], None, Locale::En).unwrap();
     assert_eq!(after.control, DecisionControlV1::Strategic);
     assert!(after.view.contains("Rewards"));
     assert!(

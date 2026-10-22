@@ -2,6 +2,7 @@ use std::collections::{BTreeMap, BTreeSet, HashSet};
 use std::io::{BufRead, Write};
 use std::path::Path;
 use std::time::Instant;
+use sts_presentation::Locale;
 
 mod saved_plans;
 use crate::decision::DecisionDetailV1;
@@ -194,7 +195,7 @@ pub enum AgentShellRequestV1 {
         request_id: String,
         query: String,
         #[serde(default)]
-        locale: sts_presentation::Locale,
+        locale: Option<Locale>,
     },
     SlPiles {
         schema: String,
@@ -2868,7 +2869,10 @@ fn render_private_automatic_turn_changes_v1(
     }
 }
 
-fn project_agent_probe_line_v1(line: &ExactRunPlayProbeLineV1) -> Result<AgentProbeLineV1, String> {
+fn project_agent_probe_line_v1(
+    line: &ExactRunPlayProbeLineV1,
+    locale: Locale,
+) -> Result<AgentProbeLineV1, String> {
     let steps = line
         .steps
         .iter()
@@ -2891,7 +2895,7 @@ fn project_agent_probe_line_v1(line: &ExactRunPlayProbeLineV1) -> Result<AgentPr
     };
     let view = match &last.next_decision {
         Some(decision) => {
-            let reading = crate::decision::read_preview_decision_v1(decision, None)?;
+            let reading = crate::decision::read_preview_decision_v1(decision, None, locale)?;
             match reading.control {
                 crate::decision::DecisionControlV1::Strategic => {
                     crate::compact::render_reading_status_v1(decision, &reading, true, None)?
@@ -2924,11 +2928,14 @@ fn project_agent_probe_line_v1(line: &ExactRunPlayProbeLineV1) -> Result<AgentPr
 
 fn project_agent_inspection_v1(
     inspection: &ExactRunPlayInspectionV1,
+    locale: Locale,
 ) -> Result<AgentProbeLineV1, String> {
     match &inspection.stop {
-        ExactRunPlayInspectionStopV1::Complete => project_agent_probe_line_v1(&inspection.line),
+        ExactRunPlayInspectionStopV1::Complete => {
+            project_agent_probe_line_v1(&inspection.line, locale)
+        }
         ExactRunPlayInspectionStopV1::Terminal { unapplied_steps } => {
-            let mut result = project_agent_probe_line_v1(&inspection.line)?;
+            let mut result = project_agent_probe_line_v1(&inspection.line, locale)?;
             result.stop = AgentProbeStopV1::Terminal {
                 unapplied_actions: *unapplied_steps,
             };
@@ -2943,7 +2950,7 @@ fn project_agent_inspection_v1(
             error,
             decision,
         } => {
-            let reading = crate::decision::read_preview_decision_v1(decision, None)?;
+            let reading = crate::decision::read_preview_decision_v1(decision, None, locale)?;
             let view = match reading.control {
                 crate::decision::DecisionControlV1::Strategic => {
                     crate::compact::render_reading_status_v1(decision, &reading, true, None)?
@@ -2997,7 +3004,7 @@ mod private_preview_command_tests {
         let actions =
             crate::selector::parse_action_line_v1("event:CursedTome:0", "preview test").unwrap();
         let comparison = game.compare_action_lines_v1(&[actions.clone()]).unwrap();
-        let projected = project_agent_probe_line_v1(&comparison.lines[0]).unwrap();
+        let projected = project_agent_probe_line_v1(&comparison.lines[0], Locale::En).unwrap();
         assert!(
             projected
                 .view
@@ -3039,12 +3046,12 @@ mod private_preview_command_tests {
         let before = game.head().clone();
         let prefix = crate::selector::parse_action_line_v1("event:CursedTome:0", "test").unwrap();
         let expected = game.compare_action_lines_v1(&[prefix]).unwrap();
-        let expected = project_agent_probe_line_v1(&expected.lines[0]).unwrap();
+        let expected = project_agent_probe_line_v1(&expected.lines[0], Locale::En).unwrap();
         let line =
             crate::selector::parse_action_line_v1("event:CursedTome:0/play:Strike@0", "test")
                 .unwrap();
         let inspections = game.inspect_action_lines_v1(&[line.clone()]).unwrap();
-        let projected = project_agent_inspection_v1(&inspections[0]).unwrap();
+        let projected = project_agent_inspection_v1(&inspections[0], Locale::En).unwrap();
         assert_eq!(projected.endpoint, expected.endpoint);
         assert_eq!(projected.steps.len(), 1);
         assert!(matches!(
@@ -3080,7 +3087,7 @@ mod private_preview_command_tests {
             .unwrap();
         let line = crate::selector::parse_action_line_v1("play:Corruption@0", "test").unwrap();
         let inspections = game.inspect_action_lines_v1(&[line]).unwrap();
-        let projected = project_agent_inspection_v1(&inspections[0]).unwrap();
+        let projected = project_agent_inspection_v1(&inspections[0], Locale::En).unwrap();
         assert!(projected.steps.is_empty());
         assert!(projected
             .view
@@ -3101,7 +3108,7 @@ mod private_preview_command_tests {
         let before = game.head().clone();
         let line = crate::selector::parse_action_line_v1("end/end", "test").unwrap();
         let inspections = game.inspect_action_lines_v1(&[line.clone()]).unwrap();
-        let projected = project_agent_inspection_v1(&inspections[0]).unwrap();
+        let projected = project_agent_inspection_v1(&inspections[0], Locale::En).unwrap();
         assert!(matches!(
             projected.stop,
             AgentProbeStopV1::Terminal {
@@ -3130,7 +3137,7 @@ mod private_preview_command_tests {
         let before = game.head().clone();
         let line = crate::selector::parse_action_line_v1("play:Strike@0/end", "test").unwrap();
         let inspections = game.inspect_action_lines_v1(&[line]).unwrap();
-        let projected = project_agent_inspection_v1(&inspections[0]).unwrap();
+        let projected = project_agent_inspection_v1(&inspections[0], Locale::En).unwrap();
         assert!(matches!(
             projected.stop,
             AgentProbeStopV1::Unresolved {
@@ -3151,10 +3158,10 @@ mod private_preview_command_tests {
         let before = game.head().clone();
         let prefix = crate::selector::parse_action_line_v1("end", "test").unwrap();
         let expected = game.compare_action_lines_v1(&[prefix]).unwrap();
-        let expected = project_agent_probe_line_v1(&expected.lines[0]).unwrap();
+        let expected = project_agent_probe_line_v1(&expected.lines[0], Locale::En).unwrap();
         let line = crate::selector::parse_action_line_v1("end/play:Corruption", "test").unwrap();
         let inspections = game.inspect_action_lines_v1(&[line]).unwrap();
-        let projected = project_agent_inspection_v1(&inspections[0]).unwrap();
+        let projected = project_agent_inspection_v1(&inspections[0], Locale::En).unwrap();
         assert_eq!(projected.endpoint, expected.endpoint);
         assert!(projected.view.contains("Turn 2 |"), "{}", projected.view);
         assert!(projected.view.contains("Hand:"));
@@ -3187,12 +3194,12 @@ mod private_preview_command_tests {
         let inspections = game
             .inspect_action_lines_v1(&[vec![line[0].clone()], line])
             .unwrap();
-        let complete = project_agent_inspection_v1(&inspections[0]).unwrap();
+        let complete = project_agent_inspection_v1(&inspections[0], Locale::En).unwrap();
         assert!(matches!(complete.stop, AgentProbeStopV1::Complete));
         assert!(complete
             .view
             .contains("Automatic turn changes: action 1 play:Defend+0#0: T1 -> T2"));
-        let projected = project_agent_inspection_v1(&inspections[1]).unwrap();
+        let projected = project_agent_inspection_v1(&inspections[1], Locale::En).unwrap();
         assert!(
             projected
                 .view
@@ -3232,7 +3239,7 @@ pub fn capture_exact_prefix_artifact_v1(
     let projected_lines = comparison
         .lines
         .iter()
-        .map(project_agent_probe_line_v1)
+        .map(|line| project_agent_probe_line_v1(line, Locale::En))
         .collect::<Result<Vec<_>, String>>()?;
     let combat_replay = if comparison.lines.iter().all(|line| {
         !line.steps.is_empty()
@@ -3315,6 +3322,7 @@ pub fn project_agent_observation_v1(
     head: &RunPlayHeadV1,
     capabilities: AgentCapabilitiesV1,
     decision_evidence: Option<AgentDecisionEvidenceV1>,
+    locale: Locale,
 ) -> Result<AgentObservationV1, String> {
     let position = match &head.position {
         RunPlayPositionV1::Terminal { outcome, .. } => AgentPositionV1::Terminal {
@@ -3375,7 +3383,9 @@ pub fn project_agent_observation_v1(
     let preparation_reading = head
         .current_decision
         .as_ref()
-        .map(|inventory| crate::decision::preparation::reading(&inventory.public_decision_v1()?))
+        .map(|inventory| {
+            crate::decision::preparation::reading(&inventory.public_decision_v1()?, locale)
+        })
         .transpose()?
         .flatten();
     Ok(AgentObservationV1 {
@@ -3781,6 +3791,7 @@ fn project_agent_route_entry_evidence_v1(
 fn current_agent_observation_v1(
     controller: &mut RunPlayControllerV1,
     capabilities: AgentCapabilitiesV1,
+    locale: Locale,
 ) -> Result<AgentObservationV1, String> {
     let site = controller
         .head()
@@ -3889,7 +3900,7 @@ fn current_agent_observation_v1(
             }
         }
     };
-    project_agent_observation_v1(controller.head(), capabilities, decision_evidence)
+    project_agent_observation_v1(controller.head(), capabilities, decision_evidence, locale)
 }
 
 fn render_sl_piles_v1(root: &sts_oracle_learning::sim::combat::CombatPosition) -> String {
@@ -3939,6 +3950,7 @@ fn cached_current_agent_observation_v1(
     controller: &mut RunPlayControllerV1,
     capabilities: AgentCapabilitiesV1,
     cache: &mut Option<AgentObservationV1>,
+    locale: Locale,
 ) -> Result<AgentObservationV1, String> {
     if let Some(cached) = cache.as_ref() {
         let head = controller.head();
@@ -3949,7 +3961,7 @@ fn cached_current_agent_observation_v1(
             return Ok(cached.clone());
         }
     }
-    let observation = current_agent_observation_v1(controller, capabilities)?;
+    let observation = current_agent_observation_v1(controller, capabilities, locale)?;
     *cache = Some(observation.clone());
     Ok(observation)
 }
@@ -5139,6 +5151,7 @@ fn handle_valid_request_v1(
     combat_turn_cache: &mut Option<AgentCombatTurnCacheV1>,
     combat_draft: &mut AgentCombatDraftRuntimeV1,
     request: &AgentShellRequestV1,
+    locale: Locale,
 ) -> Result<(AgentShellResultV1, bool), String> {
     if capabilities.permission_envelope.information_ceiling == "public_only"
         && !request.public_manual_operation()
@@ -5151,7 +5164,8 @@ fn handle_valid_request_v1(
             known_context,
             ..
         } => {
-            let mut reading = controller.decision_reading_v1(details, known_context.as_ref())?;
+            let mut reading =
+                controller.decision_reading_v1(details, known_context.as_ref(), locale)?;
             if reading.control == crate::decision::DecisionControlV1::Combat
                 && capabilities.permission_envelope.information_ceiling
                     == "privileged_exact_allowed"
@@ -5211,8 +5225,11 @@ fn handle_valid_request_v1(
             combat_draft.clear();
             Ok((
                 AgentShellResultV1::Chosen {
-                    reading: controller
-                        .decision_reading_v1(&[DecisionDetailV1::Brief], known_context.as_ref())?,
+                    reading: controller.decision_reading_v1(
+                        &[DecisionDetailV1::Brief],
+                        known_context.as_ref(),
+                        locale,
+                    )?,
                     revealed_changes,
                 },
                 false,
@@ -5230,6 +5247,7 @@ fn handle_valid_request_v1(
                     controller,
                     capabilities.clone(),
                     observation_cache,
+                    locale,
                 )?,
             },
             false,
@@ -5240,10 +5258,14 @@ fn handle_valid_request_v1(
             },
             false,
         )),
-        AgentShellRequestV1::Info { query, locale, .. } => {
+        AgentShellRequestV1::Info {
+            query,
+            locale: info_locale,
+            ..
+        } => {
             // Refresh from the published head just as ordinary reading does;
             // queries never evaluate an action or consume game RNG.
-            controller.decision_reading_v1(&[], None)?;
+            controller.decision_reading_v1(&[], None, locale)?;
             let decision = controller
                 .head()
                 .current_decision
@@ -5252,7 +5274,11 @@ fn handle_valid_request_v1(
                 .transpose()?;
             Ok((
                 AgentShellResultV1::Info {
-                    view: crate::mechanics_info::render(decision.as_ref(), &query, *locale)?,
+                    view: crate::mechanics_info::render(
+                        decision.as_ref(),
+                        &query,
+                        info_locale.unwrap_or(locale),
+                    )?,
                 },
                 false,
             ))
@@ -5314,8 +5340,13 @@ fn handle_valid_request_v1(
                         controller,
                         capabilities.clone(),
                         observation_cache,
+                        locale,
                     )?,
-                    reading: controller.decision_reading_v1(&[DecisionDetailV1::Brief], None)?,
+                    reading: controller.decision_reading_v1(
+                        &[DecisionDetailV1::Brief],
+                        None,
+                        locale,
+                    )?,
                     revealed_changes,
                 },
                 false,
@@ -5334,7 +5365,7 @@ fn handle_valid_request_v1(
             let inspections = controller.inspect_action_lines_v1(&selectors)?;
             let lines = inspections
                 .iter()
-                .map(project_agent_inspection_v1)
+                .map(|inspection| project_agent_inspection_v1(inspection, locale))
                 .collect::<Result<Vec<_>, String>>()?;
             if controller.head().head_revision != root_head_revision {
                 return Err("agent-shell probe changed the durable controller head".to_string());
@@ -5896,9 +5927,13 @@ fn handle_valid_request_v1(
                             controller,
                             capabilities.clone(),
                             observation_cache,
+                            locale,
                         )?,
-                        reading: controller
-                            .decision_reading_v1(&[DecisionDetailV1::Brief], None)?,
+                        reading: controller.decision_reading_v1(
+                            &[DecisionDetailV1::Brief],
+                            None,
+                            locale,
+                        )?,
                     },
                     false,
                 ));
@@ -5935,8 +5970,13 @@ fn handle_valid_request_v1(
                         controller,
                         capabilities.clone(),
                         observation_cache,
+                        locale,
                     )?,
-                    reading: controller.decision_reading_v1(&[DecisionDetailV1::Brief], None)?,
+                    reading: controller.decision_reading_v1(
+                        &[DecisionDetailV1::Brief],
+                        None,
+                        locale,
+                    )?,
                 },
                 false,
             ))
@@ -5974,6 +6014,7 @@ fn handle_valid_request_v1(
                         controller,
                         capabilities.clone(),
                         observation_cache,
+                        locale,
                     )?,
                 },
                 false,
@@ -6194,6 +6235,7 @@ fn handle_valid_request_v1(
                         controller,
                         capabilities.clone(),
                         observation_cache,
+                        locale,
                     )?,
                 },
                 false,
@@ -6269,6 +6311,7 @@ pub fn run_agent_jsonl_v1(
     capabilities: AgentCapabilitiesV1,
     input: impl BufRead,
     output: impl Write,
+    locale: Locale,
 ) -> Result<(), String> {
     let mut observation_cache = None;
     let mut combat_research_cache = None;
@@ -6283,6 +6326,7 @@ pub fn run_agent_jsonl_v1(
             &mut combat_turn_cache,
             &mut combat_draft,
             request,
+            locale,
         )
     })
 }
@@ -6296,13 +6340,14 @@ pub fn run_terminal_agent_jsonl_v1(
     capabilities: AgentCapabilitiesV1,
     input: impl BufRead,
     output: impl Write,
+    locale: Locale,
 ) -> Result<(), String> {
     if !matches!(head.position, RunPlayPositionV1::Terminal { .. })
         || head.current_decision.is_some()
     {
         return Err("terminal agent transport requires a terminal head".to_string());
     }
-    let observation = project_agent_observation_v1(head, capabilities.clone(), None)?;
+    let observation = project_agent_observation_v1(head, capabilities.clone(), None, locale)?;
     run_agent_jsonl_transport_v1(input, output, |request| match request {
         AgentShellRequestV1::Decision {
             details,
@@ -6310,7 +6355,12 @@ pub fn run_terminal_agent_jsonl_v1(
             ..
         } => Ok((
             AgentShellResultV1::Decision {
-                reading: crate::decision::read_decision(head, details, known_context.as_ref())?,
+                reading: crate::decision::read_decision(
+                    head,
+                    details,
+                    known_context.as_ref(),
+                    locale,
+                )?,
             },
             false,
         )),
@@ -6332,9 +6382,13 @@ pub fn run_terminal_agent_jsonl_v1(
             },
             false,
         )),
-        AgentShellRequestV1::Info { query, locale, .. } => Ok((
+        AgentShellRequestV1::Info {
+            query,
+            locale: info_locale,
+            ..
+        } => Ok((
             AgentShellResultV1::Info {
-                view: crate::mechanics_info::render(None, &query, *locale)?,
+                view: crate::mechanics_info::render(None, &query, info_locale.unwrap_or(locale))?,
             },
             false,
         )),
@@ -6346,6 +6400,59 @@ pub fn run_terminal_agent_jsonl_v1(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn connection_locale_reaches_native_queries_and_source_bound_observation_without_state_changes()
+    {
+        use crate::decision_tests::{controller_with_session, fixture, TestDirectory};
+        for locale in [Locale::En, Locale::ZhCn] {
+            let directory = TestDirectory::new();
+            let mut controller =
+                controller_with_session(&directory.0, "locale-transport", &fixture("reward"));
+            let before = controller.head().clone();
+            let input = [
+                serde_json::json!({"schema":AGENT_REQUEST_SCHEMA_V1,"request_id":"observe","command":"observe"}),
+                serde_json::json!({"schema":AGENT_REQUEST_SCHEMA_V1,"request_id":"info","command":"info","query":"card Bash"}),
+                serde_json::json!({"schema":AGENT_REQUEST_SCHEMA_V1,"request_id":"decision","command":"decision"}),
+                serde_json::json!({"schema":AGENT_REQUEST_SCHEMA_V1,"request_id":"quit","command":"quit"}),
+            ].iter().map(|request| serde_json::to_string(request).unwrap()).collect::<Vec<_>>().join("\n") + "\n";
+            let mut output = Vec::new();
+            run_agent_jsonl_v1(
+                &mut controller,
+                AgentCapabilitiesV1::new(AgentPermissionEnvelopeV1::public_manual_v1(None)),
+                std::io::Cursor::new(input.as_bytes()),
+                &mut output,
+                locale,
+            )
+            .unwrap();
+            let replies = String::from_utf8(output)
+                .unwrap()
+                .lines()
+                .map(|line| serde_json::from_str::<serde_json::Value>(line).unwrap())
+                .collect::<Vec<_>>();
+            assert_eq!(replies.len(), 4);
+            assert!(
+                replies.iter().all(|reply| reply["status"] == "ok"),
+                "{replies:?}"
+            );
+            let inventory = replies[0]["result"]["observation"]["preparation_reading"]["inventory"]
+                ["view"]
+                .as_str()
+                .unwrap();
+            assert!(inventory.starts_with(if locale == Locale::En {
+                "Deck ("
+            } else {
+                "永久卡组（"
+            }));
+            let query = replies[1]["result"]["view"].as_str().unwrap();
+            assert!(query.contains(locale.entity("card", "Bash")));
+            assert_eq!(
+                replies[2]["result"]["reading"]["source"]["public_snapshot_id"],
+                before.current_decision.as_ref().unwrap().public_snapshot_id
+            );
+            assert_eq!(*controller.head(), before);
+        }
+    }
 
     #[test]
     fn opening_cursed_key_chests_reveals_added_curses_through_choose_and_act() {
@@ -6368,7 +6475,7 @@ mod tests {
             });
             let mut controller = controller_with_session(&dir.0, "cursed-chest", &session);
             let reading = controller
-                .decision_reading_v1(&[DecisionDetailV1::Brief], None)
+                .decision_reading_v1(&[DecisionDetailV1::Brief], None, Locale::En)
                 .unwrap();
             let request = if use_act {
                 AgentShellRequestV1::Act {
@@ -6412,6 +6519,7 @@ mod tests {
                 &mut None,
                 &mut AgentCombatDraftRuntimeV1::default(),
                 &request,
+                Locale::En,
             )
             .unwrap();
             let result = serde_json::to_value(result).unwrap();
@@ -6456,7 +6564,7 @@ mod tests {
             }
             let mut controller = controller_with_session(&dir.0, "random-deck-result", &session);
             let reading = controller
-                .decision_reading_v1(&[DecisionDetailV1::Brief], None)
+                .decision_reading_v1(&[DecisionDetailV1::Brief], None, Locale::En)
                 .unwrap();
             let request = if use_act {
                 AgentShellRequestV1::Act {
@@ -6532,6 +6640,7 @@ mod tests {
                 &mut None,
                 &mut AgentCombatDraftRuntimeV1::default(),
                 &request,
+                Locale::En,
             )
             .unwrap();
             let result = serde_json::to_value(result).unwrap();
@@ -6549,7 +6658,7 @@ mod tests {
             assert!(changes.contains('+'), "{changes}");
             assert!(!changes.contains("Relic gained"), "{changes}");
             let current = controller
-                .decision_reading_v1(&[DecisionDetailV1::Brief], None)
+                .decision_reading_v1(&[DecisionDetailV1::Brief], None, Locale::En)
                 .unwrap();
             let ordinary =
                 serde_json::to_value(AgentShellResultV1::Decision { reading: current }).unwrap();
@@ -8375,7 +8484,8 @@ mod tests {
             let capabilities = AgentCapabilitiesV1::new(
                 AgentPermissionEnvelopeV1::a20_first_unrestricted_v1(None),
             );
-            let observed = current_agent_observation_v1(&mut controller, capabilities).unwrap();
+            let observed =
+                current_agent_observation_v1(&mut controller, capabilities, Locale::En).unwrap();
             let Some(AgentDecisionEvidenceV1::CardAcquisitionOptions {
                 resource_options,
                 candidates,
@@ -8400,7 +8510,7 @@ mod tests {
     #[test]
     fn terminal_agent_transport_observes_without_reconstructing_a_decision() {
         let head = terminal_head_fixture();
-        let reading = crate::decision::read_decision(&head, &[], None).unwrap();
+        let reading = crate::decision::read_decision(&head, &[], None, Locale::En).unwrap();
         assert_eq!(reading.summary, reading.view);
         assert!(reading.summary.starts_with("Terminal | "));
         let capabilities =
@@ -8419,6 +8529,7 @@ mod tests {
             capabilities,
             std::io::Cursor::new(input),
             &mut output,
+            Locale::En,
         )
         .expect("terminal transport");
 

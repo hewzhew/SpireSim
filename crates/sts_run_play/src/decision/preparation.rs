@@ -2,6 +2,7 @@
 //! existing native renderers; selection uses typed identities, never headings.
 use super::*;
 use sts_oracle_learning::content::cards::{self, CardId};
+use sts_presentation::Locale;
 
 #[derive(Clone, Debug, PartialEq, Serialize)]
 pub struct CardRuleReadingV1 {
@@ -59,12 +60,19 @@ fn card_rules(action: &TaskStrategicActionV1) -> Vec<CardRuleReadingV1> {
 
 pub(crate) fn reading(
     decision: &TaskPublicDecisionV1,
+    locale: Locale,
 ) -> Result<Option<PreparationReadingV1>, String> {
     let TaskPublicObservationV1::Strategic { observation } = &decision.observation else {
         return Ok(None);
     };
-    let rendered =
-        super::read_public_decision_v1(decision, &[DecisionDetailV1::Options], None, None, None)?;
+    let rendered = super::read_public_decision_v1(
+        decision,
+        &[DecisionDetailV1::Options],
+        None,
+        None,
+        None,
+        locale,
+    )?;
     let mut overview = rendered.summary.clone();
     crate::mechanics_info::write_preparation_window(&mut overview, observation);
     crate::mechanics_info::write_key_status(
@@ -142,7 +150,7 @@ pub(crate) fn reading(
             decision.clone(),
             true,
             None,
-            sts_presentation::Locale::En,
+            locale,
         )?,
         stock,
         routes,
@@ -154,6 +162,59 @@ mod tests {
     use super::*;
     use crate::agent_protocol::{AgentCapabilitiesV1, AgentPermissionEnvelopeV1};
     use crate::decision_tests::{controller_with_session, fixture, TestDirectory};
+
+    #[test]
+    fn preparation_locale_changes_inventory_text_while_preserving_public_actions_and_source() {
+        let dir = TestDirectory::new();
+        let game = controller_with_session(&dir.0, "preparation-locale", &fixture("shop_twins"));
+        let before = game.head().clone();
+        let capabilities =
+            AgentCapabilitiesV1::new(AgentPermissionEnvelopeV1::public_manual_v1(None));
+        let en = crate::agent_protocol::project_agent_observation_v1(
+            &before,
+            capabilities.clone(),
+            None,
+            Locale::En,
+        )
+        .unwrap();
+        let zh = crate::agent_protocol::project_agent_observation_v1(
+            &before,
+            capabilities,
+            None,
+            Locale::ZhCn,
+        )
+        .unwrap();
+        assert_eq!(
+            serde_json::to_value(&en.position).unwrap(),
+            serde_json::to_value(&zh.position).unwrap()
+        );
+        let en = en.preparation_reading.unwrap();
+        let zh = zh.preparation_reading.unwrap();
+        assert_eq!(en.public_snapshot_id, zh.public_snapshot_id);
+        assert!(en.inventory.view.starts_with("Deck ("));
+        assert!(zh.inventory.view.starts_with("永久卡组（"));
+        assert_eq!(
+            en.candidates
+                .iter()
+                .map(|row| &row.command)
+                .collect::<Vec<_>>(),
+            zh.candidates
+                .iter()
+                .map(|row| &row.command)
+                .collect::<Vec<_>>()
+        );
+        assert_eq!(
+            en.stock
+                .iter()
+                .map(|row| (&row.action, &row.command))
+                .collect::<Vec<_>>(),
+            zh.stock
+                .iter()
+                .map(|row| (&row.action, &row.command))
+                .collect::<Vec<_>>()
+        );
+        assert_eq!(*game.head(), before);
+    }
 
     #[test]
     fn preparation_blocks_preserve_their_native_inventory_and_legal_bindings() {
@@ -184,9 +245,13 @@ mod tests {
             let capabilities = AgentCapabilitiesV1::new(
                 AgentPermissionEnvelopeV1::a20_first_unrestricted_v1(None),
             );
-            let observation =
-                crate::agent_protocol::project_agent_observation_v1(&head, capabilities, None)
-                    .unwrap();
+            let observation = crate::agent_protocol::project_agent_observation_v1(
+                &head,
+                capabilities,
+                None,
+                Locale::En,
+            )
+            .unwrap();
             let projection = observation.preparation_reading.as_ref().unwrap();
             assert_eq!(
                 projection.public_snapshot_id,
@@ -198,7 +263,7 @@ mod tests {
                     public.clone(),
                     true,
                     None,
-                    sts_presentation::Locale::En
+                    Locale::En
                 )
                 .unwrap()
             );
@@ -267,6 +332,6 @@ mod tests {
             .unwrap()
             .public_decision_v1()
             .unwrap();
-        assert!(reading(&public).unwrap().is_none());
+        assert!(reading(&public, Locale::En).unwrap().is_none());
     }
 }

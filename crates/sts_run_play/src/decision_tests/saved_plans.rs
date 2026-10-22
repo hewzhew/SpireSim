@@ -1,6 +1,7 @@
 use super::*;
 use crate::agent_protocol::{run_agent_jsonl_v1, AgentCapabilitiesV1, AgentPermissionEnvelopeV1};
 use serde_json::{json, Value};
+use sts_presentation::Locale;
 
 // Each exchange starts a new transport/cache, as separate ./p invocations do.
 fn exchange(game: &mut RunPlayControllerV1, mut request: Value) -> Value {
@@ -12,6 +13,7 @@ fn exchange(game: &mut RunPlayControllerV1, mut request: Value) -> Value {
         AgentCapabilitiesV1::new(AgentPermissionEnvelopeV1::a20_first_unrestricted_v1(None)),
         std::io::Cursor::new(format!("{request}\n")),
         &mut output,
+        Locale::En,
     )
     .unwrap();
     serde_json::from_slice(&output).unwrap()
@@ -55,6 +57,7 @@ fn public_manual_play_disables_private_operations_and_cached_wins_but_can_act() 
         AgentCapabilitiesV1::new(AgentPermissionEnvelopeV1::public_manual_v1(None)),
         std::io::Cursor::new(input),
         &mut output,
+        Locale::En,
     )
     .unwrap();
     let responses = String::from_utf8(output)
@@ -133,7 +136,7 @@ fn ordinary_read_exposes_current_saved_wins_without_search_or_publication() {
     let mut public_output = Vec::new();
     run_agent_jsonl_v1(&mut game, AgentCapabilitiesV1::new(public_permission),
         std::io::Cursor::new("{\"schema\":\"sts-run-play-agent-request-v1\",\"request_id\":\"public-read\",\"command\":\"decision\"}\n"),
-        &mut public_output).unwrap();
+        &mut public_output, Locale::En).unwrap();
     let public_read: Value = serde_json::from_slice(&public_output).unwrap();
     assert_eq!(public_read["status"], "ok");
     assert!(
@@ -195,7 +198,7 @@ fn chosen_successors_keep_bound_choices_and_resources_in_a_brief_response() {
     let dir = TestDirectory::new();
     for kind in ["reward", "full_reward"] {
         let mut game = controller(&dir.0, kind);
-        let before = game.decision_reading_v1(&[], None).unwrap();
+        let before = game.decision_reading_v1(&[], None, Locale::En).unwrap();
         let choice = pick(&before, |a| match kind {
             "reward" => matches!(a, TaskStrategicActionV1::SkipCardReward { .. }),
             _ => matches!(
@@ -209,10 +212,10 @@ fn chosen_successors_keep_bound_choices_and_resources_in_a_brief_response() {
         let response = exchange(&mut game, json!({"command":"choose", "selection":choice}));
         assert_eq!(response["status"], "ok", "{response}");
         let brief = game
-            .decision_reading_v1(&[DecisionDetailV1::Brief], None)
+            .decision_reading_v1(&[DecisionDetailV1::Brief], None, Locale::En)
             .unwrap();
         assert_eq!(response["result"]["reading"], json!(brief));
-        let full = game.decision_reading_v1(&[], None).unwrap();
+        let full = game.decision_reading_v1(&[], None, Locale::En).unwrap();
         assert_eq!(brief.source, full.source);
         assert_eq!(brief.options, full.options);
         assert_eq!(brief.selections, full.selections);
@@ -270,7 +273,8 @@ fn private_preview_exposes_the_same_followup_choices_and_rules_as_real_execution
             .unwrap()
             .public_decision_v1()
             .unwrap();
-        let hypothetical = crate::decision::read_preview_decision_v1(&current, None).unwrap();
+        let hypothetical =
+            crate::decision::read_preview_decision_v1(&current, None, Locale::En).unwrap();
         assert_eq!(preview["result"]["lines"][0]["view"], hypothetical.view);
         assert_eq!(
             acted["result"]["reading"]["options"],
@@ -616,7 +620,7 @@ fn saved_plans_survive_reopen_and_commit_the_reviewed_execution_without_research
     assert_eq!(
         committed["result"]["reading"],
         json!(game
-            .decision_reading_v1(&[DecisionDetailV1::Brief], None)
+            .decision_reading_v1(&[DecisionDetailV1::Brief], None, Locale::En)
             .unwrap())
     );
     let current = game

@@ -35,7 +35,7 @@ lines.on('line', line => {
 async function fixture(t, timeoutMs = 5000, extra = {}) {
   const base = await realpath(tmpdir());
   const root = await mkdtemp(join(base, 'run-play-pipe-'));
-  const config = { repository: root, session: root, recordDirectory: join(root, 'wire'), binary: process.execPath, timeoutMs, closeTimeoutMs: 200 };
+  const config = { repository: root, session: root, recordDirectory: join(root, 'wire'), binary: process.execPath, timeoutMs, closeTimeoutMs: 200, locale: extra.locale ?? 'en' };
   let client;
   t.after(async () => {
     try {
@@ -72,6 +72,27 @@ test('direct pipes retain source objects, concise views and exact evidence', asy
   const wire = await readFile(join(root, 'wire', files[0]), 'utf8');
   assert.ok(!wire.includes('\x1b'));
   assert.equal(wire.trim().split('\n').length, 2);
+});
+
+test('connection language reaches the native process and defaults definition queries without rewriting requests', async t => {
+  const scripted = `
+  require('node:readline').createInterface({ input:process.stdin }).on('line', line => {
+    const r = JSON.parse(line);
+    const result = { view:'original native text\\n', processLocale:process.argv[process.argv.indexOf('--locale')+1], queryLocale:r.locale };
+    process.stdout.write(JSON.stringify({schema:'sts-run-play-agent-response-v1',request_id:r.request_id,status:'ok',result})+'\\n');
+  });`;
+  const { client, root } = await fixture(t, 5000, { server: scripted, locale: 'zh-CN' });
+  const chinese = await client.info('card Bash');
+  assert.equal(chinese.raw.processLocale, 'zh-CN');
+  assert.equal(chinese.raw.queryLocale, 'zh-CN');
+  assert.equal(chinese.view, 'original native text\n');
+  const english = await client.info('card Bash', { locale: 'en' });
+  assert.equal(english.raw.processLocale, 'zh-CN');
+  assert.equal(english.raw.queryLocale, 'en');
+  const request = JSON.parse((await readFile(join(root, 'wire', 'exchange-000.jsonl'), 'utf8')).split('\n')[0]);
+  assert.equal(request.query, 'card Bash');
+  assert.equal(request.locale, 'zh-CN');
+  await assert.rejects(fixture(t, 5000, { locale: 'fr' }), /Unsupported text locale/);
 });
 
 test('observe returns the resident typed observation without starting another process', async t => {

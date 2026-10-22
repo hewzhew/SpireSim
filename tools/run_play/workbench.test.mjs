@@ -173,11 +173,15 @@ test('manual workbench blocks assistance before grouped actions and retains the 
 
 test('agent text language belongs to the workbench and survives reconnects without changing a query', async t => {
   const queries = [];
-  const wb = await fixture(t, async () => ({
+  const connections = [];
+  const wb = await fixture(t, async config => {
+    connections.push(config.locale);
+    return {
     async info(query, options) { queries.push({ query, ...options }); return { view: '药水机制原文\n' }; },
     async decision() { return { view: 'Reopened game\n', control: 'terminal' }; },
     async close() {},
-  }), () => ({ status: 0, stdout: 'restored' }), { agentLocale: 'zh-CN' });
+    };
+  }, () => ({ status: 0, stdout: 'restored' }), { agentLocale: 'zh-CN' });
   assert.equal((await wb.execute('info potion SteroidPotion')).text, '药水机制原文\n');
   await wb.execute('back 1');
   await wb.execute('info potion SteroidPotion');
@@ -187,6 +191,7 @@ test('agent text language belongs to the workbench and survives reconnects witho
   ]);
   const metadata = JSON.parse(await readFile(join(wb.recordDirectory, 'workbench.json'), 'utf8'));
   assert.equal(metadata.agentLocale, 'zh-CN');
+  assert.deepEqual(connections, ['zh-CN', 'zh-CN']);
 });
 
 test('text tokens preserve card selectors and literal shell syntax without evaluation', () => {

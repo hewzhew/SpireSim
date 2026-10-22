@@ -1,5 +1,6 @@
 use super::*;
 use crate::agent_protocol::{run_agent_jsonl_v1, AgentCapabilitiesV1, AgentPermissionEnvelopeV1};
+use sts_presentation::Locale;
 
 #[test]
 fn collector_summon_probe_keeps_the_boss_identity_when_slots_move() {
@@ -82,6 +83,7 @@ fn lethal_transition_hp_is_observed_net_change_not_inferred_healing() {
             AgentCapabilitiesV1::new(AgentPermissionEnvelopeV1::a20_first_unrestricted_v1(None)),
             std::io::Cursor::new(input),
             &mut output,
+            Locale::En,
         )
         .unwrap();
         let responses: Vec<serde_json::Value> = std::str::from_utf8(&output)

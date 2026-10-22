@@ -1,5 +1,6 @@
 use super::*;
 use sts_oracle_learning::agent::task::TaskPublicChoiceV1;
+use sts_presentation::Locale;
 
 fn commands(reading: &RunPlayDecisionReadingV1) -> (RunPlayBoundChoiceV1, Vec<TaskPublicChoiceV1>) {
     let choices: Vec<_> = reading
@@ -28,11 +29,11 @@ fn reward_sequence_reindexes_after_claims_and_reopens_at_the_unselected_card() {
     let dir = TestDirectory::new();
     let mut game = controller(&dir.0, "reward_sequence");
     let before = game.head().clone();
-    let reading = game.decision_reading_v1(&[], None).unwrap();
+    let reading = game.decision_reading_v1(&[], None, Locale::En).unwrap();
     assert!(reading.can_collect_rewards);
     let (first, following) = commands(&reading);
     game.choose_reward_sequence_v1(&first, &following).unwrap();
-    let after = game.decision_reading_v1(&[], None).unwrap();
+    let after = game.decision_reading_v1(&[], None, Locale::En).unwrap();
     assert!(!after.can_collect_rewards);
     assert!(after.view.contains("Headbutt"));
     let session = game
@@ -70,7 +71,7 @@ fn reward_sequence_reindexes_after_claims_and_reopens_at_the_unselected_card() {
     assert_eq!(*reopened.head(), committed);
     assert_eq!(
         reopened
-            .decision_reading_v1(&[], None)
+            .decision_reading_v1(&[], None, Locale::En)
             .unwrap()
             .last_choice
             .unwrap(),
@@ -82,7 +83,7 @@ fn reward_sequence_reindexes_after_claims_and_reopens_at_the_unselected_card() {
 fn reward_sequence_rejects_an_uncollectable_later_potion_without_publishing_the_prefix() {
     let dir = TestDirectory::new();
     let mut game = controller(&dir.0, "reward_sequence_crowded");
-    let reading = game.decision_reading_v1(&[], None).unwrap();
+    let reading = game.decision_reading_v1(&[], None, Locale::En).unwrap();
     let (first, following) = commands(&reading);
     assert_eq!(
         following.len(),
@@ -95,7 +96,10 @@ fn reward_sequence_rejects_an_uncollectable_later_potion_without_publishing_the_
         .unwrap_err()
         .contains("unavailable"));
     assert_eq!(*game.head(), before);
-    assert_eq!(game.decision_reading_v1(&[], None).unwrap(), reading);
+    assert_eq!(
+        game.decision_reading_v1(&[], None, Locale::En).unwrap(),
+        reading
+    );
     game.choose_bound_v1(&first).unwrap();
     let after_single = game.head().clone();
     assert!(game
@@ -109,7 +113,7 @@ fn reward_sequence_rejects_an_uncollectable_later_potion_without_publishing_the_
 fn reward_sequence_rejects_duplicate_out_of_scope_and_early_card_choices() {
     let dir = TestDirectory::new();
     let mut game = controller(&dir.0, "reward_sequence");
-    let reading = game.decision_reading_v1(&[], None).unwrap();
+    let reading = game.decision_reading_v1(&[], None, Locale::En).unwrap();
     let (first, following) = commands(&reading);
     let before = game.head().clone();
     for tail in [
@@ -165,7 +169,7 @@ fn reward_sequence_keeps_duplicate_occurrences_and_runs_gold_relic_effects() {
         },
     );
     let mut game = controller_with_session(&dir.0, "duplicate_rewards", &session);
-    let reading = game.decision_reading_v1(&[], None).unwrap();
+    let reading = game.decision_reading_v1(&[], None, Locale::En).unwrap();
     let (_, all) = commands(&reading);
     let first = RunPlayBoundChoiceV1 {
         source: reading.source.unwrap(),
@@ -200,7 +204,7 @@ fn reward_sequence_rejects_inventory_drift_and_a_potion_that_was_not_obtained() 
     let dir = TestDirectory::new();
     let mut game = controller_with_session(&dir.0, "resolver_checks", &session);
     let reading = game
-        .decision_reading_v1(&[DecisionDetailV1::State], None)
+        .decision_reading_v1(&[DecisionDetailV1::State], None, Locale::En)
         .unwrap();
     let (first, following) = commands(&reading);
     let choices = [

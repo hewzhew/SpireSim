@@ -208,7 +208,7 @@ export async function openWorkbench({ repository, session, binary = join(reposit
     write: text => chunks.push(formatOutput(text)),
   });
   async function reconnect() {
-    game = await connect({ ...options, repository, session, binary, manual,
+    game = await connect({ ...options, repository, session, binary, manual, locale: agentLocale,
       recordDirectory: join(records, `connection-${connectionNumber++}`) });
     ctx.game = game;
   }

@@ -1,3 +1,4 @@
+use sts_presentation::Locale;
 mod adapter_failure;
 mod agent_combat_draft;
 #[cfg(test)]
@@ -540,7 +541,7 @@ enum Command {
         #[arg(long)]
         session: PathBuf,
         #[arg(long, default_value = "en")]
-        locale: sts_presentation::Locale,
+        locale: Locale,
         #[arg(required = true, num_args = 1..)]
         query: Vec<String>,
     },
@@ -562,7 +563,7 @@ enum Command {
         #[arg(long)]
         effects: bool,
         #[arg(long, default_value = "en")]
-        locale: sts_presentation::Locale,
+        locale: Locale,
     },
     /// Read exact persistent run-level RNG streams for scoped Java/Rust parity work.
     ParityRng {
@@ -1298,6 +1299,8 @@ enum Command {
         /// Public-information manual play: no search, private probes or hidden piles.
         #[arg(long)]
         manual: bool,
+        #[arg(long, default_value = "en")]
+        locale: Locale,
     },
     /// Print simulator-owned typed facts for exact gameplay entity IDs.
     GameFacts {
@@ -2293,7 +2296,7 @@ fn run(cli: Cli) -> Result<(), String> {
                     after.clone(),
                     false,
                     None,
-                    sts_presentation::Locale::En,
+                    Locale::En,
                 )?);
                 if let TaskPublicObservationV1::Strategic { observation } = &after.observation {
                     preparation_text.push_str(&format!("Base energy/turn {} | Potions: {}\n",
@@ -4374,7 +4377,8 @@ fn run(cli: Cli) -> Result<(), String> {
             session,
             knowledge_pack,
             manual,
-        } => run_agent_shell_v1(session, knowledge_pack, manual)?,
+            locale,
+        } => run_agent_shell_v1(session, knowledge_pack, manual, locale)?,
         Command::GameFacts {
             cards,
             relics,
@@ -4899,7 +4903,7 @@ fn run_shell_v1(session: PathBuf) -> Result<(), String> {
                     print_shell_view_v1(&mechanics_info::render(
                         decision.as_ref(),
                         &query,
-                        sts_presentation::Locale::En,
+                        Locale::En,
                     )?);
                 }
                 "advice" => {
@@ -5120,7 +5124,7 @@ fn print_shell_reading_v1(
     known: &mut Option<decision::DecisionKnownContextV1>,
     displayed: &mut Option<decision::RunPlayDecisionReadingV1>,
 ) -> Result<(), String> {
-    let reading = controller.decision_reading_v1(&[], known.as_ref())?;
+    let reading = controller.decision_reading_v1(&[], known.as_ref(), Locale::En)?;
     println!(
         "h{} node=n{}",
         controller.head().head_revision,
@@ -5221,6 +5225,7 @@ fn run_agent_shell_v1(
     session: PathBuf,
     knowledge_pack_reference: Option<String>,
     manual: bool,
+    locale: Locale,
 ) -> Result<(), String> {
     let paths = RunPlayPathsV1::new(session);
     let head = paths.load_head()?;
@@ -5237,6 +5242,7 @@ fn run_agent_shell_v1(
             capabilities,
             BufReader::new(stdin.lock()),
             stdout.lock(),
+            locale,
         );
     }
     let mut controller = RunPlayControllerV1::open(paths)?;
@@ -5245,6 +5251,7 @@ fn run_agent_shell_v1(
         capabilities,
         BufReader::new(stdin.lock()),
         stdout.lock(),
+        locale,
     )
 }
 
@@ -6744,12 +6751,15 @@ mod tests {
             "--knowledge-pack",
             "ironclad-a20-v1",
             "--manual",
+            "--locale",
+            "zh-CN",
         ])
         .expect("agent shell command");
 
         let Command::AgentShell {
             knowledge_pack,
             manual,
+            locale,
             ..
         } = cli.command
         else {
@@ -6757,5 +6767,6 @@ mod tests {
         };
         assert_eq!(knowledge_pack.as_deref(), Some("ironclad-a20-v1"));
         assert!(manual);
+        assert_eq!(locale, Locale::ZhCn);
     }
 }

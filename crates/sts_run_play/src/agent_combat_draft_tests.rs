@@ -1,5 +1,6 @@
 use std::cmp::Reverse;
 use std::fs;
+use sts_presentation::Locale;
 
 use sts_combat_planner::{
     CombatPlanningCounters, CombatPlanningQuantum, CompleteTurnOptionBoundary,
@@ -268,6 +269,7 @@ fn analyst_draft_victory_uses_the_existing_combat_plan_transaction() {
         ),
         std::io::Cursor::new(input),
         &mut output,
+        Locale::En,
     )
     .unwrap();
     let responses = String::from_utf8(output)
@@ -298,6 +300,7 @@ fn analyst_draft_victory_uses_the_existing_combat_plan_transaction() {
         crate::agent_protocol::AgentCapabilitiesV1::new(public_permission),
         std::io::Cursor::new(format!("{}\n", requests[3])),
         &mut denied,
+        Locale::En,
     )
     .unwrap();
     assert!(String::from_utf8(denied)

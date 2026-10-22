@@ -3,6 +3,7 @@ use crate::decision_tests::{controller_with_session, fixture, TestDirectory};
 use cards::CardId;
 use relics::RelicId;
 use sts_oracle_learning::content::identity::StableGameplayId;
+use sts_presentation::Locale;
 
 fn card(id: CardId, ordinal: usize) -> TaskStrategicCardV1 {
     TaskStrategicCardV1 {
@@ -156,7 +157,9 @@ fn inventory_combat_uses_master_snapshot_and_typed_bottle_lineage_without_advanc
         .add_card_to_deck(CardId::RitualDagger);
     bottle_session.run_state.add_card_to_deck(CardId::Bash);
     let mut bottle_game = controller_with_session(&dir.0, "bottle-binding", &bottle_session);
-    let selection = bottle_game.decision_reading_v1(&[], None).unwrap();
+    let selection = bottle_game
+        .decision_reading_v1(&[], None, Locale::En)
+        .unwrap();
     bottle_game
         .choose_bound_v1(&crate::decision::RunPlayBoundChoiceV1 {
             source: selection.source.unwrap(),

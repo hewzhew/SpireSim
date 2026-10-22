@@ -2,6 +2,7 @@ use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use std::fs;
 use std::path::Path;
 use std::time::{Duration, Instant};
+use sts_presentation::Locale;
 
 use serde::{Deserialize, Serialize};
 use sts_combat_planner::{
@@ -3825,6 +3826,7 @@ impl RunPlayControllerV1 {
         &mut self,
         details: &[crate::decision::DecisionDetailV1],
         known: Option<&crate::decision::DecisionKnownContextV1>,
+        locale: Locale,
     ) -> Result<crate::decision::RunPlayDecisionReadingV1, String> {
         let published = self.paths.load_head()?;
         if published.session_id != self.head.session_id
@@ -3835,7 +3837,7 @@ impl RunPlayControllerV1 {
         if matches!(self.head.position, RunPlayPositionV1::Decision { .. }) {
             self.restore_exact_at_published_head_v1()?;
         }
-        crate::decision::read_decision(&self.head, details, known)
+        crate::decision::read_decision(&self.head, details, known, locale)
     }
 
     /// Execute exactly one bound choice, with no implicit strategy

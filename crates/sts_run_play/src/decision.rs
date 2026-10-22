@@ -3,6 +3,7 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
+use sts_presentation::Locale;
 
 use serde::{Deserialize, Serialize};
 use sts_oracle_learning::agent::task::{
@@ -180,6 +181,7 @@ pub(crate) fn read_decision(
     head: &RunPlayHeadV1,
     details: &[DecisionDetailV1],
     known: Option<&DecisionKnownContextV1>,
+    locale: Locale,
 ) -> Result<RunPlayDecisionReadingV1, String> {
     if let RunPlayPositionV1::Terminal { outcome, .. } = &head.position {
         let summary = format!("Terminal | {outcome:?}\n");
@@ -207,6 +209,7 @@ pub(crate) fn read_decision(
         known,
         Some(decision_source(head)?),
         last_choice(head),
+        locale,
     )
 }
 
@@ -215,8 +218,16 @@ pub(crate) fn read_decision(
 pub(crate) fn read_preview_decision_v1(
     decision: &TaskPublicDecisionV1,
     known: Option<&DecisionKnownContextV1>,
+    locale: Locale,
 ) -> Result<RunPlayDecisionReadingV1, String> {
-    read_public_decision_v1(decision, &[DecisionDetailV1::Brief], known, None, None)
+    read_public_decision_v1(
+        decision,
+        &[DecisionDetailV1::Brief],
+        known,
+        None,
+        None,
+        locale,
+    )
 }
 
 fn read_public_decision_v1(
@@ -225,6 +236,7 @@ fn read_public_decision_v1(
     known: Option<&DecisionKnownContextV1>,
     source: Option<ExactRunDecisionSourceV1>,
     last_choice: Option<DecisionChoiceReceiptV1>,
+    locale: Locale,
 ) -> Result<RunPlayDecisionReadingV1, String> {
     let mut result = RunPlayDecisionReadingV1 {
         control: DecisionControlV1::Strategic,
@@ -388,15 +400,15 @@ fn read_public_decision_v1(
     let context = DecisionKnownContextV1 {
         deck: Some(stable_planner_id(
             "run-play-reading-deck-v1",
-            &observation.cards,
+            &(locale, &observation.cards),
         )?),
         relics: Some(stable_planner_id(
             "run-play-reading-relics-v1",
-            &observation.relics,
+            &(locale, &observation.relics),
         )?),
         potions: Some(stable_planner_id(
             "run-play-reading-potions-v1",
-            &observation.potions,
+            &(locale, &observation.potions),
         )?),
     };
     let repeat_deck = known.is_none_or(|old| old.deck != context.deck);
@@ -579,12 +591,7 @@ fn read_public_decision_v1(
             observation
                 .relics
                 .iter()
-                .map(|r| crate::compact::relic_label_v1(
-                    r.relic,
-                    r.counter,
-                    r.used_up,
-                    sts_presentation::Locale::En
-                ))
+                .map(|r| crate::compact::relic_label_v1(r.relic, r.counter, r.used_up, Locale::En))
                 .collect::<Vec<_>>()
                 .join(", ")
         )
@@ -1258,7 +1265,7 @@ fn write_choice_mechanics(out: &mut String, action: &TaskStrategicActionV1, brie
             }
             return;
         }
-        let mechanics = crate::mechanics_info::render(None, query, sts_presentation::Locale::En)
+        let mechanics = crate::mechanics_info::render(None, query, Locale::En)
             .expect("key choices have shared mechanics definitions");
         for line in mechanics.lines() {
             writeln!(out, "  {line}").unwrap();
@@ -1378,12 +1385,7 @@ fn write_choice_mechanics(out: &mut String, action: &TaskStrategicActionV1, brie
             writeln!(
                 out,
                 "  Card: {}",
-                crate::mechanics_info::card_attributes(
-                    *card,
-                    *upgrades,
-                    0,
-                    sts_presentation::Locale::En
-                )
+                crate::mechanics_info::card_attributes(*card, *upgrades, 0, Locale::En)
             )
             .unwrap();
             let mut blueprint = sts_oracle_learning::runtime::combat::CardBlueprint::fresh(*card);
@@ -1429,12 +1431,7 @@ fn write_choice_mechanics(out: &mut String, action: &TaskStrategicActionV1, brie
     if let TaskStrategicActionV1::TakeCard { card, upgrades, .. }
     | TaskStrategicActionV1::BuyCard { card, upgrades, .. } = action
     {
-        crate::mechanics_info::write_card_fixed_requests(
-            out,
-            *card,
-            *upgrades,
-            sts_presentation::Locale::En,
-        );
+        crate::mechanics_info::write_card_fixed_requests(out, *card, *upgrades, Locale::En);
     }
 }
 

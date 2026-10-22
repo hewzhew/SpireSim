@@ -1,5 +1,41 @@
 use super::*;
 use crate::decision_tests::{controller_with_session, fixture, TestDirectory};
+use sts_presentation::Locale;
+
+#[test]
+fn context_acknowledgements_are_language_scoped_without_changing_choices_or_state() {
+    let dir = TestDirectory::new();
+    let mut game = controller_with_session(&dir.0, "locale-context", &fixture("reward"));
+    let before = game.head().clone();
+    let english = game.decision_reading_v1(&[], None, Locale::En).unwrap();
+    let chinese = game.decision_reading_v1(&[], None, Locale::ZhCn).unwrap();
+    let from_english = game
+        .decision_reading_v1(&[], english.context.as_ref(), Locale::ZhCn)
+        .unwrap();
+    let repeated = game
+        .decision_reading_v1(&[], chinese.context.as_ref(), Locale::ZhCn)
+        .unwrap();
+    assert_eq!(english.source, chinese.source);
+    assert_eq!(
+        english
+            .options
+            .iter()
+            .map(|row| (&row.choice, &row.candidate))
+            .collect::<Vec<_>>(),
+        chinese
+            .options
+            .iter()
+            .map(|row| (&row.choice, &row.candidate))
+            .collect::<Vec<_>>()
+    );
+    assert_ne!(english.context, chinese.context);
+    assert_eq!(
+        chinese.view, from_english.view,
+        "an English acknowledgement must not hide Chinese resources"
+    );
+    assert!(repeated.view.len() < chinese.view.len());
+    assert_eq!(*game.head(), before);
+}
 
 #[test]
 fn position_summaries_share_public_rendering_across_detail_and_binding_modes() {
@@ -16,16 +52,16 @@ fn position_summaries_share_public_rendering_across_detail_and_binding_modes() {
         let mut game = controller_with_session(&dir.0, kind, &fixture(kind));
         let before = game.head().clone();
         let brief = game
-            .decision_reading_v1(&[DecisionDetailV1::Brief], None)
+            .decision_reading_v1(&[DecisionDetailV1::Brief], None, Locale::En)
             .unwrap();
-        let full = game.decision_reading_v1(&[], None).unwrap();
+        let full = game.decision_reading_v1(&[], None, Locale::En).unwrap();
         let public = before
             .current_decision
             .as_ref()
             .unwrap()
             .public_decision_v1()
             .unwrap();
-        let preview = read_preview_decision_v1(&public, None).unwrap();
+        let preview = read_preview_decision_v1(&public, None, Locale::En).unwrap();
         assert!(!brief.summary.is_empty(), "{kind}");
         assert!(brief.view.starts_with(&brief.summary), "{kind}");
         assert_eq!(brief.summary, full.summary, "{kind}");
@@ -60,7 +96,7 @@ fn escape_summary_does_not_offer_the_inactive_hand() {
     };
     assert!(!observation.cards.hand.cards.is_empty());
     observation.turn.player_escaping = true;
-    let reading = read_preview_decision_v1(&public, None).unwrap();
+    let reading = read_preview_decision_v1(&public, None, Locale::En).unwrap();
     assert!(reading.summary.contains("Escape settlement pending"));
     assert!(!reading.summary.contains("Hand:"));
     assert!(!reading.summary.contains("Player turn"));
@@ -83,14 +119,14 @@ fn live_choice_commands_round_trip_while_preview_choices_remain_hypothetical() {
         let dir = TestDirectory::new();
         let mut game = controller_with_session(&dir.0, kind, &fixture(kind));
         let before = game.head().clone();
-        let reading = game.decision_reading_v1(&[], None).unwrap();
+        let reading = game.decision_reading_v1(&[], None, Locale::En).unwrap();
         let decision = before
             .current_decision
             .as_ref()
             .unwrap()
             .public_decision_v1()
             .unwrap();
-        let preview = read_preview_decision_v1(&decision, None).unwrap();
+        let preview = read_preview_decision_v1(&decision, None, Locale::En).unwrap();
         assert!(!preview.view.contains("./p "), "{kind}: {}", preview.view);
         assert_eq!(reading.options, preview.options);
         assert_eq!(reading.selections, preview.selections);
@@ -210,6 +246,7 @@ fn localized_or_command_like_event_labels_do_not_change_choice_commands() {
             None,
             Some(decision_source(&before).unwrap()),
             None,
+            Locale::En,
         )
         .unwrap();
         for (choice, command) in expected {

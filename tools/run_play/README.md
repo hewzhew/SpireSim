@@ -352,7 +352,9 @@ Rust 返回的命令错误以 `RunPlayCommandError` 保留 `code`、`command`、
 
 ## 模型工具读数语言
 
-`openWorkbench({ ..., agentLocale: 'zh-CN' })` 为该工作台选择文字语言，默认 `en`，重连保持不变。直连客户端可使用 `game.info('potion SteroidPotion', { locale: 'zh-CN' })`；CLI 使用 `run_play info --session <path> --locale zh-CN potion SteroidPotion`。原生协议的 `info.locale` 使用相同的两个明确值，省略时为英语。
+`openWorkbench({ ..., agentLocale: 'zh-CN' })` 为该工作台选择文字语言，默认 `en`，重连保持不变。直连客户端使用 `openRunPlay({ ..., locale: 'zh-CN' })`；它将选择传给 `agent-shell --locale`，原生查询、普通读数、动作后的返回、私下预演和准备投影共享该连接的呈现参数。当前接入的内容按实际 renderer 覆盖，普通正文、选项与手牌还在迁移；语言选择不写入游戏状态。
+
+`game.info('potion SteroidPotion')` 默认使用连接语言，也可用 `{ locale: 'en' }` 单独覆盖这次定义查询。CLI 使用 `run_play info --session <path> --locale zh-CN potion SteroidPotion`。原生协议的 `info.locale` 接受 `en` / `zh-CN`，省略时继承连接设置；连接默认英语。上下文省略用的 `known_context` 引用按语言区分，英语资源的确认不会使中文读数漏掉同一批库存；游戏快照、动作身份与来源绑定不随语言变化。
 
 当前药水机制查询支持全部 42 种药水的中英文名称、规则、基础药效、稀有度和目标要求；其他读数仍使用各自原有渲染。命令与查询中的稳定 ID 保持原样，语言不参与游戏状态、动作、RNG、训练词表或 parity 比较。记录保存实际查询时的语言和返回原文。
 

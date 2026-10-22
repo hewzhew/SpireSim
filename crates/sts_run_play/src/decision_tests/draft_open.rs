@@ -3,6 +3,7 @@ use crate::agent_combat_draft::{prepare_commit_attempt, AgentCombatDraftRuntimeV
 use sts_combat_planner::{materialize_exact_action_line, CombatPlanningCounters};
 use sts_oracle_learning::sim::combat::EngineCombatStepper;
 use sts_oracle_learning::state::core::ClientInput;
+use sts_presentation::Locale;
 
 #[test]
 fn candidate_draft_keeps_prefix_and_accepts_an_independently_edited_suffix() {
@@ -91,7 +92,9 @@ fn candidate_draft_keeps_prefix_and_accepts_an_independently_edited_suffix() {
     game.anchor_cached_combat_research_candidate_id_v1(before.head_revision, &edited.attempt, &id)
         .unwrap();
     assert_eq!(
-        game.decision_reading_v1(&[], None).unwrap().control,
+        game.decision_reading_v1(&[], None, Locale::En)
+            .unwrap()
+            .control,
         DecisionControlV1::Strategic
     );
     assert!(draft.open_candidate(&mut game, candidate, 2, true).is_err());
@@ -171,6 +174,7 @@ fn candidate_draft_protocol_checks_cached_effort_and_replacement_atomically() {
         AgentCapabilitiesV1::new(AgentPermissionEnvelopeV1::a20_first_unrestricted_v1(None)),
         std::io::Cursor::new(input),
         &mut output,
+        Locale::En,
     )
     .unwrap();
     let responses = std::str::from_utf8(&output)

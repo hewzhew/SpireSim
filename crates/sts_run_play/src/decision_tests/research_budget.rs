@@ -1,5 +1,6 @@
 use super::*;
 use crate::agent_protocol::{run_agent_jsonl_v1, AgentCapabilitiesV1, AgentPermissionEnvelopeV1};
+use sts_presentation::Locale;
 
 #[test]
 fn work_exhaustion_is_reported_and_identical_requests_explain_cached_results() {
@@ -16,6 +17,7 @@ fn work_exhaustion_is_reported_and_identical_requests_explain_cached_results() {
         AgentCapabilitiesV1::new(AgentPermissionEnvelopeV1::a20_first_unrestricted_v1(None)),
         std::io::Cursor::new(input),
         &mut output,
+        Locale::En,
     )
     .unwrap();
     let rows = std::str::from_utf8(&output)
@@ -166,6 +168,7 @@ fn whole_combat_work_budget_reaches_solver_saved_plans_and_cache_identity() {
         AgentCapabilitiesV1::new(AgentPermissionEnvelopeV1::a20_first_unrestricted_v1(None)),
         std::io::Cursor::new(input),
         &mut output,
+        Locale::En,
     )
     .unwrap();
     let responses = std::str::from_utf8(&output)
@@ -250,6 +253,7 @@ fn research_budget_is_part_of_the_cache_identity_and_preserves_resident_draft() 
         AgentCapabilitiesV1::new(AgentPermissionEnvelopeV1::a20_first_unrestricted_v1(None)),
         std::io::Cursor::new(input),
         &mut output,
+        Locale::En,
     )
     .unwrap();
     let responses = std::str::from_utf8(&output)

@@ -50,14 +50,15 @@ export async function openRunPlay(options) {
   }
 }
 
-async function connectRunPlay({ repository, session, recordDirectory, binary, manual = false, timeoutMs = 30000, closeTimeoutMs = 2000 }, release) {
+async function connectRunPlay({ repository, session, recordDirectory, binary, manual = false, locale = 'en', timeoutMs = 30000, closeTimeoutMs = 2000 }, release) {
   if (!repository || !session || !recordDirectory) throw new Error('repository, session and a fresh recordDirectory are required');
   if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1) throw new Error('invalid timeout');
   if (!Number.isSafeInteger(closeTimeoutMs) || closeTimeoutMs < 1) throw new Error('invalid close timeout');
+  if (!['en', 'zh-CN'].includes(locale)) throw new Error('Unsupported text locale; use en or zh-CN');
   const records = resolve(recordDirectory);
   await mkdir(records); // Never mix a new connection into an old transcript.
   const child = spawn(binary ?? join(repository, 'target/dev-opt/run_play.exe'),
-    ['agent-shell', '--session', resolve(session), ...(manual ? ['--manual'] : [])], {
+    ['agent-shell', '--session', resolve(session), '--locale', locale, ...(manual ? ['--manual'] : [])], {
       cwd: resolve(repository), windowsHide: true, shell: false,
       stdio: ['pipe', 'pipe', 'pipe'],
     });
@@ -439,12 +440,12 @@ async function connectRunPlay({ repository, session, recordDirectory, binary, ma
   }
 
   return Object.freeze({
-    async info(query, { locale = 'en' } = {}) {
+    async info(query, { locale: infoLocale = locale } = {}) {
       if (typeof query !== 'string' || !query.trim()) {
         throw new Error('Info requires a mechanics query such as card Dropkick or M0');
       }
-      if (!['en', 'zh-CN'].includes(locale)) throw new Error('Unsupported text locale; use en or zh-CN');
-      return frame(await request('info', { query, locale }));
+      if (!['en', 'zh-CN'].includes(infoLocale)) throw new Error('Unsupported text locale; use en or zh-CN');
+      return frame(await request('info', { query, locale: infoLocale }));
     },
     async slPiles() {
       return frame(await request('sl_piles'));

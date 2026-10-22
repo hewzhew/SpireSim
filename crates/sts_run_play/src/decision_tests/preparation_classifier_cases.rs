@@ -2,6 +2,7 @@
 //! These roots declare their construction; they carry no strategy labels.
 use super::*;
 use sts_oracle_learning::content::monsters::factory::EncounterId;
+use sts_presentation::Locale;
 
 fn deck(session: &mut RunControlSession, cards: &[(CardId, u8)]) {
     session.run_state.master_deck.clear();
@@ -195,7 +196,7 @@ fn paired_preparation_roots_expose_upgrade_hp_and_slot_differences() {
     for (name, _, session) in cases() {
         let mut game = controller_with_session(&dir.0, name, &session);
         readings.push(
-            game.decision_reading_v1(&[DecisionDetailV1::Options], None)
+            game.decision_reading_v1(&[DecisionDetailV1::Options], None, Locale::En)
                 .unwrap(),
         );
     }
@@ -232,13 +233,13 @@ fn paired_preparation_roots_expose_upgrade_hp_and_slot_differences() {
     assert!(readings[5].view.contains("base 12"));
     for (name, case_index, final_hp) in [("healthy-rest", 2, 75), ("hurt-rest", 3, 30)] {
         let mut game = controller_with_session(&dir.0, name, &cases()[case_index].2);
-        let reading = game.decision_reading_v1(&[], None).unwrap();
+        let reading = game.decision_reading_v1(&[], None, Locale::En).unwrap();
         game.choose_bound_v1(&pick(&reading, |action| {
             matches!(action, TaskStrategicActionV1::Rest)
         }))
         .unwrap();
         assert!(game
-            .decision_reading_v1(&[], None)
+            .decision_reading_v1(&[], None, Locale::En)
             .unwrap()
             .view
             .contains(&format!("HP {final_hp}/75")));
@@ -246,7 +247,7 @@ fn paired_preparation_roots_expose_upgrade_hp_and_slot_differences() {
     let session = &cases()[5].2;
     let mut game = controller_with_session(&dir.0, "shop-exchange", session);
     let reading = game
-        .decision_reading_v1(&[DecisionDetailV1::Options], None)
+        .decision_reading_v1(&[DecisionDetailV1::Options], None, Locale::En)
         .unwrap();
     game.choose_bound_v1(&pick(&reading, |action| {
         matches!(
@@ -258,7 +259,7 @@ fn paired_preparation_roots_expose_upgrade_hp_and_slot_differences() {
         )
     }))
     .unwrap();
-    let available = game.decision_reading_v1(&[], None).unwrap();
+    let available = game.decision_reading_v1(&[], None, Locale::En).unwrap();
     assert!(has_block_purchase(&available));
     game.choose_bound_v1(&pick(&available, |action| {
         matches!(
@@ -270,7 +271,7 @@ fn paired_preparation_roots_expose_upgrade_hp_and_slot_differences() {
         )
     }))
     .unwrap();
-    let purchased = game.decision_reading_v1(&[], None).unwrap();
+    let purchased = game.decision_reading_v1(&[], None, Locale::En).unwrap();
     assert!(purchased.view.contains("Gold 0"));
     assert!(purchased.view.contains("P0 Block Potion, P1 Fear Potion"));
 }
@@ -341,7 +342,7 @@ fn preparation_interaction_roots_preserve_upgrade_and_purchase_conditions() {
         ("budget-enough", 4, 40, true),
     ] {
         let mut game = controller_with_session(&dir.0, name, &roots[index].2);
-        let reading = game.decision_reading_v1(&[], None).unwrap();
+        let reading = game.decision_reading_v1(&[], None, Locale::En).unwrap();
         game.choose_bound_v1(&pick(&reading, |action| {
             matches!(
                 action,
@@ -352,7 +353,7 @@ fn preparation_interaction_roots_preserve_upgrade_and_purchase_conditions() {
             )
         }))
         .unwrap();
-        let after = game.decision_reading_v1(&[], None).unwrap();
+        let after = game.decision_reading_v1(&[], None, Locale::En).unwrap();
         assert!(after.view.contains(&format!("Gold {expected_gold}")));
         assert_eq!(
             after.options.iter().any(|row| matches!(
@@ -486,7 +487,7 @@ fn preparation_selection_roots_execute_exact_single_and_multiple_targets() {
         let selection = parse_action_selector_v1(line, "selection-case").unwrap();
         let resolved = resolve_action_selector_v1(&decision, &selection).unwrap();
         let before = roots[index].2.run_state.master_deck.len() as i32;
-        let reading = game.decision_reading_v1(&[], None).unwrap();
+        let reading = game.decision_reading_v1(&[], None, Locale::En).unwrap();
         let choice = RunPlayBoundChoiceV1 {
             source: reading.source.clone().unwrap(),
             choice: resolved,
@@ -652,7 +653,7 @@ fn preparation_protection_roots_preserve_size_and_execute_addition_or_skip() {
             expected_blocks
         );
         let mut game = controller_with_session(&dir.0, name, session);
-        let reading = game.decision_reading_v1(&[], None).unwrap();
+        let reading = game.decision_reading_v1(&[], None, Locale::En).unwrap();
         assert!(reading.view.contains("Connected paths to the first Elite"));
         assert!(reading
             .view
@@ -809,7 +810,7 @@ fn preparation_attack_increment_roots_keep_the_owned_attack_suite_identical() {
     assert_eq!(roots[3].2.run_state.master_deck.len(), 11);
     let dir = TestDirectory::new();
     let mut game = controller_with_session(&dir.0, roots[2].0, &roots[2].2);
-    let reading = game.decision_reading_v1(&[], None).unwrap();
+    let reading = game.decision_reading_v1(&[], None, Locale::En).unwrap();
     game.choose_bound_v1(&pick(&reading, |action| {
         matches!(action, TaskStrategicActionV1::SkipCardReward { .. })
     }))
@@ -838,7 +839,7 @@ fn export_roots(roots: Vec<(&str, &str, RunControlSession)>) {
     let mut manifest = Vec::new();
     for (name, pair, session) in roots {
         let mut game = controller_with_session(&root, name, &session);
-        let reading = game.decision_reading_v1(&[], None).unwrap();
+        let reading = game.decision_reading_v1(&[], None, Locale::En).unwrap();
         fs::write(root.join(format!("{name}-reading.txt")), reading.view).unwrap();
         manifest.push(
             serde_json::json!({ "case": name, "pair": pair, "session": root.join(name),
