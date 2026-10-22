@@ -4853,5 +4853,682 @@
       "variantCostAmount": "{{command}}: {{cost}} Energy, {{amount}} {{value}}.",
       "variantCostOnly": "{{command}}: {{cost}} Energy."
     }
+  },
+  "cli": {
+    "common": {
+      "language": "Display language for help and supported game readings",
+      "help": "Print help",
+      "helpMore": "Print help (see more with '--help')",
+      "helpSummary": "Print help (see a summary with '-h')",
+      "helpCommand": "Print this message or the help of the given subcommand(s)",
+      "usage": "Usage:",
+      "arguments": "Arguments",
+      "options": "Options",
+      "commands": "Commands",
+      "defaultValue": "[default: {{values}}]",
+      "possibleValues": "[possible values: {{values}}]"
+    },
+    "commands": {
+      "_root": {
+        "about": "Persistent exact full-run research workbench",
+        "long_about": "A typed, persistent full-run workbench over current-simulator natural roots or explicitly imported exact run archives. It shows real public decisions, applies one controller-selected choice, permits automatic combat continuation only, yields at the next strategic boundary, and supports exact navigation without shell-side JSON parsing.",
+        "args": {
+          "adapter_failure_report": {
+            "help": "Create a private typed failure report for a supervising adapter caller"
+          }
+        }
+      },
+      "new": {
+        "about": "Create a natural session from the current simulator",
+        "args": {
+          "neow_offer": {
+            "help": "Source-audited Neow eligibility captured before this run starts"
+          },
+          "goal": {
+            "help": "Complete-run objective. Heart victory enables keys and Act 4 from the natural root"
+          },
+          "focus": {
+            "help": "Set this new durable run as the convenience focus after creation"
+          }
+        }
+      },
+      "replay-mirror-prefix": {
+        "about": "Create a fresh current-simulator session by replaying a typed prefix from a retained Java mirror plan",
+        "args": {
+          "plan": {
+            "help": "Historical or current versioned mirror plan; its typed actions are never shell-expanded"
+          },
+          "session": {
+            "help": "Fresh target session. A pre-existing path is rejected"
+          },
+          "through_depth": {
+            "help": "Inclusive retained source depth to replay"
+          },
+          "neow_offer": {
+            "help": "Source-audited Neow eligibility for the natural Rust root"
+          }
+        }
+      },
+      "import": {
+        "about": "Import a session from a validated historical archive/checkpoint pair"
+      },
+      "snapshot-current": {
+        "about": "Read-only verify and capture an exact state/RNG, including from a source-drifted session when reconstruction succeeds",
+        "args": {
+          "output": {
+            "help": "Fresh public-observation-schema-independent reroot capsule path"
+          }
+        }
+      },
+      "reroot": {
+        "about": "Verify an exact-state capsule and create a fresh current-build root; the source trajectory is not certified",
+        "args": {
+          "target": {
+            "help": "Fresh target session directory"
+          }
+        }
+      },
+      "reroot-current": {
+        "about": "Verify the current exact state and create a fresh root without writing an intermediate capsule",
+        "args": {
+          "at": {
+            "help": "Retained nNODE or source:hREV/target:hREV to restore instead of the old head"
+          },
+          "target": {
+            "help": "Fresh target session directory; omitted to generate one beside the source"
+          },
+          "focus": {
+            "help": "Focus the new session. Implicit when the source is the focused session"
+          }
+        }
+      },
+      "adopt-current": {
+        "about": "Keep only the selected exact game state in a disposable play session"
+      },
+      "fork": {
+        "about": "Create an independent writable session from a retained source decision without moving the source head",
+        "args": {
+          "session": {
+            "help": "Existing source session"
+          },
+          "target": {
+            "help": "Fresh target session directory"
+          },
+          "at": {
+            "help": "Optional retained nNODE or explicit source:hREV/target:hREV boundary; defaults to the source head"
+          },
+          "disposable": {
+            "help": "Register this fork as disposable below the declared managed root"
+          },
+          "managed_root": {
+            "help": "Root whose direct registered children may be considered by workspace GC"
+          },
+          "expected_cleanup_phase": {
+            "help": "Human recovery cue retained in the disposable workspace manifest"
+          }
+        }
+      },
+      "promote-branch": {
+        "about": "Transactionally replay one verified source branch onto a divergent target session",
+        "args": {
+          "source": {
+            "help": "Session whose active suffix is the desired branch"
+          },
+          "target": {
+            "help": "Existing session that should receive the verified suffix"
+          }
+        }
+      },
+      "counterfactual-branch": {
+        "about": "Retain one parked disposable probe as read-only root-bound reachability evidence",
+        "args": {
+          "session": {
+            "help": "Registered disposable probe whose completed active suffix should be captured"
+          },
+          "managed_root": {
+            "help": "Root whose direct registered children are eligible probes"
+          },
+          "output": {
+            "help": "Fresh JSON evidence path outside the disposable workspace"
+          },
+          "max_steps": {
+            "help": "Maximum retained typed decisions in the probe suffix"
+          }
+        }
+      },
+      "show": {
+        "about": "Show the current exact public state and legal candidates",
+        "args": {
+          "public_output": {
+            "help": "Export the validated strategic public decision once for offline selective reading"
+          },
+          "decision_json": {
+            "help": "Print the current public decision as JSON instead of the human debug rendering, so tooling consumes a typed contract rather than parsing the presentation format"
+          }
+        }
+      },
+      "map": {
+        "about": "Read the published map without the full diagnostic decision dump"
+      },
+      "map/full": {
+        "about": "Expand all published map nodes (grouped connected routes are the default)",
+        "args": {
+          "flipped": {
+            "help": "Put small map y first, so forward travel reads downward"
+          }
+        }
+      },
+      "map/elites": {
+        "about": "Compare the maximum number of elites on published ordinary paths"
+      },
+      "map/route": {
+        "about": "Inspect the next ordinary branches from one published map coordinate"
+      },
+      "deck-lab": {
+        "about": "Check current resources with the live combat solver against diagnostic encounters, including Heart",
+        "args": {
+          "output": {
+            "help": "Fresh JSON artifact; terminal output stays short"
+          },
+          "list": {
+            "help": "List the same-act battery and the explicit counterfactual Heart test"
+          },
+          "scenarios": {
+            "help": "Repeat each selected encounter under reproducible diagnostic RNG"
+          },
+          "encounter": {
+            "help": "Select same-act encounters or TheHeart; repeat to select several"
+          },
+          "details": {
+            "help": "Include opening examples and per-turn traces in this diagnostic run"
+          },
+          "after": {
+            "help": "Privately apply current preparation selectors (separated by /) before testing resources"
+          }
+        }
+      },
+      "info": {
+        "about": "Inspect power or enemy mechanics using definitions and current public state only"
+      },
+      "options": {
+        "about": "Show executable choices at the current decision"
+      },
+      "status": {
+        "about": "Show a compact typed resume context for the current controller head"
+      },
+      "inventory": {
+        "about": "Read the complete current master deck and relic list on demand",
+        "args": {
+          "effects": {
+            "help": "Include printed card rules and upgrade-sensitive costs"
+          }
+        }
+      },
+      "parity-rng": {
+        "about": "Read exact persistent run-level RNG streams for scoped Java/Rust parity work",
+        "args": {
+          "at": {
+            "help": "Inspect a retained decision without moving the durable head"
+          }
+        }
+      },
+      "state-fingerprint": {
+        "about": "Read exact-state and future-continuation identities without mutating the run",
+        "args": {
+          "at": {
+            "help": "Inspect a retained decision without moving the durable head"
+          }
+        }
+      },
+      "paired-root-prepare-preflight": {
+        "about": "Reject a PairedRoot source whose Rust simulator/RNG semantics are not current"
+      },
+      "paired-root-bootstrap-natural-neow": {
+        "about": "Build one parentless natural Neow root after a fresh-JVM reconstruction proof"
+      },
+      "paired-root-bootstrap-constructed-combat": {
+        "about": "Build one fresh constructed combat root from a strictly validated scenario recipe"
+      },
+      "paired-root-prepare": {
+        "about": "Prepare one probe-only PairedRoot from a retained Rust decision and a freshly restored Java frame"
+      },
+      "paired-root-observe-actions": {
+        "about": "Derive stable typed action handles from one immutable PairedRoot"
+      },
+      "paired-root-search": {
+        "about": "Run the routine combat-search owner from one immutable PairedRoot"
+      },
+      "paired-root-preview-action": {
+        "about": "Preview one stable typed action handle inside the live PairedRoot restoration"
+      },
+      "paired-root-materialize-native": {
+        "about": "Materialize the nearest native Java recovery bundle for one target root"
+      },
+      "paired-root-resume-preview": {
+        "about": "Activate, recover, and preview one target-root action in one workbench process"
+      },
+      "paired-root-resume-witness": {
+        "about": "Activate, recover, and preview one typed witness in one live transaction"
+      },
+      "paired-root-preview-witness": {
+        "about": "Preview one typed witness directly from an already parked live activation"
+      },
+      "paired-root-cas-proof": {
+        "about": "Prove receipt-only compare-and-swap on one disposable PairedHead"
+      },
+      "paired-root-head-init": {
+        "about": "Initialize one named PairedHead without executing a game transition"
+      },
+      "paired-root-head-commit": {
+        "about": "Commit one already verified receipt to a named PairedHead"
+      },
+      "paired-root-head-select": {
+        "about": "Select one named PairedHead through an append-only selector"
+      },
+      "paired-root-head-resolve": {
+        "about": "Resolve the current live head behind an append-only selector"
+      },
+      "paired-root-selected-head-commit": {
+        "about": "Commit one receipt to the PairedHead currently selected by a selector"
+      },
+      "overview": {
+        "about": "Show repository/build identity, typed focus, the focused decision, and recent sessions"
+      },
+      "focus": {
+        "about": "Manage the project-local convenience focus; it never grants mutation authority"
+      },
+      "focus/show": {
+        "about": "Show the latest typed focus event"
+      },
+      "focus/set": {
+        "about": "Select one durable session for overview convenience only"
+      },
+      "focus/clear": {
+        "about": "Append an explicit empty focus event"
+      },
+      "focus/migrate": {
+        "about": "Import the old raw active-session pointer once without deleting it"
+      },
+      "session": {
+        "about": "Manage session purpose and enforceable open/parked lifecycle"
+      },
+      "session/show": {
+        "about": "Show one session's control-plane state"
+      },
+      "session/describe": {
+        "about": "Assign a catalog purpose and optional human label without changing the game head"
+      },
+      "session/park": {
+        "about": "Freeze every head-changing entry point at the current exact head"
+      },
+      "session/unpark": {
+        "about": "Explicitly reopen a parked session for head-changing commands"
+      },
+      "handoff": {
+        "about": "Manage repository- and exact-head-scoped recovery notes"
+      },
+      "handoff/open": {
+        "about": "Open or supersede one exact-head, repository-bound recovery note"
+      },
+      "handoff/resolve": {
+        "about": "Resolve the currently open V2 handoff without changing the game head"
+      },
+      "handoff/show": {
+        "about": "Inspect handoff history; legacy V1 receipts are historical only"
+      },
+      "reference-request": {
+        "about": "Export the current strategic decision as a typed reference-service request"
+      },
+      "advice": {
+        "about": "Read the exact strategic owner's projected public recommendation",
+        "args": {
+          "at": {
+            "help": "Inspect an already retained nNODE or explicit source:hREV/target:hREV boundary without moving the durable head"
+          }
+        }
+      },
+      "combat-research": {
+        "about": "Run the configured combat-research portfolio read-only at this root",
+        "args": {
+          "detail": {
+            "help": "Expand internal lanes, dominated candidates, and complete action lines"
+          },
+          "artifact": {
+            "help": "Save the same research frontier as a fresh root-bound typed JSON artifact"
+          }
+        }
+      },
+      "combat-query": {
+        "about": "Run one read-only composable typed trajectory query at the current combat root",
+        "args": {
+          "eventually_generated_card": {
+            "help": "Require selecting this canonical card ID from a Discovery choice. Repeatable"
+          },
+          "eventually_lethal_payoff": {
+            "help": "Require this card's typed lethal payoff. Currently Feed is supported. Repeatable"
+          },
+          "max_potions_used": {
+            "help": "Maximum potion uses/discards in the complete combat. Omit for unbounded"
+          },
+          "allowed_potion_slot": {
+            "help": "Restrict potion actions to these zero-based slots. Repeatable; omit for all slots"
+          },
+          "output": {
+            "help": "Save the complete typed result as a fresh JSON artifact"
+          }
+        }
+      },
+      "anchor-combat-query": {
+        "about": "Transactionally anchor the selected witness from a root-bound V2 combat-query artifact",
+        "args": {
+          "candidate": {
+            "help": "Zero-based exact witness frontier member. Omit for the local-HP-selected witness"
+          }
+        }
+      },
+      "combat-trace": {
+        "about": "Replay selected artifact candidates at their retained historical root and report typed combat deltas",
+        "args": {
+          "candidate": {
+            "help": "Combat-research global candidate index; use 0 for a combat-query selected witness. Repeatable for research"
+          },
+          "output": {
+            "help": "Save the complete typed trace as a fresh JSON artifact"
+          }
+        }
+      },
+      "combat-feed-repair": {
+        "about": "Reopen a replayed candidate after a fixed prefix and search explicitly for a healthy Feed payoff",
+        "args": {
+          "output": {
+            "help": "Save the complete typed repair result as a fresh JSON artifact"
+          }
+        }
+      },
+      "combat-feed-challenge": {
+        "about": "Detect nonfatal Feed use in strong resource-frontier witnesses and open bounded suffix challengers",
+        "args": {
+          "artifact": {
+            "help": "Replay-proved combat-research or V2 combat-query source artifact"
+          },
+          "output": {
+            "help": "Save the complete typed challenge result as a fresh JSON artifact"
+          }
+        }
+      },
+      "combat-feed-anchor": {
+        "about": "Promote one globally non-dominated Feed challenger at its unchanged exact root",
+        "args": {
+          "frontier": {
+            "help": "Zero-based index from the V2 artifact's global_resource_frontier"
+          }
+        }
+      },
+      "combat-damage-challenge": {
+        "about": "Challenge every turn-advancing HP-loss cutpoint without exceeding the source potion spend",
+        "args": {
+          "artifact": {
+            "help": "Replay-proved combat-research or V2 combat-query source artifact"
+          },
+          "output": {
+            "help": "Save the complete typed challenge result as a fresh JSON artifact"
+          }
+        }
+      },
+      "combat-damage-anchor": {
+        "about": "Promote one globally non-dominated damage challenger at its unchanged exact root",
+        "args": {
+          "frontier": {
+            "help": "Zero-based index from the artifact's global_resource_frontier"
+          }
+        }
+      },
+      "export-combat-case": {
+        "about": "Export the current exact combat root as a fresh production case",
+        "args": {
+          "at": {
+            "help": "Inspect a retained exact boundary without moving the session head"
+          }
+        }
+      },
+      "proposal-audit": {
+        "about": "Audit whether one semantic complete-turn line survives proposal generation",
+        "args": {
+          "line": {
+            "help": "For example play:Armaments/select:DarkEmbrace/play:DarkEmbrace+/end"
+          }
+        }
+      },
+      "compare": {
+        "about": "Compare read-only semantic lines from one hot root",
+        "args": {
+          "at": {
+            "help": "Inspect an already retained nNODE or explicit source:hREV/target:hREV boundary without moving the durable head"
+          },
+          "detail": {
+            "help": "Include every intermediate step and its timing"
+          },
+          "artifact": {
+            "help": "Save the exact semantic lines and public endpoints as a fresh root-bound artifact"
+          }
+        }
+      },
+      "anchor-line": {
+        "about": "Execute one exact public line transactionally and anchor its final decision",
+        "args": {
+          "line": {
+            "help": "For example play:Defend/play:Whirlwind/end"
+          }
+        }
+      },
+      "anchor-combat-plan": {
+        "about": "Select one replay-verified complete combat plan by producer and anchor it transactionally",
+        "args": {
+          "artifact": {
+            "help": "Replay a fresh root-bound typed artifact instead of repeating its search"
+          },
+          "candidate": {
+            "help": "Global candidate index printed by `combat-research`; required when a producer has more than one candidate"
+          },
+          "producer": {
+            "help": "One of resident, proposal, or atomic"
+          }
+        }
+      },
+      "protocol-choose": {
+        "about": "Low-level protocol diagnostic using one explicit ordinal path",
+        "args": {
+          "manual": {
+            "help": "Yield after exactly this public action, including inside combat"
+          }
+        }
+      },
+      "preview": {
+        "about": "Rehearse one semantic action line on a private exact fork without publishing it",
+        "args": {
+          "at": {
+            "help": "Preview from one exact retained public node without moving the durable head. Head revisions are audit metadata and are deliberately not accepted here"
+          },
+          "detail": {
+            "help": "Include every intermediate public successor and timing"
+          },
+          "artifact": {
+            "help": "Save this exact semantic line and public endpoint as a fresh root-bound artifact"
+          },
+          "actions": {
+            "help": "The same positional semantic actions accepted by `act`"
+          }
+        }
+      },
+      "act": {
+        "about": "Resolve and execute one semantic action line, then yield at its public successor",
+        "args": {
+          "at": {
+            "help": "Branch directly from one exact retained public node. This replaces a separate jump followed by act, and publishes nothing when resolution fails. Head revisions are audit metadata and are deliberately not accepted here"
+          },
+          "actions": {
+            "help": "One action executes immediately. Two or more are privately validated and published as one all-or-nothing transaction. For example: play:Corruption play:Impervious play:Strike@0 end"
+          },
+          "auto_combat": {
+            "help": "After this action, let the built-in actor continue through combat to the next strategic decision"
+          }
+        }
+      },
+      "undo": {
+        "about": "Undo the latest public action. This is the routine correction surface; use jump only for deliberate historical navigation"
+      },
+      "back": {
+        "about": "Move the controller head to an earlier recoverable public decision",
+        "args": {
+          "floor": {
+            "help": "Return to the retained end of this floor"
+          },
+          "mark": {
+            "help": "Return to a named decision kept in this scratch session"
+          },
+          "list": {
+            "help": "List retained floor targets and named alternatives without moving"
+          },
+          "json": {
+            "help": "Return structured retained targets instead of text"
+          },
+          "request": {
+            "help": "Restore the exact target from a source-bound return request JSON"
+          }
+        }
+      },
+      "mark": {
+        "about": "Keep or list named alternatives inside one scratch session",
+        "args": {
+          "name": {
+            "help": "Save the current exact decision under this name"
+          },
+          "drop": {
+            "help": "Release a previously kept alternative"
+          }
+        }
+      },
+      "history": {
+        "about": "Render the active archive path as exact boundaries or human-scale episodes",
+        "args": {
+          "strategic_only": {
+            "help": "Omit combat actions and apply the limit to strategic decisions only"
+          },
+          "combat_detail": {
+            "help": "Include the public hand, energy, intent, powers, and enemy state for combat actions"
+          },
+          "at": {
+            "help": "Start combat detail at this retained action source (nNODE or source:hREVISION)"
+          },
+          "journey": {
+            "help": "Render the active path as human-scale run episodes backed by the complete archive surface"
+          },
+          "first": {
+            "help": "Show the first N journey episodes"
+          },
+          "last": {
+            "help": "Show the last N journey episodes"
+          },
+          "after_depth": {
+            "help": "Continue journey pagination after the episode ending at this archive depth"
+          },
+          "count": {
+            "help": "Number of episodes to show after --after-depth (default 8)"
+          },
+          "detail": {
+            "help": "Expand complete strategic candidate surfaces and the starting deck"
+          }
+        }
+      },
+      "construction-history": {
+        "about": "Show every non-route, non-combat construction boundary on the current path",
+        "args": {
+          "site": {
+            "help": "Optional strategic site such as card_reward, shop, campfire, or event"
+          },
+          "candidate_card": {
+            "help": "Only retain boundaries whose candidate surface explicitly mentions this canonical CardId"
+          },
+          "added_card": {
+            "help": "Only retain boundaries whose observed successor adds this canonical CardId to the deck"
+          },
+          "all_boundaries": {
+            "help": "Include routine open/proceed and fixed gold-claim boundaries"
+          },
+          "detail": {
+            "help": "Expand every retained boundary with deck, relics, potions, and all candidates"
+          },
+          "json": {
+            "help": "Emit the typed projection as JSON"
+          }
+        }
+      },
+      "victory-dossier": {
+        "about": "Write a typed, reproducible ledger for a successful active run path",
+        "args": {
+          "output": {
+            "help": "Fresh create-new JSON output path"
+          },
+          "transcript_sources": {
+            "help": "Explicit agent transcript file or flat directory; repeat as needed"
+          }
+        }
+      },
+      "terminals": {
+        "about": "List retained terminal outcomes and their exact resumable source node"
+      },
+      "jump": {
+        "about": "Move to an existing decision by nNODE or an explicit source:hN/target:hN event boundary"
+      },
+      "shell": {
+        "about": "Keep exact archive/checkpoints hot for repeated manual play"
+      },
+      "agent-shell": {
+        "about": "Keep exact state hot behind a machine-only JSONL protocol",
+        "args": {
+          "knowledge_pack": {
+            "help": "Optional external knowledge-pack identifier; this process does not load it"
+          },
+          "manual": {
+            "help": "Public-information manual play: no search, private probes or hidden piles"
+          }
+        }
+      },
+      "game-facts": {
+        "about": "Print simulator-owned typed facts for exact gameplay entity IDs"
+      },
+      "checkpoint": {
+        "about": "Rebase the selected prefix into a durable exact recovery point"
+      },
+      "compact-active": {
+        "about": "Retain only the selected recovery path and its exact checkpoints",
+        "args": {
+          "commit": {
+            "help": "Atomically publish the destructive projection; omit for dry-run"
+          }
+        }
+      },
+      "profile-open": {
+        "about": "Measure the read-only phases of opening the current exact decision"
+      },
+      "profile-storage": {
+        "about": "Attribute persisted workspace size without opening the exact simulator"
+      },
+      "workspace-gc": {
+        "about": "Inspect, plan, or execute cleanup of registered disposable forks"
+      },
+      "workspace-gc/summary": {
+        "about": "Print the compact cleanup summary used by run-play resume"
+      },
+      "workspace-gc/plan": {
+        "about": "Write a create-new plan containing the exact currently eligible targets"
+      },
+      "workspace-gc/execute": {
+        "about": "Revalidate and delete only the exact targets named by a prior plan"
+      },
+      "export": {
+        "about": "Export the current head's active recovery path to fresh artifacts"
+      }
+    }
   }
 }

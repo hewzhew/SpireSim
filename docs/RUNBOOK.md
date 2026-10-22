@@ -39,6 +39,7 @@ PairedRoot 与 Rust workbench 保留为实验组件。使用前检查其当前�
 
 ```powershell
 .\scripts\run-play.ps1 --help
+.\scripts\run-play.ps1 --locale zh-CN --help
 ```
 
 `run_play new --session PATH --seed N --character silent --ascension 20 --goal heart-victory`

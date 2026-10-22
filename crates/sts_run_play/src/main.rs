@@ -4,6 +4,7 @@ mod agent_combat_draft;
 #[cfg(test)]
 mod agent_combat_draft_tests;
 mod agent_protocol;
+mod cli_presentation;
 mod combat_explain;
 mod combat_query;
 mod combat_reading;
@@ -111,13 +112,10 @@ use workspace_lifecycle::{
 };
 
 #[derive(Parser)]
-#[command(
-    name = "run_play",
-    about = "Persistent exact full-run research workbench",
-    long_about = "A typed, persistent full-run workbench over current-simulator natural roots or explicitly imported exact run archives. It shows real public decisions, applies one controller-selected choice, permits automatic combat continuation only, yields at the next strategic boundary, and supports exact navigation without shell-side JSON parsing."
-)]
+#[command(name = "run_play")]
 struct Cli {
-    /// Create a private typed failure report for a supervising adapter caller.
+    #[arg(long, global = true, default_value = "en")]
+    locale: Locale,
     #[arg(long, global = true, hide = true)]
     adapter_failure_report: Option<PathBuf>,
     #[command(subcommand)]
@@ -187,26 +185,22 @@ impl From<RunPlaySessionPurposeArgV1> for RunPlaySessionPurposeV1 {
 
 #[derive(Subcommand)]
 enum FocusCommandV1 {
-    /// Show the latest typed focus event.
     Show {
         #[arg(long, default_value = ".oracle-lab/run-play-focus")]
         focus_root: PathBuf,
         #[arg(long)]
         json: bool,
     },
-    /// Select one durable session for overview convenience only.
     Set {
         #[arg(long)]
         session: PathBuf,
         #[arg(long, default_value = ".oracle-lab/run-play-focus")]
         focus_root: PathBuf,
     },
-    /// Append an explicit empty focus event.
     Clear {
         #[arg(long, default_value = ".oracle-lab/run-play-focus")]
         focus_root: PathBuf,
     },
-    /// Import the old raw active-session pointer once without deleting it.
     Migrate {
         #[arg(long, default_value = ".oracle-lab/active-run-session.txt")]
         legacy_pointer: PathBuf,
@@ -217,14 +211,12 @@ enum FocusCommandV1 {
 
 #[derive(Subcommand)]
 enum SessionCommandV1 {
-    /// Show one session's control-plane state.
     Show {
         #[arg(long)]
         session: PathBuf,
         #[arg(long)]
         json: bool,
     },
-    /// Assign a catalog purpose and optional human label without changing the game head.
     Describe {
         #[arg(long)]
         session: PathBuf,
@@ -233,14 +225,12 @@ enum SessionCommandV1 {
         #[arg(long)]
         label: Option<String>,
     },
-    /// Freeze every head-changing entry point at the current exact head.
     Park {
         #[arg(long)]
         session: PathBuf,
         #[arg(long)]
         reason: String,
     },
-    /// Explicitly reopen a parked session for head-changing commands.
     Unpark {
         #[arg(long)]
         session: PathBuf,
@@ -251,7 +241,6 @@ enum SessionCommandV1 {
 
 #[derive(Subcommand)]
 enum HandoffCommandV2 {
-    /// Open or supersede one exact-head, repository-bound recovery note.
     Open {
         #[arg(long)]
         session: PathBuf,
@@ -266,7 +255,6 @@ enum HandoffCommandV2 {
         #[arg(long = "completed", action = clap::ArgAction::Append)]
         completed_issues: Vec<String>,
     },
-    /// Resolve the currently open V2 handoff without changing the game head.
     Resolve {
         #[arg(long)]
         session: PathBuf,
@@ -275,7 +263,6 @@ enum HandoffCommandV2 {
         #[arg(long)]
         resolution: String,
     },
-    /// Inspect handoff history; legacy V1 receipts are historical only.
     Show {
         #[arg(long)]
         session: PathBuf,
@@ -288,16 +275,15 @@ enum HandoffCommandV2 {
 
 #[derive(Subcommand)]
 enum MapQueryV1 {
-    /// Expand all published map nodes (grouped connected routes are the default).
     Full {
-        /// Put small map y first, so forward travel reads downward.
         #[arg(long)]
         flipped: bool,
     },
-    /// Compare the maximum number of elites on published ordinary paths.
     Elites,
-    /// Inspect the next ordinary branches from one published map coordinate.
-    Route { x: i32, y: i32 },
+    Route {
+        x: i32,
+        y: i32,
+    },
 }
 
 impl From<RunGoalArgV1> for TaskObjectiveV1 {
@@ -347,7 +333,6 @@ struct LoadedRetainedMirrorPrefixV1 {
 
 #[derive(Subcommand)]
 enum Command {
-    /// Create a natural session from the current simulator.
     New {
         #[arg(long)]
         session: PathBuf,
@@ -357,32 +342,24 @@ enum Command {
         character: RunCharacterArgV1,
         #[arg(long, default_value_t = 0, value_parser = clap::value_parser!(u8).range(0..=20))]
         ascension: u8,
-        /// Source-audited Neow eligibility captured before this run starts.
         #[arg(long, value_enum, default_value_t = NeowOfferArgV1::Rich)]
         neow_offer: NeowOfferArgV1,
-        /// Complete-run objective. Heart victory enables keys and Act 4 from the natural root.
         #[arg(long, value_enum, default_value_t = RunGoalArgV1::ActThreeVictory)]
         goal: RunGoalArgV1,
         #[arg(long, default_value_t = 4096)]
         max_world_transitions: u64,
         #[arg(long, default_value_t = 0)]
         max_reloads: u32,
-        /// Set this new durable run as the convenience focus after creation.
         #[arg(long)]
         focus: bool,
     },
-    /// Create a fresh current-simulator session by replaying a typed prefix from a retained Java mirror plan.
     ReplayMirrorPrefix {
-        /// Historical or current versioned mirror plan; its typed actions are never shell-expanded.
         #[arg(long)]
         plan: PathBuf,
-        /// Fresh target session. A pre-existing path is rejected.
         #[arg(long)]
         session: PathBuf,
-        /// Inclusive retained source depth to replay.
         #[arg(long)]
         through_depth: usize,
-        /// Source-audited Neow eligibility for the natural Rust root.
         #[arg(long, value_enum, default_value_t = NeowOfferArgV1::Rich)]
         neow_offer: NeowOfferArgV1,
         #[arg(long, default_value_t = 4096)]
@@ -390,7 +367,6 @@ enum Command {
         #[arg(long, default_value_t = 0)]
         max_reloads: u32,
     },
-    /// Import a session from a validated historical archive/checkpoint pair.
     Import {
         #[arg(long)]
         session: PathBuf,
@@ -405,37 +381,28 @@ enum Command {
         #[arg(long, default_value_t = 0)]
         max_reloads: u32,
     },
-    /// Read-only verify and capture an exact state/RNG, including from a source-drifted session when reconstruction succeeds.
     SnapshotCurrent {
         #[arg(long)]
         session: PathBuf,
-        /// Fresh public-observation-schema-independent reroot capsule path.
         #[arg(long)]
         output: PathBuf,
     },
-    /// Verify an exact-state capsule and create a fresh current-build root; the source trajectory is not certified.
     Reroot {
         #[arg(long)]
         snapshot: PathBuf,
-        /// Fresh target session directory.
         #[arg(long)]
         target: PathBuf,
     },
-    /// Verify the current exact state and create a fresh root without writing an intermediate capsule.
     RerootCurrent {
         #[arg(long)]
         session: Option<PathBuf>,
-        /// Retained nNODE or source:hREV/target:hREV to restore instead of the old head.
         #[arg(long)]
         at: Option<String>,
-        /// Fresh target session directory; omitted to generate one beside the source.
         #[arg(long)]
         target: Option<PathBuf>,
-        /// Focus the new session. Implicit when the source is the focused session.
         #[arg(long)]
         focus: bool,
     },
-    /// Keep only the selected exact game state in a disposable play session.
     AdoptCurrent {
         #[arg(long)]
         session: Option<PathBuf>,
@@ -444,87 +411,59 @@ enum Command {
         #[arg(long)]
         focus: bool,
     },
-    /// Create an independent writable session from a retained source decision without moving the source head.
     Fork {
-        /// Existing source session.
         #[arg(long)]
         session: PathBuf,
-        /// Fresh target session directory.
         #[arg(long)]
         target: PathBuf,
-        /// Optional retained nNODE or explicit source:hREV/target:hREV boundary; defaults to the source head.
         #[arg(long)]
         at: Option<String>,
-        /// Register this fork as disposable below the declared managed root.
         #[arg(long)]
         disposable: bool,
-        /// Root whose direct registered children may be considered by workspace GC.
         #[arg(long, default_value = ".oracle-lab/run-play-tmp")]
         managed_root: PathBuf,
-        /// Human recovery cue retained in the disposable workspace manifest.
         #[arg(long, default_value = "after probe review")]
         expected_cleanup_phase: String,
     },
-    /// Transactionally replay one verified source branch onto a divergent target session.
     PromoteBranch {
-        /// Session whose active suffix is the desired branch.
         #[arg(long)]
         source: PathBuf,
-        /// Existing session that should receive the verified suffix.
         #[arg(long)]
         target: PathBuf,
     },
-    /// Retain one parked disposable probe as read-only root-bound reachability evidence.
     CounterfactualBranch {
-        /// Registered disposable probe whose completed active suffix should be captured.
         #[arg(long)]
         session: PathBuf,
-        /// Root whose direct registered children are eligible probes.
         #[arg(long, default_value = ".oracle-lab/run-play-tmp")]
         managed_root: PathBuf,
-        /// Fresh JSON evidence path outside the disposable workspace.
         #[arg(long)]
         output: PathBuf,
-        /// Maximum retained typed decisions in the probe suffix.
         #[arg(long, default_value_t = DEFAULT_COUNTERFACTUAL_BRANCH_MAX_STEPS_V1)]
         max_steps: usize,
     },
-    /// Show the current exact public state and legal candidates.
     Show {
         #[arg(long)]
         session: PathBuf,
-        /// Export the validated strategic public decision once for offline selective reading.
         #[arg(long)]
         public_output: Option<PathBuf>,
-        /// Print the current public decision as JSON instead of the human
-        /// debug rendering, so tooling consumes a typed contract rather
-        /// than parsing the presentation format.
         #[arg(long)]
         decision_json: bool,
     },
-    /// Read the published map without the full diagnostic decision dump.
     Map {
         #[arg(long, global = true)]
         session: Option<PathBuf>,
-        #[arg(long, global = true, default_value = "en")]
-        locale: sts_presentation::Locale,
         #[command(subcommand)]
         query: Option<MapQueryV1>,
     },
-    /// Check current resources with the live combat solver against diagnostic encounters, including Heart.
     DeckLab {
         #[arg(long)]
         session: Option<PathBuf>,
-        /// Fresh JSON artifact; terminal output stays short.
         #[arg(long)]
         output: Option<PathBuf>,
-        /// List the same-act battery and the explicit counterfactual Heart test.
         #[arg(long)]
         list: bool,
-        /// Repeat each selected encounter under reproducible diagnostic RNG.
         #[arg(long, default_value_t = 1)]
         scenarios: usize,
-        /// Select same-act encounters or TheHeart; repeat to select several.
         #[arg(long)]
         encounter: Vec<String>,
         #[arg(long, default_value_t = 200_000)]
@@ -533,67 +472,50 @@ enum Command {
         ms: u64,
         #[arg(long)]
         full_hp: bool,
-        /// Include opening examples and per-turn traces in this diagnostic run.
         #[arg(long)]
         details: bool,
         #[arg(long, default_value_t = 0)]
         max_potion_uses: u32,
-        /// Privately apply current preparation selectors (separated by /) before testing resources.
         #[arg(long, conflicts_with = "list")]
         after: Option<String>,
     },
-    /// Inspect power or enemy mechanics using definitions and current public state only.
     Info {
         #[arg(long)]
         session: PathBuf,
-        #[arg(long, default_value = "en")]
-        locale: Locale,
         #[arg(required = true, num_args = 1..)]
         query: Vec<String>,
     },
-    /// Show executable choices at the current decision.
     Options {
         #[arg(long)]
         session: PathBuf,
     },
-    /// Show a compact typed resume context for the current controller head.
     Status {
         #[arg(long)]
         session: PathBuf,
     },
-    /// Read the complete current master deck and relic list on demand.
     Inventory {
         #[arg(long)]
         session: PathBuf,
-        /// Include printed card rules and upgrade-sensitive costs.
         #[arg(long)]
         effects: bool,
-        #[arg(long, default_value = "en")]
-        locale: Locale,
     },
-    /// Read exact persistent run-level RNG streams for scoped Java/Rust parity work.
     ParityRng {
         #[arg(long)]
         session: PathBuf,
-        /// Inspect a retained decision without moving the durable head.
         #[arg(long)]
         at: Option<String>,
     },
-    /// Read exact-state and future-continuation identities without mutating the run.
     StateFingerprint {
         #[arg(long)]
         session: PathBuf,
-        /// Inspect a retained decision without moving the durable head.
         #[arg(long)]
         at: Option<String>,
     },
-    /// Reject a PairedRoot source whose Rust simulator/RNG semantics are not current.
     #[command(name = "paired-root-prepare-preflight", hide = true)]
     PairedRootPreparePreflight {
         #[arg(long)]
         session: PathBuf,
     },
-    /// Build one parentless natural Neow root after a fresh-JVM reconstruction proof.
     #[command(name = "paired-root-bootstrap-natural-neow", hide = true)]
     PairedRootBootstrapNaturalNeow {
         #[arg(long)]
@@ -619,7 +541,6 @@ enum Command {
         #[arg(long)]
         report: PathBuf,
     },
-    /// Build one fresh constructed combat root from a strictly validated scenario recipe.
     #[command(name = "paired-root-bootstrap-constructed-combat", hide = true)]
     PairedRootBootstrapConstructedCombat {
         #[arg(long)]
@@ -637,7 +558,6 @@ enum Command {
         #[arg(long)]
         report: PathBuf,
     },
-    /// Prepare one probe-only PairedRoot from a retained Rust decision and a freshly restored Java frame.
     #[command(name = "paired-root-prepare", hide = true)]
     PairedRootPrepare {
         #[arg(long)]
@@ -657,7 +577,6 @@ enum Command {
         #[arg(long)]
         report: PathBuf,
     },
-    /// Derive stable typed action handles from one immutable PairedRoot.
     #[command(name = "paired-root-observe-actions", hide = true)]
     PairedRootObserveActions {
         #[arg(long)]
@@ -667,7 +586,6 @@ enum Command {
         #[arg(long)]
         report: PathBuf,
     },
-    /// Run the routine combat-search owner from one immutable PairedRoot.
     #[command(name = "paired-root-search", hide = true)]
     PairedRootSearch {
         #[arg(long)]
@@ -677,7 +595,6 @@ enum Command {
         #[arg(long)]
         report: PathBuf,
     },
-    /// Preview one stable typed action handle inside the live PairedRoot restoration.
     #[command(name = "paired-root-preview-action", hide = true)]
     PairedRootPreviewAction {
         #[arg(long)]
@@ -697,7 +614,6 @@ enum Command {
         #[arg(long)]
         report: PathBuf,
     },
-    /// Materialize the nearest native Java recovery bundle for one target root.
     #[command(name = "paired-root-materialize-native", hide = true)]
     PairedRootMaterializeNative {
         #[arg(long)]
@@ -709,7 +625,6 @@ enum Command {
         #[arg(long)]
         report: PathBuf,
     },
-    /// Activate, recover, and preview one target-root action in one workbench process.
     #[command(name = "paired-root-resume-preview", hide = true)]
     PairedRootResumePreview {
         #[arg(long)]
@@ -733,7 +648,6 @@ enum Command {
         #[arg(long)]
         preview_report: PathBuf,
     },
-    /// Activate, recover, and preview one typed witness in one live transaction.
     #[command(name = "paired-root-resume-witness", hide = true)]
     PairedRootResumeWitness {
         #[arg(long)]
@@ -757,7 +671,6 @@ enum Command {
         #[arg(long)]
         transaction_report: PathBuf,
     },
-    /// Preview one typed witness directly from an already parked live activation.
     #[command(name = "paired-root-preview-witness", hide = true)]
     PairedRootPreviewWitness {
         #[arg(long)]
@@ -777,7 +690,6 @@ enum Command {
         #[arg(long)]
         report: PathBuf,
     },
-    /// Prove receipt-only compare-and-swap on one disposable PairedHead.
     #[command(name = "paired-root-cas-proof", hide = true)]
     PairedRootCasProof {
         #[arg(long)]
@@ -791,7 +703,6 @@ enum Command {
         #[arg(long)]
         report: PathBuf,
     },
-    /// Initialize one named PairedHead without executing a game transition.
     #[command(name = "paired-root-head-init", hide = true)]
     PairedRootHeadInit {
         #[arg(long)]
@@ -803,7 +714,6 @@ enum Command {
         #[arg(long)]
         report: PathBuf,
     },
-    /// Commit one already verified receipt to a named PairedHead.
     #[command(name = "paired-root-head-commit", hide = true)]
     PairedRootHeadCommit {
         #[arg(long)]
@@ -815,7 +725,6 @@ enum Command {
         #[arg(long)]
         report: PathBuf,
     },
-    /// Select one named PairedHead through an append-only selector.
     #[command(name = "paired-root-head-select", hide = true)]
     PairedRootHeadSelect {
         #[arg(long)]
@@ -829,7 +738,6 @@ enum Command {
         #[arg(long)]
         report: PathBuf,
     },
-    /// Resolve the current live head behind an append-only selector.
     #[command(name = "paired-root-head-resolve", hide = true)]
     PairedRootHeadResolve {
         #[arg(long)]
@@ -839,7 +747,6 @@ enum Command {
         #[arg(long)]
         report: PathBuf,
     },
-    /// Commit one receipt to the PairedHead currently selected by a selector.
     #[command(name = "paired-root-selected-head-commit", hide = true)]
     PairedRootSelectedHeadCommit {
         #[arg(long)]
@@ -851,7 +758,6 @@ enum Command {
         #[arg(long)]
         report: PathBuf,
     },
-    /// Show repository/build identity, typed focus, the focused decision, and recent sessions.
     Overview {
         #[arg(long)]
         repository_commit: String,
@@ -868,57 +774,45 @@ enum Command {
         #[arg(long)]
         json: bool,
     },
-    /// Manage the project-local convenience focus; it never grants mutation authority.
     Focus {
         #[command(subcommand)]
         action: FocusCommandV1,
     },
-    /// Manage session purpose and enforceable open/parked lifecycle.
     Session {
         #[command(subcommand)]
         action: SessionCommandV1,
     },
-    /// Manage repository- and exact-head-scoped recovery notes.
     Handoff {
         #[command(subcommand)]
         action: HandoffCommandV2,
     },
-    /// Export the current strategic decision as a typed reference-service request.
     ReferenceRequest {
         #[arg(long)]
         session: PathBuf,
     },
-    /// Read the exact strategic owner's projected public recommendation.
     Advice {
         #[arg(long)]
         session: PathBuf,
-        /// Inspect an already retained nNODE or explicit source:hREV/target:hREV boundary without moving the durable head.
         #[arg(long)]
         at: Option<String>,
         #[arg(long)]
         detail: bool,
     },
-    /// Run the configured combat-research portfolio read-only at this root.
     CombatResearch {
         #[arg(long)]
         session: PathBuf,
         #[arg(long, value_enum, default_value_t = AgentCombatResearchEffortV1::Standard)]
         effort: AgentCombatResearchEffortV1,
-        /// Expand internal lanes, dominated candidates, and complete action lines.
         #[arg(long)]
         detail: bool,
-        /// Save the same research frontier as a fresh root-bound typed JSON artifact.
         #[arg(long)]
         artifact: Option<PathBuf>,
     },
-    /// Run one read-only composable typed trajectory query at the current combat root.
     CombatQuery {
         #[arg(long)]
         session: PathBuf,
-        /// Require selecting this canonical card ID from a Discovery choice. Repeatable.
         #[arg(long, value_parser = parse_construction_card_v1, action = clap::ArgAction::Append)]
         eventually_generated_card: Vec<CardId>,
-        /// Require this card's typed lethal payoff. Currently Feed is supported. Repeatable.
         #[arg(long, value_parser = parse_construction_card_v1, action = clap::ArgAction::Append)]
         eventually_lethal_payoff: Vec<CardId>,
         #[arg(long, default_value_t = 500_000)]
@@ -929,42 +823,33 @@ enum Command {
         wall_ms: u64,
         #[arg(long, default_value_t = 32)]
         max_turn_depth: usize,
-        /// Maximum potion uses/discards in the complete combat. Omit for unbounded.
         #[arg(long)]
         max_potions_used: Option<u32>,
-        /// Restrict potion actions to these zero-based slots. Repeatable; omit for all slots.
         #[arg(long, action = clap::ArgAction::Append)]
         allowed_potion_slot: Vec<usize>,
         #[arg(long)]
         allow_potion_discard: bool,
-        /// Save the complete typed result as a fresh JSON artifact.
         #[arg(long)]
         output: Option<PathBuf>,
     },
-    /// Transactionally anchor the selected witness from a root-bound V2 combat-query artifact.
     AnchorCombatQuery {
         #[arg(long)]
         session: PathBuf,
         #[arg(long)]
         artifact: PathBuf,
-        /// Zero-based exact witness frontier member. Omit for the local-HP-selected witness.
         #[arg(long)]
         candidate: Option<usize>,
     },
-    /// Replay selected artifact candidates at their retained historical root and report typed combat deltas.
     CombatTrace {
         #[arg(long)]
         session: PathBuf,
         #[arg(long)]
         artifact: PathBuf,
-        /// Combat-research global candidate index; use 0 for a combat-query selected witness. Repeatable for research.
         #[arg(long, action = clap::ArgAction::Append, required = true)]
         candidate: Vec<usize>,
-        /// Save the complete typed trace as a fresh JSON artifact.
         #[arg(long)]
         output: Option<PathBuf>,
     },
-    /// Reopen a replayed candidate after a fixed prefix and search explicitly for a healthy Feed payoff.
     CombatFeedRepair {
         #[arg(long)]
         session: PathBuf,
@@ -984,15 +869,12 @@ enum Command {
         max_selections: usize,
         #[arg(long, default_value_t = 5_000)]
         wall_ms: u64,
-        /// Save the complete typed repair result as a fresh JSON artifact.
         #[arg(long)]
         output: Option<PathBuf>,
     },
-    /// Detect nonfatal Feed use in strong resource-frontier witnesses and open bounded suffix challengers.
     CombatFeedChallenge {
         #[arg(long)]
         session: PathBuf,
-        /// Replay-proved combat-research or V2 combat-query source artifact.
         #[arg(long)]
         artifact: PathBuf,
         #[arg(long, default_value_t = 4)]
@@ -1003,25 +885,20 @@ enum Command {
         max_selections_per_challenger: usize,
         #[arg(long, default_value_t = 30_000)]
         wall_ms_per_challenger: u64,
-        /// Save the complete typed challenge result as a fresh JSON artifact.
         #[arg(long)]
         output: Option<PathBuf>,
     },
-    /// Promote one globally non-dominated Feed challenger at its unchanged exact root.
     CombatFeedAnchor {
         #[arg(long)]
         session: PathBuf,
         #[arg(long)]
         artifact: PathBuf,
-        /// Zero-based index from the V2 artifact's global_resource_frontier.
         #[arg(long)]
         frontier: usize,
     },
-    /// Challenge every turn-advancing HP-loss cutpoint without exceeding the source potion spend.
     CombatDamageChallenge {
         #[arg(long)]
         session: PathBuf,
-        /// Replay-proved combat-research or V2 combat-query source artifact.
         #[arg(long)]
         artifact: PathBuf,
         #[arg(long, default_value_t = 8)]
@@ -1032,76 +909,58 @@ enum Command {
         max_selections_per_challenger: usize,
         #[arg(long, default_value_t = 30_000)]
         wall_ms_per_challenger: u64,
-        /// Save the complete typed challenge result as a fresh JSON artifact.
         #[arg(long)]
         output: Option<PathBuf>,
     },
-    /// Promote one globally non-dominated damage challenger at its unchanged exact root.
     CombatDamageAnchor {
         #[arg(long)]
         session: PathBuf,
         #[arg(long)]
         artifact: PathBuf,
-        /// Zero-based index from the artifact's global_resource_frontier.
         #[arg(long)]
         frontier: usize,
     },
-    /// Export the current exact combat root as a fresh production case.
     ExportCombatCase {
         #[arg(long)]
         session: PathBuf,
-        /// Inspect a retained exact boundary without moving the session head.
         #[arg(long)]
         at: Option<String>,
         #[arg(long)]
         output: PathBuf,
     },
-    /// Audit whether one semantic complete-turn line survives proposal generation.
     ProposalAudit {
         #[arg(long)]
         session: PathBuf,
-        /// For example play:Armaments/select:DarkEmbrace/play:DarkEmbrace+/end.
         line: String,
     },
-    /// Compare read-only semantic lines from one hot root.
     Compare {
         #[arg(long)]
         session: PathBuf,
-        /// Inspect an already retained nNODE or explicit source:hREV/target:hREV boundary without moving the durable head.
         #[arg(long, conflicts_with = "artifact")]
         at: Option<String>,
-        /// Include every intermediate step and its timing.
         #[arg(long)]
         detail: bool,
-        /// Save the exact semantic lines and public endpoints as a fresh root-bound artifact.
         #[arg(long)]
         artifact: Option<PathBuf>,
         #[arg(required = true, num_args = 1..)]
         lines: Vec<String>,
     },
-    /// Execute one exact public line transactionally and anchor its final decision.
     AnchorLine {
         #[arg(long)]
         session: PathBuf,
-        /// For example play:Defend/play:Whirlwind/end.
         line: String,
     },
-    /// Select one replay-verified complete combat plan by producer and anchor it transactionally.
     AnchorCombatPlan {
         #[arg(long)]
         session: PathBuf,
-        /// Replay a fresh root-bound typed artifact instead of repeating its search.
         #[arg(long)]
         artifact: Option<PathBuf>,
-        /// Global candidate index printed by `combat-research`; required when a producer has more than one candidate.
         #[arg(long)]
         candidate: Option<usize>,
         #[arg(long, value_enum, default_value_t = AgentCombatResearchEffortV1::Standard)]
         effort: AgentCombatResearchEffortV1,
-        /// One of resident, proposal, or atomic.
         producer: String,
     },
-    /// Low-level protocol diagnostic using one explicit ordinal path.
     #[command(name = "protocol-choose", hide = true)]
     ProtocolChoose {
         #[arg(long)]
@@ -1112,104 +971,72 @@ enum Command {
         max_world_transitions: Option<u64>,
         #[arg(long)]
         max_reloads: Option<u32>,
-        /// Yield after exactly this public action, including inside combat.
         #[arg(long)]
         manual: bool,
     },
-    /// Rehearse one semantic action line on a private exact fork without publishing it.
     Preview {
         #[arg(long)]
         session: PathBuf,
-        /// Preview from one exact retained public node without moving the durable head.
-        /// Head revisions are audit metadata and are deliberately not accepted here.
         #[arg(long)]
         at: Option<String>,
-        /// Include every intermediate public successor and timing.
         #[arg(long)]
         detail: bool,
-        /// Save this exact semantic line and public endpoint as a fresh root-bound artifact.
         #[arg(long)]
         artifact: Option<PathBuf>,
-        /// The same positional semantic actions accepted by `act`.
         #[arg(required = true, num_args = 1..)]
         actions: Vec<String>,
     },
-    /// Resolve and execute one semantic action line, then yield at its public successor.
     Act {
         #[arg(long)]
         session: PathBuf,
-        /// Branch directly from one exact retained public node. This replaces a
-        /// separate jump followed by act, and publishes nothing when resolution fails.
-        /// Head revisions are audit metadata and are deliberately not accepted here.
         #[arg(long)]
         at: Option<String>,
-        /// One action executes immediately. Two or more are privately
-        /// validated and published as one all-or-nothing transaction.
-        /// For example: play:Corruption play:Impervious play:Strike@0 end.
         #[arg(required = true, num_args = 1..)]
         actions: Vec<String>,
-        /// After this action, let the built-in actor continue through combat to the next strategic decision.
         #[arg(long)]
         auto_combat: bool,
     },
-    /// Undo the latest public action. This is the routine correction surface;
-    /// use jump only for deliberate historical navigation.
     Undo {
         #[arg(long)]
         session: PathBuf,
     },
-    /// Move the controller head to an earlier recoverable public decision.
     Back {
         #[arg(long)]
         session: PathBuf,
         #[arg(long, conflicts_with = "floor")]
         steps: Option<usize>,
-        /// Return to the retained end of this floor.
         #[arg(long)]
         floor: Option<i32>,
-        /// Return to a named decision kept in this scratch session.
         #[arg(long, conflicts_with_all = ["steps", "floor"])]
         mark: Option<String>,
-        /// List retained floor targets and named alternatives without moving.
         #[arg(long, conflicts_with_all = ["steps", "floor", "mark"])]
         list: bool,
-        /// Return structured retained targets instead of text.
         #[arg(long, requires = "list", conflicts_with = "request")]
         json: bool,
-        /// Restore the exact target from a source-bound return request JSON.
         #[arg(long, conflicts_with_all = ["steps", "floor", "mark", "list", "json"])]
         request: Option<PathBuf>,
     },
-    /// Keep or list named alternatives inside one scratch session.
     Mark {
         #[arg(long)]
         session: PathBuf,
-        /// Save the current exact decision under this name.
         #[arg(long, conflicts_with = "drop")]
         name: Option<String>,
-        /// Release a previously kept alternative.
         #[arg(long)]
         drop: Option<String>,
     },
-    /// Render the active archive path as exact boundaries or human-scale episodes.
     History {
         #[arg(long)]
         session: PathBuf,
         #[arg(long, conflicts_with = "journey")]
         limit: Option<usize>,
-        /// Omit combat actions and apply the limit to strategic decisions only.
         #[arg(long, conflicts_with_all = ["combat_detail", "journey"])]
         strategic_only: bool,
-        /// Include the public hand, energy, intent, powers, and enemy state for combat actions.
         #[arg(long, conflicts_with_all = ["strategic_only", "journey"])]
         combat_detail: bool,
-        /// Start combat detail at this retained action source (nNODE or source:hREVISION).
         #[arg(long, requires = "combat_detail", conflicts_with = "journey")]
         at: Option<String>,
-        /// Render the active path as human-scale run episodes backed by the complete archive surface.
         #[arg(long)]
         journey: bool,
-        /// Show the first N journey episodes.
         #[arg(
             long,
             requires = "journey",
@@ -1217,7 +1044,6 @@ enum Command {
             value_parser = parse_positive_usize
         )]
         first: Option<usize>,
-        /// Show the last N journey episodes.
         #[arg(
             long,
             requires = "journey",
@@ -1225,90 +1051,68 @@ enum Command {
             value_parser = parse_positive_usize
         )]
         last: Option<usize>,
-        /// Continue journey pagination after the episode ending at this archive depth.
         #[arg(
             long,
             requires = "journey",
             conflicts_with_all = ["first", "last"]
         )]
         after_depth: Option<usize>,
-        /// Number of episodes to show after --after-depth (default 8).
         #[arg(
             long,
             requires = "after_depth",
             value_parser = parse_positive_usize
         )]
         count: Option<usize>,
-        /// Expand complete strategic candidate surfaces and the starting deck.
         #[arg(long, requires = "journey")]
         detail: bool,
     },
-    /// Show every non-route, non-combat construction boundary on the current path.
     ConstructionHistory {
         #[arg(long)]
         session: PathBuf,
-        /// Optional strategic site such as card_reward, shop, campfire, or event.
         #[arg(long)]
         site: Option<String>,
-        /// Only retain boundaries whose candidate surface explicitly mentions this canonical CardId.
         #[arg(long, conflicts_with = "added_card")]
         candidate_card: Option<String>,
-        /// Only retain boundaries whose observed successor adds this canonical CardId to the deck.
         #[arg(long, conflicts_with = "candidate_card")]
         added_card: Option<String>,
-        /// Include routine open/proceed and fixed gold-claim boundaries.
         #[arg(long)]
         all_boundaries: bool,
-        /// Expand every retained boundary with deck, relics, potions, and all candidates.
         #[arg(long)]
         detail: bool,
-        /// Emit the typed projection as JSON.
         #[arg(long)]
         json: bool,
     },
-    /// Write a typed, reproducible ledger for a successful active run path.
     VictoryDossier {
         #[arg(long)]
         session: PathBuf,
-        /// Fresh create-new JSON output path.
         #[arg(long)]
         output: PathBuf,
-        /// Explicit agent transcript file or flat directory; repeat as needed.
         #[arg(long = "transcript-source")]
         transcript_sources: Vec<PathBuf>,
     },
-    /// List retained terminal outcomes and their exact resumable source node.
     Terminals {
         #[arg(long)]
         session: PathBuf,
         #[arg(long, default_value_t = 40)]
         limit: usize,
     },
-    /// Move to an existing decision by nNODE or an explicit source:hN/target:hN event boundary.
     Jump {
         #[arg(long)]
         session: PathBuf,
         selector: String,
     },
-    /// Keep exact archive/checkpoints hot for repeated manual play.
     Shell {
         #[arg(long)]
         session: PathBuf,
     },
-    /// Keep exact state hot behind a machine-only JSONL protocol.
     AgentShell {
         #[arg(long)]
         session: PathBuf,
-        /// Optional external knowledge-pack identifier; this process does not load it.
         #[arg(long)]
         knowledge_pack: Option<String>,
-        /// Public-information manual play: no search, private probes or hidden piles.
         #[arg(long)]
         manual: bool,
-        #[arg(long, default_value = "en")]
-        locale: Locale,
     },
-    /// Print simulator-owned typed facts for exact gameplay entity IDs.
     GameFacts {
         #[arg(
             long = "card",
@@ -1332,35 +1136,28 @@ enum Command {
         )]
         potions: Vec<PotionId>,
     },
-    /// Rebase the selected prefix into a durable exact recovery point.
     Checkpoint {
         #[arg(long)]
         session: PathBuf,
     },
-    /// Retain only the selected recovery path and its exact checkpoints.
     CompactActive {
         #[arg(long)]
         session: PathBuf,
-        /// Atomically publish the destructive projection; omit for dry-run.
         #[arg(long)]
         commit: bool,
     },
-    /// Measure the read-only phases of opening the current exact decision.
     ProfileOpen {
         #[arg(long)]
         session: PathBuf,
     },
-    /// Attribute persisted workspace size without opening the exact simulator.
     ProfileStorage {
         #[arg(long)]
         session: PathBuf,
     },
-    /// Inspect, plan, or execute cleanup of registered disposable forks.
     WorkspaceGc {
         #[command(subcommand)]
         action: WorkspaceGcCommandV1,
     },
-    /// Export the current head's active recovery path to fresh artifacts.
     Export {
         #[arg(long)]
         session: PathBuf,
@@ -1373,14 +1170,12 @@ enum Command {
 
 #[derive(Subcommand)]
 enum WorkspaceGcCommandV1 {
-    /// Print the compact cleanup summary used by run-play resume.
     Summary {
         #[arg(long, default_value = ".oracle-lab/run-play-tmp")]
         managed_root: PathBuf,
         #[arg(long, default_value = ".oracle-lab/run-play-focus")]
         focus_root: PathBuf,
     },
-    /// Write a create-new plan containing the exact currently eligible targets.
     Plan {
         #[arg(long, default_value = ".oracle-lab/run-play-tmp")]
         managed_root: PathBuf,
@@ -1389,7 +1184,6 @@ enum WorkspaceGcCommandV1 {
         #[arg(long)]
         output: PathBuf,
     },
-    /// Revalidate and delete only the exact targets named by a prior plan.
     Execute {
         #[arg(long, default_value = ".oracle-lab/run-play-tmp")]
         managed_root: PathBuf,
@@ -1425,7 +1219,7 @@ fn main() -> ExitCode {
 }
 
 fn run_main() -> ExitCode {
-    let cli = Cli::parse();
+    let cli = cli_presentation::parse();
     let adapter_failure_report = cli.adapter_failure_report.clone();
     match ensure_current_run_play_is_fresh_v1().and_then(|()| run(cli)) {
         Ok(()) => ExitCode::SUCCESS,
@@ -1742,6 +1536,7 @@ fn next_reroot_target_v1(source: &Path) -> Result<PathBuf, String> {
 }
 
 fn run(cli: Cli) -> Result<(), String> {
+    let locale = cli.locale;
     let adapter_failure_report = cli.adapter_failure_report;
     match cli.command {
         Command::New {
@@ -2165,11 +1960,7 @@ fn run(cli: Cli) -> Result<(), String> {
                 }
             }
         }
-        Command::Map {
-            session,
-            query,
-            locale,
-        } => {
+        Command::Map { session, query } => {
             let session =
                 session.ok_or("map requires --session (or a focused session via p.ps1)")?;
             let paths = RunPlayPathsV1::new(session);
@@ -2402,11 +2193,7 @@ fn run(cli: Cli) -> Result<(), String> {
             print!("{}{}", preparation_text, deck_lab::render(&report, details));
             println!("Full cases: {}", output.display());
         }
-        Command::Info {
-            session,
-            query,
-            locale,
-        } => {
+        Command::Info { session, query } => {
             let paths = RunPlayPathsV1::new(session);
             let head = paths.load_head()?;
             let head = if head.scratch && head.current_decision.is_some() {
@@ -2443,11 +2230,7 @@ fn run(cli: Cli) -> Result<(), String> {
             };
             print!("{}", render_status_v1(&head)?);
         }
-        Command::Inventory {
-            session,
-            effects,
-            locale,
-        } => {
+        Command::Inventory { session, effects } => {
             let mut controller =
                 RunPlayControllerV1::open_for_read_only_snapshot_v1(RunPlayPathsV1::new(session))?;
             print!("{}", render_inventory_v1(&mut controller, effects, locale)?);
@@ -4407,7 +4190,6 @@ fn run(cli: Cli) -> Result<(), String> {
             session,
             knowledge_pack,
             manual,
-            locale,
         } => run_agent_shell_v1(session, knowledge_pack, manual, locale)?,
         Command::GameFacts {
             cards,
@@ -5322,10 +5104,10 @@ mod tests {
             "--flipped",
         ])
         .unwrap();
+        assert_eq!(localized.locale, Locale::ZhCn);
         assert!(matches!(
             localized.command,
             Command::Map {
-                locale: sts_presentation::Locale::ZhCn,
                 query: Some(MapQueryV1::Full { flipped: true }),
                 ..
             }
@@ -6808,7 +6590,6 @@ mod tests {
         let Command::AgentShell {
             knowledge_pack,
             manual,
-            locale,
             ..
         } = cli.command
         else {
@@ -6816,6 +6597,6 @@ mod tests {
         };
         assert_eq!(knowledge_pack.as_deref(), Some("ironclad-a20-v1"));
         assert!(manual);
-        assert_eq!(locale, Locale::ZhCn);
+        assert_eq!(cli.locale, Locale::ZhCn);
     }
 }

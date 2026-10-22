@@ -4853,5 +4853,682 @@
       "variantCostAmount": "{{command}}：{{cost}} 点能量；{{value}}：{{amount}}。",
       "variantCostOnly": "{{command}}：{{cost}} 点能量。"
     }
+  },
+  "cli": {
+    "common": {
+      "language": "帮助及已接入游戏读数的显示语言",
+      "help": "显示帮助",
+      "helpMore": "显示帮助，使用 --help 查看详细说明",
+      "helpSummary": "显示帮助，使用 -h 查看简要说明",
+      "helpCommand": "显示本页或指定子命令的帮助",
+      "usage": "用法：",
+      "arguments": "参数",
+      "options": "选项",
+      "commands": "命令",
+      "defaultValue": "[默认：{{values}}]",
+      "possibleValues": "[可选值：{{values}}]"
+    },
+    "commands": {
+      "_root": {
+        "about": "持久化精确完整对局研究工作台",
+        "long_about": "基于当前模拟器自然根局面，或显式导入的精确对局档案，提供带类型的持久化完整对局工作台。显示真实公开决策，执行控制器选定的单个选择，只允许在战斗内自动续行，并在下一个战略决策处交还控制。精确导航使用结构化接口，无需在 shell 中解析 JSON。",
+        "args": {
+          "adapter_failure_report": {
+            "help": "为监督适配器调用方创建私有的带类型失败报告"
+          }
+        }
+      },
+      "new": {
+        "about": "从当前模拟器创建自然来源会话",
+        "args": {
+          "neow_offer": {
+            "help": "在本局开始前确定、已核查来源的涅奥奖励资格"
+          },
+          "goal": {
+            "help": "完整对局目标。心脏胜利目标从自然根局面启用钥匙与第四幕"
+          },
+          "focus": {
+            "help": "创建后将这局新的持久对局设为便捷焦点"
+          }
+        }
+      },
+      "replay-mirror-prefix": {
+        "about": "回放保留的 Java 镜像计划中的带类型前缀，创建新的当前模拟器会话",
+        "args": {
+          "plan": {
+            "help": "历史或当前的带版本镜像计划；其中的带类型动作不进行 shell 展开"
+          },
+          "session": {
+            "help": "新建目标会话；路径已存在时拒绝执行"
+          },
+          "through_depth": {
+            "help": "回放至所保留来源深度，包含该深度"
+          },
+          "neow_offer": {
+            "help": "自然 Rust 根局面所用、已核查来源的涅奥奖励资格"
+          }
+        }
+      },
+      "import": {
+        "about": "从已验证的历史档案与检查点组合导入会话"
+      },
+      "snapshot-current": {
+        "about": "只读核验并捕获精确状态与 RNG；来源版本已变化的会话在重建成功时也可使用",
+        "args": {
+          "output": {
+            "help": "新的重新定基胶囊路径，不依赖公开观察 schema"
+          }
+        }
+      },
+      "reroot": {
+        "about": "核验精确状态胶囊并建立当前构建的新根局面；来源轨迹不获认证",
+        "args": {
+          "target": {
+            "help": "新的目标会话目录"
+          }
+        }
+      },
+      "reroot-current": {
+        "about": "核验当前精确状态并建立新根局面，不写入中间胶囊",
+        "args": {
+          "at": {
+            "help": "恢复所保留的 nNODE 或 source:hREV/target:hREV，替代旧 head"
+          },
+          "target": {
+            "help": "新的目标会话目录；省略时在来源旁生成"
+          },
+          "focus": {
+            "help": "将新会话设为焦点；来源原本是焦点时默认执行"
+          }
+        }
+      },
+      "adopt-current": {
+        "about": "仅将选中的精确游戏状态保留为可丢弃的游玩会话"
+      },
+      "fork": {
+        "about": "从保留的来源决策创建独立可写会话，不移动来源 head",
+        "args": {
+          "session": {
+            "help": "已有来源会话"
+          },
+          "target": {
+            "help": "新的目标会话目录"
+          },
+          "at": {
+            "help": "可选的保留 nNODE 或显式 source:hREV/target:hREV 边界；默认为来源 head"
+          },
+          "disposable": {
+            "help": "将此分支登记为声明的托管根目录下的可丢弃会话"
+          },
+          "managed_root": {
+            "help": "工作区 GC 可检查其直接登记子目录的根目录"
+          },
+          "expected_cleanup_phase": {
+            "help": "保留在可丢弃工作区清单中的人工恢复提示"
+          }
+        }
+      },
+      "promote-branch": {
+        "about": "将一条已核验的来源分支以事务方式回放到已分歧的目标会话",
+        "args": {
+          "source": {
+            "help": "其活动后缀是所需分支的会话"
+          },
+          "target": {
+            "help": "接收已核验后缀的已有会话"
+          }
+        }
+      },
+      "counterfactual-branch": {
+        "about": "将一个已停放的可丢弃探针保留为绑定根局面的只读可达性证据",
+        "args": {
+          "session": {
+            "help": "已登记的可丢弃探针，捕获其已完成的活动后缀"
+          },
+          "managed_root": {
+            "help": "其直接登记子目录是合格探针的根目录"
+          },
+          "output": {
+            "help": "位于可丢弃工作区之外的全新 JSON 证据路径"
+          },
+          "max_steps": {
+            "help": "探针后缀中最多保留的带类型决策数量"
+          }
+        }
+      },
+      "show": {
+        "about": "显示当前精确公开状态与合法候选",
+        "args": {
+          "public_output": {
+            "help": "一次性导出已验证的战略公开决策，供离线按需读取"
+          },
+          "decision_json": {
+            "help": "将当前公开决策打印为 JSON，供工具消费带类型合同，无需解析面向人的诊断文本"
+          }
+        }
+      },
+      "map": {
+        "about": "读取已公开地图，不展开完整诊断决策"
+      },
+      "map/full": {
+        "about": "展开全部已公开地图节点；默认显示分组连通路线",
+        "args": {
+          "flipped": {
+            "help": "先显示较小的地图 y，使前进方向向下"
+          }
+        }
+      },
+      "map/elites": {
+        "about": "比较已公开普通路径上的最大精英数量"
+      },
+      "map/route": {
+        "about": "从一个已公开地图坐标检查后续普通分支"
+      },
+      "deck-lab": {
+        "about": "使用现役战斗求解器，在含心脏的诊断遭遇中检查当前资源",
+        "args": {
+          "output": {
+            "help": "新的 JSON 产物路径；终端保持紧凑输出"
+          },
+          "list": {
+            "help": "列出本幕测试遭遇及显式反事实心脏测试"
+          },
+          "scenarios": {
+            "help": "在可复现的诊断 RNG 下重复各个选定遭遇"
+          },
+          "encounter": {
+            "help": "选择本幕遭遇或 TheHeart；可重复指定多个"
+          },
+          "details": {
+            "help": "在本次诊断中包含开局示例与逐回合轨迹"
+          },
+          "after": {
+            "help": "测试资源前，在私有分支应用当前准备选择；多个选择以 / 分隔"
+          }
+        }
+      },
+      "info": {
+        "about": "仅依据定义与当前公开状态查询能力或敌人机制"
+      },
+      "options": {
+        "about": "显示当前决策可执行的选择"
+      },
+      "status": {
+        "about": "显示当前控制器 head 的紧凑结构化接续上下文"
+      },
+      "inventory": {
+        "about": "按需读取当前完整永久卡组与遗物清单",
+        "args": {
+          "effects": {
+            "help": "包含牌面规则与随升级变化的费用"
+          }
+        }
+      },
+      "parity-rng": {
+        "about": "读取精确持久对局 RNG 流，用于限定范围的 Java/Rust 对齐",
+        "args": {
+          "at": {
+            "help": "检查一个保留的决策，不移动持久 head"
+          }
+        }
+      },
+      "state-fingerprint": {
+        "about": "读取精确状态及后续续行身份，不修改对局",
+        "args": {
+          "at": {
+            "help": "检查一个保留的决策，不移动持久 head"
+          }
+        }
+      },
+      "paired-root-prepare-preflight": {
+        "about": "拒绝 Rust 模拟器或 RNG 语义已过期的 PairedRoot 来源"
+      },
+      "paired-root-bootstrap-natural-neow": {
+        "about": "在全新 JVM 重建验证后，建立一个无父节点的自然涅奥根局面"
+      },
+      "paired-root-bootstrap-constructed-combat": {
+        "about": "从严格验证的场景配方建立一个新的构造战斗根局面"
+      },
+      "paired-root-prepare": {
+        "about": "从保留的 Rust 决策与刚恢复的 Java 帧准备一个仅供探查的 PairedRoot"
+      },
+      "paired-root-observe-actions": {
+        "about": "从一个不可变 PairedRoot 派生稳定的带类型动作句柄"
+      },
+      "paired-root-search": {
+        "about": "从一个不可变 PairedRoot 运行常规战斗搜索"
+      },
+      "paired-root-preview-action": {
+        "about": "在现役 PairedRoot 恢复中预演一个稳定的带类型动作句柄"
+      },
+      "paired-root-materialize-native": {
+        "about": "为一个目标根局面生成最近的原生 Java 恢复包"
+      },
+      "paired-root-resume-preview": {
+        "about": "在一个工作台进程内激活、恢复并预演目标根局面的单个动作"
+      },
+      "paired-root-resume-witness": {
+        "about": "在一次现役事务内激活、恢复并预演一条带类型见证"
+      },
+      "paired-root-preview-witness": {
+        "about": "从已停放的现役激活直接预演一条带类型见证"
+      },
+      "paired-root-cas-proof": {
+        "about": "在一个可丢弃 PairedHead 上验证仅基于收据的比较并交换"
+      },
+      "paired-root-head-init": {
+        "about": "初始化一个命名 PairedHead，不执行游戏转换"
+      },
+      "paired-root-head-commit": {
+        "about": "将一份已核验收据提交到命名 PairedHead"
+      },
+      "paired-root-head-select": {
+        "about": "通过只追加的选择器选中一个命名 PairedHead"
+      },
+      "paired-root-head-resolve": {
+        "about": "解析只追加选择器背后的当前现役 head"
+      },
+      "paired-root-selected-head-commit": {
+        "about": "将一份收据提交到选择器当前选中的 PairedHead"
+      },
+      "overview": {
+        "about": "显示仓库与构建身份、带类型的焦点、焦点决策及近期会话"
+      },
+      "focus": {
+        "about": "管理项目本地的便捷焦点；焦点不授予修改权限"
+      },
+      "focus/show": {
+        "about": "显示最新的带类型焦点事件"
+      },
+      "focus/set": {
+        "about": "仅为概览便利选中一个持久会话"
+      },
+      "focus/clear": {
+        "about": "追加一条显式空焦点事件"
+      },
+      "focus/migrate": {
+        "about": "一次性导入旧版原始活动会话指针，不删除原指针"
+      },
+      "session": {
+        "about": "管理会话用途及可强制执行的打开、停放生命周期"
+      },
+      "session/show": {
+        "about": "显示一个会话的控制面状态"
+      },
+      "session/describe": {
+        "about": "指定目录用途与可选人工标签，不改变游戏 head"
+      },
+      "session/park": {
+        "about": "将所有会改变 head 的入口冻结在当前精确 head"
+      },
+      "session/unpark": {
+        "about": "显式重新开放已停放会话，允许改变 head 的命令"
+      },
+      "handoff": {
+        "about": "管理限定仓库与精确 head 的恢复说明"
+      },
+      "handoff/open": {
+        "about": "打开或替换一条绑定精确 head 与仓库的恢复说明"
+      },
+      "handoff/resolve": {
+        "about": "完成当前打开的 V2 交接，不改变游戏 head"
+      },
+      "handoff/show": {
+        "about": "检查交接历史；旧版 V1 收据仅作为历史记录"
+      },
+      "reference-request": {
+        "about": "将当前战略决策导出为带类型的资料服务请求"
+      },
+      "advice": {
+        "about": "读取精确战略规则产生的公开建议投影",
+        "args": {
+          "at": {
+            "help": "检查已有保留 nNODE 或显式 source:hREV/target:hREV 边界，不移动持久 head"
+          }
+        }
+      },
+      "combat-research": {
+        "about": "在当前根局面只读运行已配置的战斗研究组合",
+        "args": {
+          "detail": {
+            "help": "展开内部搜索通道、被支配候选与完整动作序列"
+          },
+          "artifact": {
+            "help": "将同一研究前沿保存为新的、绑定根局面的带类型 JSON 产物"
+          }
+        }
+      },
+      "combat-query": {
+        "about": "在当前战斗根局面运行一次可组合的带类型只读轨迹查询",
+        "args": {
+          "eventually_generated_card": {
+            "help": "要求在发现选择中选取此标准卡牌 ID；可重复指定"
+          },
+          "eventually_lethal_payoff": {
+            "help": "要求此牌产生带类型的击杀收益；目前支持 Feed，可重复指定"
+          },
+          "max_potions_used": {
+            "help": "完整战斗中最多使用或弃置药水的次数；省略时不设上限"
+          },
+          "allowed_potion_slot": {
+            "help": "仅允许操作这些从零计数的药水槽；可重复指定，省略时允许全部槽位"
+          },
+          "output": {
+            "help": "将完整带类型结果保存为新的 JSON 产物"
+          }
+        }
+      },
+      "anchor-combat-query": {
+        "about": "以事务方式采用绑定根局面的 V2 战斗查询产物所选见证",
+        "args": {
+          "candidate": {
+            "help": "精确见证前沿成员的零基编号；省略时使用局部生命目标选中的见证"
+          }
+        }
+      },
+      "combat-trace": {
+        "about": "在产物保留的历史根局面回放选定候选，并报告带类型的战斗变化",
+        "args": {
+          "candidate": {
+            "help": "combat-research 的全局候选编号；combat-query 所选见证使用 0，研究候选可重复指定"
+          },
+          "output": {
+            "help": "将完整带类型轨迹保存为新的 JSON 产物"
+          }
+        }
+      },
+      "combat-feed-repair": {
+        "about": "在固定前缀后重新打开已回放候选，显式搜索健康的 Feed 收益",
+        "args": {
+          "output": {
+            "help": "将完整带类型修复结果保存为新的 JSON 产物"
+          }
+        }
+      },
+      "combat-feed-challenge": {
+        "about": "在强资源前沿见证中查找未击杀的 Feed 使用，并开启有界后缀改进搜索",
+        "args": {
+          "artifact": {
+            "help": "已回放验证的 combat-research 或 V2 combat-query 来源产物"
+          },
+          "output": {
+            "help": "将完整带类型改进搜索结果保存为新的 JSON 产物"
+          }
+        }
+      },
+      "combat-feed-anchor": {
+        "about": "在精确根局面未变时采用一个全局非劣的 Feed 改进候选",
+        "args": {
+          "frontier": {
+            "help": "V2 产物 global_resource_frontier 中的零基编号"
+          }
+        }
+      },
+      "combat-damage-challenge": {
+        "about": "在不超过来源药水开支的前提下，改进每个推进回合的生命损失切点",
+        "args": {
+          "artifact": {
+            "help": "已回放验证的 combat-research 或 V2 combat-query 来源产物"
+          },
+          "output": {
+            "help": "将完整带类型改进搜索结果保存为新的 JSON 产物"
+          }
+        }
+      },
+      "combat-damage-anchor": {
+        "about": "在精确根局面未变时采用一个全局非劣的战损改进候选",
+        "args": {
+          "frontier": {
+            "help": "产物 global_resource_frontier 中的零基编号"
+          }
+        }
+      },
+      "export-combat-case": {
+        "about": "将当前精确战斗根局面导出为新的正式 case",
+        "args": {
+          "at": {
+            "help": "检查保留的精确边界，不移动会话 head"
+          }
+        }
+      },
+      "proposal-audit": {
+        "about": "检查一条语义完整回合序列是否在提案生成中被保留",
+        "args": {
+          "line": {
+            "help": "例如 play:Armaments/select:DarkEmbrace/play:DarkEmbrace+/end"
+          }
+        }
+      },
+      "compare": {
+        "about": "从同一个驻留根局面比较只读语义序列",
+        "args": {
+          "at": {
+            "help": "检查已有保留 nNODE 或显式 source:hREV/target:hREV 边界，不移动持久 head"
+          },
+          "detail": {
+            "help": "包含每个中间步骤及其耗时"
+          },
+          "artifact": {
+            "help": "将精确语义序列与公开终点保存为新的、绑定根局面的产物"
+          }
+        }
+      },
+      "anchor-line": {
+        "about": "以事务方式执行一条精确公开序列，并将最终决策设为当前落点",
+        "args": {
+          "line": {
+            "help": "例如 play:Defend/play:Whirlwind/end"
+          }
+        }
+      },
+      "anchor-combat-plan": {
+        "about": "按生产者选取一条已回放验证的完整战斗计划，并以事务方式采用",
+        "args": {
+          "artifact": {
+            "help": "回放新的、绑定根局面的带类型产物，不重复原搜索"
+          },
+          "candidate": {
+            "help": "combat-research 打印的全局候选编号；一个生产者有多个候选时必须提供"
+          },
+          "producer": {
+            "help": "resident、proposal 或 atomic 之一"
+          }
+        }
+      },
+      "protocol-choose": {
+        "about": "使用显式序号路径进行底层协议诊断",
+        "args": {
+          "manual": {
+            "help": "恰好在本次公开动作后交还控制，战斗中也如此"
+          }
+        }
+      },
+      "preview": {
+        "about": "在私有精确分支上演练一条语义动作序列，不发布结果",
+        "args": {
+          "at": {
+            "help": "从一个精确保留的公开节点预演，不移动持久 head。head 修订号属于审计元数据，此处不接受"
+          },
+          "detail": {
+            "help": "包含每个中间公开后继及其耗时"
+          },
+          "artifact": {
+            "help": "将此精确语义序列与公开终点保存为新的、绑定根局面的产物"
+          },
+          "actions": {
+            "help": "与 act 接受的相同位置语义动作"
+          }
+        }
+      },
+      "act": {
+        "about": "解析并执行一条语义动作序列，在其公开后继处交还控制",
+        "args": {
+          "at": {
+            "help": "直接从一个精确保留的公开节点分支，替代先 jump 再 act。解析失败时不发布结果。head 修订号属于审计元数据，此处不接受"
+          },
+          "actions": {
+            "help": "单个动作立即执行；两个及以上动作先私下验证，再以全成或全败的事务一次发布。例如：play:Corruption play:Impervious play:Strike@0 end"
+          },
+          "auto_combat": {
+            "help": "本次动作后，让内置玩家继续战斗，直至下一个战略决策"
+          }
+        }
+      },
+      "undo": {
+        "about": "撤销最近一次公开动作。日常纠正使用此入口；需要主动导航到历史时再使用 jump"
+      },
+      "back": {
+        "about": "将控制器 head 移至更早的可恢复公开决策",
+        "args": {
+          "floor": {
+            "help": "返回此楼层保留的结束落点"
+          },
+          "mark": {
+            "help": "返回此 scratch 会话中保留的命名决策"
+          },
+          "list": {
+            "help": "列出保留的楼层目标与命名备选局面，不移动当前位置"
+          },
+          "json": {
+            "help": "返回结构化保留目标，不使用文本形式"
+          },
+          "request": {
+            "help": "从绑定来源的回退请求 JSON 恢复精确目标"
+          }
+        }
+      },
+      "mark": {
+        "about": "在一个 scratch 会话内保留或列出命名备选局面",
+        "args": {
+          "name": {
+            "help": "以此名称保存当前精确决策"
+          },
+          "drop": {
+            "help": "释放先前保留的备选局面"
+          }
+        }
+      },
+      "history": {
+        "about": "将活动档案路径显示为精确边界或便于阅读的对局片段",
+        "args": {
+          "strategic_only": {
+            "help": "省略战斗动作，仅对战略决策应用数量上限"
+          },
+          "combat_detail": {
+            "help": "在战斗动作中包含公开手牌、能量、意图、能力与敌方状态"
+          },
+          "at": {
+            "help": "从此保留动作来源开始显示战斗细节：nNODE 或 source:hREVISION"
+          },
+          "journey": {
+            "help": "按便于阅读的对局片段显示活动路径，并保留其完整档案依据"
+          },
+          "first": {
+            "help": "显示最前面的 N 个对局片段"
+          },
+          "last": {
+            "help": "显示最后的 N 个对局片段"
+          },
+          "after_depth": {
+            "help": "从结束于此档案深度的片段之后继续分页"
+          },
+          "count": {
+            "help": "在 --after-depth 之后显示的片段数量，默认为 8"
+          },
+          "detail": {
+            "help": "展开完整战略候选与起始卡组"
+          }
+        }
+      },
+      "construction-history": {
+        "about": "显示当前路径上所有非路线、非战斗的构筑决策边界",
+        "args": {
+          "site": {
+            "help": "可选战略地点，例如 card_reward、shop、campfire 或 event"
+          },
+          "candidate_card": {
+            "help": "仅保留候选中明确出现此标准 CardId 的边界"
+          },
+          "added_card": {
+            "help": "仅保留已观察后继向卡组加入此标准 CardId 的边界"
+          },
+          "all_boundaries": {
+            "help": "包含常规打开、继续及固定金币领取边界"
+          },
+          "detail": {
+            "help": "展开每个保留边界的卡组、遗物、药水及全部候选"
+          },
+          "json": {
+            "help": "以 JSON 输出带类型投影"
+          }
+        }
+      },
+      "victory-dossier": {
+        "about": "为成功的活动对局路径写入带类型、可复现的记录账本",
+        "args": {
+          "output": {
+            "help": "以 create-new 方式创建的新 JSON 输出路径"
+          },
+          "transcript_sources": {
+            "help": "显式玩家逐字记录文件或不递归读取的目录；可按需重复指定"
+          }
+        }
+      },
+      "terminals": {
+        "about": "列出保留的终局结果及其可精确恢复的来源节点"
+      },
+      "jump": {
+        "about": "通过 nNODE 或显式 source:hN/target:hN 事件边界移至已有决策"
+      },
+      "shell": {
+        "about": "让精确档案与检查点驻留，以便反复手动游玩"
+      },
+      "agent-shell": {
+        "about": "通过仅面向机器的 JSONL 协议保持精确状态驻留",
+        "args": {
+          "knowledge_pack": {
+            "help": "可选外部知识包标识；本进程不加载该知识包"
+          },
+          "manual": {
+            "help": "公开信息手动游玩：不提供搜索、私有探查或隐藏牌堆"
+          }
+        }
+      },
+      "game-facts": {
+        "about": "打印由模拟器提供、对应精确游戏实体 ID 的带类型事实"
+      },
+      "checkpoint": {
+        "about": "将选定前缀重新定基为持久精确恢复点"
+      },
+      "compact-active": {
+        "about": "仅保留选定的恢复路径及其精确检查点",
+        "args": {
+          "commit": {
+            "help": "原子发布会删除内容的投影；省略时仅预演"
+          }
+        }
+      },
+      "profile-open": {
+        "about": "测量打开当前精确决策的各个只读阶段"
+      },
+      "profile-storage": {
+        "about": "统计持久工作区大小及来源，不打开精确模拟器"
+      },
+      "workspace-gc": {
+        "about": "检查、规划或执行已登记可丢弃分支的清理"
+      },
+      "workspace-gc/summary": {
+        "about": "打印 run-play 接续所用的紧凑清理摘要"
+      },
+      "workspace-gc/plan": {
+        "about": "写入一个新的清理计划，包含当前精确符合条件的目标"
+      },
+      "workspace-gc/execute": {
+        "about": "重新验证并仅删除先前计划中列明的精确目标"
+      },
+      "export": {
+        "about": "将当前 head 的活动恢复路径导出为新的产物"
+      }
+    }
   }
 }
