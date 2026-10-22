@@ -302,6 +302,10 @@ test('extra-hit upgrades bind the actual hit delta, Strength applications and si
   assert.match(binding.fixedMechanics.join('\n'), /With one enemy, every hit goes to that enemy/);
   assert.ok(binding.choices.some(row => row.id === '@extra-hit'));
   assert.ok(!binding.choices.some(row => row.id === '@base-damage'));
+  const localized = preparationConditionBindings(current, conciseCardCommand, 'zh-CN')[0];
+  assert.deepEqual(localized.choices.map(row => row.id), binding.choices.map(row => row.id));
+  assert.match(localized.fixedMechanics.join('\n'), /每次打出命中数 3->4/);
+  assert.match(localized.fixedMechanics.join('\n'), /基础伤害合计 9->12/);
   const rows = parsePreparationClassification('smith:SwordBoomerang#0 | medium | sequence | @extra-hit', current, conciseCardCommand);
   assert.match(rows[0].reason, /hits per play 3->4/);
   assert.throws(() => parsePreparationClassification('smith:SwordBoomerang#0 | low | direct | +1 damage per hit.',
@@ -797,6 +801,9 @@ test('temporary Strength comparisons bind native amounts, owned damage modifiers
   current.decision_evidence = { candidates: [{ semantic_action: 'take:Flex+0#0', cards: [{ current: definition }] }] };
   const binding = specificBindings(current)[0];
   assert.equal(binding.id, 'temporary-strength-payoff-v1');
+  const localized = preparationConditionBindings(current, undefined, 'zh-CN')[0];
+  assert.deepEqual(localized.choices.map(row => row.id), binding.choices.map(row => row.id));
+  assert.match(localized.fixedMechanics.join(' '), /请求 2 力量.*失去 2 力量.*同一手牌/);
   assert.match(binding.fixedMechanics.join(' '), /2 Strength.*2 Lose Strength.*shared-Hand sequence/);
   assert.ok(binding.choices.some(choice => choice.id === '@damage-threshold'));
   assert.ok(binding.choices.some(choice => choice.id === '@opening-stack'));
@@ -1221,6 +1228,9 @@ test('Apparition accept and decline retain the whole package while model ratings
   const rows = parsePreparationClassification(text, current);
   assert.equal(rows[0].category, 'low', 'the host preserves the actual model rating');
   assert.match(rows[0].reason, /current-HP cost 11.*permanent cap reduction 38/);
+  const localized = parsePreparationClassification(text, current, undefined, 'zh-CN');
+  assert.deepEqual(localized.map(row => [row.command, row.category, row.realization, row.conditionIds]), rows.map(row => [row.command, row.category, row.realization, row.conditionIds]));
+  assert.match(localized[0].reason, /当前生命成本 11.*永久上限减少 38/);
   assert.match(rows[0].reason, /Every new combat.*again/);
   assert.match(rows[1].reason, /preserves current HP 48\/75.*adds 3 permanent Apparition/s);
   assert.match(rows[1].reason, /multi-hit attacks still have separate damage instances/);
@@ -1272,6 +1282,8 @@ test('removing Ethereal preserves a redrawable copy, with hand persistence bound
   assert.throws(() => parsePreparationClassification('smith:Apparition#0 | high | direct | @pyramid-hand', current, conciseCardCommand),
     /Use supplied condition references/);
   state.relics.push({ relic: 'RunicPyramid' });
+  const localized = parsePreparationClassification('smith:Apparition#0 | high | direct | @pyramid-hand', current, conciseCardCommand, 'zh-CN');
+  assert.match(localized[0].reason, /RunicPyramid 跳过普通手牌弃置/);
   assert.match(parsePreparationClassification('smith:Apparition#0 | high | direct | @pyramid-hand', current, conciseCardCommand)[0].reason,
     /Owned RunicPyramid skips ordinary hand discard/);
   current.decision_evidence.candidates[0].after.ethereal = true;

@@ -1,4 +1,4 @@
-import { createPresentation } from '@sts-simulator/presentation';
+import { createPresentation, resolveLocale } from '@sts-simulator/presentation';
 import { gameContextSource, sameGameContextSource, gameDecisionTask } from './context.mjs';
 import { preparationExpertGuidance, renderExpertGuidance, renderCandidateExpertGuidance, apparitionPreparationOffers, preparationBossRelicOffers, preparationShopRemovalPolicy } from './strategy.mjs';
 import { preparationDeckComparison, preparationDeckConditionBindings, preparationCardAcquisition, strikeScaledAttack, renderDeckComparison, attackInventoryText, renderStatusRoutes } from './deck.mjs';
@@ -9,9 +9,12 @@ import { shopInstructions, renderShopBudget, shopContinuation, shopNeedsPotionSl
 const families = new Set(['shop', 'campfire', 'event', 'rewards', 'treasure', 'boss_relic', 'run_choice', 'map', 'run_transition']);
 const queries = new Set(['read', 'options']);
 
+const preparationViews = Object.fromEntries(['en', 'zh-CN'].map(locale => [locale, createPresentation({ locale })]));
+const preparationText = (locale, key, parameters = {}) => preparationViews[resolveLocale(locale)].text(`scripted:preparation.${key}`,
+  Object.fromEntries(Object.entries(parameters).map(([name, value]) => [name, String(value)])));
+
 export function preparationInstructions(locale = 'en') {
-  const presentation = createPresentation({ locale });
-  const text = (key, params) => presentation.text(`scripted:preparation.${key}`, params);
+  const text = (key, params) => preparationText(locale, key, params);
   const parameters = Object.fromEntries(['command', 'basis', 'choice'].map(key => [key,
     { type: 'string', ...(key === 'command' ? { required: true } : {}), description: text(`parameter${key[0].toUpperCase()}${key.slice(1)}`) }]));
   return {
@@ -309,14 +312,14 @@ export function preparationConditionBindings(observation, normalize = command =>
   const spendingScope = shopSpendingScope(observation, normalize, locale);
   if (spendingScope) return shopSpendingConditionBindings(spendingScope, locale);
   const specific = [...preparationEnergyBindings(observation, normalize), ...armamentsConditionBindings(observation, normalize),
-    ...etherealUpgradeConditionBindings(observation, normalize),
-    ...attackUpgradeConditionBindings(observation, normalize),
+    ...etherealUpgradeConditionBindings(observation, normalize, locale),
+    ...attackUpgradeConditionBindings(observation, normalize, locale),
     ...duplicateConditionBindings(observation, normalize), ...routeConditionBindings(observation, normalize),
-    ...bossRelicConditionBindings(observation, normalize), ...eventCombatConditionBindings(observation, normalize),
-    ...apparitionConditionBindings(observation, normalize),
-    ...rewardRevealConditionBindings(observation, normalize),
-    ...statusDrawConditionBindings(observation, normalize),
-    ...temporaryStrengthConditionBindings(observation, normalize)];
+    ...bossRelicConditionBindings(observation, normalize, locale), ...eventCombatConditionBindings(observation, normalize, locale),
+    ...apparitionConditionBindings(observation, normalize, locale),
+    ...rewardRevealConditionBindings(observation, normalize, locale),
+    ...statusDrawConditionBindings(observation, normalize, locale),
+    ...temporaryStrengthConditionBindings(observation, normalize, locale)];
   const bindings = [...specific, ...preparationDeckConditionBindings(observation, normalize, locale)
     .filter(row => !specific.some(binding => binding.command === row.command))];
   const profile = preparationDeckComparison(observation, normalize, locale);
@@ -325,10 +328,10 @@ export function preparationConditionBindings(observation, normalize = command =>
     .map(group => ({ command: group.command, id: 'preparation-effect-tradeoff-v1',
       fixedMechanics: [],
       choices: [
-        { id: '@effect', text: 'Assess the useful increment of this supplied effect compared with the current inventory or preserving the resource.' },
-        { id: '@owned-support', text: 'Assess realization through specific currently owned resources, their actual access, triggers and deployment order.' },
-        { id: '@resource-tradeoff', text: 'Weigh this effect\'s draw, payment, HP, Gold or preparation opportunity against the strongest feasible alternative and keeping the resource.' },
-        { id: '@review-access', text: 'A specific missing effect, inventory or access fact needs maintainer review.' },
+        { id: '@effect', text: preparationText(locale, 'conditionEffect') },
+        { id: '@owned-support', text: preparationText(locale, 'conditionRealization') },
+        { id: '@resource-tradeoff', text: preparationText(locale, 'conditionTradeoff') },
+        { id: '@review-access', text: preparationText(locale, 'conditionReview') },
       ] }))].map(binding => {
     const row = observation.position.actions.find(row => normalize(row.semantic_action, observation) === binding.command);
     const acquisition = preparationCardAcquisition(observation, row);
@@ -337,16 +340,16 @@ export function preparationConditionBindings(observation, normalize = command =>
     const copies = state.cards.filter(card => card.card === acquisition.card).reduce((sum, card) => sum + card.count, 0);
     const injections = acquisition.mechanics?.status_injections ?? [];
     return { ...binding, fixedMechanics: [
-      `Evaluation pool: the ${profile.size} owned originals plus one ${acquisition.card}${acquisition.upgrades > 0 ? '+' : ''}. Owned ${acquisition.card} copies before this choice: ${copies}; after: ${copies + 1}.`,
+      preparationText(locale, 'evaluationPool', { size: profile.size, card: acquisition.card, upgradeSuffix: acquisition.upgrades > 0 ? '+' : '', ownedCard: acquisition.card, copiesBefore: copies, copiesAfter: copies + 1 }),
       ...(injections.length ? [
-        `This addition's generated Status routes: ${renderStatusRoutes([{ card: acquisition.card, injections }])}`,
-        `Owned Status-draw payoff Powers: ${profile.statusPayoffs.map(source => `${source.card}: ${source.cost} Energy to deploy`).join('; ') || 'none'}. Apply those owned effects when their qualifying Status draw occurs after deployment.`,
+        preparationText(locale, 'additionStatusRoutes', { renderStatusRoutes: renderStatusRoutes([{ card: acquisition.card, injections }], locale) }),
+        preparationText(locale, 'ownedStatusPayoffs', { statusPayoffs: profile.statusPayoffs.map(source => preparationText(locale, 'deploymentCost', { card: source.card, cost: source.cost })).join('; ') || preparationText(locale, 'none') }),
       ] : []), ...binding.fixedMechanics,
     ] };
   });
 }
 
-function attackUpgradeConditionBindings(observation, normalize) {
+function attackUpgradeConditionBindings(observation, normalize, locale = 'en') {
   return preparationCandidateGroups(observation, normalize).flatMap(group => {
     const action = observation.position.actions.find(row => normalize(row.semantic_action, observation) === group.command)?.candidate?.action;
     if (action?.kind !== 'smith') return [];
@@ -357,17 +360,17 @@ function attackUpgradeConditionBindings(observation, normalize) {
         || after?.card !== action.card || after.upgrades !== before.upgrades + 1
         || !Number.isSafeInteger(before.cost) || before.cost < 0 || before.cost !== after.cost) return [];
     const attacks = [before, after].map(card => card.damage);
-    const [oldScaling, newScaling] = attacks.map(strikeScaledAttack);
+    const [oldScaling, newScaling] = attacks.map(damage => strikeScaledAttack(damage, locale));
     if (oldScaling && newScaling && attacks[0].delivery.targets === attacks[1].delivery.targets
         && (oldScaling.perCard !== newScaling.perCard || oldScaling.base !== newScaling.base)) {
       return [{ command: group.command, id: 'strike-scaled-attack-upgrade-v1', fixedMechanics: [
-        `Upgrade one ${action.card} copy: cost ${before.cost}->${after.cost}; damage request before Strength and other combat modifiers changes ${oldScaling.base} + ${oldScaling.perCard} * N -> ${newScaling.base} + ${newScaling.perCard} * N.`,
+        preparationText(locale, 'strikeUpgrade', { card: action.card, costBefore: before.cost, costAfter: after.cost, baseBefore: oldScaling.base, perCardBefore: oldScaling.perCard, baseAfter: newScaling.base, perCardAfter: newScaling.perCard }),
         oldScaling.countRule,
-        `Upgrade increment at the same N: ${newScaling.base - oldScaling.base} + ${newScaling.perCard - oldScaling.perCard} * N. Reach the upgraded copy and pay for it; compare this one-copy improvement with recovery and other upgrades.`,
+        preparationText(locale, 'strikeUpgradeIncrement', { baseIncrement: newScaling.base - oldScaling.base, perCardIncrement: newScaling.perCard - oldScaling.perCard }),
       ], choices: [
-        { id: '@strike-count', text: 'Assess the per-counted-copy damage increase using the supplied whole-pile count rule and the owned removal or Exhaust routes that change it.' },
-        { id: '@upgrade-opportunity', text: 'Compare this incremental attack improvement with the strongest other upgrade, recovery or key action using the campfire.' },
-        { id: '@review-access', text: 'A specific count, access or payment fact is needed to rate this upgrade; record it through sts_feedback.' },
+        { id: '@strike-count', text: preparationText(locale, 'strikeUpgradeCount') },
+        { id: '@upgrade-opportunity', text: preparationText(locale, 'attackUpgradeOpportunity') },
+        { id: '@review-access', text: preparationText(locale, 'strikeUpgradeReview') },
       ] }];
     }
     if (!attacks.every(damage => damage?.delivery?.kind === 'attack' && damage.delivery.amount?.kind === 'base'
@@ -382,24 +385,24 @@ function attackUpgradeConditionBindings(observation, normalize) {
       && before.draw_cards !== after.draw_cards;
     if (!extraHits && !perHitChanges && !drawChanges) return [];
     return [{ command: group.command, id: 'fixed-attack-upgrade-v1', fixedMechanics: [
-      `Upgrade one ${action.card} copy: cost ${before.cost}->${after.cost}; base damage per hit ${oldDamage.damage_per_hit}->${newDamage.damage_per_hit}; hits per play ${oldDamage.hit_count}->${newDamage.hit_count}.`,
-      `Before combat modifiers, base damage across those hits is ${oldDamage.damage_per_hit * oldDamage.hit_count}->${newDamage.damage_per_hit * newDamage.hit_count}. Resolved player Strength applies to each hit; changing the hit count changes the number of Strength applications.`,
-      ...(drawChanges ? [`On successful play, unconditional draw request ${before.draw_cards}->${after.draw_cards} before NoDraw and Hand capacity. This changes access as well as the printed attack output, at the same ${after.cost} Energy payment.`] : []),
-      `Targeting: ${newDamage.delivery.targets}.`
+      preparationText(locale, 'attackUpgrade', { card: action.card, costBefore: before.cost, costAfter: after.cost, damageBefore: oldDamage.damage_per_hit, damageAfter: newDamage.damage_per_hit, hitsBefore: oldDamage.hit_count, hitsAfter: newDamage.hit_count }),
+      preparationText(locale, 'attackUpgradeTotal', { totalBefore: oldDamage.damage_per_hit * oldDamage.hit_count, totalAfter: newDamage.damage_per_hit * newDamage.hit_count }),
+      ...(drawChanges ? [preparationText(locale, 'attackUpgradeDraw', { drawBefore: before.draw_cards, drawAfter: after.draw_cards, cost: after.cost })] : []),
+      preparationText(locale, 'attackTargeting', { targets: newDamage.delivery.targets })
         + (newDamage.delivery.targets === 'random_enemy_per_hit'
-          ? ' Each hit chooses among the current enemies. With one enemy, every hit goes to that enemy.' : ''),
-      'The full supplied effects and lifecycle govern each play. Reach the upgraded copy and pay for it; Strength-dependent output also uses the owned source at its stated timing. Compare this one-copy improvement with other uses of the campfire.',
+          ? preparationText(locale, 'randomAttackTargeting') : ''),
+      preparationText(locale, 'attackUpgradeLifecycle'),
     ], choices: [
-      ...(extraHits > 0 ? [{ id: '@extra-hit', text: `Assess ${extraHits} additional hit(s) per play, each receiving resolved Strength and the actual attack modifiers. Compare owned Strength access and payment with the other upgrades.` }] : []),
-      ...(perHitChanges ? [{ id: '@base-damage', text: 'Assess the supplied base-damage change across the actual hit count, together with the other effects of this upgrade.' }] : []),
-      ...(drawChanges ? [{ id: '@draw-increment', text: 'Compare the extra draws reaching useful owned functions at this unchanged payment with the other campfire improvements.' }] : []),
-      { id: '@upgrade-opportunity', text: 'Compare this incremental attack improvement with the strongest other upgrade, recovery or key action using the campfire.' },
-      { id: '@review-access', text: 'A specific source, access or payment fact is needed to rate this upgrade; record it through sts_feedback.' },
+      ...(extraHits > 0 ? [{ id: '@extra-hit', text: preparationText(locale, 'attackExtraHits', { extraHits: extraHits }) }] : []),
+      ...(perHitChanges ? [{ id: '@base-damage', text: preparationText(locale, 'attackBaseChange') }] : []),
+      ...(drawChanges ? [{ id: '@draw-increment', text: preparationText(locale, 'attackExtraDraw') }] : []),
+      { id: '@upgrade-opportunity', text: preparationText(locale, 'attackUpgradeOpportunity') },
+      { id: '@review-access', text: preparationText(locale, 'attackUpgradeReview') },
     ] }];
   });
 }
 
-function etherealUpgradeConditionBindings(observation, normalize) {
+function etherealUpgradeConditionBindings(observation, normalize, locale = 'en') {
   const state = observation.position.observation.observation;
   return preparationCandidateGroups(observation, normalize).flatMap(group => {
     const action = observation.position.actions.find(row => normalize(row.semantic_action, observation) === group.command)?.candidate?.action;
@@ -412,37 +415,37 @@ function etherealUpgradeConditionBindings(observation, normalize) {
         || before.ethereal !== true || after.ethereal !== false) return [];
     const pyramid = (state.relics ?? []).some(row => row.relic === 'RunicPyramid');
     return [{ command: group.command, id: 'ethereal-upgrade-window-v1', fixedMechanics: [
-      `Upgrade one ${action.card} copy: printed Ethereal true->false. An unplayed base copy normally Exhausts at turn end; the upgraded copy uses the ordinary end-of-turn discard rule.`,
-      pyramid ? 'Owned RunicPyramid skips ordinary hand discard, so the upgraded unplayed copy can stay in Hand under that relic rule. Other discard effects and Hand capacity still apply.'
-        : 'With ordinary hand discard, the upgraded unplayed copy enters Discard. Using it on a later turn requires reaching it through subsequent draws or retrieval; hand persistence uses an actual retention source.',
-      `Printed play cost ${before.cost}->${after.cost}; printed Exhaust after play ${before.exhausts}->${after.exhausts}. Combat powers, relics and instance modifiers apply their own destination rules.`,
+      preparationText(locale, 'etherealUpgrade', { card: action.card }),
+      pyramid ? preparationText(locale, 'pyramidEtherealUpgrade')
+        : preparationText(locale, 'ordinaryEtherealUpgrade'),
+      preparationText(locale, 'etherealUpgradeCosts', { costBefore: before.cost, costAfter: after.cost, exhaustBefore: before.exhausts, exhaustAfter: after.exhausts }),
       ...(Number.isSafeInteger(before.intangible_gain) && Number.isSafeInteger(after.intangible_gain)
-        && after.intangible_gain > 0 ? [`Printed Intangible ${before.intangible_gain}->${after.intangible_gain}; the upgrade changes the unplayed copy's availability. Playing it still grants that supplied protected duration.`] : []),
-      'Only the selected permanent copy is upgraded. Compare this timing flexibility with the other upgrades, removal, recovery or key action using the same campfire.',
+        && after.intangible_gain > 0 ? [preparationText(locale, 'etherealUpgradeProtection', { intangibleBefore: before.intangible_gain, intangibleAfter: after.intangible_gain })] : []),
+      preparationText(locale, 'etherealUpgradeOpportunity'),
     ], choices: [
-      { id: '@preserve-for-redraw', text: 'Assess preserving an unplayed copy in the combat card cycle and reaching it again in time for a useful play.' },
-      ...(pyramid ? [{ id: '@pyramid-hand', text: 'Assess delayed use in Hand under the already-owned Pyramid discard rule, with its Hand capacity and payment.' }] : []),
-      { id: '@upgrade-opportunity', text: 'Compare this one-copy timing improvement with the strongest other preparation using this campfire action.' },
-      { id: '@review-access', text: 'A specific lifecycle or timing fact is missing; record it through sts_feedback.' },
+      { id: '@preserve-for-redraw', text: preparationText(locale, 'etherealRedraw') },
+      ...(pyramid ? [{ id: '@pyramid-hand', text: preparationText(locale, 'pyramidDelayedUse') }] : []),
+      { id: '@upgrade-opportunity', text: preparationText(locale, 'etherealPreparationTradeoff') },
+      { id: '@review-access', text: preparationText(locale, 'etherealTimingReview') },
     ] }];
   });
 }
 
-function apparitionConditionBindings(observation, normalize) {
+function apparitionConditionBindings(observation, normalize, locale = 'en') {
   const state = observation.position.observation.observation;
   const offers = apparitionPreparationOffers(observation, normalize);
   return offers.flatMap(offer => {
     const card = offer.current;
     const fixedMechanics = [
-      `${offer.command} adds ${offer.count} permanent Apparition copies. Immediate HP ${offer.hpBefore}->${offer.hpAfter} (this event's current-HP cost ${offer.hpBefore - offer.hpAfter}); Max HP ${offer.maxHpBefore}->${offer.maxHpAfter} (permanent cap reduction ${offer.maxHpBefore - offer.maxHpAfter}). Current HP loss and Max HP reduction are separate quantities.`,
-      `Each copy costs ${card.cost} Energy and grants ${card.intangible_gain} Intangible. While active, each incoming damage instance is capped at ${card.intangible_damage_cap} before Block; multi-hit attacks still have separate damage instances.`
-        + (card.intangible_caps_direct_hp_loss_to_one ? ' Direct HP-loss requests are also capped at 1.' : ''),
-      `Each played copy ${card.exhausts ? 'Exhausts for this combat' : 'follows its supplied played-card destination'}. Every new combat uses the permanent copies again.`
-        + (card.ethereal ? ' An unplayed Ethereal copy Exhausts at turn end.' : '')
+      preparationText(locale, 'apparitionPackage', { command: offer.command, copies: offer.count, hpBefore: offer.hpBefore, hpAfter: offer.hpAfter, hpCost: offer.hpBefore - offer.hpAfter, maxHpBefore: offer.maxHpBefore, maxHpAfter: offer.maxHpAfter, maxHpReduction: offer.maxHpBefore - offer.maxHpAfter }),
+      preparationText(locale, 'apparitionProtection', { cost: card.cost, intangible: card.intangible_gain, damageCap: card.intangible_damage_cap })
+        + (card.intangible_caps_direct_hp_loss_to_one ? preparationText(locale, 'apparitionHpLossCap') : ''),
+      preparationText(locale, 'apparitionLifecycle', { exhausts: card.exhausts ? preparationText(locale, 'apparitionExhaust') : preparationText(locale, 'apparitionDestination') })
+        + (card.ethereal ? preparationText(locale, 'apparitionEthereal') : '')
         + (offer.upgraded?.card === card.card && offer.upgraded.upgrades === card.upgrades + 1
-          && card.ethereal && offer.upgraded.ethereal === false ? ' Its supplied upgrade removes Ethereal, allowing later redraw after ordinary discard.' : ''),
-      'Several plays can stack protected duration. Useful coverage needs reaching, paying for and using the copies on appropriate turns. Block requests a finite amount; Weak and enemy Strength reduction reduce attacks according to their own hit rules. Intangible supplies the per-instance cap on its active turns, including while deploying the other functions.',
-      `Combat and potion healing still use their own triggers and printed amounts, capped at the new ${offer.maxHpAfter} Max HP. Later event/combat HP payments use the smaller reserve.`,
+          && card.ethereal && offer.upgraded.ethereal === false ? preparationText(locale, 'apparitionUpgrade') : ''),
+      preparationText(locale, 'apparitionCoverage'),
+      preparationText(locale, 'apparitionHealing', { maxHpAfter: offer.maxHpAfter }),
     ];
     const decline = observation.position.actions.filter(row => {
       const action = row.candidate?.action, semantics = action?.public_semantics;
@@ -451,33 +454,33 @@ function apparitionConditionBindings(observation, normalize) {
         && semantics.structured_semantics?.effects?.length === 0 && !semantics.starts_combat;
     });
     return [{ command: offer.command, id: 'apparition-package-v1', fixedMechanics, choices: [
-      { id: '@protected-turns', text: 'Compare the new low-cost protected turns across remaining combats and the time they provide to reach and deploy useful functions.' },
-      { id: '@hp-cap-tradeoff', text: 'Weigh the one-time current HP change and permanent smaller reserve against repeated protected turns, using owned recovery and actual HP-payment demands.' },
-      { id: '@access-timing', text: 'Weigh the added draw slots, payment, Ethereal timing and reachable upgrades together with using the protected turns.' },
-      { id: '@review-access', text: 'A specific package, HP or timing fact is missing; record it through sts_feedback.' },
+      { id: '@protected-turns', text: preparationText(locale, 'apparitionProtectedTurns') },
+      { id: '@hp-cap-tradeoff', text: preparationText(locale, 'apparitionHpTradeoff') },
+      { id: '@access-timing', text: preparationText(locale, 'apparitionAccessTiming') },
+      { id: '@review-access', text: preparationText(locale, 'apparitionReview') },
     ] }, ...decline.map(row => ({ command: normalize(row.semantic_action, observation), id: 'apparition-decline-v1',
-      fixedMechanics: [`This option preserves current HP ${state.run.current_hp}/${state.run.max_hp} and the current deck. Its comparison is the offered permanent protection package.`, ...fixedMechanics], choices: [
-        { id: '@retain-hp-cap', text: 'Compare retaining the current HP reserve and existing draw slots with the package\'s actual HP change and recurring protection.' },
-        { id: '@forgone-protection', text: 'Leaving gives up the supplied additional protected turns across later combats. Compare their function with existing protection under the matched maintenance preference.' },
-        { id: '@review-access', text: 'A specific HP or existing-coverage fact is missing; record it through sts_feedback.' },
+      fixedMechanics: [preparationText(locale, 'apparitionDecline', { hp: state.run.current_hp, maxHp: state.run.max_hp }), ...fixedMechanics], choices: [
+        { id: '@retain-hp-cap', text: preparationText(locale, 'apparitionRetainHp') },
+        { id: '@forgone-protection', text: preparationText(locale, 'apparitionForegoneProtection') },
+        { id: '@review-access', text: preparationText(locale, 'apparitionDeclineReview') },
       ] }))];
   });
 }
 
-function rewardRevealConditionBindings(observation, normalize) {
+function rewardRevealConditionBindings(observation, normalize, locale = 'en') {
   if (observation.position.observation.observation.context?.kind !== 'reward') return [];
   return observation.position.actions.flatMap(row => row.candidate?.action?.kind === 'open_card_reward'
     ? [{ command: normalize(row.semantic_action, observation), id: 'reward-card-reveal-v1', fixedMechanics: [
-      'This command opens the pending card reward while preserving current HP, Gold and owned cards. The revealed take/skip choices receive their own classification using the actual offered cards.',
+      preparationText(locale, 'openCardReward'),
     ], choices: [
-      { id: '@card-choice-access', text: 'Assess access to the remaining card choices after settling useful inventory rewards. Their specific acquisition payoff is evaluated in the revealed card task.' },
-      { id: '@review-access', text: 'A specific fact about this reward-opening action is missing; record it through sts_feedback.' },
+      { id: '@card-choice-access', text: preparationText(locale, 'rewardRevealAccess') },
+      { id: '@review-access', text: preparationText(locale, 'rewardRevealReview') },
     ] }] : []);
 }
 
-function temporaryStrengthConditionBindings(observation, normalize) {
+function temporaryStrengthConditionBindings(observation, normalize, locale = 'en') {
   const state = observation.position.observation.observation;
-  const profile = preparationDeckComparison(observation, normalize);
+  const profile = preparationDeckComparison(observation, normalize, locale);
   const ownsRelic = relic => (state.relics ?? []).some(row => row.relic === relic);
   return preparationCandidateGroups(observation, normalize).flatMap(group => {
     const row = observation.position.actions.find(row => normalize(row.semantic_action, observation) === group.command);
@@ -488,23 +491,23 @@ function temporaryStrengthConditionBindings(observation, normalize) {
         || !Number.isSafeInteger(amount) || amount <= 0 || definition.strength_gain !== amount
         || definition.strength_loss_at_end_of_turn !== amount || !Number.isSafeInteger(definition.cost)) return [];
     return [{ command: group.command, id: 'temporary-strength-payoff-v1', fixedMechanics: [
-      `${definition.name}: printed cost ${definition.cost}; request ${amount} Strength on play and a separate ${amount} Lose Strength at turn end.`,
-      'Its attack payoff uses a shared-Hand sequence: play this card, then useful attacks before the scheduled Strength loss. Compare the extra damage obtained from that sequence with the extra draw occupied by this permanent copy.',
-      ...(profile ? [attackInventoryText(profile)] : []),
-      ...(ownsRelic('Boot') ? ['Owned Boot changes qualifying low unblocked Attack hits. Apply its supplied rule to both the baseline and Strength-boosted hit, then compare those final damage amounts. A multi-hit payoff uses that difference for each actual hit.'] : []),
-      ...(ownsRelic('MutagenicStrength') ? ['Owned MutagenicStrength supplies opening-turn Strength with its own first-turn loss. Stacking the two sources for damage uses this card and useful attacks in that opening Hand.'] : []),
+      preparationText(locale, 'temporaryStrengthMechanics', { card: definition.name, cost: definition.cost, strength: amount, strengthLoss: amount }),
+      preparationText(locale, 'temporaryStrengthSequence'),
+      ...(profile ? [attackInventoryText(profile, locale)] : []),
+      ...(ownsRelic('Boot') ? [preparationText(locale, 'bootStrengthDamage')] : []),
+      ...(ownsRelic('MutagenicStrength') ? [preparationText(locale, 'mutagenicOpening')] : []),
     ], choices: [
-      { id: '@same-hand-payoff', text: `Assess useful owned attacks (${profile?.attackCopies ?? 'the supplied inventory'}) accessed and paid after this temporary Strength card during the same turn, and their actual extra damage.` },
-      ...(ownsRelic('Boot') ? [{ id: '@damage-threshold', text: 'Compare per-hit added damage after the owned Boot rule at both Strength levels, with the target Block and other combat modifiers.' }] : []),
-      ...(ownsRelic('MutagenicStrength') ? [{ id: '@opening-stack', text: 'Assess the extra opening burst when this card shares the opening Hand with useful payable attacks and the owned temporary opening Strength.' }] : []),
-      { id: '@draw-slot-tradeoff', text: 'Compare that temporary damage increment with skipping to preserve access to owned protection, draw and enabling cards.' },
-      { id: '@review-access', text: 'A specific same-Hand, damage or persistence fact is needed; record it through sts_feedback.' },
+      { id: '@same-hand-payoff', text: preparationText(locale, 'temporaryStrengthOutput', { value: profile?.attackCopies ?? preparationText(locale, 'suppliedInventory') }) },
+      ...(ownsRelic('Boot') ? [{ id: '@damage-threshold', text: preparationText(locale, 'bootStrengthComparison') }] : []),
+      ...(ownsRelic('MutagenicStrength') ? [{ id: '@opening-stack', text: preparationText(locale, 'openingBurst') }] : []),
+      { id: '@draw-slot-tradeoff', text: preparationText(locale, 'temporaryStrengthCost') },
+      { id: '@review-access', text: preparationText(locale, 'temporaryStrengthReview') },
     ] }];
   });
 }
 
-function statusDrawConditionBindings(observation, normalize) {
-  const profile = preparationDeckComparison(observation, normalize);
+function statusDrawConditionBindings(observation, normalize, locale = 'en') {
+  const profile = preparationDeckComparison(observation, normalize, locale);
   if (!profile) return [];
   return preparationCandidateGroups(observation, normalize).flatMap(group => {
     const row = observation.position.actions.find(row => normalize(row.semantic_action, observation) === group.command);
@@ -512,21 +515,21 @@ function statusDrawConditionBindings(observation, normalize) {
     if (!['Evolve', 'FireBreathing'].includes(acquisition?.card) || acquisition.mechanics?.card_type !== 'Power') return [];
     const triggers = profile.statusInventory.filter(card => card.type === 'Status' || acquisition.card === 'FireBreathing');
     return [{ command: group.command, id: 'status-draw-route-v1', fixedMechanics: [
-      `${acquisition.mechanics.name}: pay ${acquisition.mechanics.cost} Energy to deploy, then apply its supplied effect on each qualifying draw.`,
-      `Owned generated Status routes: ${renderStatusRoutes(profile.statusGeneration) || 'none'}.`,
-      `Owned original qualifying draws: ${triggers.map(card => `${card.card}${card.ethereal ? ' (Ethereal after drawing)' : ' (ordinary later redraw)'}`).join('; ') || 'none'}.`,
-      'Count draws after deployment along these routes and the supplied encounter Status routes. A generated Hand card occupies a slot immediately; its later ordinary discard, reshuffle and draw can supply the trigger. Access, hand capacity, draw prevention and exhausting fuel determine actual triggers.',
+      preparationText(locale, 'statusPayoffDeployment', { name: acquisition.mechanics.name, cost: acquisition.mechanics.cost }),
+      preparationText(locale, 'ownedStatusRoutes', { renderStatusRoutes: renderStatusRoutes(profile.statusGeneration, locale) || preparationText(locale, 'none') }),
+      preparationText(locale, 'qualifyingOriginals', { triggers: triggers.map(card => `${card.card}${card.ethereal ? preparationText(locale, 'drawnEthereal') : preparationText(locale, 'ordinaryLaterRedraw')}`).join('; ') || preparationText(locale, 'none') }),
+      preparationText(locale, 'statusTriggerCounting'),
     ], choices: [
       { id: '@owned-status-route', realizations: profile.statusGeneration.length || triggers.length ? ['sequence'] : ['future'],
-        text: 'Assess the deployed payoff from the listed owned originals and generated Status routes, with their access and lifecycle.' },
-      { id: '@encounter-status-route', text: 'Assess the deployed payoff from the next relevant encounter\'s supplied Status sources, receiving piles and later draws.' },
-      { id: '@deployment-cost', text: 'Compare those reachable draw triggers with this Power\'s deployment Energy, extra original draw slot and needed protection.' },
-      { id: '@review-access', text: 'A specific missing trigger, source or pile-changing rule needs maintainer review.' },
+        text: preparationText(locale, 'ownedStatusPayoff') },
+      { id: '@encounter-status-route', text: preparationText(locale, 'encounterStatusPayoff') },
+      { id: '@deployment-cost', text: preparationText(locale, 'statusDeploymentCost') },
+      { id: '@review-access', text: preparationText(locale, 'statusRuleReview') },
     ] }];
   });
 }
 
-function eventCombatConditionBindings(observation, normalize) {
+function eventCombatConditionBindings(observation, normalize, locale = 'en') {
   const state = observation.position.observation.observation;
   if (state.context?.kind !== 'event') return [];
   return observation.position.actions.flatMap(row => {
@@ -538,21 +541,21 @@ function eventCombatConditionBindings(observation, normalize) {
     const hp = state.run?.current_hp, max = state.run?.max_hp;
     const recent = state.public_history;
     return [{ command, id: 'event-combat-risk-v1', fixedMechanics: [
-      'This command enters combat using the current resources. Gold, relics and other listed combat rewards are received after victory. The event option\'s immediate HP delta describes the event transaction; combat HP cost is determined by the fight.',
-      ...(Number.isSafeInteger(hp) && Number.isSafeInteger(max) ? [`Combat-entry HP is ${hp}/${max}.`] : []),
+      preparationText(locale, 'eventCombatEntry'),
+      ...(Number.isSafeInteger(hp) && Number.isSafeInteger(max) ? [preparationText(locale, 'eventEntryHp', { hp: hp, maxHp: max })] : []),
       ...(Number.isSafeInteger(recent?.recent_combat_hp_loss) ? [
-        `The last adopted combat settled with net HP loss ${recent.recent_combat_hp_loss}. This is an observed past cost; the new encounter needs its own survival assessment.`,
+        preparationText(locale, 'previousCombatCost', { recent_combat_hp_loss: recent.recent_combat_hp_loss }),
       ] : []),
-      'Combat-end healing resolves when combat settles; the HP needed to reach that boundary is paid first. Escape has its own potion cost and forfeits victory rewards.',
+      preparationText(locale, 'eventCombatHealing'),
     ], choices: [
-      { id: '@combat-risk', text: 'Weigh surviving the encounter at the actual entry HP with owned early protection, payable damage and usable potions against taking the safe event alternative.' },
-      { id: '@victory-reward', text: 'Assess the listed reward after accounting for the fight needed to receive it, and the safe alternative\'s resource cost.' },
-      { id: '@review-access', text: 'A concrete fact about encounter survival or reward timing is needed to rate this fight; record it through sts_feedback.' },
+      { id: '@combat-risk', text: preparationText(locale, 'eventCombatRisk') },
+      { id: '@victory-reward', text: preparationText(locale, 'eventVictoryReward') },
+      { id: '@review-access', text: preparationText(locale, 'eventCombatReview') },
     ] }];
   });
 }
 
-function bossRelicConditionBindings(observation, normalize) {
+function bossRelicConditionBindings(observation, normalize, locale = 'en') {
   const evidence = observation.decision_evidence;
   const state = observation.position.observation.observation;
   if (state.context?.kind !== 'boss_relic' || evidence?.kind !== 'boss_relic_options') return [];
@@ -582,7 +585,7 @@ function bossRelicConditionBindings(observation, normalize) {
     }
     const cap = definition.card_play_limit_per_turn;
     if (Number.isSafeInteger(cap) && cap > 0 && Number.isSafeInteger(definition.energy_per_turn_delta)) {
-      const profile = preparationDeckComparison(observation, normalize);
+      const profile = preparationDeckComparison(observation, normalize, locale);
       return [{ command, id: 'relic-energy-play-cap-v1', fixedMechanics: [
         `${relic} adds ${definition.energy_per_turn_delta} base Energy every turn and permits at most ${cap} card plays in that turn; the allowance resets each turn.`,
         'Draw Skills, zero-cost cards, setup Powers, defensive cards and attacks share that play allowance. A played multi-hit attack consumes one card play; each subsequent card consumes another. Drawing a card alone uses no card play.',

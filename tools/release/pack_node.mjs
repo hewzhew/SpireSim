@@ -161,6 +161,7 @@ if (process.argv.slice(2).join(' ') === '--check') {
             }
             const preparation = preparationInstructions(locale), card = cardChoiceInstructions(locale), shop = shopInstructions(locale);
             if (!preparationStageGuide('pending', undefined, {}, undefined, locale).includes(locale === 'en' ? 'Current task: rate' : '当前任务：评估')
+                || !preparation.text('eventCombatEntry').includes(locale === 'en' ? 'received after victory' : '在获胜后取得')
                 || !card.parameters.command.description.includes('choose') || !shop.spendingGuide.includes('then FOLLOW_UP_COMMAND')
                 || preparation.comparisons.map(row => row.id).join(',') !== '@function,@access,@protection,@resources,@opportunity'
                 || !playedCardLifecycle({ type: 'Power' }, locale).includes(locale === 'en' ? 'after deployment' : '部署后')
@@ -170,7 +171,7 @@ if (process.argv.slice(2).join(' ') === '--check') {
                 || !renderShopBudget({ gold: 40, starts: [] }, undefined, locale).includes(locale === 'en' ? 'Shop budget: Gold 40' : '商店预算：金币 40')) {
               throw new Error(`Installed preparation guide lost language or protocol: ${locale}`);
             }
-            report.installed_scripted_checks.push({ package: manifest.name, locale, imported_entries: true, preserved_guide_commands_and_operator: true, preparation_guides_and_schemas: true, deck_mechanism_messages: true, card_choice_messages: true, shop_messages: true });
+            report.installed_scripted_checks.push({ package: manifest.name, locale, imported_entries: true, preserved_guide_commands_and_operator: true, preparation_guides_and_schemas: true, deck_mechanism_messages: true, card_choice_messages: true, shop_messages: true, preparation_card_conditions: true });
           }
         }
       }
