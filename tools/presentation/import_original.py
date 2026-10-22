@@ -245,12 +245,41 @@ POWERS = {
     "WraithForm": "Wraith Form v2",
     "WrathNextTurn": "WrathNextTurnPower"
 }
-# Presentation aliases for the map's named encounters. A compound encounter
-# has no original NAME of its own; its separator is our presentation message.
-ENCOUNTER_ENEMIES = {"JawWorm": ["JawWorm"], "SlimeBoss": ["SlimeBoss"], "Hexaghost": ["Hexaghost"],
-                     "TheGuardian": ["TheGuardian"], "TheChamp": ["Champ"], "Collector": ["TheCollector"],
-                     "Automaton": ["BronzeAutomaton"], "AwakenedOne": ["AwakenedOne"], "TimeEater": ["TimeEater"],
-                     "DonuAndDeca": ["Donu", "Deca"], "TheHeart": ["CorruptHeart"]}
+# Named encounters use explicit original enemy identities. Group names come
+# from the game's run-history UI resource, not inferred English labels.
+ENCOUNTER_ENEMIES = {
+    "BlueSlaver": "SlaverBlue", "Cultist": "Cultist", "JawWorm": "JawWorm",
+    "Looter": "Looter", "RedSlaver": "SlaverRed", "GremlinNob": "GremlinNob",
+    "Lagavulin": "Lagavulin", "LagavulinEvent": "Lagavulin",
+    "TheGuardian": "TheGuardian", "Hexaghost": "Hexaghost", "SlimeBoss": "SlimeBoss",
+    "ChosenAlone": "Chosen", "ShellParasite": "ShelledParasite",
+    "SphericGuardian": "SphericGuardian", "SnakePlant": "SnakePlant", "Snecko": "Snecko",
+    "GremlinLeader": "GremlinLeader", "BookOfStabbing": "BookOfStabbing",
+    "Automaton": "BronzeAutomaton", "TheChamp": "Champ", "Collector": "TheCollector",
+    "OrbWalker": "OrbWalker", "SpireGrowth": "SpireGrowth", "Transient": "Transient",
+    "TheMaw": "Maw", "WrithingMass": "WrithingMass", "GiantHead": "GiantHead",
+    "TheNemesis": "Nemesis", "Reptomancer": "Reptomancer",
+    "AwakenedOne": "AwakenedOne", "TimeEater": "TimeEater", "TheHeart": "CorruptHeart",
+}
+HISTORY_ENCOUNTERS = {
+    "GremlinGang": 0, "LargeSlime": 1, "ExordiumThugs": 2, "ExordiumWildlife": 3,
+    "LotsOfSlimes": 4, "SmallSlimes": 5, "TwoThieves": 6, "ThreeByrds": 7,
+    "ThreeCultists": 9, "ChosenAndByrds": 10, "SentryAndSphere": 11,
+    "CenturionAndHealer": 12, "ShelledParasiteAndFungi": 13, "MaskedBandits": 14,
+    "ColosseumNobs": 15, "ColosseumSlavers": 16, "ThreeShapes": 17,
+    "JawWormHorde": 18, "FourShapes": 19, "SphereAndTwoShapes": 20,
+    "TwoOrbWalkers": 21, "DonuAndDeca": 22, "ThreeSentries": 23,
+    "CultistAndChosen": 24, "SneckoAndMystics": 27, "ShieldAndSpear": 28,
+}
+# These groups have no run-history UI entry. Keep the composition explicit;
+# numeric notation and separators are presentation, all names remain original.
+COMPOSED_ENCOUNTERS = {
+    "ThreeLouse": [(3, "LouseNormal")], "TwoLouse": [(2, "LouseNormal")],
+    "TwoFungiBeasts": [(2, "FungiBeast")], "TheMushroomLair": [(3, "FungiBeast")],
+    "ThreeDarklings": [(3, "Darkling")],
+    "Slavers": [(1, "SlaverBlue"), (1, "Taskmaster"), (1, "SlaverRed")],
+}
+ENCOUNTER_EVENTS = {"MysteriousSphere": "MysteriousSphere"}
 
 
 def encoded(value: object) -> bytes:
@@ -279,6 +308,13 @@ def names_from_archive(jar: Path, repository: Path = REPOSITORY) -> tuple[dict, 
     if not stance_ids or set(stance_ids.values()) != set(STANCES) | {"Neutral"}:
         raise ValueError("Original stance bindings do not cover the current stable StanceId identities")
     identity_sources["src/runtime/combat/orbs.rs"] = digest(stance_path.read_bytes())
+    encounter_path = repository / "src/content/monsters/factory.rs"
+    encounter_ids = _stable_identity_owner(encounter_path.read_text(encoding="utf-8"), "EncounterId")
+    groups = [set(ENCOUNTER_ENEMIES), set(HISTORY_ENCOUNTERS), set(COMPOSED_ENCOUNTERS), set(ENCOUNTER_EVENTS)]
+    bound = set().union(*groups)
+    if sum(map(len, groups)) != len(bound) or bound != set(encounter_ids.values()):
+        raise ValueError("Original encounter name bindings do not cover the stable EncounterId identities exactly once")
+    identity_sources["src/content/monsters/factory.rs"] = digest(encounter_path.read_bytes())
     result, entries, bindings = {}, {}, {}
     with zipfile.ZipFile(jar) as archive:
         def source(language: str, resource: str) -> dict:
@@ -331,17 +367,22 @@ def names_from_archive(jar: Path, repository: Path = REPOSITORY) -> tuple[dict, 
                 raise ValueError("Original resource now supplies a name for the omitted stance.Neutral")
             names["stance"] = {stable: take("stance", stable, key, stances) for stable, key in STANCES.items()}
             names["encounter"] = {}
-            for encounter, group in ENCOUNTER_ENEMIES.items():
-                if len(group) == 1:
-                    enemy = group[0]
-                    names["encounter"][encounter] = names["enemy"][enemy]
-                    bindings[locale][f"encounter.{encounter}"] = {"alias": f"enemy.{enemy}"}
-                elif encounter == "DonuAndDeca" and group == ["Donu", "Deca"]:
-                    separator = " and " if locale == "en" else "与"
-                    names["encounter"][encounter] = separator.join(names["enemy"][part] for part in ("Donu", "Deca"))
-                    bindings[locale][f"encounter.{encounter}"] = {"members": ["enemy.Donu", "enemy.Deca"], "separator": separator}
-                else:
-                    raise ValueError(f"Encounter label requires an explicit composition: {encounter}")
+            for encounter, enemy in ENCOUNTER_ENEMIES.items():
+                names["encounter"][encounter] = names["enemy"][enemy]
+                bindings[locale][f"encounter.{encounter}"] = {"alias": f"enemy.{enemy}"}
+            ui = source(language, "ui")
+            if len(ui["RunHistoryMonsterNames"]["TEXT"]) != 29:
+                raise ValueError("Original run-history encounter layout requires review")
+            for encounter, index in HISTORY_ENCOUNTERS.items():
+                names["encounter"][encounter] = take("encounter", encounter, "RunHistoryMonsterNames", ui, "TEXT", index, resource="ui")
+            if names["enemy"]["LouseNormal"] != names["enemy"]["LouseDefensive"]:
+                raise ValueError("Original Louse group label requires review: variant names now differ")
+            for encounter, members in COMPOSED_ENCOUNTERS.items():
+                names["encounter"][encounter] = " + ".join((f"{count}×" if count != 1 else "") + names["enemy"][enemy] for count, enemy in members)
+                bindings[locale][f"encounter.{encounter}"] = {"members": [{"count": count, "alias": f"enemy.{enemy}"} for count, enemy in members], "separator": " + "}
+            for encounter, event in ENCOUNTER_EVENTS.items():
+                names["encounter"][encounter] = names["event"][event]
+                bindings[locale][f"encounter.{encounter}"] = {"alias": f"event.{event}"}
             result[locale] = {kind: dict(sorted(values.items())) for kind, values in names.items()}
     manifest = {"schema": "sts-original-localization-names-v1", "producer": "tools/presentation/import_original.py",
                 "game": "Slay the Spire", "languages": LANGUAGES, "entries_sha256": dict(sorted(entries.items())),
@@ -349,7 +390,7 @@ def names_from_archive(jar: Path, repository: Path = REPOSITORY) -> tuple[dict, 
                 "bindings_sha256": {locale: digest(encoded(rows)) for locale, rows in bindings.items()},
                 "name_counts": {locale: {kind: len(values) for kind, values in names.items()} for locale, names in result.items()},
                 "generated_names_sha256": {locale: digest(encoded(names)) for locale, names in result.items()},
-                "omitted": OMITTED, "composed_labels": ["encounter.DonuAndDeca"]}
+                "omitted": OMITTED, "composed_labels": [f"encounter.{key}" for key in sorted(COMPOSED_ENCOUNTERS)]}
     return result, manifest, bindings
 
 

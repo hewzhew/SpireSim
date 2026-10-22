@@ -73,7 +73,7 @@ Node 工作台按连接建立独立语言实例，`printReading` 与预演库存
 
 共用内容位于 `locales/en.json` 和 `zh-CN.json`：`game` 拥有名称、术语、状态计数、遗物触发状态和规则，`mechanics` 拥有机制查询和卡牌规则消息，`inventory` 拥有永久库存消息，`combat` 拥有战斗与选牌读数，`decision` 拥有战略概览、选项与共用选择提示，`map` 拥有原生地图和路线读数，`workbench` 拥有 Node 追加的命令、board、牌堆与预演读数，`replay` 拥有离线演示消息。dsh 地图和工作台自己的界面消息位于其 `locale/` 资源中，不在其中复制游戏名称。
 
-`game.card`、`relic`、`potion`、`enemy`、`character`、`event`、`power`、`stance`、`encounter` 是原版资源导入的名称区段，由 [import_original.py](import_original.py) 更新，不手工翻译。卡牌、遗物、药水、敌人和状态按当前模拟器稳定身份核对；角色覆盖四名可玩角色，事件按现役 `EventId` 显式绑定原版条目，Neow 名称取 `characters.json`；退役事件不加入运行词典。遭遇取地图使用的具名遭遇。状态的本地化键差异显式记录，例如 `Regen` 对应怪物 `Regenerate`，`Regeneration` 对应会递减的再生，`DexterityDown` 对应 `DexLoss`；它们不按译名或相似类名合并。多敌人遭遇 `DonuAndDeca` 用原版的两个敌人名与本项目的连接词组合。房间类型、界面消息和补充规则说明由项目维护。
+`game.card`、`relic`、`potion`、`enemy`、`character`、`event`、`power`、`stance`、`encounter` 是原版资源导入的名称区段，由 [import_original.py](import_original.py) 更新，不手工翻译。卡牌、遗物、药水、敌人和状态按当前模拟器稳定身份核对；角色覆盖四名可玩角色，事件按现役 `EventId` 显式绑定原版条目，Neow 名称取 `characters.json`；退役事件不加入运行词典。遭遇名称覆盖全部稳定 `EncounterId`，具名遭遇显式引用敌人名称，组合遭遇优先取 `ui.json` 的 `RunHistoryMonsterNames.TEXT`，例如“三哨卫”和“矛与盾”；没有该条目的六组按明确数量组合原版敌人名称，神秘球体引用对应事件名。导入器检查身份不遗漏、不重复，以及已接入的原版数组布局；来源摘要分别记录直接条目、别名和组合。状态的本地化键差异显式记录，例如 `Regen` 对应怪物 `Regenerate`，`Regeneration` 对应会递减的再生，`DexterityDown` 对应 `DexLoss`；它们不按译名或相似类名合并。房间类型、界面消息和补充规则说明由项目维护。
 
 原版资源位于安装目录的 `desktop-1.0.jar`：`localization/eng/` 为英文，`localization/zhs/` 为简体中文，`localization/zht/` 为繁体中文；本模块当前导入前两种。目录内的 `cards.json`、`relics.json`、`potions.json`、`monsters.json`、`powers.json`、`stances.json`、`characters.json`、`events.json` 等按游戏内容分类。导入只读取 ZIP 中的 JSON，不启动游戏或 Java。
 

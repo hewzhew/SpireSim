@@ -29,6 +29,9 @@ def sources():
         result[f"localization/{language}/stances.json"] = {key: {"NAME": f"{language}:{key}"} for key in owner.STANCES.values()}
         result[f"localization/{language}/events.json"] = {key: {"NAME": f"{language}:{key}"} for key in owner.EVENTS.values()}
         result[f"localization/{language}/events.json"]["FaceTrader"]["DESCRIPTIONS"] = [f'{language}:scene {index} NL ~original~' for index in range(5)]
+        result[f"localization/{language}/ui.json"] = {"RunHistoryMonsterNames": {"TEXT": [f"{language}:encounter {index}" for index in range(29)]}}
+        for key in ["FuzzyLouseNormal", "FuzzyLouseDefensive"]:
+            result[f"localization/{language}/monsters.json"][key]["NAME"] = f"{language}:Louse"
     return result
 
 
@@ -59,7 +62,7 @@ def test_exact_source_keys_preserve_identity_and_skip_deprecated_names(tmp_path,
     assert bindings["zh-CN"]["potion.Elixir"]["entry"] == "localization/zhs/potions.json"
     assert "Impulse" not in names["en"]["card"]
     assert manifest["name_counts"]["en"]["card"] == 370
-    assert len(manifest["entries_sha256"]) == 16
+    assert len(manifest["entries_sha256"]) == 18
     assert manifest["name_counts"]["en"]["event"] == 53
     assert names["zh-CN"]["event"]["Ssssserpent"] == "zhs:Liars Game"
     assert names["en"]["event"]["BackTotheBasics"] == "eng:Back to Basics"
@@ -70,7 +73,29 @@ def test_exact_source_keys_preserve_identity_and_skip_deprecated_names(tmp_path,
     assert bindings["en"]["event.Neow"]["entry"] == "localization/eng/characters.json"
     assert names["zh-CN"]["stance"]["Wrath"] == "zhs:Wrath"
     assert names["en"]["encounter"]["TheHeart"] == names["en"]["enemy"]["CorruptHeart"]
-    assert names["zh-CN"]["encounter"]["DonuAndDeca"] == "zhs:Donu与zhs:Deca"
+    assert names["zh-CN"]["encounter"]["DonuAndDeca"] == "zhs:encounter 22"
+    assert names["zh-CN"]["encounter"]["Cultist"] == "zhs:Cultist"
+    assert names["zh-CN"]["encounter"]["ThreeSentries"] == "zhs:encounter 23"
+    assert names["zh-CN"]["encounter"]["TwoLouse"] == "2×zhs:Louse"
+    assert manifest["name_counts"]["en"]["encounter"] == 65
+    assert bindings["zh-CN"]["encounter.ShieldAndSpear"] == {"entry": "localization/zhs/ui.json", "key": "RunHistoryMonsterNames", "field": "TEXT", "index": 28}
+    assert bindings["en"]["encounter.MysteriousSphere"] == {"alias": "event.MysteriousSphere"}
+
+
+def test_encounter_source_layout_and_variant_names_require_review(tmp_path, sources):
+    sources["localization/eng/ui.json"]["RunHistoryMonsterNames"]["TEXT"].append("new entry")
+    with pytest.raises(ValueError, match="encounter layout requires review"):
+        owner.names_from_archive(archive(tmp_path, sources))
+    sources["localization/eng/ui.json"]["RunHistoryMonsterNames"]["TEXT"].pop()
+    sources["localization/zhs/monsters.json"]["FuzzyLouseDefensive"]["NAME"] = "distinct variant"
+    with pytest.raises(ValueError, match="variant names now differ"):
+        owner.names_from_archive(archive(tmp_path, sources))
+
+
+def test_encounter_bindings_require_every_stable_identity_once(tmp_path, sources, monkeypatch):
+    monkeypatch.delitem(owner.ENCOUNTER_ENEMIES, "Cultist")
+    with pytest.raises(ValueError, match="EncounterId identities exactly once"):
+        owner.names_from_archive(archive(tmp_path, sources))
 
 
 def test_card_templates_keep_original_fields_and_do_not_guess_upgrade_semantics(tmp_path, sources):

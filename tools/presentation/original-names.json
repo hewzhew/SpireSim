@@ -15,6 +15,7 @@
     "localization/eng/powers.json": "32116a638adfdcf786847bdfb40b739bffecda646b6c534773387e885ccb7d13",
     "localization/eng/relics.json": "2527d6b59063d9905d4c575611d2f33500943090d415de0048e46fdeed75d7c3",
     "localization/eng/stances.json": "2922b2db9de21d77de9825f44c1a393825e965cb660f1a69befad466d8936022",
+    "localization/eng/ui.json": "95071a7e2c892155e1aebb0f30f56ad434ceb55de5d4a0a37bd14b9914cd7055",
     "localization/zhs/cards.json": "f1e3856ddeed29bb83d2b9a08de38967e99eb5e183abe6f62929303ddda34115",
     "localization/zhs/characters.json": "dfe855326e920fcb0b240d3d9866279a21dee13e3c60413143a85062a2092b4d",
     "localization/zhs/events.json": "a274ab52893804e2ae9b3361cc096bbec902bd2be0df55700d291c323379ada2",
@@ -22,7 +23,8 @@
     "localization/zhs/potions.json": "8eb86bb9719c3977d443d572b613e5d2fe4f4ee3583b7995d9589e02d67ed296",
     "localization/zhs/powers.json": "cd57a85765555b92462c77be235d84bd67c52098233319afc8923f72757216ca",
     "localization/zhs/relics.json": "87104935ab9dd91f2399557103c4cc07e3633663648058743b5b6934fe64b596",
-    "localization/zhs/stances.json": "306477ca19ff2d58724fd872136835fa9c96801a3836e0da087e9a1acd3c6955"
+    "localization/zhs/stances.json": "306477ca19ff2d58724fd872136835fa9c96801a3836e0da087e9a1acd3c6955",
+    "localization/zhs/ui.json": "792e769cfb29239f2df62c868ab16b6492afc33f2c024a0376a9112b5cf6b21d"
   },
   "identity_inputs_sha256": {
     "src/content/cards/mod.rs": "6bba6e088783b055781d54bcd5bf76790d34dcb19aaeb69bfe09a9890eb20b9a",
@@ -37,8 +39,8 @@
     "src/runtime/combat/orbs.rs": "304e8fadd9404a9308abf27665d1b0b2048ade00e41a53cc5947df4f4b95b688"
   },
   "bindings_sha256": {
-    "en": "b25765049210bc5aada08e554cb4026dda4ab0cd677837468a8ebbb37db3c523",
-    "zh-CN": "b0e0b4090d5947138f2cc002fc89a6aebccdc7518a69fd79d292d8fa625d771b"
+    "en": "f1ea4fe3bcf9e18c4597693293fb360b8526e42d1edf9ab5a17e1de66f6e0bb0",
+    "zh-CN": "63b8872236bda453dbdcb35ea15bbe7a9832e9646f75d77a817f7027766ccb88"
   },
   "name_counts": {
     "en": {
@@ -50,7 +52,7 @@
       "event": 53,
       "power": 134,
       "stance": 3,
-      "encounter": 11
+      "encounter": 65
     },
     "zh-CN": {
       "card": 370,
@@ -61,12 +63,12 @@
       "event": 53,
       "power": 134,
       "stance": 3,
-      "encounter": 11
+      "encounter": 65
     }
   },
   "generated_names_sha256": {
-    "en": "b45ce21b0015440fd739163304f4dc9595e80c7ac62782ec5ef4c52204479ed3",
-    "zh-CN": "150cd8103c47fd9eab90a1a6fb065986cb221b2fa0d6ca2ce3a02d80e5d247ec"
+    "en": "5cc3cd0e218ed7b9460fbf86baa2f1041d6bc5c2b85aef3a0b7d635ef7f02ea1",
+    "zh-CN": "8dbc0f6b62a2c5a9586847826c229f257099bb4fead4a4085855f3162e31400d"
   },
   "omitted": {
     "card.Impulse": "No corresponding card localization entry in the installed release; retain stable-ID fallback.",
@@ -75,6 +77,11 @@
     "stance.Neutral": "Original Neutral stance NAME is empty; retain stable-ID fallback."
   },
   "composed_labels": [
-    "encounter.DonuAndDeca"
+    "encounter.Slavers",
+    "encounter.TheMushroomLair",
+    "encounter.ThreeDarklings",
+    "encounter.ThreeLouse",
+    "encounter.TwoFungiBeasts",
+    "encounter.TwoLouse"
   ]
 }

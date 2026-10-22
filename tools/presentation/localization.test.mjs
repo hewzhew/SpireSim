@@ -24,7 +24,7 @@ test('locale selection maps the host zh and browser tags without claiming Tradit
 test('generated name sections match their recorded original-resource import', async () => {
   const source = JSON.parse(await readFile(new URL('./original-names.json', import.meta.url), 'utf8'));
   assert.equal(source.schema, 'sts-original-localization-names-v1');
-  assert.equal(Object.keys(source.entries_sha256).length, 16);
+  assert.equal(Object.keys(source.entries_sha256).length, 18);
   for (const locale of ['en', 'zh-CN']) {
     const names = {};
     for (const [kind, count] of Object.entries(source.name_counts[locale])) {
@@ -38,6 +38,10 @@ test('generated name sections match their recorded original-resource import', as
   assert.equal(catalogs['zh-CN'].game.card.SwordBoomerang, '飞剑回旋镖');
   assert.equal(catalogs['zh-CN'].game.encounter.TheChamp, '第一勇士');
   assert.equal(catalogs['zh-CN'].game.encounter.Automaton, '铜制机械人偶');
+  assert.equal(catalogs['zh-CN'].game.encounter.Cultist, '邪教徒');
+  assert.equal(catalogs['zh-CN'].game.encounter.ThreeSentries, '三哨卫');
+  assert.equal(catalogs['zh-CN'].game.encounter.ShieldAndSpear, '矛与盾');
+  assert.equal(source.name_counts.en.encounter, 65);
   assert.equal(catalogs.en.game.enemy.LouseNormal, catalogs.en.game.enemy.LouseDefensive);
   assert.ok(source.omitted['card.Impulse']);
   assert.equal(catalogs.en.game.card.Impulse, undefined);
