@@ -9,7 +9,7 @@
 | 层 | 负责什么 | 接入约定 |
 | --- | --- | --- |
 | Rust 游戏核心 | 稳定身份、规则数值、公开状态、合法动作 | 沿用 [identity](../../src/content/identity.rs) 的稳定 ID，不从译名构造身份；语言选择不参与 RNG、游戏状态、动作身份、数值训练词表或 parity 判定 |
-| 领域资源 | 卡牌、遗物、敌人、遭遇、状态、房间等名称与共用术语 | 按实体种类和稳定 ID 取词；各端消费同一个人工维护来源，打包时可以生成资源，不能再人工维护平行名称表 |
+| 领域资源 | 卡牌、遗物、敌人、遭遇、状态、房间等名称与共用术语 | 按实体种类和稳定 ID 取词；原版名称从安装包导入，各端消费同一份生成资源；工具自己的术语和消息独立维护 |
 | 功能界面 | 导航、按钮、空状态、可访问性文案 | 各功能使用自己的命名空间；演示的 `replay` 不能成为地图、工作台或工具消息的公共容器 |
 | 自然语言读数 | 卡牌机制、当前局面、合法动作说明、错误消息 | 沿 Rust/Node 的实际渲染 owner 使用结构化事实和具名参数，不翻译最终字符串后再解析；数值与效果顺序由规则 owner 提供 |
 | Python 训练接口 | 结构化观察、动作、奖励及可选文字读数 | 稳定 ID 和数值特征不随语言变化；文字读数接现有渲染 owner，避免在 Python 再维护一套规则说明 |
@@ -67,9 +67,24 @@ view.text('game:effect.draw', { count: 2 }); // Draw 2 cards.
 
 ## 资源职责
 
-共用内容维护在 `locales/en.json` 和 `zh-CN.json`：`game` 拥有名称、术语和规则，`mechanics` 拥有机制查询消息，`replay` 拥有离线演示的导航、场景和原始记录入口文案。dsh 地图和工作台自己的界面消息位于其 `locale/` 资源中，不在其中复制游戏名称。
+共用内容位于 `locales/en.json` 和 `zh-CN.json`：`game` 拥有名称、术语和规则，`mechanics` 拥有机制查询消息，`replay` 拥有离线演示的导航、场景和原始记录入口文案。dsh 地图和工作台自己的界面消息位于其 `locale/` 资源中，不在其中复制游戏名称。
 
-名称按领域和**现有稳定 ID**取值，例如 `game.card.StrikeG`、`game.encounter.TheHeart`。同名的 `Strike`、`StrikeG`、`StrikeB`、`StrikeP` 保持四个条目，不能按翻译文字反查动作。名称资源目前覆盖演示和地图所需的一部分实体，新增消费者按实际需要补齐。缺项先回退英语，再显示原稳定 ID；`onMissing` 提供开发检查信息，不向页面增加提示条。
+`game.card`、`relic`、`potion`、`enemy`、`character`、`event`、`power`、`encounter` 是原版资源导入的名称区段，由 [import_original.py](import_original.py) 更新，不手工翻译。其中卡牌、遗物、药水和敌人按当前模拟器词表导入；角色覆盖四名可玩角色，事件目前取 Neow，状态目前取易伤、虚弱、脆弱，遭遇取地图使用的具名遭遇。多敌人遭遇 `DonuAndDeca` 用原版的两个敌人名与本项目的连接词组合。房间类型、界面消息和补充规则说明由项目维护。
+
+原版资源位于安装目录的 `desktop-1.0.jar`：`localization/eng/` 为英文，`localization/zhs/` 为简体中文，`localization/zht/` 为繁体中文；本模块当前导入前两种。目录内的 `cards.json`、`relics.json`、`potions.json`、`monsters.json`、`powers.json`、`characters.json`、`events.json` 等按游戏内容分类。导入只读取 ZIP 中的 JSON，不启动游戏或 Java。
+
+从仓库根目录核对原版名称；加 `--write` 更新名称区段与来源摘要：
+
+```powershell
+.\scripts\py.ps1 tools/presentation/import_original.py --jar 'C:/path/to/SlayTheSpire/desktop-1.0.jar'
+.\scripts\py.ps1 tools/presentation/import_original.py --jar 'C:/path/to/SlayTheSpire/desktop-1.0.jar' --write
+```
+
+卡牌、遗物使用现有身份 owner 提供的原版 ID；本地化键与协议 ID 不同的项在导入器中显式列出，不用译名、英文显示名或模糊匹配反查。例如稳定 ID `Elixir` 对应原版当前药水键 `ElixirPotion`，原版同名 `Elixir` 条目已经废弃。来源 [original-names.json](original-names.json) 记录语言、资源文件摘要、生成名称摘要与明确遗漏；逐项来源可以用 `--report <新 artifact JSON 路径>` 保存。`Impulse` 在当前安装版的卡牌语言资源中没有条目，保持稳定 ID 回退。普通安装、构建和运行只消费已生成的 JSON，不依赖本机游戏；npm 和 Cargo 包保留来源摘要。
+
+原版牌面与工具补充说明承担不同用途。卡牌 `DESCRIPTION` 中的 `!D!`、`!B!`、`!M!` 由游戏提供数值，`NL` 和 `#y` 等控制换行与颜色；药水和遗物的 `DESCRIPTIONS` 常是由 Java 按顺序插入数值的片段。后续接入原版牌面时，由对应 renderer 选择基础/升级模板并绑定公开数值。当前 `game.potionRule` 是项目整理的完整机制解释，包括触发时点、目标、限制和原版短描述未展开的交互；它与原版名称分别维护，导入器保留它以及所有工具、界面消息。
+
+名称按领域和**现有稳定 ID**取值，例如 `game.card.StrikeG`、`game.encounter.TheHeart`。同名的 `Strike`、`StrikeG`、`StrikeB`、`StrikeP` 保持四个条目，不能按翻译文字反查动作。名称资源的具体覆盖见来源摘要，新增消费者沿稳定 ID 使用已有原版名称，再补所需消息。缺项先回退英语，再显示原稳定 ID；`onMissing` 提供开发检查信息，不向页面增加提示条。
 
 界面消息使用完整句子和具名参数，不能拼接翻译片段。英语复数采用 i18next 的 `_one`、`_other` 规则，调用时保留数值 `count`。`validateCatalogs` 检查两种语言的键、非空值和参数一致性；未知消息键或缺少参数会报错。测试同时核对实体键仍属于当前模拟器的稳定词表。
 

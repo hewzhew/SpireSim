@@ -97,6 +97,24 @@ mod tests {
     use super::*;
 
     #[test]
+    fn original_names_retain_stable_ids_when_display_names_are_shared_or_changed() {
+        for id in ["Strike", "StrikeG", "StrikeB", "StrikeP"] {
+            assert_eq!(Locale::ZhCn.entity("card", id), "打击");
+            assert_eq!(Locale::En.entity("card", id), "Strike");
+        }
+        assert_eq!(Locale::ZhCn.entity("card", "SwordBoomerang"), "飞剑回旋镖");
+        assert_eq!(Locale::ZhCn.entity("encounter", "TheChamp"), "第一勇士");
+        assert_eq!(
+            Locale::ZhCn.entity("encounter", "Automaton"),
+            "铜制机械人偶"
+        );
+        assert_eq!(Locale::En.entity("power", "Weak"), "Weakened");
+        assert_eq!(Locale::ZhCn.entity("potion", "Elixir"), "万灵药水");
+        assert_eq!(Locale::ZhCn.entity("relic", "HappyFlower"), "开心小花");
+        assert_eq!(Locale::ZhCn.entity("card", "Impulse"), "Impulse");
+    }
+
+    #[test]
     fn locales_are_explicit_and_instances_do_not_share_a_language_preference() {
         assert_eq!("en".parse(), Ok(Locale::En));
         assert_eq!("zh-CN".parse(), Ok(Locale::ZhCn));

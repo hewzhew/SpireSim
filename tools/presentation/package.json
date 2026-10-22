@@ -8,9 +8,10 @@
   "exports": {
     ".": "./index.mjs",
     "./catalogs": "./catalogs.mjs",
+    "./original-names": "./original-names.json",
     "./locales/*.json": "./locales/*.json"
   },
-  "files": ["index.mjs", "catalogs.mjs", "locales/*.json", "replay/*", "README.md"],
+  "files": ["index.mjs", "catalogs.mjs", "original-names.json", "locales/*.json", "replay/*", "README.md"],
   "scripts": {
     "test": "node --test localization.test.mjs"
   },

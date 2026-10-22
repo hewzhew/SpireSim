@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 import { catalogs, createPresentation, preferredLocale, resolveLocale, validateCatalogs } from './index.mjs';
 
 test('shipped dictionaries have identical keys and named parameters', () => {
@@ -18,6 +19,28 @@ test('locale selection maps the host zh and browser tags without claiming Tradit
   assert.equal(resolveLocale('zh-Hant'), 'en');
   assert.equal(preferredLocale(['fr-FR', 'zh-CN']), 'zh-CN');
   assert.equal(preferredLocale(['en-GB', 'zh-CN']), 'en');
+});
+
+test('generated name sections match their recorded original-resource import', async () => {
+  const source = JSON.parse(await readFile(new URL('./original-names.json', import.meta.url), 'utf8'));
+  assert.equal(source.schema, 'sts-original-localization-names-v1');
+  assert.equal(Object.keys(source.entries_sha256).length, 12);
+  for (const locale of ['en', 'zh-CN']) {
+    const names = {};
+    for (const [kind, count] of Object.entries(source.name_counts[locale])) {
+      const entries = Object.entries(catalogs[locale].game[kind]).sort(([left], [right]) => left < right ? -1 : left > right ? 1 : 0);
+      assert.equal(entries.length, count, `${locale}:${kind}`);
+      names[kind] = Object.fromEntries(entries);
+    }
+    const sha = createHash('sha256').update(JSON.stringify(names, null, 2) + '\n').digest('hex');
+    assert.equal(sha, source.generated_names_sha256[locale], locale);
+  }
+  assert.equal(catalogs['zh-CN'].game.card.SwordBoomerang, '飞剑回旋镖');
+  assert.equal(catalogs['zh-CN'].game.encounter.TheChamp, '第一勇士');
+  assert.equal(catalogs['zh-CN'].game.encounter.Automaton, '铜制机械人偶');
+  assert.equal(catalogs.en.game.enemy.LouseNormal, catalogs.en.game.enemy.LouseDefensive);
+  assert.ok(source.omitted['card.Impulse']);
+  assert.equal(catalogs.en.game.card.Impulse, undefined);
 });
 
 test('names are keyed by exact typed identity; changing one view leaves other views alone', async () => {

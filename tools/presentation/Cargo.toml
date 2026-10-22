@@ -5,7 +5,7 @@ edition = "2021"
 publish = false
 description = "Shared text resources for native simulator renderers"
 license = "MIT"
-include = ["Cargo.toml", "src/**", "locales/**"]
+include = ["Cargo.toml", "src/**", "locales/**", "original-names.json"]
 
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }

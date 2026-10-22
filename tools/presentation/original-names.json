@@ -1,0 +1,69 @@
+{
+  "schema": "sts-original-localization-names-v1",
+  "producer": "tools/presentation/import_original.py",
+  "game": "Slay the Spire",
+  "languages": {
+    "en": "eng",
+    "zh-CN": "zhs"
+  },
+  "entries_sha256": {
+    "localization/eng/cards.json": "864d2d024ebc423bc7722a4c8f704f26e995d8ea440d804148f1b5ed2398f2b1",
+    "localization/eng/characters.json": "0649402af16b911fd61a5900927733f772fbfd8970fd3cd0dfea9664bb92db1c",
+    "localization/eng/monsters.json": "c78460c5faedba0da97832e9abaa1376c2300436495ee9dd84d4165d89af0361",
+    "localization/eng/potions.json": "0e28ac6eaea7046061d5e163d28f4a158f8de0998428d98074ecf20d05b80958",
+    "localization/eng/powers.json": "32116a638adfdcf786847bdfb40b739bffecda646b6c534773387e885ccb7d13",
+    "localization/eng/relics.json": "2527d6b59063d9905d4c575611d2f33500943090d415de0048e46fdeed75d7c3",
+    "localization/zhs/cards.json": "f1e3856ddeed29bb83d2b9a08de38967e99eb5e183abe6f62929303ddda34115",
+    "localization/zhs/characters.json": "dfe855326e920fcb0b240d3d9866279a21dee13e3c60413143a85062a2092b4d",
+    "localization/zhs/monsters.json": "49dcf8455fa6fa8dfe8702e05a9b37627ee870fbe52167c704250e68311326de",
+    "localization/zhs/potions.json": "8eb86bb9719c3977d443d572b613e5d2fe4f4ee3583b7995d9589e02d67ed296",
+    "localization/zhs/powers.json": "cd57a85765555b92462c77be235d84bd67c52098233319afc8923f72757216ca",
+    "localization/zhs/relics.json": "87104935ab9dd91f2399557103c4cc07e3633663648058743b5b6934fe64b596"
+  },
+  "identity_inputs_sha256": {
+    "src/content/cards/mod.rs": "6bba6e088783b055781d54bcd5bf76790d34dcb19aaeb69bfe09a9890eb20b9a",
+    "src/content/monsters/factory.rs": "610453b51ba543b833ead5c803a565c63326ac7fe80c2f22c969e72f50c15588",
+    "src/content/monsters/mod.rs": "e81c8940ce9aa8ad5bbdb1dfac256a1222a01327b0af9d17f7d43f319f68eac2",
+    "src/content/potions/mod.rs": "7476f324257abaa7bf1faec101fe2e8f7ec41e6e6170c95644a2ec5053594585",
+    "src/content/relics/identity_v1.json": "5794b359cc76adc59f0b1d573cfd6460bb507e548f0651363a9faad22318d9a9",
+    "src/content/relics/mod.rs": "f349c8108e8b3dc86f7f553e8b90454e76c2ebff3d8db82b06aaf8239d5ce83a",
+    "src/state/events/identity.rs": "7a5c5dcf219c9d682ae6a59062915a3084ed21662278448619d228b13123a372",
+    "src/state/events/mod.rs": "b30c45a451028cc689c6ea6400b8752d496fdcc9672e90c190951a6a211b2993"
+  },
+  "bindings_sha256": {
+    "en": "ab0cd186ea228fa116f10c7bd545fd6e2ccc43290c9e1b124604ad8bc2416454",
+    "zh-CN": "8b02915e86e4aa1c24f0b85f40812a49355e498540caa19828db60803188c261"
+  },
+  "name_counts": {
+    "en": {
+      "card": 370,
+      "relic": 182,
+      "potion": 42,
+      "enemy": 65,
+      "character": 4,
+      "event": 1,
+      "power": 3,
+      "encounter": 11
+    },
+    "zh-CN": {
+      "card": 370,
+      "relic": 182,
+      "potion": 42,
+      "enemy": 65,
+      "character": 4,
+      "event": 1,
+      "power": 3,
+      "encounter": 11
+    }
+  },
+  "generated_names_sha256": {
+    "en": "4eaf262d6c3d563aa59b9733848f8dc3f16fb88a7b3f0ad09b01ea3c00dc3e9d",
+    "zh-CN": "bf4c2b4caba684b23a54d3080d89db647c8b0769d3580eb743b2ada561aefc6d"
+  },
+  "omitted": {
+    "card.Impulse": "No corresponding card localization entry in the installed release; retain stable-ID fallback."
+  },
+  "composed_labels": [
+    "encounter.DonuAndDeca"
+  ]
+}

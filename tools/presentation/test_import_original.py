@@ -1,0 +1,118 @@
+import json
+import zipfile
+
+import pytest
+
+from tools.presentation import import_original as owner
+
+
+@pytest.fixture
+def sources():
+    entities, _ = owner.build_simulator_catalog(owner.REPOSITORY)
+    result = {}
+    for language in owner.LANGUAGES.values():
+        for kind, resource in owner.RESOURCES.items():
+            rows = {}
+            for entity in entities:
+                if entity.kind != kind or f"{kind}.{entity.stable_id}" in owner.OMITTED:
+                    continue
+                key = owner.KEYS[kind].get(entity.stable_id, entity.external_id if kind in ("card", "relic") else entity.stable_id)
+                rows[key] = {"NAME": f"{language}:{key}", "DESCRIPTION": "!D! NL !B! !M!"}
+            result[f"localization/{language}/{resource}.json"] = rows
+        result[f"localization/{language}/potions.json"]["Elixir"] = {"NAME": "deprecated-name"}
+        result[f"localization/{language}/cards.json"]["Strike_R"]["NAME"] = "Strike"
+        result[f"localization/{language}/cards.json"]["Strike_G"]["NAME"] = "Strike"
+        characters = {key: {"NAMES": [f"{language}:{key}"]} for key in owner.CHARACTERS.values()}
+        characters["Neow Event"] = {"NAMES": [f"{language}:Neow"]}
+        result[f"localization/{language}/characters.json"] = characters
+        result[f"localization/{language}/powers.json"] = {key: {"NAME": f"{language}:{key}"} for key in owner.POWERS.values()}
+    return result
+
+
+def archive(tmp_path, sources):
+    path = tmp_path / "game.jar"
+    with zipfile.ZipFile(path, "w") as output:
+        for name, rows in sources.items():
+            output.writestr(name, owner.encoded(rows))
+    return path
+
+
+def test_exact_source_keys_preserve_identity_and_skip_deprecated_names(tmp_path, sources):
+    names, manifest, bindings = owner.names_from_archive(archive(tmp_path, sources))
+    assert names["en"]["card"]["Strike"] == names["en"]["card"]["StrikeG"] == "Strike"
+    assert names["zh-CN"]["potion"]["Elixir"] == "zhs:ElixirPotion"
+    assert names["en"]["potion"]["WeakenPotion"] == "eng:Weak Potion"
+    assert names["zh-CN"]["relic"]["HappyFlower"] == "zhs:Happy Flower"
+    assert names["en"]["power"]["Weak"] == "eng:Weakened"
+    assert bindings["zh-CN"]["potion.Elixir"]["key"] == "ElixirPotion"
+    assert bindings["zh-CN"]["potion.Elixir"]["entry"] == "localization/zhs/potions.json"
+    assert "Impulse" not in names["en"]["card"]
+    assert manifest["name_counts"]["en"]["card"] == 370
+    assert len(manifest["entries_sha256"]) == 12
+    assert names["en"]["encounter"]["TheHeart"] == names["en"]["enemy"]["CorruptHeart"]
+    assert names["zh-CN"]["encounter"]["DonuAndDeca"] == "zhs:Donu与zhs:Deca"
+
+
+def test_english_display_aliases_are_not_used_for_lookup(tmp_path, sources, monkeypatch):
+    from dataclasses import replace
+
+    original = owner.build_simulator_catalog
+    def changed(repository):
+        entities, hashes = original(repository)
+        return [replace(entity, display_name="an unrelated translated label") for entity in entities], hashes
+    monkeypatch.setattr(owner, "build_simulator_catalog", changed)
+    names, _, _ = owner.names_from_archive(archive(tmp_path, sources))
+    assert names["zh-CN"]["potion"]["Elixir"] == "zhs:ElixirPotion"
+    assert names["en"]["card"]["ShrugItOff"] == "eng:Shrug It Off"
+
+
+def test_missing_chinese_entry_stops_instead_of_english_or_name_fallback(tmp_path, sources):
+    cards = sources["localization/zhs/cards.json"]
+    cards["ShrugItOff"] = cards.pop("Shrug It Off")
+    with pytest.raises(KeyError, match="Shrug It Off"):
+        owner.names_from_archive(archive(tmp_path, sources))
+
+
+def test_empty_original_names_stop_the_import(tmp_path, sources):
+    sources["localization/eng/potions.json"]["ElixirPotion"]["NAME"] = " "
+    with pytest.raises(ValueError, match="Empty original name"):
+        owner.names_from_archive(archive(tmp_path, sources))
+
+
+def test_a_new_source_for_an_omitted_card_requires_review(tmp_path, sources):
+    sources["localization/eng/cards.json"]["Impulse"] = {"NAME": "new-release-name"}
+    with pytest.raises(ValueError, match="now supplies the omitted"):
+        owner.names_from_archive(archive(tmp_path, sources))
+
+
+def test_write_and_check_preserve_authored_messages_and_detect_drift(tmp_path, sources):
+    jar = archive(tmp_path, sources)
+    directory = tmp_path / "catalogue"
+    (directory / "locales").mkdir(parents=True)
+    for locale in owner.LANGUAGES:
+        (directory / "locales" / f"{locale}.json").write_bytes(owner.encoded({"game": {
+            "card": {"Bash": "old-name"}, "potionRule": {"Elixir": "Our full mechanism explanation."},
+            "effect": {"damage": "Deal {{damage}} damage."}}, "replay": {"button": "Next"}}))
+    assert not owner.update(jar, directory)["passed"]
+    assert owner.update(jar, directory, write=True)["passed"]
+    assert owner.update(jar, directory)["changed"] == []
+    file = directory / "locales/en.json"
+    catalog = json.loads(file.read_bytes())
+    assert catalog["game"]["potionRule"]["Elixir"] == "Our full mechanism explanation."
+    assert catalog["game"]["effect"]["damage"] == "Deal {{damage}} damage."
+    assert catalog["replay"]["button"] == "Next"
+    catalog["game"]["card"]["Bash"] = "accidental-translation"
+    file.write_bytes(owner.encoded(catalog))
+    assert owner.update(jar, directory)["changed"] == ["en.json"]
+
+
+def test_failed_source_check_leaves_catalogues_untouched(tmp_path, sources):
+    directory = tmp_path / "catalogue"
+    (directory / "locales").mkdir(parents=True)
+    for locale in owner.LANGUAGES:
+        (directory / "locales" / f"{locale}.json").write_text('{"game":{}}', encoding="utf-8")
+    del sources["localization/zhs/relics.json"]["Burning Blood"]
+    with pytest.raises(KeyError, match="Burning Blood"):
+        owner.update(archive(tmp_path, sources), directory, write=True)
+    assert (directory / "locales/en.json").read_text(encoding="utf-8") == '{"game":{}}'
+    assert not (directory / "original-names.json").exists()
