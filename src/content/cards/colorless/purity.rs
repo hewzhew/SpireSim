@@ -3,7 +3,10 @@ use crate::runtime::action::{Action, ActionInfo, AddTo};
 use crate::runtime::combat::{CombatCard, CombatState};
 use smallvec::SmallVec;
 
-pub const MECHANICS: &str = "Choose up to 3 other cards in your hand to Exhaust (up to 5 if upgraded); choosing zero is allowed. Costs 0 Energy. Purity itself also Exhausts. Does not remove any card from your permanent deck.";
+pub const MECHANICS: super::super::mechanics::CardMechanics =
+    super::super::mechanics::CardMechanics {
+        text_id: crate::content::cards::CardId::Purity,
+    };
 
 pub fn definition() -> CardDefinition {
     CardDefinition {

@@ -4,8 +4,10 @@ use crate::runtime::combat::{CombatCard, CombatState};
 use crate::EntityId;
 use smallvec::SmallVec;
 
-pub const MECHANICS: &str =
-    "Deal 7 damage to one enemy (10 if upgraded). Costs 0 Energy and does not Exhaust.";
+pub const MECHANICS: super::super::mechanics::CardMechanics =
+    super::super::mechanics::CardMechanics {
+        text_id: crate::content::cards::CardId::SwiftStrike,
+    };
 
 pub fn definition() -> CardDefinition {
     CardDefinition {

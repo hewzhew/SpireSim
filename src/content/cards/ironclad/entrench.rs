@@ -3,7 +3,10 @@ use crate::runtime::action::{Action, ActionInfo, AddTo};
 use crate::runtime::combat::{CombatCard, CombatState};
 use smallvec::SmallVec;
 
-pub const MECHANICS: &str = "Double your current Block. Costs 2 Energy (1 if upgraded).";
+pub const MECHANICS: super::super::mechanics::CardMechanics =
+    super::super::mechanics::CardMechanics {
+        text_id: crate::content::cards::CardId::Entrench,
+    };
 
 pub fn definition() -> CardDefinition {
     CardDefinition {

@@ -4,7 +4,10 @@ use crate::runtime::combat::{CombatCard, CombatState};
 use crate::EntityId;
 use smallvec::SmallVec;
 
-pub const MECHANICS: &str = "Gain 5 Block (7 if upgraded), then deal 5 damage (7 if upgraded) to one enemy. Block resolves before the hit; each uses its own combat modifiers.";
+pub const MECHANICS: super::super::mechanics::CardMechanics =
+    super::super::mechanics::CardMechanics {
+        text_id: crate::content::cards::CardId::IronWave,
+    };
 
 pub fn definition() -> CardDefinition {
     CardDefinition {

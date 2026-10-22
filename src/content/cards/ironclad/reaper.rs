@@ -3,7 +3,10 @@ use crate::runtime::action::{Action, ActionInfo, AddTo, DamageType};
 use crate::runtime::combat::{CombatCard, CombatState};
 use smallvec::SmallVec;
 
-pub const MECHANICS: &str = "Deal 4 base Attack damage to all enemies (5 if upgraded), modified by Strength, Weak, Vulnerable and other damage effects. Heal for their total actual HP lost after Block, remaining HP and damage limits such as Invincible. Healing modifiers such as Magic Flower apply to that total. Exhaust; using it once removes this copy from later combat draws unless another effect returns it.";
+pub const MECHANICS: super::super::mechanics::CardMechanics =
+    super::super::mechanics::CardMechanics {
+        text_id: crate::content::cards::CardId::Reaper,
+    };
 
 pub fn definition() -> CardDefinition {
     CardDefinition {

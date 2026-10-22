@@ -3,8 +3,10 @@ use crate::runtime::action::{Action, ActionInfo, AddTo, DamageInfo, DamageType};
 use crate::runtime::combat::{CombatCard, CombatState};
 use smallvec::SmallVec;
 
-pub const MECHANICS: &str =
-    "Use current Block as base Attack damage, then apply Strength, Weak, the target's Vulnerable and other damage modifiers. Playing Body Slam preserves your Block. Costs 1 Energy (0 if upgraded).";
+pub const MECHANICS: super::super::mechanics::CardMechanics =
+    super::super::mechanics::CardMechanics {
+        text_id: crate::content::cards::CardId::BodySlam,
+    };
 
 pub fn definition() -> CardDefinition {
     CardDefinition {

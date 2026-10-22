@@ -4,7 +4,10 @@ use crate::runtime::combat::{CombatCard, CombatState};
 use crate::EntityId;
 use smallvec::SmallVec;
 
-pub const MECHANICS: &str = "Deal 18 damage (22 if upgraded). Base cost is 4 (3 if upgraded). Each positive HP-loss event reduces this instance's cost by 1 while it is in hand, draw or discard, to a minimum of 0, for this combat. Blocked or prevented HP loss does not reduce cost.";
+pub const MECHANICS: super::super::mechanics::CardMechanics =
+    super::super::mechanics::CardMechanics {
+        text_id: crate::content::cards::CardId::BloodForBlood,
+    };
 
 pub fn definition() -> CardDefinition {
     CardDefinition {

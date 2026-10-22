@@ -4,7 +4,10 @@ use crate::runtime::action::{Action, ActionInfo, AddTo, DamageInfo, DamageType};
 use crate::runtime::combat::{CombatCard, CombatState};
 use smallvec::SmallVec;
 
-pub const MECHANICS: &str = "Deal 12 damage (14 if upgraded), then apply 2 Weak (3 if upgraded). The new Weak applies after this hit.";
+pub const MECHANICS: super::super::mechanics::CardMechanics =
+    super::super::mechanics::CardMechanics {
+        text_id: crate::content::cards::CardId::Clothesline,
+    };
 
 pub fn definition() -> CardDefinition {
     CardDefinition {

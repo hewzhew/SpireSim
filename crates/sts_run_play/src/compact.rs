@@ -480,8 +480,8 @@ pub(crate) fn inventory_reading_decision_v1(
             writeln!(
                 output,
                 "    {}",
-                match cards::mechanics::explanation(id) {
-                    Some(effect) => message("supplement", &[("effect", effect)]),
+                match cards::mechanics::get(id).map(|rule| rule.explanation(locale)) {
+                    Some(effect) => message("cardSupplement", &[("effect", &effect)]),
                     None => message("unknown", &[]),
                 }
             )
@@ -504,11 +504,9 @@ pub(crate) fn inventory_reading_decision_v1(
             groups
                 .iter()
                 .map(|&(count, card)| (card.card, card.upgrades, card.cost_modifier, count)),
+            locale,
         );
         if !links.is_empty() {
-            if locale != Locale::En {
-                writeln!(output, "{}", message("linksEnglish", &[])).expect("string write");
-            }
             output.push_str(&links);
         }
     }
@@ -528,7 +526,7 @@ pub(crate) fn inventory_reading_decision_v1(
                 output,
                 "    {}",
                 match relics::mechanics::explanation(id) {
-                    Some(effect) => message("supplement", &[("effect", effect)]),
+                    Some(effect) => message("relicSupplement", &[("effect", effect)]),
                     None => message("unknown", &[]),
                 }
             )
@@ -829,7 +827,9 @@ fn render_shop_status_v1(
         let detail = format!(
             "{cost} {:?}: {}",
             definition.card_type,
-            cards::mechanics::explanation(offer.card).unwrap_or("Effect description unavailable.")
+            cards::mechanics::get(offer.card)
+                .map(|rule| rule.explanation(Locale::En))
+                .unwrap_or_else(|| "Effect description unavailable.".to_owned())
         );
         render_shop_offer_v1(
             &mut output,

@@ -4,7 +4,10 @@ use crate::runtime::action::{Action, ActionInfo, AddTo};
 use crate::runtime::combat::{CombatCard, CombatState};
 use smallvec::SmallVec;
 
-pub const MECHANICS: &str = "Costs 0 Energy. For the rest of combat, every 5 cards played in a single turn deals 10 non-Attack damage to all enemies (14 if upgraded). Counts cards, not damage hits; multiple groups of 5 can trigger, and the card counter resets each turn. Does not grant Energy or draw cards.";
+pub const MECHANICS: super::super::mechanics::CardMechanics =
+    super::super::mechanics::CardMechanics {
+        text_id: crate::content::cards::CardId::Panache,
+    };
 
 pub fn definition() -> CardDefinition {
     CardDefinition {

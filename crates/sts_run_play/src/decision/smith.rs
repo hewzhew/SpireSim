@@ -242,11 +242,17 @@ fn changes(before: &CardBlueprint, after: &CardBlueprint, locale: Locale) -> (Ve
     if includes_rule {
         changes.push(text(
             locale,
-            "smith.ruleEnglish",
+            "smith.rule",
             &[(
                 "effect",
-                mechanics::explanation(before.id)
-                    .unwrap_or("Upgrade effect unknown; query info card"),
+                &mechanics::get(before.id)
+                    .map(|rule| rule.explanation(locale))
+                    .unwrap_or_else(|| {
+                        locale
+                            .entry("mechanics", "card.ruleUnavailable")
+                            .unwrap()
+                            .to_owned()
+                    }),
             )],
         ));
     }
@@ -276,11 +282,15 @@ pub(super) fn write_full(out: &mut String, groups: &[SmithComparison], locale: L
                 "    {}",
                 text(
                     locale,
-                    "smith.printedRuleEnglish",
+                    "smith.printedRule",
                     &[(
                         "effect",
-                        mechanics::explanation(group.before.id)
-                            .unwrap_or("Effect unknown; query info card")
+                        &mechanics::get(group.before.id)
+                            .map(|rule| rule.explanation(locale))
+                            .unwrap_or_else(|| locale
+                                .entry("mechanics", "card.ruleUnavailable")
+                                .unwrap()
+                                .to_owned())
                     )]
                 )
             )

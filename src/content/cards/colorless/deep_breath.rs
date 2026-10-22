@@ -1,4 +1,7 @@
-pub const MECHANICS: &str = "Shuffle your discard pile into your draw pile, then draw 1 card (2 if upgraded). If the discard pile is empty when played, only draw; do not shuffle. The playing Deep Breath is not included in this shuffle or draw, and is normally discarded after its effects. Costs 0 Energy and does not Exhaust.";
+pub const MECHANICS: super::super::mechanics::CardMechanics =
+    super::super::mechanics::CardMechanics {
+        text_id: crate::content::cards::CardId::DeepBreath,
+    };
 
 use crate::content::cards::{CardDefinition, CardId, CardRarity, CardTarget, CardType};
 use crate::runtime::action::{Action, ActionInfo, AddTo};

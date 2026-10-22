@@ -5,7 +5,10 @@ use crate::state::HandSelectFilter;
 use crate::state::HandSelectReason;
 use smallvec::SmallVec;
 
-pub const MECHANICS: &str = "Create 1 additional copy (2 if upgraded) of an Attack or Power in your hand. With one eligible card, keep the original and add copies; with multiple eligible cards, select one and replace it with 2 copies (3 if upgraded). Both branches have the same net copy gain before the hand limit. No eligible card produces no copies; hand capacity applies.";
+pub const MECHANICS: super::super::mechanics::CardMechanics =
+    super::super::mechanics::CardMechanics {
+        text_id: crate::content::cards::CardId::DualWield,
+    };
 
 pub fn definition() -> CardDefinition {
     CardDefinition {

@@ -71,6 +71,22 @@ test('every shipped power definition has complete bilingual fields and resolves 
   }
 });
 
+test('all reviewed card rules share stable identities and resolve official cross references', () => {
+  for (const locale of ['en', 'zh-CN']) {
+    const display = createPresentation({ locale });
+    assert.equal(Object.keys(catalogs[locale].game.cardRule).length, 136);
+    for (const id of Object.keys(catalogs[locale].game.cardRule)) {
+      assert.equal(typeof catalogs[locale].game.card[id], 'string', id);
+      const rule = display.definitionText(`game:cardRule.${id}`);
+      assert.ok(rule && !rule.includes('{{'), `${locale}:${id}`);
+      if (locale === 'zh-CN') assert.match(rule, /[\u4e00-\u9fff]/);
+    }
+    const rule = display.definitionText('game:cardRule.Reaper');
+    assert.ok(rule.includes(display.entity('relic', 'MagicFlower')));
+    assert.ok(rule.includes(display.entity('power', 'Invincible')));
+  }
+});
+
 test('generated name sections match their recorded original-resource import', async () => {
   const source = JSON.parse(await readFile(new URL('./original-names.json', import.meta.url), 'utf8'));
   assert.equal(source.schema, 'sts-original-localization-names-v1');

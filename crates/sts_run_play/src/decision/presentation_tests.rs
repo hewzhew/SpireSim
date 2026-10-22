@@ -671,7 +671,7 @@ fn campfire_locales_keep_upgrade_values_copy_groups_and_legal_bindings() {
     assert!(zh.view.contains("消耗目标：随机 -> 自选"));
     assert!(zh.view.contains("战斗中升级：一张手牌 -> 所有手牌"));
     assert!(zh.view.contains("打出后消耗 是 -> 否"));
-    assert!(zh.view.contains("机制补充（英文）"));
+    assert!(zh.view.contains("机制补充："));
     assert!(full.view.contains("可升级效果："));
     let public = before
         .current_decision

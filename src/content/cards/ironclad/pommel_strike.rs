@@ -4,8 +4,10 @@ use crate::runtime::combat::{CombatCard, CombatState};
 use crate::EntityId;
 use smallvec::SmallVec;
 
-pub const MECHANICS: &str =
-    "Deal 9 damage (10 if upgraded), then draw 1 card (2 if upgraded). It has the Strike tag.";
+pub const MECHANICS: super::super::mechanics::CardMechanics =
+    super::super::mechanics::CardMechanics {
+        text_id: crate::content::cards::CardId::PommelStrike,
+    };
 
 pub fn definition() -> CardDefinition {
     CardDefinition {

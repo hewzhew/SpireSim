@@ -5,8 +5,10 @@ use smallvec::SmallVec;
 
 use crate::content::cards::mechanics::card_self_hp_loss_on_play_v1;
 
-pub const MECHANICS: &str =
-    "Lose 3 HP, then gain 2 Energy (3 if upgraded). The HP loss occurs before the Energy gain.";
+pub const MECHANICS: super::super::mechanics::CardMechanics =
+    super::super::mechanics::CardMechanics {
+        text_id: crate::content::cards::CardId::Bloodletting,
+    };
 
 pub fn definition() -> CardDefinition {
     CardDefinition {

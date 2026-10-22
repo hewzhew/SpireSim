@@ -51,7 +51,7 @@ fn card_rules(action: &TaskStrategicActionV1, locale: Locale) -> Vec<CardRuleRea
             CardRuleReadingV1 {
                 card,
                 upgrades,
-                available: cards::mechanics::explanation(card).is_some(),
+                available: cards::mechanics::get(card).is_some(),
                 view,
             }
         })

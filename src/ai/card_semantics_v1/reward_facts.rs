@@ -433,7 +433,7 @@ mod tests {
                     profile.roles.contains(&role),
                     "{card:?}+{upgrades}: {profile:?}"
                 );
-                assert!(crate::content::cards::mechanics::explanation(card).is_some());
+                assert!(crate::content::cards::mechanics::get(card).is_some());
             }
         }
     }

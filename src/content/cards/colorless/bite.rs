@@ -4,7 +4,10 @@ use crate::runtime::combat::{CombatCard, CombatState};
 use crate::EntityId;
 use smallvec::SmallVec;
 
-pub const MECHANICS: &str = "Deal 7 damage to one enemy, then heal 2 HP (8 damage and 3 HP if upgraded). Healing is a fixed amount per play, subject to healing modifiers and the Max HP cap.";
+pub const MECHANICS: super::super::mechanics::CardMechanics =
+    super::super::mechanics::CardMechanics {
+        text_id: crate::content::cards::CardId::Bite,
+    };
 
 pub fn definition() -> CardDefinition {
     CardDefinition {

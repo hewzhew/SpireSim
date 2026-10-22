@@ -1,4 +1,7 @@
-pub const MECHANICS: &str = "Upgrade every upgradeable card in hand, draw pile, discard pile and exhaust pile for this combat only, then Exhaust. Costs 2 Energy (1 if upgraded). Does not upgrade the master deck or the currently playing card in limbo; already upgraded cards are skipped except repeat-upgradeable Searing Blow.";
+pub const MECHANICS: super::super::mechanics::CardMechanics =
+    super::super::mechanics::CardMechanics {
+        text_id: crate::content::cards::CardId::Apotheosis,
+    };
 
 use crate::content::cards::{CardDefinition, CardId, CardRarity, CardTarget, CardType};
 use crate::runtime::action::{ActionInfo, AddTo};

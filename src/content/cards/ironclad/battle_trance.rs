@@ -3,8 +3,10 @@ use crate::runtime::action::{Action, ActionInfo, AddTo};
 use crate::runtime::combat::{CombatCard, CombatState};
 use smallvec::SmallVec;
 
-pub const MECHANICS: &str =
-    "Draw 3 cards (4 if upgraded), then prevent further card draw for the rest of this turn.";
+pub const MECHANICS: super::super::mechanics::CardMechanics =
+    super::super::mechanics::CardMechanics {
+        text_id: crate::content::cards::CardId::BattleTrance,
+    };
 
 pub fn definition() -> CardDefinition {
     CardDefinition {

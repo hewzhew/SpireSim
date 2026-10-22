@@ -1147,7 +1147,7 @@ fn bonfire_selection_preserves_source_and_exposes_each_offers_executed_reward() 
 }
 
 #[test]
-fn event_reading_uses_public_labels_and_retains_typed_mechanics() {
+fn event_reading_preserves_public_candidates_beneath_display_labels() {
     use sts_oracle_learning::content::events::neow::NeowEligibilityV1;
     let dir = TestDirectory::new();
     let paths = RunPlayPathsV1::new(dir.0.join("neow"));
@@ -1168,6 +1168,14 @@ fn event_reading_uses_public_labels_and_retains_typed_mechanics() {
     )
     .unwrap();
     let mut game = RunPlayControllerV1::open(paths).unwrap();
+    let before = serde_json::to_value(game.head()).unwrap();
+    let public = game
+        .head()
+        .current_decision
+        .as_ref()
+        .unwrap()
+        .public_decision_v1()
+        .unwrap();
     let reading = game
         .decision_reading_v1(&[DecisionDetailV1::State], None, Locale::En)
         .unwrap();
@@ -1179,12 +1187,21 @@ fn event_reading_uses_public_labels_and_retains_typed_mechanics() {
                 },
         } = &option.candidate
         {
-            assert_eq!(Some(&option.label), public_semantics.public_label.as_ref());
+            assert!(!option.label.is_empty());
+            assert!(public_semantics
+                .public_label
+                .as_ref()
+                .is_some_and(|label| !label.is_empty()));
+            assert_eq!(
+                serde_json::to_value(&option.candidate).unwrap(),
+                serde_json::to_value(&public.candidates[option.choice.ordinal_path[0]]).unwrap()
+            );
             assert!(public_semantics.structured_semantics.is_some());
         }
     }
     assert!(reading.state.is_some());
     assert!(!reading.view.contains("mechanics=["));
+    assert_eq!(serde_json::to_value(game.head()).unwrap(), before);
 }
 
 #[test]
@@ -1904,7 +1921,9 @@ fn brief_smith_keeps_the_rule_for_an_unnamed_upgrade_effect() {
     assert!(row.contains("Rule:"), "{row}");
     assert!(
         row.contains(
-            sts_oracle_learning::content::cards::mechanics::explanation(CardId::DoubleTap).unwrap()
+            &sts_oracle_learning::content::cards::mechanics::get(CardId::DoubleTap)
+                .unwrap()
+                .explanation(Locale::En)
         ),
         "{row}"
     );
@@ -1951,7 +1970,9 @@ fn smith_reading_compares_actual_instance_upgrades_and_preserves_each_choice() {
         let mut game = controller_with_session(&dir.0, "smith-comparison", &session);
         let before = game.decision_reading_v1(&[], None, Locale::En).unwrap();
         assert!(before.view.contains(fact), "{card:?}: {}", before.view);
-        assert!(before.view.contains(mechanics::explanation(card).unwrap()));
+        assert!(before
+            .view
+            .contains(&mechanics::get(card).unwrap().explanation(Locale::En)));
         assert_eq!(
             before
                 .view
@@ -2987,9 +3008,9 @@ fn choice_readings_expose_typed_items_and_rules_without_changing_choices() {
     assert!(reading
         .view
         .contains("take Uppercut+\n  Card Uppercut+ | Attack | 2c | tags: none"));
-    assert!(reading
-        .view
-        .contains(sts_oracle_learning::content::cards::ironclad::uppercut::MECHANICS));
+    assert!(reading.view.contains(
+        &sts_oracle_learning::content::cards::ironclad::uppercut::MECHANICS.explanation(Locale::En)
+    ));
     assert!(reading
         .view
         .contains("take Anger\n  Card Anger | Attack | 0c | tags: none"));
@@ -3249,9 +3270,10 @@ fn inventory_effects_reports_real_upgrades_and_conditional_engine_rules() {
     assert!(explained.contains("P1 empty"));
     assert!(explained.contains("Gain Dexterity equal to potency (base 5)"));
     assert!(explained.contains("Draw 1 card (2 if upgraded), then put 1 card"));
-    assert!(
-        explained.contains(sts_oracle_learning::content::cards::ironclad::battle_trance::MECHANICS)
-    );
+    assert!(explained.contains(
+        &sts_oracle_learning::content::cards::ironclad::battle_trance::MECHANICS
+            .explanation(Locale::En)
+    ));
     let summary = explained
         .find("Mechanic summary (same deck copies listed above):")
         .unwrap();

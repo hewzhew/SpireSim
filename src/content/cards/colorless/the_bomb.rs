@@ -4,7 +4,10 @@ use crate::runtime::action::{Action, ActionInfo, AddTo};
 use crate::runtime::combat::{CombatCard, CombatState};
 use smallvec::SmallVec;
 
-pub const MECHANICS: &str = "Costs 2 Energy. Apply a 3-turn countdown: at the end of your third turn, deal 40 non-Attack damage to all enemies (50 if upgraded). The turn this card is played counts as the first turn. Strength, Weak and Vulnerable do not modify this delayed THORNS damage; enemy Block and damage caps still apply. The card itself does not Exhaust unless another effect makes it do so.";
+pub const MECHANICS: super::super::mechanics::CardMechanics =
+    super::super::mechanics::CardMechanics {
+        text_id: crate::content::cards::CardId::TheBomb,
+    };
 
 pub fn definition() -> CardDefinition {
     CardDefinition {

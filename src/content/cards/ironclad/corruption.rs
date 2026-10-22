@@ -3,7 +3,10 @@ use crate::runtime::action::{Action, ActionInfo, AddTo};
 use crate::runtime::combat::{CombatCard, CombatState};
 use smallvec::SmallVec;
 
-pub const MECHANICS: &str = "For the rest of combat, Skills cost 0 and Exhaust when played, including upgraded Skills that normally do not Exhaust. Costs 3 Energy (2 if upgraded).";
+pub const MECHANICS: super::super::mechanics::CardMechanics =
+    super::super::mechanics::CardMechanics {
+        text_id: crate::content::cards::CardId::Corruption,
+    };
 
 pub fn definition() -> CardDefinition {
     CardDefinition {

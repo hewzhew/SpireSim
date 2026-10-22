@@ -4,7 +4,10 @@ use crate::runtime::action::{Action, ActionInfo, AddTo, DamageInfo, DamageType};
 use crate::runtime::combat::{CombatCard, CombatState};
 use smallvec::SmallVec;
 
-pub const MECHANICS: &str = "Deal 13 damage, then apply 1 Weak and 1 Vulnerable (2 of each if upgraded). Costs 2 Energy. Resolves damage first, then applies Weak, then Vulnerable. Its new Vulnerable does not increase its own damage. Each debuff can consume a separate Artifact charge. With one Artifact charge and no prior Vulnerable, Weak is blocked and Vulnerable applies after the damage.";
+pub const MECHANICS: super::super::mechanics::CardMechanics =
+    super::super::mechanics::CardMechanics {
+        text_id: crate::content::cards::CardId::Uppercut,
+    };
 
 pub fn definition() -> CardDefinition {
     CardDefinition {

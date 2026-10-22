@@ -4,7 +4,10 @@ use crate::runtime::combat::{CombatCard, CombatState};
 use crate::EntityId;
 use smallvec::SmallVec;
 
-pub const MECHANICS: &str = "Exhaust all other cards in your hand, then deal 7 damage (10 if upgraded) to one enemy once for each card Exhausted. Each hit benefits from Strength.";
+pub const MECHANICS: super::super::mechanics::CardMechanics =
+    super::super::mechanics::CardMechanics {
+        text_id: crate::content::cards::CardId::FiendFire,
+    };
 
 pub fn definition() -> CardDefinition {
     CardDefinition {

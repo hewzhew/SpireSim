@@ -4,7 +4,10 @@ use crate::runtime::action::{Action, ActionInfo, AddTo};
 use crate::runtime::combat::{CombatCard, CombatState};
 use smallvec::SmallVec;
 
-pub const MECHANICS: &str = "Gain 1 Artifact (2 if upgraded). Artifact blocks future debuff applications, consuming one charge per application. Costs 0 Energy. Exhaust.";
+pub const MECHANICS: super::super::mechanics::CardMechanics =
+    super::super::mechanics::CardMechanics {
+        text_id: crate::content::cards::CardId::Panacea,
+    };
 
 pub fn definition() -> CardDefinition {
     CardDefinition {

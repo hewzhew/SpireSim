@@ -3,7 +3,10 @@ use crate::runtime::action::{Action, ActionInfo, AddTo};
 use crate::runtime::combat::{CombatCard, CombatState};
 use smallvec::SmallVec;
 
-pub const MECHANICS: &str = "Choose one Skill card currently in your draw pile and move it to your hand, with its existing cost. Costs 0 Energy. Cannot play if the draw pile has no Skill. Exhaust when unupgraded; upgrading removes Exhaust.";
+pub const MECHANICS: super::super::mechanics::CardMechanics =
+    super::super::mechanics::CardMechanics {
+        text_id: crate::content::cards::CardId::SecretTechnique,
+    };
 
 pub fn definition() -> CardDefinition {
     CardDefinition {

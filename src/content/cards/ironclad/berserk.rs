@@ -3,7 +3,10 @@ use crate::runtime::action::{Action, ActionInfo, AddTo};
 use crate::runtime::combat::{CombatCard, CombatState};
 use smallvec::SmallVec;
 
-pub const MECHANICS: &str = "When played, apply 2 turns of Vulnerable to yourself once (1 turn if upgraded); its duration decreases at the end of each round. Separately, gain 1 Energy at the start of each of your turns from the next turn onward for this combat.";
+pub const MECHANICS: super::super::mechanics::CardMechanics =
+    super::super::mechanics::CardMechanics {
+        text_id: crate::content::cards::CardId::Berserk,
+    };
 
 pub fn definition() -> CardDefinition {
     CardDefinition {

@@ -9,7 +9,13 @@ use sts_oracle_learning::content::cards::{self, mechanics as m, CardId, CardType
 pub(crate) fn write_owned_card_links(
     out: &mut String,
     cards: impl IntoIterator<Item = (CardId, u8, i8, usize)>,
+    locale: Locale,
 ) {
+    let text = |key: &str, parameters: &[(&str, &str)]| {
+        locale
+            .text("mechanics", &format!("cardLinks.{key}"), parameters)
+            .expect("card mechanism link message")
+    };
     let mut strength = Vec::new();
     let mut conversion = Vec::new();
     let mut access = Vec::new();
@@ -20,20 +26,40 @@ pub(crate) fn write_owned_card_links(
     for (id, upgrades, modifier, count) in cards {
         let definition = cards::get_card_definition(id);
         let magic = definition.base_magic + i32::from(upgrades > 0) * definition.upgrade_magic;
-        let source = format!(
-            "{count}x {} | {}",
-            crate::render::format_card(id, upgrades),
-            super::card_attributes(id, upgrades, modifier, Locale::En)
+        let source = text(
+            "source",
+            &[
+                ("count", &count.to_string()),
+                ("name", &locale.card_name(id.stable_id(), upgrades)),
+                (
+                    "attributes",
+                    &super::card_attributes(id, upgrades, modifier, locale),
+                ),
+            ],
         );
-        let rule = m::explanation(id).unwrap_or("See info card for the effect rule.");
-        let row = |effect: String| format!("{source}: {effect}");
+        let rule_text = m::get(id)
+            .map(|rule| rule.explanation(locale))
+            .unwrap_or_else(|| text("ruleUnavailable", &[]));
+        let rule = rule_text.as_str();
+        let row = |effect: String| text("row", &[("source", &source), ("effect", &effect)]);
         if let Some(delivery) = m::card_player_strength_delivery_v1(id) {
             use m::CardPlayerStrengthDeliveryV1::*;
             let effect = match delivery {
-                OnPlay => format!("request {magic} Strength on play, with no scheduled loss."),
-                IfTargetIntentBaseDamageNonnegativeAtResolution => format!("request {magic} Strength if the target has an attack intent at resolution, including a zero-damage attack."),
-                OnPlayWithSeparateLoseStrength => format!("request {magic} Strength on play, then a separate {magic} Lose Strength at turn end; preventing/removing that debuff changes persistence."),
-                EachPlayerTurnStartPostDraw => format!("deployment grants 0 immediate Strength. Each later player turn start after normal draw requests {magic} Strength per application. One deployment on turn t contributes 0 on t, {magic} on t+1, {} on t+2, {} on t+3 before other effects. A later deployment shifts this schedule. A separate normal play of another drawn copy pays its own current cost and adds another application with its own deployment time.", magic * 2, magic * 3),
+                OnPlay => text("strengthOnPlay", &[("amount", &magic.to_string())]),
+                IfTargetIntentBaseDamageNonnegativeAtResolution => {
+                    text("strengthAttackIntent", &[("amount", &magic.to_string())])
+                }
+                OnPlayWithSeparateLoseStrength => {
+                    text("strengthTemporary", &[("amount", &magic.to_string())])
+                }
+                EachPlayerTurnStartPostDraw => text(
+                    "strengthLaterTurns",
+                    &[
+                        ("amount", &magic.to_string()),
+                        ("second", &(magic * 2).to_string()),
+                        ("third", &(magic * 3).to_string()),
+                    ],
+                ),
             };
             strength.push(row(effect));
         }
@@ -42,23 +68,47 @@ pub(crate) fn write_owned_card_links(
         }
         if let Some(loss) = m::card_self_hp_loss_on_play_v1(id, upgrades) {
             let destination = if definition.exhaust {
-                "After the play it normally Exhausts; another use needs an actual recovery or copying effect."
+                text("selfLossExhaust", &[])
             } else {
-                "Another ordinary use needs reaching Hand again and paying its current cost."
+                text("selfLossRepeat", &[])
             };
-            self_loss.push(row(format!("each successful play requests one self HP-loss event of {} HP. With Rupture already deployed, actual positive self HP loss triggers its active Strength amount once for this event. {count} owned copies supply at most {count} such on-play events in one pass through those copies; repeated draws or copies have their own access and payment. {destination}", loss.base_hp_loss)));
+            self_loss.push(row(text(
+                "selfLossOnPlay",
+                &[
+                    ("loss", &loss.base_hp_loss.to_string()),
+                    (
+                        "rupture",
+                        locale.entity("card", CardId::Rupture.stable_id()),
+                    ),
+                    ("count", &count.to_string()),
+                    ("destination", &destination),
+                ],
+            )));
         } else if let Some(loss) = m::card_end_of_turn_hp_loss_and_damage_v1(id, magic) {
-            self_loss.push(row(format!("after deployment, at each player turn end while the combat is ongoing, request {} self HP loss per application as one combined event. An already deployed Rupture gains its active Strength amount once for that positive-loss event. Additional applications increase the loss amount of this event. {rule}", loss.hp_loss_per_application)));
+            self_loss.push(row(text(
+                "selfLossTurnEnd",
+                &[
+                    ("loss", &loss.hp_loss_per_application.to_string()),
+                    (
+                        "rupture",
+                        locale.entity("card", CardId::Rupture.stable_id()),
+                    ),
+                    ("rule", rule),
+                ],
+            )));
         } else if id == CardId::Brutality {
             self_loss.push(row(rule.into()));
         }
         if m::card_hand_copy_v1(id, magic).is_some() {
-            copying.push(row(format!("{rule} A useful copy needs its particular target sharing Hand before copying, then room and Energy for the resulting uses. Evaluate the intended target's added payoff and this entire payment sequence.")));
+            copying.push(row(text("copying", &[("rule", rule)])));
         }
         let roles = m::card_mechanic_profile(id, upgrades).roles;
         let draw = m::unconditional_card_draw_request_v1(id, magic);
         if let Some(n) = draw {
-            access.push(row(format!("after successful play request {n} draws; draw prevention, hand capacity and follow-up effects still apply. {rule}")));
+            access.push(row(text(
+                "draw",
+                &[("count", &n.to_string()), ("rule", rule)],
+            )));
         } else if roles.contains(m::CardMechanicRole::DrawCards)
             || roles.contains(m::CardMechanicRole::DrawPileControl)
         {
@@ -74,42 +124,37 @@ pub(crate) fn write_owned_card_links(
         if let Some(gain) = m::card_energy_gain_v1(id, upgrades, magic) {
             use m::CardEnergyDeliveryV1::*;
             let timing = match gain.delivery {
-                OnPlay => "on play",
-                OnExhaust => {
-                    "only when this card is Exhausted; playing it alone does not grant this Energy"
-                }
-                EachPlayerTurnStart => "at each later player turn start after deployment",
-                NextPlayerEnergyRecharge => "at the next player Energy recharge",
-                IfTargetVulnerableAtResolution => "if the target is Vulnerable at resolution",
+                OnPlay => "energyOnPlay",
+                OnExhaust => "energyOnExhaust",
+                EachPlayerTurnStart => "energyLaterTurn",
+                NextPlayerEnergyRecharge => "energyNextRecharge",
+                IfTargetVulnerableAtResolution => "energyVulnerable",
             };
-            energy.push(row(format!(
-                "request {} Energy {timing}. {rule}",
-                gain.amount
+            energy.push(row(text(
+                timing,
+                &[("amount", &gain.amount.to_string()), ("rule", rule)],
             )));
         }
     }
     let groups = [
-        ("Strength grants", strength),
-        (
-            "Strength amplification and trigger dependencies",
-            conversion,
-        ),
-        ("Draw and pile access", access),
-        ("Deployed trigger and Skill-cost rules", triggers),
-        ("Energy grants", energy),
-        ("Self HP-loss event sources and repetition", self_loss),
-        ("Same-Hand copying", copying),
+        ("strength", strength),
+        ("conversion", conversion),
+        ("access", access),
+        ("triggers", triggers),
+        ("energy", energy),
+        ("selfLoss", self_loss),
+        ("copy", copying),
     ];
     if groups.iter().all(|(_, rows)| rows.is_empty()) {
         return;
     }
-    writeln!(out, "Mechanic summary (same deck copies listed above):").unwrap();
-    writeln!(out, "Normal card deployment requires reaching Hand and paying its current cost; free plays and on-Exhaust gains follow their own rules. Power triggers require prior deployment. Relic and potion rules are listed with their actual inventory below.").unwrap();
+    writeln!(out, "{}", text("heading", &[])).unwrap();
+    writeln!(out, "{}", text("deployment", &[])).unwrap();
     for (name, rows) in groups {
         if rows.is_empty() {
             continue;
         }
-        writeln!(out, "  {name}:").unwrap();
+        writeln!(out, "  {}:", text(&format!("group.{name}"), &[])).unwrap();
         for row in rows {
             writeln!(out, "    {row}").unwrap();
         }
@@ -119,6 +164,28 @@ pub(crate) fn write_owned_card_links(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn chinese_links_keep_delayed_counts_conditional_energy_and_official_names() {
+        let mut out = String::new();
+        write_owned_card_links(
+            &mut out,
+            [
+                (CardId::DemonForm, 0, 0, 1),
+                (CardId::Sentinel, 1, 0, 2),
+                (CardId::Offering, 0, 0, 2),
+                (CardId::DualWield, 0, 0, 1),
+            ],
+            Locale::ZhCn,
+        );
+        assert!(out.contains("1× 恶魔形态"));
+        assert!(out.contains("t+1 为 2，t+2 为 4，t+3 为 6"));
+        assert!(out.contains("仅在此牌被消耗时请求获得 3 点能量"));
+        assert!(out.contains("至多提供 2 次这样的打出事件"));
+        assert!(out.contains(Locale::ZhCn.entity("card", CardId::Rupture.stable_id())));
+        assert!(out.contains("复制前目标牌必须同处手牌"));
+        assert!(!out.contains("Mechanic summary"));
+    }
 
     #[test]
     fn sources_keep_counts_costs_and_delayed_growth_separate_from_amplification() {
@@ -132,6 +199,7 @@ mod tests {
                 (CardId::LimitBreak, 0, 0, 1),
                 (CardId::ShrugItOff, 0, 0, 1),
             ],
+            Locale::En,
         );
         assert!(out.contains("1x Demon Form | Power | 3c"));
         assert!(out.contains("2x Demon Form+ | Power | 2c"));
@@ -163,9 +231,10 @@ mod tests {
                 (CardId::BattleTrance, 1, 0, 1),
                 (CardId::Warcry, 1, 0, 1),
             ],
+            Locale::En,
         );
         assert!(out.contains("after successful play request 4 draws"));
-        assert!(out.contains(cards::ironclad::battle_trance::MECHANICS));
+        assert!(out.contains(&cards::ironclad::battle_trance::MECHANICS.explanation(Locale::En)));
         assert!(out.contains("then put 1 card"));
         assert!(out.contains("request 3 Energy only when this card is Exhausted"));
         assert!(out.contains("Skills cost 0 and Exhaust when played"));
@@ -185,6 +254,7 @@ mod tests {
                 (CardId::Combust, 0, 0, 1),
                 (CardId::DualWield, 0, 0, 1),
             ],
+            Locale::En,
         );
         assert!(out.contains("one self HP-loss event of 2 HP"));
         assert!(out.contains("1 owned copies supply at most 1 such on-play events"));

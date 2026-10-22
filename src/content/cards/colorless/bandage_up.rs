@@ -3,7 +3,10 @@ use crate::runtime::action::{Action, ActionInfo, AddTo};
 use crate::runtime::combat::{CombatCard, CombatState};
 use smallvec::SmallVec;
 
-pub const MECHANICS: &str = "Heal 4 HP (6 if upgraded), up to Max HP and subject to healing modifiers. Costs 0 Energy. Exhaust. This heals HP directly rather than gaining Block.";
+pub const MECHANICS: super::super::mechanics::CardMechanics =
+    super::super::mechanics::CardMechanics {
+        text_id: crate::content::cards::CardId::BandageUp,
+    };
 
 pub fn definition() -> CardDefinition {
     CardDefinition {

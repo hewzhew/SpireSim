@@ -3,7 +3,10 @@ use crate::runtime::action::{Action, ActionInfo, AddTo};
 use crate::runtime::combat::{CombatCard, CombatState};
 use smallvec::SmallVec;
 
-pub const MECHANICS: &str = "X-cost Skill. Spend all current Energy to add X random Colorless cards to your hand; Chemical X adds 2 to the number generated. Generated cards cost 0 this turn and are upgraded if Transmutation is upgraded. Hand capacity applies, with overflow sent to discard. These are temporary combat cards, not additions to the master deck. Exhaust.";
+pub const MECHANICS: super::super::mechanics::CardMechanics =
+    super::super::mechanics::CardMechanics {
+        text_id: crate::content::cards::CardId::Transmutation,
+    };
 
 pub fn definition() -> CardDefinition {
     CardDefinition {

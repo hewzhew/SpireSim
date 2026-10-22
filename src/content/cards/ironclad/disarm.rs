@@ -4,7 +4,10 @@ use crate::runtime::action::{Action, ActionInfo, AddTo};
 use crate::runtime::combat::{CombatCard, CombatState};
 use smallvec::SmallVec;
 
-pub const MECHANICS: &str = "Reduce one enemy's current Strength by 2 (3 if upgraded). Strength can become negative: a target at 0 becomes -2 (-3 if upgraded). This persistent reduction affects each later attack hit, including across turns; ordinary Strength gains add to the reduced amount. An effect that explicitly clears debuffs can remove negative Strength. Artifact can block the application. Exhaust.";
+pub const MECHANICS: super::super::mechanics::CardMechanics =
+    super::super::mechanics::CardMechanics {
+        text_id: crate::content::cards::CardId::Disarm,
+    };
 
 pub fn definition() -> CardDefinition {
     CardDefinition {

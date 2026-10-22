@@ -422,10 +422,13 @@ pub(crate) fn write_card_offer(
             writeln!(out, "  {line}").unwrap();
         }
     }
-    match cards::mechanics::explanation(card) {
-        Some(effect) => {
-            writeln!(out, "{}", message("card.supplement", &[("effect", effect)])).unwrap()
-        }
+    match cards::mechanics::get(card).map(|rule| rule.explanation(locale)) {
+        Some(effect) => writeln!(
+            out,
+            "{}",
+            message("card.supplement", &[("effect", &effect)])
+        )
+        .unwrap(),
         None => writeln!(out, "  {}", message("card.ruleUnavailable", &[])).unwrap(),
     }
 }
@@ -471,8 +474,8 @@ pub(crate) fn write_printed_card_rule(
             writeln!(out, "    {line}").unwrap();
         }
     }
-    let effect = cards::mechanics::explanation(card)
-        .map(str::to_owned)
+    let effect = cards::mechanics::get(card)
+        .map(|rule| rule.explanation(locale))
         .unwrap_or_else(|| message("card.ruleUnavailable", &[]));
     writeln!(
         out,
@@ -1382,10 +1385,13 @@ fn write_card(
             writeln!(out, "    {line}").unwrap();
         }
     }
-    match cards::mechanics::explanation(card) {
-        Some(effect) => {
-            writeln!(out, "{}", message("card.supplement", &[("effect", effect)])).unwrap()
-        }
+    match cards::mechanics::get(card).map(|rule| rule.explanation(locale)) {
+        Some(effect) => writeln!(
+            out,
+            "{}",
+            message("card.supplement", &[("effect", &effect)])
+        )
+        .unwrap(),
         None => writeln!(out, "{}", message("card.unknown", &[])).unwrap(),
     }
     Ok(())
@@ -2131,9 +2137,9 @@ mod tests {
                 for locale in [Locale::En, Locale::ZhCn] {
                     let view = super::render(Some(&decision), &query, locale).unwrap();
                     assert!(view.contains(id), "{query}/{locale}: {view}");
-                    if let Some(rule) = cards::mechanics::explanation(card) {
+                    if let Some(rule) = cards::mechanics::get(card) {
                         assert!(
-                            view.contains(rule),
+                            view.contains(&rule.explanation(locale)),
                             "complete supplementary rule: {query}/{locale}"
                         );
                     }
@@ -2152,7 +2158,7 @@ mod tests {
         let armaments = super::render(Some(&decision), "card Armaments+", Locale::ZhCn).unwrap();
         assert!(armaments.starts_with("卡牌定义：武装+ | ID：Armaments"));
         assert!(armaments.contains("所有牌"));
-        assert!(armaments.contains("机制补充（英文）"));
+        assert!(armaments.contains("机制补充："));
         assert_eq!(
             *game.head(),
             before,

@@ -4,7 +4,10 @@ use crate::runtime::combat::{CombatCard, CombatState};
 use crate::EntityId;
 use smallvec::SmallVec;
 
-pub const MECHANICS: &str = "If the targeted enemy has an Attack intent when this effect resolves, gain 3 Strength (4 if upgraded); otherwise gain none.";
+pub const MECHANICS: super::super::mechanics::CardMechanics =
+    super::super::mechanics::CardMechanics {
+        text_id: crate::content::cards::CardId::SpotWeakness,
+    };
 
 pub fn definition() -> CardDefinition {
     CardDefinition {

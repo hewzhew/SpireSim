@@ -5,7 +5,10 @@ use smallvec::SmallVec;
 
 use crate::content::cards::mechanics::card_end_of_turn_block_each_turn_v1;
 
-pub const MECHANICS: &str = "At the end of each player turn, gain 3 Block (4 if upgraded). The Block is available against that turn's enemy actions.";
+pub const MECHANICS: super::super::mechanics::CardMechanics =
+    super::super::mechanics::CardMechanics {
+        text_id: crate::content::cards::CardId::Metallicize,
+    };
 
 pub fn definition() -> CardDefinition {
     CardDefinition {

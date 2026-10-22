@@ -3,7 +3,10 @@ use crate::runtime::action::{Action, ActionInfo, AddTo, DamageInfo, DamageType};
 use crate::runtime::combat::{CombatCard, CombatState};
 use smallvec::SmallVec;
 
-pub const MECHANICS: &str = "Deal 8 damage. Afterwards, increase this card instance's damage by 5 (8 if upgraded) for the rest of combat.";
+pub const MECHANICS: super::super::mechanics::CardMechanics =
+    super::super::mechanics::CardMechanics {
+        text_id: crate::content::cards::CardId::Rampage,
+    };
 
 pub fn definition() -> CardDefinition {
     CardDefinition {

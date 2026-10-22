@@ -4,7 +4,10 @@ use crate::runtime::combat::{CombatCard, CombatState};
 use crate::EntityId;
 use smallvec::SmallVec;
 
-pub const MECHANICS: &str = "Exhaust all non-Attack cards remaining in hand, then deal 16 damage (22 if upgraded) to one enemy. Attack cards stay in hand.";
+pub const MECHANICS: super::super::mechanics::CardMechanics =
+    super::super::mechanics::CardMechanics {
+        text_id: crate::content::cards::CardId::SeverSoul,
+    };
 
 pub fn definition() -> CardDefinition {
     CardDefinition {

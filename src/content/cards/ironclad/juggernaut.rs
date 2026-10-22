@@ -3,7 +3,10 @@ use crate::runtime::action::{Action, ActionInfo, AddTo};
 use crate::runtime::combat::{CombatCard, CombatState};
 use smallvec::SmallVec;
 
-pub const MECHANICS: &str = "Whenever you gain Block, deal 5 damage (7 if upgraded) to a random enemy. Each separate Block gain triggers once, regardless of the amount gained.";
+pub const MECHANICS: super::super::mechanics::CardMechanics =
+    super::super::mechanics::CardMechanics {
+        text_id: crate::content::cards::CardId::Juggernaut,
+    };
 
 pub fn definition() -> CardDefinition {
     CardDefinition {

@@ -4,7 +4,10 @@ use crate::runtime::combat::{CombatCard, CombatState};
 use crate::EntityId;
 use smallvec::SmallVec;
 
-pub const MECHANICS: &str = "Deal damage equal to this copy's stored misc value, initially 15. If this hit kills a non-Minion enemy that is not entering a half-dead phase, permanently increase this copy's stored damage by 3 (5 if upgraded). The increase follows its lineage into the master deck and matching combat copies. Costs 1 Energy. Exhaust. Upgrading increases kill growth, not the current damage.";
+pub const MECHANICS: super::super::mechanics::CardMechanics =
+    super::super::mechanics::CardMechanics {
+        text_id: crate::content::cards::CardId::RitualDagger,
+    };
 
 pub fn definition() -> CardDefinition {
     CardDefinition {

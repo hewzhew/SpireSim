@@ -3,7 +3,10 @@ use crate::runtime::action::{Action, ActionInfo, AddTo};
 use crate::runtime::combat::{CombatCard, CombatState};
 use smallvec::SmallVec;
 
-pub const MECHANICS: &str = "Draw 1 card (2 if upgraded), then put 1 card from your hand on top of the draw pile. The top-deck step still occurs if drawing is prevented. Exhaust.";
+pub const MECHANICS: super::super::mechanics::CardMechanics =
+    super::super::mechanics::CardMechanics {
+        text_id: crate::content::cards::CardId::Warcry,
+    };
 
 pub fn definition() -> CardDefinition {
     CardDefinition {

@@ -3,7 +3,10 @@ use crate::runtime::action::{Action, ActionInfo, AddTo};
 use crate::runtime::combat::{CombatCard, CombatState};
 use smallvec::SmallVec;
 
-pub const MECHANICS: &str = "Gain 8 Block (11 if upgraded), then draw 1 card. Block follows the current Dexterity and Frail modifiers.";
+pub const MECHANICS: super::super::mechanics::CardMechanics =
+    super::super::mechanics::CardMechanics {
+        text_id: crate::content::cards::CardId::ShrugItOff,
+    };
 
 pub fn definition() -> CardDefinition {
     CardDefinition {

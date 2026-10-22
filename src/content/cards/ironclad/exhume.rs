@@ -3,7 +3,10 @@ use crate::runtime::action::{Action, ActionInfo, AddTo};
 use crate::runtime::combat::{CombatCard, CombatState};
 use smallvec::SmallVec;
 
-pub const MECHANICS: &str = "Return 1 card other than Exhume from your exhaust pile to your hand. The exhaust pile and hand capacity are checked when the effect resolves. Exhaust. Costs 0 if upgraded.";
+pub const MECHANICS: super::super::mechanics::CardMechanics =
+    super::super::mechanics::CardMechanics {
+        text_id: crate::content::cards::CardId::Exhume,
+    };
 
 pub fn definition() -> CardDefinition {
     CardDefinition {

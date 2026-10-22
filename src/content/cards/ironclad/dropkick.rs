@@ -4,7 +4,10 @@ use crate::runtime::combat::{CombatCard, CombatState};
 use crate::EntityId;
 use smallvec::SmallVec;
 
-pub const MECHANICS: &str = "Deal 5 damage (8 if upgraded). When the attack resolves, check whether its target has Vulnerable before damage; if so, queue damage, gain 1 Energy, then draw 1 card. Energy and draw are conditional, not guaranteed on play.";
+pub const MECHANICS: super::super::mechanics::CardMechanics =
+    super::super::mechanics::CardMechanics {
+        text_id: crate::content::cards::CardId::Dropkick,
+    };
 
 pub fn definition() -> CardDefinition {
     CardDefinition {

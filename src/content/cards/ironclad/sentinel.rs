@@ -3,7 +3,10 @@ use crate::runtime::action::{Action, ActionInfo, AddTo};
 use crate::runtime::combat::{CombatCard, CombatState};
 use smallvec::SmallVec;
 
-pub const MECHANICS: &str = "Gain 5 Block (8 if upgraded). If this card is Exhausted, gain 2 Energy (3 if upgraded); playing it does not Exhaust it.";
+pub const MECHANICS: super::super::mechanics::CardMechanics =
+    super::super::mechanics::CardMechanics {
+        text_id: crate::content::cards::CardId::Sentinel,
+    };
 
 pub fn definition() -> CardDefinition {
     CardDefinition {

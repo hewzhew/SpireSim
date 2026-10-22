@@ -72,7 +72,7 @@ fn inventory_locales_preserve_identity_variants_and_original_permanent_faces() {
     };
     assert_eq!(identities(&en), identities(&zh));
     assert_eq!(zh.cards.len(), 14);
-    for reading in [&en, &zh] {
+    for (reading, locale) in [(&en, Locale::En), (&zh, Locale::ZhCn)] {
         for id in [
             CardId::Strike,
             CardId::StrikeG,
@@ -110,6 +110,10 @@ fn inventory_locales_preserve_identity_variants_and_original_permanent_faces() {
         );
         for block in &reading.cards {
             assert!(reading.view.contains(&block.view));
+            if let Some(rule) = cards::mechanics::get(block.card) {
+                assert!(block.view.contains(&rule.explanation(locale)));
+                assert!(!block.view.contains("（英文）"));
+            }
         }
         for block in &reading.relics {
             assert!(reading.view.contains(&block.view));
@@ -124,7 +128,7 @@ fn inventory_locales_preserve_identity_variants_and_original_permanent_faces() {
     assert!(zh.view.contains("灼热攻击+3"));
     assert!(zh.view.contains("瓶装火焰"));
     assert!(zh.view.contains("机制补充（英文）"));
-    assert!(zh.view.contains("机制关联（英文）"));
+    assert!(zh.view.contains("机制关联（对应上方同一牌组"));
     assert!(zh.view.contains("1 费"));
     assert!(zh.view.contains("基础格挡请求"));
     let plain = inventory_reading_decision_v1(decision, false, None, Locale::ZhCn).unwrap();
@@ -243,7 +247,7 @@ fn inventory_relic_states_and_potions_use_the_requested_language() {
     let before = game.head().clone();
     let zh = render_inventory_v1(&mut game, true, Locale::ZhCn).unwrap();
     assert!(
-        !zh.contains("机制关联（英文）"),
+        !zh.contains("机制关联（对应上方同一牌组"),
         "empty rule sections should not have a heading"
     );
     assert!(zh.contains("P0 速度药水"));

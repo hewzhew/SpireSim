@@ -3,7 +3,10 @@ use crate::runtime::action::{Action, ActionInfo, AddTo};
 use crate::runtime::combat::{CombatCard, CombatState};
 use smallvec::SmallVec;
 
-pub const MECHANICS: &str = "For the rest of this turn, gain 3 Block (5 if upgraded) each time you play an Attack. Rage is removed at the end of the turn.";
+pub const MECHANICS: super::super::mechanics::CardMechanics =
+    super::super::mechanics::CardMechanics {
+        text_id: crate::content::cards::CardId::Rage,
+    };
 
 pub fn definition() -> CardDefinition {
     CardDefinition {

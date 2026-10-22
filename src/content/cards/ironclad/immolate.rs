@@ -3,8 +3,10 @@ use crate::runtime::action::{Action, ActionInfo, AddTo};
 use crate::runtime::combat::{CombatCard, CombatState};
 use smallvec::SmallVec;
 
-pub const MECHANICS: &str =
-    "Deal 21 damage to all enemies (28 if upgraded), then add 1 Burn to the discard pile.";
+pub const MECHANICS: super::super::mechanics::CardMechanics =
+    super::super::mechanics::CardMechanics {
+        text_id: crate::content::cards::CardId::Immolate,
+    };
 
 pub fn definition() -> CardDefinition {
     CardDefinition {

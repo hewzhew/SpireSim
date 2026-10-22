@@ -3,7 +3,10 @@ use crate::runtime::action::{Action, ActionInfo, AddTo};
 use crate::runtime::combat::{CombatCard, CombatState};
 use smallvec::SmallVec;
 
-pub const MECHANICS: &str = "Move 3 randomly chosen Attack cards from your draw pile to your hand (4 if upgraded), or all eligible cards if fewer remain. This moves cards rather than performing ordinary draws and does not reshuffle an empty draw pile. Cards that exceed the 10-card hand limit go to discard. Costs 0 Energy. Exhaust.";
+pub const MECHANICS: super::super::mechanics::CardMechanics =
+    super::super::mechanics::CardMechanics {
+        text_id: crate::content::cards::CardId::Violence,
+    };
 
 pub fn definition() -> CardDefinition {
     CardDefinition {

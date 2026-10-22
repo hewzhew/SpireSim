@@ -3,7 +3,10 @@ use crate::runtime::action::{Action, ActionInfo, AddTo};
 use crate::runtime::combat::{CombatCard, CombatState};
 use smallvec::SmallVec;
 
-pub const MECHANICS: &str = "Gain 5 Block, then upgrade one card in hand for this combat. When upgraded, Armaments upgrades every card currently in hand instead.";
+pub const MECHANICS: super::super::mechanics::CardMechanics =
+    super::super::mechanics::CardMechanics {
+        text_id: crate::content::cards::CardId::Armaments,
+    };
 
 pub fn definition() -> CardDefinition {
     CardDefinition {

@@ -4,7 +4,10 @@ use crate::runtime::action::{Action, ActionInfo, AddTo};
 use crate::runtime::combat::{CombatCard, CombatState};
 use smallvec::SmallVec;
 
-pub const MECHANICS: &str = "Costs 0 Energy. Gain 30 Block (40 if upgraded), then apply 2 No Block to yourself. No Block sets calculated Block from cards to 0 while active; Block from powers such as Feel No Pain and Metallicize still works. Its duration ticks at each round end, including this round, so it affects further card Block this turn and next turn. Artifact can prevent this debuff. Exhaust.";
+pub const MECHANICS: super::super::mechanics::CardMechanics =
+    super::super::mechanics::CardMechanics {
+        text_id: crate::content::cards::CardId::PanicButton,
+    };
 
 pub fn definition() -> CardDefinition {
     CardDefinition {

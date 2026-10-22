@@ -3,7 +3,10 @@ use crate::runtime::action::{Action, ActionInfo, AddTo};
 use crate::runtime::combat::{CombatCard, CombatState};
 use smallvec::SmallVec;
 
-pub const MECHANICS: &str = "Gain 12 Block (16 if upgraded) and 4 retaliation damage per incoming attack hit (6 if upgraded). Each qualifying incoming attack hit causes retaliation, even if Block absorbs its damage. The retaliation power expires at the start of the next player turn. Card plays and retaliation hits are different counts.";
+pub const MECHANICS: super::super::mechanics::CardMechanics =
+    super::super::mechanics::CardMechanics {
+        text_id: crate::content::cards::CardId::FlameBarrier,
+    };
 
 pub fn definition() -> CardDefinition {
     CardDefinition {

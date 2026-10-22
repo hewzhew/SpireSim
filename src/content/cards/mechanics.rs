@@ -11,154 +11,327 @@ use serde::{Deserialize, Serialize};
 use super::{get_card_definition, CardDefinition, CardId, CardTarget};
 use crate::runtime::combat::{CardBlueprint, CombatCard};
 
-/// Reviewed effect order beyond printed attributes; absent explanations stay explicit.
-pub fn explanation(card: CardId) -> Option<&'static str> {
-    match card {
-        CardId::Pain => Some(super::curses::pain::MECHANICS),
-        CardId::Parasite => Some(super::curses::parasite::MECHANICS),
-        CardId::Writhe => Some(super::curses::writhe::MECHANICS),
-        CardId::Decay => Some(super::curses::decay::MECHANICS),
-        CardId::Normality => Some(super::curses::normality::MECHANICS),
-        CardId::Injury => Some("Unplayable. Occupies a draw and Hand slot; has no additional combat effect."),
-        CardId::Regret => Some("Unplayable. If still in Hand at the end of your turn, lose HP equal to the Hand size when its end-turn effect is queued, including Regret itself. Block does not prevent this HP loss."),
-        CardId::Clumsy => Some("Unplayable. Ethereal: Exhaust if still in Hand at the end of your turn. Occupies a draw and Hand slot until then."),
-        CardId::CurseOfTheBell => Some("Unplayable. Occupies a draw and Hand slot; has no additional combat effect. Cannot be selected for ordinary permanent removal or transformation."),
-        CardId::Doubt => Some("Unplayable. If still in Hand at the end of your turn, apply 1 Weak to yourself. Artifact can block this application."),
-        CardId::Shame => Some("Unplayable. If still in Hand at the end of your turn, apply 1 Frail to yourself. Artifact can block this application."),
-        CardId::Pride => Some("Innate. If still in Hand at the end of your turn, put one temporary Pride on top of the draw pile. Costs 1 Energy to play and Exhaust; playing it has no additional effect. Copies generated during combat do not enter the permanent deck."),
-        CardId::Miracle => Some("Gain 1 Energy (2 if upgraded). Costs 0 Energy. Retain. Exhaust."),
-        CardId::Insight => Some("Draw 2 cards (3 if upgraded). Costs 0 Energy. Retain. Exhaust. Draw prevention and hand capacity still apply."),
-        CardId::Shiv => Some("Deal 4 damage to one enemy (6 if upgraded). Costs 0 Energy. Exhaust."),
-        CardId::Strike => Some("Deal 6 damage to one enemy (9 if upgraded)."),
-        CardId::Defend => Some("Gain 5 Block (8 if upgraded)."),
-        CardId::JAX => Some("Lose 3 HP, then gain 2 Strength (3 if upgraded) for the rest of combat. Costs 0 Energy and does not Exhaust; Block does not prevent the self HP loss."),
-        CardId::Apparition => Some("Gain 1 Intangible, reducing incoming damage and HP loss to 1 per instance while active. Exhaust. Ethereal when unupgraded; upgrading removes Ethereal but does not remove Exhaust."),
-        CardId::Apotheosis => Some(super::colorless::apotheosis::MECHANICS),
-        CardId::Bite => Some(super::colorless::bite::MECHANICS),
-        CardId::RitualDagger => Some(super::colorless::ritual_dagger::MECHANICS),
-        CardId::BandageUp => Some(super::colorless::bandage_up::MECHANICS),
-        CardId::Madness => Some("Set one randomly selected eligible card in Hand to cost 0 for this combat. Prefers cards with a positive current turn cost; if none exist, uses a card whose combat cost is still positive. Costs 1 Energy (0 if upgraded). Exhaust."),
-        CardId::Blind => Some("Apply 2 Weak to one enemy (all enemies if upgraded). Costs 0 Energy and does not Exhaust. Artifact can block each enemy's debuff application."),
-        CardId::DarkShackles => Some("Reduce one enemy's Strength by 9 (15 if upgraded) for its next turn, then restore that amount at the end of that enemy's turn. Artifact can block the Strength reduction. Costs 0 Energy. Exhaust."),
-        CardId::DramaticEntrance => Some("Deal 8 damage to all enemies (12 if upgraded). Costs 0 Energy. Innate. Exhaust."),
-        CardId::Enlightenment => Some("Reduce costs greater than 1 on eligible cards currently in Hand to 1 for this turn (for this combat if upgraded). X-cost and unplayable cards are unaffected. Costs 0 Energy and does not Exhaust. Only the current Hand is changed."),
-        CardId::Impatience => Some("If no Attack cards remain in Hand when this effect resolves, draw 2 cards (3 if upgraded). Otherwise draw none. Costs 0 Energy and does not Exhaust."),
-        CardId::JackOfAllTrades => Some("Add 1 random Colorless card to Hand (2 if upgraded). The generated cards keep their normal costs and are temporary for this combat; hand capacity applies. Costs 0 Energy. Exhaust."),
-        CardId::MindBlast => Some("Deal base damage equal to the number of cards currently in the draw pile, then apply ordinary Attack modifiers. Innate. Costs 2 Energy (1 if upgraded) and does not Exhaust."),
-        CardId::Trip => Some("Apply 2 Vulnerable to one enemy (all enemies if upgraded). Costs 0 Energy and does not Exhaust. Artifact can block each enemy's debuff application."),
-        CardId::Chrysalis => Some("Insert 3 random Skills from your class at random positions in the draw pile (5 if upgraded). These temporary cards cost 0 for this combat and must still be drawn to reach Hand. Costs 2 Energy. Exhaust."),
-        CardId::HandOfGreed => Some("Deal 20 damage to one enemy (25 if upgraded). If this hit kills a non-Minion enemy that is not entering a half-dead phase, gain 20 Gold (25 if upgraded), subject to gold-gain rules. Costs 2 Energy and does not Exhaust."),
-        CardId::Magnetism => Some("For the rest of combat, at each turn start from the next turn onward, add 1 random temporary Colorless card to Hand per stack. Generated cards keep their normal costs; hand capacity applies. Costs 2 Energy (1 if upgraded)."),
-        CardId::Metamorphosis => Some("Insert 3 random Attacks from your class at random positions in the draw pile (5 if upgraded). These temporary cards cost 0 for this combat and must still be drawn to reach Hand. Costs 2 Energy. Exhaust."),
-        CardId::ThinkingAhead => Some("Draw 2 cards, then choose 1 card from Hand to put on top of the draw pile. Costs 0 Energy. Exhaust when unupgraded; upgrading removes Exhaust. The returned card must be drawn again to reach Hand."),
-        CardId::DeepBreath => Some(super::colorless::deep_breath::MECHANICS),
-        CardId::Forethought => Some(super::colorless::forethought::MECHANICS),
-        CardId::SwiftStrike => Some(super::colorless::swift_strike::MECHANICS),
-        CardId::TheBomb => Some(super::colorless::the_bomb::MECHANICS),
-        CardId::PanicButton => Some(super::colorless::panic_button::MECHANICS),
-        CardId::Transmutation => Some(super::colorless::transmutation::MECHANICS),
-        CardId::Purity => Some(super::colorless::purity::MECHANICS),
-        CardId::Panache => Some(super::colorless::panache::MECHANICS),
-        CardId::Discovery => Some("Choose one of three distinct randomly offered cards from your class's combat-generation pool (healing-tagged cards are excluded). Add a temporary copy to your hand; it costs 0 this turn. Costs 1 Energy. Exhaust when unupgraded; upgrading removes Exhaust."),
-        CardId::SecretWeapon => Some("Choose one Attack card in your draw pile and move it to your hand. Costs 0 Energy. Cannot play if the draw pile has no Attack. Exhaust when unupgraded; upgrading removes Exhaust."),
-        CardId::SecretTechnique => Some(super::colorless::secret_technique::MECHANICS),
-        CardId::Panacea => Some(super::colorless::panacea::MECHANICS),
-        CardId::FlashOfSteel => Some("Deal 3 damage to one enemy (6 if upgraded), then draw 1 card. Costs 0 Energy and does not Exhaust."),
-        CardId::Mayhem => Some("For the rest of combat, after your normal start-of-turn draw, automatically play the top card of your remaining draw pile for free (a random enemy target if needed). Each stack plays one card. Does not force Exhaust; the played card keeps its own Exhaust rule. Costs 2 Energy (1 if upgraded)."),
-        CardId::Bash => Some("Deal 8 damage (10 if upgraded), then apply 2 Vulnerable (3 if upgraded). The new Vulnerable does not increase this hit's damage."),
-        CardId::Anger => Some("Deal 6 damage (8 if upgraded), then add a copy of this card to your discard pile. This combat-only copy is not added to your permanent master deck and disappears after combat. The original card is also discarded normally after play."),
-        CardId::Barricade => Some("For the rest of combat, your Block is not removed at the start of your turn. Costs 3 Energy (2 if upgraded)."),
-        CardId::Bludgeon => Some("Deal 32 damage to one enemy (42 if upgraded)."),
-        CardId::Brutality => Some("At the start of each turn, after the normal draw, draw 1 additional card and lose 1 HP. Upgraded: Innate, so it starts in your opening hand."),
-        CardId::BurningPact => Some("Choose and Exhaust 1 other card from your hand, then draw 2 cards (3 if upgraded). Burning Pact itself does not Exhaust unless another effect, such as Corruption, makes it do so; it can be drawn and played again. If no other card is in hand, the draw still occurs. Pact grants no Energy; any Energy gain needs a separate trigger, such as the selected Sentinel's own on-Exhaust effect."),
-        CardId::Carnage => Some("Deal 20 damage (28 if upgraded). Ethereal: Exhaust if still in hand at the end of your turn; playing it does not Exhaust it."),
-        CardId::Clash => Some("Can only be played if every card in your hand is an Attack; Skills, Powers, Statuses and Curses prevent play. Deal 14 damage (18 if upgraded)."),
-        CardId::Combust => Some("At the end of each turn, lose 1 HP, then deal 5 non-Attack damage to all enemies (7 if upgraded). Additional applications add both HP loss and damage."),
-        CardId::DarkEmbrace => Some("For the rest of combat, whenever a card is Exhausted, draw 1 card per stack of Dark Embrace. Each play adds 1 stack, so two plays draw 2 per Exhaust; replaying with Duplication also adds a stack. Draw prevention and hand capacity still apply. Costs 2 Energy (1 if upgraded)."),
-        CardId::DemonForm => Some("At the start of each of your turns from the next turn onward, gain 2 Strength (3 if upgraded). Does not grant Strength immediately when played."),
-        CardId::Disarm => Some(super::ironclad::disarm::MECHANICS),
-        CardId::DoubleTap => Some("This turn, replay each of the next 1 Attack cards you play (2 if upgraded) once against the same target, without paying its cost again. Unused replays expire at turn end."),
-        CardId::Evolve => Some("For the rest of combat, whenever you draw a Status card, draw 1 additional card (2 if upgraded). Curses do not trigger this effect."),
-        CardId::FireBreathing => Some("For the rest of combat, whenever you draw a Status or Curse, deal 6 non-Attack damage to all enemies (10 if upgraded)."),
-        CardId::Flex => Some("Gain 2 Strength (4 if upgraded), then apply an equal Lose Strength effect that removes that Strength at the end of this turn. Artifact can block the Lose Strength debuff."),
-        CardId::GhostlyArmor => Some("Gain 10 Block (13 if upgraded). Ethereal: Exhaust if still in hand at the end of your turn; playing it does not Exhaust it."),
-        CardId::Headbutt => Some("Deal 9 damage (12 if upgraded), then put 1 card from your discard pile on top of your draw pile. Choose when multiple cards are eligible; no card is moved if discard is empty. This does not draw the card."),
-        CardId::HeavyBlade => Some("Deal 14 base damage. Strength contributes 3 times its usual amount (5 times if upgraded); this is one hit, not multiple hits."),
-        CardId::Hemokinesis => Some("Lose 2 HP, then deal 15 damage to one enemy (20 if upgraded). Block does not prevent the self HP loss."),
-        CardId::Impervious => Some("Gain 30 Block (40 if upgraded). Exhaust."),
-        CardId::GoodInstincts => Some("Gain 6 Block (9 if upgraded). Costs 0 Energy and does not Exhaust. Block follows current Dexterity and Frail modifiers."),
-        CardId::MasterOfStrategy => Some("Draw 3 cards (4 if upgraded). Costs 0 Energy. Exhaust. Draw prevention and hand capacity still apply."),
-        CardId::Necronomicurse => Some("Unplayable. When Exhausted during combat, add a new temporary Necronomicurse to your hand. Permanent removal normally regenerates it in the master deck while Necronomicon is held."),
-        CardId::InfernalBlade => Some("Add 1 random Attack from your class pool to Hand; overflow goes to Discard. The generated card is temporary for this combat and costs 0 this turn. At turn end its ordinary cost returns; it follows its own play conditions and lifecycle. Exhaust. Costs 1 Energy (0 if upgraded)."),
-        CardId::Inflame => Some("Gain 2 Strength (3 if upgraded) for the rest of combat."),
-        CardId::Intimidate => Some("Apply 1 Weak to all enemies (2 if upgraded). Exhaust."),
-        CardId::LimitBreak => Some("Double your current Strength, including negative Strength. Gives no Strength if you have none. Exhaust when unupgraded; no longer Exhausts when upgraded."),
-        CardId::Offering => Some("Lose 6 HP, then gain 2 Energy, then draw 3 cards (5 if upgraded). Block does not prevent the self HP loss. Exhaust."),
-        CardId::PerfectedStrike => Some("Deal 6 base damage plus 2 for each Strike-tagged card in hand, draw and discard, including this card (3 per card if upgraded). Exhausted cards do not count."),
-        CardId::Pummel => Some("Deal 2 damage to one enemy 4 times (5 if upgraded). Each hit benefits from Strength. Exhaust."),
-        CardId::Reaper => Some(super::ironclad::reaper::MECHANICS),
-        CardId::RecklessCharge => Some("Deal 7 damage (10 if upgraded), then insert 1 Dazed at a random position in your draw pile. Upgrading does not remove the Dazed."),
-        CardId::SearingBlow => Some("Deal 12 damage at upgrade count 0. Can be upgraded repeatedly: base damage is 12 + n*(n+7)/2 at upgrade count n (16, 21, 27 for the first three upgrades)."),
-        CardId::SecondWind => Some("Exhaust all non-Attack cards remaining in your hand, then gain 5 Block separately for each card Exhausted (7 if upgraded). Skills, Powers, Statuses and Curses qualify; Attack cards stay in hand."),
-        CardId::SeeingRed => Some("Gain 2 Energy. Exhaust. Costs 1 Energy (0 if upgraded), so the net Energy gain is 1 (2 if upgraded) at the printed cost."),
-        CardId::Shockwave => Some("Apply 3 Weak, then 3 Vulnerable to each enemy (5 of each if upgraded). Each debuff can consume a separate Artifact charge. Exhaust."),
-        CardId::SwordBoomerang => Some("Deal 3 damage 3 times (4 if upgraded). Each hit chooses a random living enemy independently and benefits from Strength; you cannot select the target."),
-        CardId::ThunderClap => Some("Deal 4 damage to all enemies (7 if upgraded), then apply 1 Vulnerable to all enemies. The new Vulnerable does not increase these hits' damage."),
-        CardId::TwinStrike => Some("Deal 5 damage to one enemy twice (7 per hit if upgraded). Each hit benefits from Strength."),
-        CardId::WildStrike => Some("Deal 12 damage (17 if upgraded), then insert 1 Wound at a random position in your draw pile. Upgrading does not remove the Wound."),
-        CardId::Wound => Some("Unplayable. No draw or end-of-turn effect; it is discarded normally if still in hand, and remains in combat until removed by another effect."),
-        CardId::Burn => Some("Unplayable. If still in hand at the end of your turn, deal 2 damage to yourself (4 if upgraded). Block can absorb this damage; Burn is then discarded normally."),
-        CardId::Slimed => Some("Costs 1 Energy to play and Exhaust; has no other effect. If left in hand, it is discarded normally."),
-        CardId::Void => Some("Unplayable. When drawn, lose 1 Energy. Ethereal: Exhaust if still in hand at the end of your turn."),
-        CardId::AscendersBane => Some("Unplayable. Ethereal: Exhaust if still in hand at the end of your turn. Cannot be removed from your master deck."),
-        CardId::Dazed => Some(super::status::dazed::MECHANICS),
-        CardId::Cleave => Some("Deal 8 damage to all enemies (11 if upgraded)."),
-        CardId::Whirlwind => {
-            Some("Deal 5 damage to all enemies X times (8 if upgraded); X is the Energy spent.")
-        }
-        CardId::Havoc => Some(super::ironclad::havoc::MECHANICS),
-        CardId::Warcry => Some(super::ironclad::warcry::MECHANICS),
-        CardId::Rampage => Some(super::ironclad::rampage::MECHANICS),
-        CardId::BloodForBlood => Some(super::ironclad::blood_for_blood::MECHANICS),
-        CardId::Dropkick => Some(super::ironclad::dropkick::MECHANICS),
-        CardId::DualWield => Some(super::ironclad::dual_wield::MECHANICS),
-        CardId::Exhume => Some(super::ironclad::exhume::MECHANICS),
-        CardId::Rupture => {
-            Some("Whenever you lose HP from your own card, gain 1 Strength (2 if upgraded).")
-        }
-        CardId::FeelNoPain => Some("Whenever a card is Exhausted, gain 3 Block (4 if upgraded)."),
-        CardId::Finesse => Some("Gain 2 Block (4 if upgraded), then draw 1 card."),
-        CardId::Violence => Some(super::colorless::violence::MECHANICS),
-        CardId::SadisticNature => Some(
-            "When you apply a debuff to an enemy without Artifact, deal 5 damage (7 if upgraded).",
-        ),
-        CardId::Uppercut => Some(super::ironclad::uppercut::MECHANICS),
-        CardId::FlameBarrier => Some(super::ironclad::flame_barrier::MECHANICS),
-        CardId::Metallicize => Some(super::ironclad::metallicize::MECHANICS),
-        CardId::Bloodletting => Some(super::ironclad::bloodletting::MECHANICS),
-        CardId::Armaments => Some(super::ironclad::armaments::MECHANICS),
-        CardId::BattleTrance => Some(super::ironclad::battle_trance::MECHANICS),
-        CardId::SeverSoul => Some(super::ironclad::sever_soul::MECHANICS),
-        CardId::PowerThrough => Some(super::ironclad::power_through::MECHANICS),
-        CardId::ShrugItOff => Some(super::ironclad::shrug_it_off::MECHANICS),
-        CardId::TrueGrit => Some(super::ironclad::true_grit::MECHANICS),
-        CardId::Feed => Some(super::ironclad::feed::MECHANICS),
-        CardId::Rage => Some(super::ironclad::rage::MECHANICS),
-        CardId::Sentinel => Some(super::ironclad::sentinel::MECHANICS),
-        CardId::Berserk => Some(super::ironclad::berserk::MECHANICS),
-        CardId::Immolate => Some(super::ironclad::immolate::MECHANICS),
-        CardId::Juggernaut => Some(super::ironclad::juggernaut::MECHANICS),
-        CardId::BodySlam => Some(super::ironclad::body_slam::MECHANICS),
-        CardId::SpotWeakness => Some(super::ironclad::spot_weakness::MECHANICS),
-        CardId::Clothesline => Some(super::ironclad::clothesline::MECHANICS),
-        CardId::PommelStrike => Some(super::ironclad::pommel_strike::MECHANICS),
-        CardId::IronWave => Some(super::ironclad::iron_wave::MECHANICS),
-        CardId::FiendFire => Some(super::ironclad::fiend_fire::MECHANICS),
-        CardId::Entrench => Some(super::ironclad::entrench::MECHANICS),
-        CardId::Corruption => Some(super::ironclad::corruption::MECHANICS),
-        _ => None,
+/// Reviewed full rules beyond printed attributes. The definition owner binds
+/// the text identity; language selection never changes numerical mechanics.
+#[derive(Clone, Copy, Debug)]
+pub struct CardMechanics {
+    pub text_id: CardId,
+}
+
+impl CardMechanics {
+    pub fn explanation(self, locale: sts_presentation::Locale) -> String {
+        locale
+            .definition_text("game", &format!("cardRule.{}", self.text_id.stable_id()))
+            .expect("complete card mechanism text")
     }
 }
+
+pub fn get(card: CardId) -> Option<CardMechanics> {
+    Some(match card {
+        CardId::Pain => super::curses::pain::MECHANICS,
+        CardId::Parasite => super::curses::parasite::MECHANICS,
+        CardId::Writhe => super::curses::writhe::MECHANICS,
+        CardId::Decay => super::curses::decay::MECHANICS,
+        CardId::Normality => super::curses::normality::MECHANICS,
+        CardId::Injury => CardMechanics {
+            text_id: CardId::Injury,
+        },
+        CardId::Regret => CardMechanics {
+            text_id: CardId::Regret,
+        },
+        CardId::Clumsy => CardMechanics {
+            text_id: CardId::Clumsy,
+        },
+        CardId::CurseOfTheBell => CardMechanics {
+            text_id: CardId::CurseOfTheBell,
+        },
+        CardId::Doubt => CardMechanics {
+            text_id: CardId::Doubt,
+        },
+        CardId::Shame => CardMechanics {
+            text_id: CardId::Shame,
+        },
+        CardId::Pride => CardMechanics {
+            text_id: CardId::Pride,
+        },
+        CardId::Miracle => CardMechanics {
+            text_id: CardId::Miracle,
+        },
+        CardId::Insight => CardMechanics {
+            text_id: CardId::Insight,
+        },
+        CardId::Shiv => CardMechanics {
+            text_id: CardId::Shiv,
+        },
+        CardId::Strike => CardMechanics {
+            text_id: CardId::Strike,
+        },
+        CardId::Defend => CardMechanics {
+            text_id: CardId::Defend,
+        },
+        CardId::JAX => CardMechanics {
+            text_id: CardId::JAX,
+        },
+        CardId::Apparition => CardMechanics {
+            text_id: CardId::Apparition,
+        },
+        CardId::Apotheosis => super::colorless::apotheosis::MECHANICS,
+        CardId::Bite => super::colorless::bite::MECHANICS,
+        CardId::RitualDagger => super::colorless::ritual_dagger::MECHANICS,
+        CardId::BandageUp => super::colorless::bandage_up::MECHANICS,
+        CardId::Madness => CardMechanics {
+            text_id: CardId::Madness,
+        },
+        CardId::Blind => CardMechanics {
+            text_id: CardId::Blind,
+        },
+        CardId::DarkShackles => CardMechanics {
+            text_id: CardId::DarkShackles,
+        },
+        CardId::DramaticEntrance => CardMechanics {
+            text_id: CardId::DramaticEntrance,
+        },
+        CardId::Enlightenment => CardMechanics {
+            text_id: CardId::Enlightenment,
+        },
+        CardId::Impatience => CardMechanics {
+            text_id: CardId::Impatience,
+        },
+        CardId::JackOfAllTrades => CardMechanics {
+            text_id: CardId::JackOfAllTrades,
+        },
+        CardId::MindBlast => CardMechanics {
+            text_id: CardId::MindBlast,
+        },
+        CardId::Trip => CardMechanics {
+            text_id: CardId::Trip,
+        },
+        CardId::Chrysalis => CardMechanics {
+            text_id: CardId::Chrysalis,
+        },
+        CardId::HandOfGreed => CardMechanics {
+            text_id: CardId::HandOfGreed,
+        },
+        CardId::Magnetism => CardMechanics {
+            text_id: CardId::Magnetism,
+        },
+        CardId::Metamorphosis => CardMechanics {
+            text_id: CardId::Metamorphosis,
+        },
+        CardId::ThinkingAhead => CardMechanics {
+            text_id: CardId::ThinkingAhead,
+        },
+        CardId::DeepBreath => super::colorless::deep_breath::MECHANICS,
+        CardId::Forethought => super::colorless::forethought::MECHANICS,
+        CardId::SwiftStrike => super::colorless::swift_strike::MECHANICS,
+        CardId::TheBomb => super::colorless::the_bomb::MECHANICS,
+        CardId::PanicButton => super::colorless::panic_button::MECHANICS,
+        CardId::Transmutation => super::colorless::transmutation::MECHANICS,
+        CardId::Purity => super::colorless::purity::MECHANICS,
+        CardId::Panache => super::colorless::panache::MECHANICS,
+        CardId::Discovery => CardMechanics {
+            text_id: CardId::Discovery,
+        },
+        CardId::SecretWeapon => CardMechanics {
+            text_id: CardId::SecretWeapon,
+        },
+        CardId::SecretTechnique => super::colorless::secret_technique::MECHANICS,
+        CardId::Panacea => super::colorless::panacea::MECHANICS,
+        CardId::FlashOfSteel => CardMechanics {
+            text_id: CardId::FlashOfSteel,
+        },
+        CardId::Mayhem => CardMechanics {
+            text_id: CardId::Mayhem,
+        },
+        CardId::Bash => CardMechanics {
+            text_id: CardId::Bash,
+        },
+        CardId::Anger => CardMechanics {
+            text_id: CardId::Anger,
+        },
+        CardId::Barricade => CardMechanics {
+            text_id: CardId::Barricade,
+        },
+        CardId::Bludgeon => CardMechanics {
+            text_id: CardId::Bludgeon,
+        },
+        CardId::Brutality => CardMechanics {
+            text_id: CardId::Brutality,
+        },
+        CardId::BurningPact => CardMechanics {
+            text_id: CardId::BurningPact,
+        },
+        CardId::Carnage => CardMechanics {
+            text_id: CardId::Carnage,
+        },
+        CardId::Clash => CardMechanics {
+            text_id: CardId::Clash,
+        },
+        CardId::Combust => CardMechanics {
+            text_id: CardId::Combust,
+        },
+        CardId::DarkEmbrace => CardMechanics {
+            text_id: CardId::DarkEmbrace,
+        },
+        CardId::DemonForm => CardMechanics {
+            text_id: CardId::DemonForm,
+        },
+        CardId::Disarm => super::ironclad::disarm::MECHANICS,
+        CardId::DoubleTap => CardMechanics {
+            text_id: CardId::DoubleTap,
+        },
+        CardId::Evolve => CardMechanics {
+            text_id: CardId::Evolve,
+        },
+        CardId::FireBreathing => CardMechanics {
+            text_id: CardId::FireBreathing,
+        },
+        CardId::Flex => CardMechanics {
+            text_id: CardId::Flex,
+        },
+        CardId::GhostlyArmor => CardMechanics {
+            text_id: CardId::GhostlyArmor,
+        },
+        CardId::Headbutt => CardMechanics {
+            text_id: CardId::Headbutt,
+        },
+        CardId::HeavyBlade => CardMechanics {
+            text_id: CardId::HeavyBlade,
+        },
+        CardId::Hemokinesis => CardMechanics {
+            text_id: CardId::Hemokinesis,
+        },
+        CardId::Impervious => CardMechanics {
+            text_id: CardId::Impervious,
+        },
+        CardId::GoodInstincts => CardMechanics {
+            text_id: CardId::GoodInstincts,
+        },
+        CardId::MasterOfStrategy => CardMechanics {
+            text_id: CardId::MasterOfStrategy,
+        },
+        CardId::Necronomicurse => CardMechanics {
+            text_id: CardId::Necronomicurse,
+        },
+        CardId::InfernalBlade => CardMechanics {
+            text_id: CardId::InfernalBlade,
+        },
+        CardId::Inflame => CardMechanics {
+            text_id: CardId::Inflame,
+        },
+        CardId::Intimidate => CardMechanics {
+            text_id: CardId::Intimidate,
+        },
+        CardId::LimitBreak => CardMechanics {
+            text_id: CardId::LimitBreak,
+        },
+        CardId::Offering => CardMechanics {
+            text_id: CardId::Offering,
+        },
+        CardId::PerfectedStrike => CardMechanics {
+            text_id: CardId::PerfectedStrike,
+        },
+        CardId::Pummel => CardMechanics {
+            text_id: CardId::Pummel,
+        },
+        CardId::Reaper => super::ironclad::reaper::MECHANICS,
+        CardId::RecklessCharge => CardMechanics {
+            text_id: CardId::RecklessCharge,
+        },
+        CardId::SearingBlow => CardMechanics {
+            text_id: CardId::SearingBlow,
+        },
+        CardId::SecondWind => CardMechanics {
+            text_id: CardId::SecondWind,
+        },
+        CardId::SeeingRed => CardMechanics {
+            text_id: CardId::SeeingRed,
+        },
+        CardId::Shockwave => CardMechanics {
+            text_id: CardId::Shockwave,
+        },
+        CardId::SwordBoomerang => CardMechanics {
+            text_id: CardId::SwordBoomerang,
+        },
+        CardId::ThunderClap => CardMechanics {
+            text_id: CardId::ThunderClap,
+        },
+        CardId::TwinStrike => CardMechanics {
+            text_id: CardId::TwinStrike,
+        },
+        CardId::WildStrike => CardMechanics {
+            text_id: CardId::WildStrike,
+        },
+        CardId::Wound => CardMechanics {
+            text_id: CardId::Wound,
+        },
+        CardId::Burn => CardMechanics {
+            text_id: CardId::Burn,
+        },
+        CardId::Slimed => CardMechanics {
+            text_id: CardId::Slimed,
+        },
+        CardId::Void => CardMechanics {
+            text_id: CardId::Void,
+        },
+        CardId::AscendersBane => CardMechanics {
+            text_id: CardId::AscendersBane,
+        },
+        CardId::Dazed => super::status::dazed::MECHANICS,
+        CardId::Cleave => CardMechanics {
+            text_id: CardId::Cleave,
+        },
+        CardId::Whirlwind => CardMechanics {
+            text_id: CardId::Whirlwind,
+        },
+        CardId::Havoc => super::ironclad::havoc::MECHANICS,
+        CardId::Warcry => super::ironclad::warcry::MECHANICS,
+        CardId::Rampage => super::ironclad::rampage::MECHANICS,
+        CardId::BloodForBlood => super::ironclad::blood_for_blood::MECHANICS,
+        CardId::Dropkick => super::ironclad::dropkick::MECHANICS,
+        CardId::DualWield => super::ironclad::dual_wield::MECHANICS,
+        CardId::Exhume => super::ironclad::exhume::MECHANICS,
+        CardId::Rupture => CardMechanics {
+            text_id: CardId::Rupture,
+        },
+        CardId::FeelNoPain => CardMechanics {
+            text_id: CardId::FeelNoPain,
+        },
+        CardId::Finesse => CardMechanics {
+            text_id: CardId::Finesse,
+        },
+        CardId::Violence => super::colorless::violence::MECHANICS,
+        CardId::SadisticNature => CardMechanics {
+            text_id: CardId::SadisticNature,
+        },
+        CardId::Uppercut => super::ironclad::uppercut::MECHANICS,
+        CardId::FlameBarrier => super::ironclad::flame_barrier::MECHANICS,
+        CardId::Metallicize => super::ironclad::metallicize::MECHANICS,
+        CardId::Bloodletting => super::ironclad::bloodletting::MECHANICS,
+        CardId::Armaments => super::ironclad::armaments::MECHANICS,
+        CardId::BattleTrance => super::ironclad::battle_trance::MECHANICS,
+        CardId::SeverSoul => super::ironclad::sever_soul::MECHANICS,
+        CardId::PowerThrough => super::ironclad::power_through::MECHANICS,
+        CardId::ShrugItOff => super::ironclad::shrug_it_off::MECHANICS,
+        CardId::TrueGrit => super::ironclad::true_grit::MECHANICS,
+        CardId::Feed => super::ironclad::feed::MECHANICS,
+        CardId::Rage => super::ironclad::rage::MECHANICS,
+        CardId::Sentinel => super::ironclad::sentinel::MECHANICS,
+        CardId::Berserk => super::ironclad::berserk::MECHANICS,
+        CardId::Immolate => super::ironclad::immolate::MECHANICS,
+        CardId::Juggernaut => super::ironclad::juggernaut::MECHANICS,
+        CardId::BodySlam => super::ironclad::body_slam::MECHANICS,
+        CardId::SpotWeakness => super::ironclad::spot_weakness::MECHANICS,
+        CardId::Clothesline => super::ironclad::clothesline::MECHANICS,
+        CardId::PommelStrike => super::ironclad::pommel_strike::MECHANICS,
+        CardId::IronWave => super::ironclad::iron_wave::MECHANICS,
+        CardId::FiendFire => super::ironclad::fiend_fire::MECHANICS,
+        CardId::Entrench => super::ironclad::entrench::MECHANICS,
+        CardId::Corruption => super::ironclad::corruption::MECHANICS,
+        _ => return None,
+    })
+}
+
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[repr(u8)]
 pub enum CardMechanicCoverage {
@@ -867,6 +1040,31 @@ mod tests {
     use crate::runtime::combat::CombatCard;
 
     use super::*;
+
+    #[test]
+    fn reviewed_card_rules_bind_their_own_identity_and_render_both_languages() {
+        use sts_presentation::Locale;
+        let mut count = 0;
+        for &id in CardId::STABLE_IDS {
+            let card = CardId::from_stable_id(id).unwrap();
+            let Some(rule) = get(card) else { continue };
+            count += 1;
+            assert_eq!(rule.text_id, card, "{id}");
+            let en = rule.explanation(Locale::En);
+            let zh = rule.explanation(Locale::ZhCn);
+            assert!(!en.is_empty() && !zh.is_empty(), "{id}");
+            assert!(!en.contains("{{") && !zh.contains("{{"), "{id}");
+            assert!(
+                zh.chars().any(|c| ('\u{4e00}'..='\u{9fff}').contains(&c)),
+                "{id}: {zh}"
+            );
+        }
+        assert_eq!(count, 136);
+        let pact = get(CardId::BurningPact).unwrap().explanation(Locale::ZhCn);
+        assert!(pact.contains(Locale::ZhCn.entity("card", CardId::Corruption.stable_id())));
+        assert!(pact.contains("没有其他手牌时仍会抽牌"));
+        assert!(pact.contains("不提供能量"));
+    }
 
     #[test]
     fn persistent_base_numbers_match_runtime_precedence_and_upgrade_rules() {

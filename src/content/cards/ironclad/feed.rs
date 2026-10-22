@@ -4,7 +4,10 @@ use crate::runtime::combat::{CombatCard, CombatState};
 use crate::EntityId;
 use smallvec::SmallVec;
 
-pub const MECHANICS: &str = "Deal 10 damage (12 if upgraded) and Exhaust. If this hit kills a non-Minion enemy that is not half-dead, gain 3 Max HP (4 if upgraded) and heal by the same amount. Killing a Minion does not grant Max HP.";
+pub const MECHANICS: super::super::mechanics::CardMechanics =
+    super::super::mechanics::CardMechanics {
+        text_id: crate::content::cards::CardId::Feed,
+    };
 
 pub fn definition() -> CardDefinition {
     CardDefinition {

@@ -3,7 +3,10 @@ use crate::runtime::action::{Action, ActionInfo, AddTo};
 use crate::runtime::combat::{CombatCard, CombatState};
 use smallvec::SmallVec;
 
-pub const MECHANICS: &str = "Gain 7 Block (9 if upgraded), then Exhaust 1 other card from hand. The card is random when unupgraded; choose it when upgraded. Block follows current Dexterity and Frail modifiers.";
+pub const MECHANICS: super::super::mechanics::CardMechanics =
+    super::super::mechanics::CardMechanics {
+        text_id: crate::content::cards::CardId::TrueGrit,
+    };
 
 pub fn definition() -> CardDefinition {
     CardDefinition {

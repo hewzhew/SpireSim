@@ -3,7 +3,10 @@ use crate::runtime::action::{Action, ActionInfo, AddTo};
 use crate::runtime::combat::{CombatCard, CombatState};
 use smallvec::SmallVec;
 
-pub const MECHANICS: &str = "Choose 1 other card in Hand (any number if upgraded, including none) and put the chosen cards on the bottom of the draw pile. A chosen card with positive combat cost becomes free for its next play; this uses its cost before a temporary turn-only override. Zero-cost, X-cost and unplayable cards can be moved but receive no free-play benefit. This card does not draw the moved cards. Costs 0 Energy and does not Exhaust.";
+pub const MECHANICS: super::super::mechanics::CardMechanics =
+    super::super::mechanics::CardMechanics {
+        text_id: crate::content::cards::CardId::Forethought,
+    };
 
 pub fn definition() -> CardDefinition {
     CardDefinition {
