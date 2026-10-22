@@ -90,7 +90,7 @@ export function preparationCardChoice(observation, normalize = command => comman
   const owned = observation.deck_evidence.cards;
   const exhausters = owned.filter(row => row.mechanics.exhausts_other_cards);
   const names = rows => rows.map(row => `${row.card.count}x ${label(row)}`).join(', ') || cardChoiceText(locale, 'none');
-  const rules = preparationCardPolicies(observation, profile, normalize);
+  const rules = preparationCardPolicies(observation, profile, normalize, locale);
   const dependencies = new Set(rules.flatMap(rule => rule.dependencies ?? []));
   const relicRules = [];
   if (dependencies.size && (state.relics ?? []).some(row => row.relic === 'MummifiedHand')

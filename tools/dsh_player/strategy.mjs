@@ -604,7 +604,7 @@ function ownedDrawPaymentBundle(cards, profile, extraEnergy) {
 
 // Use the native detached upgrade of the owned instance. These are possible
 // changes for a card that actually shares Hand with the combat upgrader.
-function handUpgradeTargets(cards, energy) {
+function handUpgradeTargets(cards, energy, locale = 'en') {
   const basics = [], access = [];
   for (const source of cards) {
     const next = source.next_upgrade, definition = next?.definition;
@@ -620,8 +620,8 @@ function handUpgradeTargets(cards, energy) {
     const moreDraw = Number.isSafeInteger(draws) && draws > source.mechanics.draw_cards;
     const lessCost = source.persistent_cost > next.persistent_cost;
     if (moreDraw || lessCost) access.push({ source,
-      fact: `${labelCard(source)} own upgrade: ${source.persistent_cost}->${next.persistent_cost} Energy`
-        + (moreDraw ? `; on-play draw request ${source.mechanics.draw_cards}->${draws}` : '') + '.' });
+      fact: strategyText(locale, 'draftOwnedUpgrade', { labelCard: labelCard(source), persistent_cost: source.persistent_cost, persistent_cost2: next.persistent_cost })
+        + (moreDraw ? strategyText(locale, 'draftUpgradeDrawSuffix', { draw_cards: source.mechanics.draw_cards, draws: draws }) : '') + '.' });
   }
   return { basics, access };
 }
@@ -674,7 +674,7 @@ export function preparationShopRemovalPolicy(observation, locale = 'en') {
     preference: strategyText(locale, 'ordinaryStrikeRemovalPreference', { upgradeSuffix: upgrades ? '+' : '' }) };
 }
 
-function ordinaryRewardPolicy(state, cards, offers, profile) {
+function ordinaryRewardPolicy(state, cards, offers, profile, locale = 'en') {
   const act = state.run?.pending_act_entry ?? state.run?.act;
   const copies = rows => rows.reduce((n, row) => n + row.card.count, 0);
   const owned = id => cards.filter(row => row.card.card === id);
@@ -699,14 +699,14 @@ function ordinaryRewardPolicy(state, cards, offers, profile) {
   const retrievalTargets = early ? cards.flatMap(source => {
     if (source.mechanics.exhausts !== false || source.persistent_cost < 0
         || source.persistent_cost + 1 > profile.baseEnergy) return [];
-    const output = retrievalOutput(source, profile);
+    const output = retrievalOutput(source, profile, locale);
     return output?.total >= 18 ? [{ source, fact: output.fact }] : [];
   }) : [];
   const earlyRetrieval = offers.filter(row => early && row.card === 'Headbutt' && !owned('Headbutt').length
     && row.type === 'Attack' && row.cost === 1 && row.exhausts === false && row.baseDamagePerHit >= 9
     && retrievalTargets.length && profile.onPlayDraw.some(source => source.cost >= 0
       && source.cost + 1 <= profile.baseEnergy && source.topdeck === 0));
-  const upgradeTargets = handUpgradeTargets(cards, profile.baseEnergy);
+  const upgradeTargets = handUpgradeTargets(cards, profile.baseEnergy, locale);
   const earlyHandUpgrade = offers.filter(row => early && row.card === 'Armaments' && !owned('Armaments').length
     && !owned('Apotheosis').length && !(state.relics ?? []).some(relic => relic.relic === 'WarpedTongs')
     && copies(upgradeTargets.basics) >= 6 && upgradeTargets.access.length
@@ -733,7 +733,7 @@ function ordinaryRewardPolicy(state, cards, offers, profile) {
     && source.delivery.hits.count === 1
     && ['base', 'base_plus_strike_cards'].includes(source.delivery.amount?.kind));
   const coveredEarlyOutput = early && copies(transitions) >= 4 && retrievalTargets.length > 0;
-  const outputCoverage = laterOutputCoverage(state, cards, profile);
+  const outputCoverage = laterOutputCoverage(state, cards, profile, locale);
   const coveredLaterOutput = outputCoverage.supported;
   const outputCoverageFacts = outputCoverage.facts;
   const attackRelics = (state.relics ?? []).filter(source => attackPlayRelics.has(source.relic));
@@ -772,19 +772,19 @@ function ordinaryRewardPolicy(state, cards, offers, profile) {
     const result = (policy, disposition, facts, preference) => ({ command: row.command, card: id,
       policy, disposition, facts, preference });
     const review = (policy, facts) => result(policy, 'review', facts,
-      'Supply a reviewed drafting condition for this offered card.');
+      strategyText(locale, 'draftConditionRequired'));
     if (id === 'Inflame') {
       if (coveredLaterOutput && !strengthSupport && !owned(id).length && row.type === 'Power'
           && row.cost === 1 && row.enduringStrength?.delivery === 'on_play'
           && row.enduringStrength.amount >= 2) {
         return result('first-low-cost-enduring-strength', 'take', [
           ...outputCoverageFacts,
-          `Owned Strength support: 0. Inflame costs ${row.cost} Energy and grants ${row.enduringStrength.amount} Strength on play for the rest of combat; later attacks use it after deployment.`,
-          `Owned payable attacks: ${profile.attacks.filter(source => source.cost >= 0 && source.cost <= profile.baseEnergy).map(source => source.card).join(', ')}. Each subsequent hit gains the supplied Strength before combat modifiers.`,
-          ...owned('FiendFire').filter(payable).map(source => `After prior Inflame deployment, ${labelCard(source)} gains ${row.enduringStrength.amount} requested damage per actually Exhausted Hand card. Playing both in the same Hand spends Inflame itself before counting FiendFire fuel.`),
-        ], 'Take the first low-cost lasting Strength source for existing attacks. Pay deployment once; its benefit continues on subsequent attack turns and redraws.');
+          strategyText(locale, 'draftInflameEffect', { cost: row.cost, amount: row.enduringStrength.amount }),
+          strategyText(locale, 'draftOwnedPayableAttackHits', { attacks: profile.attacks.filter(source => source.cost >= 0 && source.cost <= profile.baseEnergy).map(source => source.card).join(', ') }),
+          ...owned('FiendFire').filter(payable).map(source => strategyText(locale, 'draftInflameFiendFire', { labelCard: labelCard(source), amount: row.enduringStrength.amount })),
+        ], strategyText(locale, 'draftTakeFirstInflame'));
       }
-      return review('enduring-strength-increment', [`Owned lasting Strength sources: ${profile.strengthSources.map(source => source.card).join(', ') || 'none'}; reviewed output coverage: ${coveredLaterOutput}.`]);
+      return review('enduring-strength-increment', [strategyText(locale, 'draftLastingStrengthCoverage', { strengthSources: profile.strengthSources.map(source => source.card).join(', ') || strategyText(locale, 'none'), coveredLaterOutput: coveredLaterOutput })]);
     }
     if (id === 'Anger') {
       if (coveredLaterOutput && profile.onPlayDrawCoverage.copies <= 2 && !profile.exhaustDraw.length
@@ -794,14 +794,14 @@ function ordinaryRewardPolicy(state, cards, offers, profile) {
           && row.baseDamagePerHit === (row.upgrades > 0 ? 8 : 6)) {
         return result('covered-output-copying-free-attack', attackRelics.length && !owned(id).length ? 'compare' : 'preserve', [
           ...outputCoverageFacts,
-          `Anger supplies ${row.baseDamagePerHit} base damage for 0 Energy and one Attack play. Each play adds one combat-only copy to Discard alongside the original; later reshuffles can draw these additional attacks.`,
-          `Owned on-play multi-draw copies: ${profile.onPlayDrawCoverage.copies}. The free payment still uses a draw and Hand slot; copied attacks compete with existing protection and access.`,
-          ...(attackRelics.length ? [`Owned Attack-play relics: ${attackRelics.map(source => source.relic).join(', ')}. Their actual play thresholds and benefits come from the supplied native rules.`] : []),
+          strategyText(locale, 'draftAngerEffect', { baseDamagePerHit: row.baseDamagePerHit }),
+          strategyText(locale, 'draftAngerDrawPressure', { copies: profile.onPlayDrawCoverage.copies }),
+          ...(attackRelics.length ? [strategyText(locale, 'draftAttackRelicRules', { attackRelics: attackRelics.map(source => source.relic).join(', ') })] : []),
         ], attackRelics.length && !owned(id).length
-          ? 'Compare a first free Attack toward the owned play-count relic with preserving access or adding a lasting function. Include the copies entering later draws.'
-          : 'Preserve access to existing output and protection over additional self-copying attacks in this limited-draw foundation.');
+          ? strategyText(locale, 'draftCompareFirstFreeAttack')
+          : strategyText(locale, 'draftPreserveAgainstAnger'));
       }
-      return review('copying-free-attack-increment', [`Owned Attack-play relics: ${attackRelics.map(source => source.relic).join(', ') || 'none'}.`]);
+      return review('copying-free-attack-increment', [strategyText(locale, 'draftOwnedAttackRelics', { attackRelics: attackRelics.map(source => source.relic).join(', ') || strategyText(locale, 'none') })]);
     }
     if (id === 'Bloodletting') {
       const hpInteractions = owned('Rupture').length || owned('Reaper').length
@@ -816,24 +816,24 @@ function ordinaryRewardPolicy(state, cards, offers, profile) {
           && row.selfHpLoss?.base_hp_loss === 3 && row.selfHpLoss.bypasses_block === true
           && [2, 3].includes(row.onPlayEnergy?.amount)) {
         return result('low-hp-covered-payment', 'preserve', [
-          `Current HP ${state.run.current_hp}/${state.run.max_hp}; at most one third remains (maintainer survival threshold). Bloodletting pays 3 HP before granting ${row.onPlayEnergy.amount} Energy; ordinary redraw permits another paid use.`,
-          `Owned zero-Energy, zero-HP payment: ${existingPayment.map(source => `${source.card} grants ${source.amount} Energy`).join('; ')}. These copies need their own Hand access.`,
-          `Owned on-play multi-draw copies: ${profile.onPlayDrawCoverage.copies}. Extra Energy needs useful cards reached in the same turn.`,
-        ], 'Preserve scarce HP and access over another HP-funded payment source with existing free payment and limited draw.');
+          strategyText(locale, 'draftBloodlettingLowHp', { current_hp: state.run.current_hp, max_hp: state.run.max_hp, amount: row.onPlayEnergy.amount }),
+          strategyText(locale, 'draftOwnedFreePayment', { existingPayment: existingPayment.map(source => strategyText(locale, 'draftCardEnergyGain', { card: source.card, amount: source.amount })).join('; ') }),
+          strategyText(locale, 'draftMultiDrawNeedsUsefulCards', { copies: profile.onPlayDrawCoverage.copies }),
+        ], strategyText(locale, 'draftPreserveLowHpPayment'));
       }
-      return review('hp-funded-payment-increment', [`Current HP ${state.run.current_hp}/${state.run.max_hp}; owned free payment sources: ${existingPayment.length}; HP interactions: ${hpInteractions ? 'present' : 'absent'}.`]);
+      return review('hp-funded-payment-increment', [strategyText(locale, 'draftHpPaymentInteractions', { current_hp: state.run.current_hp, max_hp: state.run.max_hp, length: existingPayment.length, hpInteractions: hpInteractions ? strategyText(locale, 'draftSupportPresent') : strategyText(locale, 'draftSupportAbsent') })]);
     }
     if (id === 'SeeingRed') {
       const bundle = row.onPlayEnergy?.amount > 0 ? ownedDrawPaymentBundle(cards, profile, row.onPlayEnergy.amount) : undefined;
       if (coveredLaterOutput && !owned(id).length && !profile.onPlayEnergy.length && !profile.skillExhaustPowers.length
           && row.type === 'Skill' && row.cost === 0 && row.exhausts === true && row.onPlayEnergy?.amount === 2 && bundle) {
         return result('first-free-payment-for-owned-draw-output', 'take', [
-          `SeeingRed costs 0, gains 2 Energy on play, then Exhausts. Base Energy ${profile.baseEnergy}->${profile.baseEnergy + 2} for that turn after actual use.`,
-          `Owned payment bundle: ${bundle.sources.map(source => `${labelCard(source)} (${source.persistent_cost} Energy)`).join(' + ')} = ${bundle.cost}, crossing the ${profile.baseEnergy}-Energy baseline. This is a payment example; reach the cards and use their actual effects in order.`,
-          'The owned multi-draw can reach further useful plays. Each extra play needs its actual Hand card; unused Energy is lost at turn end. Owned on-play Energy sources: 0.',
-        ], 'Take a first free Energy source for the checked owned draw and output payment. Its extra draw slot pays off through useful cards actually accessed that turn.');
+          strategyText(locale, 'draftSeeingRedEffect', { baseEnergy: profile.baseEnergy, baseEnergy2: profile.baseEnergy + 2 }),
+          strategyText(locale, 'draftOwnedPaymentBundle', { sources: bundle.sources.map(source => strategyText(locale, 'draftCardEnergyCost', { labelCard: labelCard(source), persistent_cost: source.persistent_cost })).join(' + '), cost: bundle.cost, baseEnergy: profile.baseEnergy }),
+          strategyText(locale, 'draftExtraEnergyLifecycle'),
+        ], strategyText(locale, 'draftTakeFirstFreeEnergy'));
       }
-      return review('draw-output-payment-coverage', [`Owned on-play Energy sources: ${profile.onPlayEnergy.length}; current draw/output payment bundle: ${bundle ? bundle.cost : 'none'}.`]);
+      return review('draw-output-payment-coverage', [strategyText(locale, 'draftPaymentBundleCoverage', { length: profile.onPlayEnergy.length, bundle: bundle ? bundle.cost : strategyText(locale, 'none') })]);
     }
     if (id === 'SeverSoul') {
       const burst = owned('FiendFire').filter(payable);
@@ -847,11 +847,11 @@ function ordinaryRewardPolicy(state, cards, offers, profile) {
           && row.attackDelivery?.amount?.kind === 'base' && row.attackDelivery.targets === 'selected_enemy'
           && row.attackDelivery.hits?.kind === 'fixed' && row.attackDelivery.hits.count === 1) {
         return result('covered-output-and-cleanup', 'preserve', [...outputCoverageFacts,
-          `Owned broad burst cleanup: ${burst.map(labelCard).join(', ')}; reusable selected-card cleanup: ${targeted.map(labelCard).join(', ')}.`,
-          'SeverSoul adds a repeatable 16-base-damage hit and clears only remaining non-Attacks; useful Skills and Powers share that pool. FiendFire also clears Attacks but Exhausts itself. These are different clearing functions.',
-        ], 'Preserve existing output and targeted cleanup over another two-Energy attack in this pool. Repeatable non-Attack clearing or actual Exhaust payoffs can justify a separate comparison.');
+          strategyText(locale, 'draftOwnedCleanup', { burst: burst.map(labelCard).join(', '), targeted: targeted.map(labelCard).join(', ') }),
+          strategyText(locale, 'draftSeverSoulEffect'),
+        ], strategyText(locale, 'draftPreserveOutputCleanup'));
       }
-      return review('non-attack-clearing-coverage', [`Owned broad burst cleanup: ${burst.map(labelCard).join(', ') || 'none'}; reusable selected-card cleanup: ${targeted.map(labelCard).join(', ') || 'none'}.`]);
+      return review('non-attack-clearing-coverage', [strategyText(locale, 'draftOwnedCleanup', { burst: burst.map(labelCard).join(', ') || strategyText(locale, 'none'), targeted: targeted.map(labelCard).join(', ') || strategyText(locale, 'none') })]);
     }
     if (id === 'FiendFire') {
       if (earlyFunctionWindow && !owned(id).length && copies(basicCleanup) >= 6 && profile.onPlayDrawCoverage.copies > 0
@@ -860,29 +860,29 @@ function ordinaryRewardPolicy(state, cards, offers, profile) {
           && row.attackDelivery.targets === 'selected_enemy'
           && row.attackDelivery.hits?.kind === 'per_hand_card_at_resolution_before_exhaust') {
         return result('first-hand-exhaust-burst', 'take', [
-          `Owned basic cleanup pool: ${copies(basicCleanup)} copies (${basicCleanup.map(labelCard).join(', ')}). Use the actual Hand to count targets.`,
-          `With k other Hand cards at resolution, base damage is ${row.baseDamagePerHit} x k to one target; each hit uses resolved Strength and modifiers.`,
-          'Play needed protection/setup first. Remaining weak cards become burst and leave reshuffles; sacrificed useful functions need recovery to return.',
+          strategyText(locale, 'draftBasicCleanupPool', { copies: copies(basicCleanup), basicCleanup: basicCleanup.map(labelCard).join(', ') }),
+          strategyText(locale, 'draftFiendFireHits', { baseDamagePerHit: row.baseDamagePerHit }),
+          strategyText(locale, 'draftFiendFireOrder'),
           ...cards.filter(source => source.mechanics.combat_upgrade_scope === 'whole_hand'
             && payable(source) && source.persistent_cost + row.cost <= profile.baseEnergy).map(source =>
-            `${labelCard(source)} can upgrade FiendFire in the same actual Hand: pay ${source.persistent_cost} + ${row.cost} Energy, then resolve the upgraded burst.`),
-          ...(profile.strikeTags ? [`Owned Strike-tagged pool: ${profile.strikeTags.copies}. Exhausting counted cards also lowers later PerfectedStrike requests until those cards return to Hand, Draw or Discard.`] : []),
-        ], 'Take a first broad Hand-clearing burst with owned draw and a substantial basic-card pool. Check the actual Hand before using it.');
+            strategyText(locale, 'draftFiendFireHandUpgrade', { labelCard: labelCard(source), persistent_cost: source.persistent_cost, cost: row.cost })),
+          ...(profile.strikeTags ? [strategyText(locale, 'draftFiendFireStrikePool', { copies: profile.strikeTags.copies })] : []),
+        ], strategyText(locale, 'draftTakeFirstFiendFire'));
       }
-      return review('hand-exhaust-burst-coverage', [`Owned FiendFire: ${copies(owned(id))}; basic cleanup copies: ${copies(basicCleanup)}; owned multi-draw copies: ${profile.onPlayDrawCoverage.copies}.`]);
+      return review('hand-exhaust-burst-coverage', [strategyText(locale, 'draftFiendFireCoverage', { copies: copies(owned(id)), copies2: copies(basicCleanup), copies3: profile.onPlayDrawCoverage.copies })]);
     }
     if (id === 'Corruption') {
       if (earlyFunctionWindow && !owned(id).length && row.type === 'Power' && row.cost >= 2 && row.cost <= profile.baseEnergy
           && copies(usefulPaidSkills) >= 6 && usefulPaidSkills.some(source => source.mechanics.draw_cards >= 2)
           && copies(transitions) >= 3) {
         return result('first-skill-payment-engine', 'take', [
-          `Owned useful paid Skills: ${copies(usefulPaidSkills)} (${usefulPaidSkills.map(source => `${labelCard(source)}: ${source.persistent_cost} Energy`).join('; ')}).`,
-          `After ${row.cost}-Energy deployment, reached Skills then cost 0 and Exhaust when played; their payments become available for other plays.`,
-          'Schedule deployment while available Skill protection/access can cover the fight. Spent basic Skills improve later draws; spent useful Skills need recovery for reuse.',
-          `Owned Exhaust-draw Powers: ${profile.exhaustDraw.length}; owned Exhaust-block Powers: ${copies(owned('FeelNoPain'))}.`,
-        ], 'Take a first Skill-payment engine supported by the owned protection, draw and payable output. Existing Exhaust payoffs improve it; the payment and cleanup benefits already exist without new cards.');
+          strategyText(locale, 'draftUsefulPaidSkills', { copies: copies(usefulPaidSkills), usefulPaidSkills: usefulPaidSkills.map(source => strategyText(locale, 'draftSkillEnergyCost', { labelCard: labelCard(source), persistent_cost: source.persistent_cost })).join('; ') }),
+          strategyText(locale, 'draftCorruptionPayment', { cost: row.cost }),
+          strategyText(locale, 'draftCorruptionSequence'),
+          strategyText(locale, 'draftOwnedExhaustPayoffs', { length: profile.exhaustDraw.length, copies: copies(owned('FeelNoPain')) }),
+        ], strategyText(locale, 'draftTakeFirstCorruption'));
       }
-      return review('skill-payment-engine-coverage', [`Owned Corruption: ${copies(owned(id))}; useful paid Skill copies: ${copies(usefulPaidSkills)}.`]);
+      return review('skill-payment-engine-coverage', [strategyText(locale, 'draftCorruptionCoverage', { copies: copies(owned(id)), copies2: copies(usefulPaidSkills) })]);
     }
     if (id === 'DemonForm') {
       if (earlyFunctionWindow && !profile.strengthSources.length && !strengthSupport && copies(transitions) >= 4
@@ -890,23 +890,23 @@ function ordinaryRewardPolicy(state, cards, offers, profile) {
           && row.type === 'Power' && row.cost >= 2 && row.cost <= profile.baseEnergy
           && row.enduringStrength?.amount >= 2 && row.enduringStrength.delivery === 'each_player_turn_start_post_draw') {
         return result('first-protected-delayed-strength', 'take', [
-          `Owned enduring Strength sources: 0; payable transition attacks: ${copies(transitions)}.`,
-          `DemonForm: ${row.cost} Energy, gain ${row.enduringStrength.amount} Strength each later turn start; supplies no Strength on its deployment turn.`,
-          `Owned protection: ${growthProtection.join(', ')}. Prior-turn debuffs can protect setup; same-turn plays still share ${profile.baseEnergy} base Energy.`,
-        ], 'A first protected long-fight growth source is useful. Compare its deployment and later paid attacks with the immediate burst or Skill-payment alternatives.');
+          strategyText(locale, 'draftFirstEnduringStrength', { copies: copies(transitions) }),
+          strategyText(locale, 'draftDemonFormTiming', { cost: row.cost, amount: row.enduringStrength.amount }),
+          strategyText(locale, 'draftDemonFormProtection', { growthProtection: growthProtection.join(', '), baseEnergy: profile.baseEnergy }),
+        ], strategyText(locale, 'draftCompareFirstDemonForm'));
       }
-      return review('delayed-strength-setup-coverage', [`Owned enduring Strength sources: ${profile.strengthSources.length}; payable transition attacks: ${copies(transitions)}.`]);
+      return review('delayed-strength-setup-coverage', [strategyText(locale, 'draftEnduringStrengthAttackCoverage', { length: profile.strengthSources.length, copies: copies(transitions) })]);
     }
     if (id === 'BodySlam') {
-      const checked = paidBlockConversionDefault(state, cards, profile, row);
+      const checked = paidBlockConversionDefault(state, cards, profile, row, locale);
       if (checked) return result(checked.policy, checked.disposition, checked.facts, checked.preference);
       if (coveredEarlyOutput && smallBlock && row.cost === 1 && row.exhausts === false
           && row.attackDelivery?.amount?.kind === 'player_block') return result('small-block-output-conversion', 'preserve', [
-        `Owned fixed Block requests: ${profile.fixedPlayedBlock.map(source => `${source.card}: ${source.block} Block for ${source.cost} Energy`).join('; ')} before combat modifiers.`,
-        `BodySlam converts current Block into base Attack damage and preserves that Block; its current play costs ${row.cost} Energy after paying the Block sources. An upgrade lowers its own payment under the native rule; combat upgrades still require actual shared Hand.`,
-        `Owned payable transition attacks: ${copies(transitions)}; stronger single-target requests already exist. Current small Block production gives this additional conversion a low drafting priority.`,
-      ], 'Preserve the draw slot over another output conversion in this small-Block foundation. Larger Block production, payment or retention deserves its own comparison.');
-      return review('block-output-foundation', [`Owned fixed Block requests: ${profile.fixedPlayedBlock.map(source => `${source.card}: ${source.block}`).join('; ') || 'none'}.`]);
+        strategyText(locale, 'draftFixedBlockBeforeModifiers', { fixedPlayedBlock: profile.fixedPlayedBlock.map(source => strategyText(locale, 'draftBlockEnergyCost', { card: source.card, block: source.block, cost: source.cost })).join('; ') }),
+        strategyText(locale, 'draftBodySlamPayment', { cost: row.cost }),
+        strategyText(locale, 'draftSmallBlockConversionPriority', { copies: copies(transitions) }),
+      ], strategyText(locale, 'draftPreserveSmallBlockAccess'));
+      return review('block-output-foundation', [strategyText(locale, 'draftFixedBlockCoverage', { fixedPlayedBlock: profile.fixedPlayedBlock.map(source => `${source.card}: ${source.block}`).join('; ') || strategyText(locale, 'none') })]);
     }
     if (id === 'Combust') {
       const effect = row.endOfTurnHpLossAndDamage;
@@ -915,12 +915,12 @@ function ordinaryRewardPolicy(state, cards, offers, profile) {
           && Number.isSafeInteger(state.run.current_hp) && Number.isSafeInteger(state.run.max_hp)
           && state.run.max_hp > 0 && state.run.current_hp >= Math.ceil(state.run.max_hp * 2 / 3)) {
         return result('first-early-recurring-area-output', 'take', [
-          `Owned payable area Attack requests: ${areaRoutes.map(source => `${labelCard(source)}: ${source.persistent_damage * source.mechanics.damage.delivery.hits.count} per enemy`).join('; ') || 'none'}. Current area output is thin.`,
-          `Combust costs ${row.cost} Energy to deploy, then each actual player turn-end trigger loses ${effect.hp_loss_per_application} HP before requesting ${effect.damage_per_enemy_per_application} non-Attack damage to each enemy. Its Power stays deployed; the played copy leaves ordinary circulation.`,
-          `HP ${state.run.current_hp}/${state.run.max_hp} meets this policy's two-thirds reserve preference. Self HP loss and enemy damage resolve under their native modifiers; longer deployment increases both damage and HP expense.`,
-        ], 'Take a first repeat area-damage function while the checked HP reserve can fund its recurring cost. Use actual combat HP and enemy state to decide deployment; the threshold is a maintainer preference.');
+          strategyText(locale, 'draftThinAreaCoverage', { areaRoutes: areaRoutes.map(source => strategyText(locale, 'draftDamagePerEnemy', { labelCard: labelCard(source), persistent_damage: source.persistent_damage * source.mechanics.damage.delivery.hits.count })).join('; ') || strategyText(locale, 'none') }),
+          strategyText(locale, 'draftCombustTrigger', { cost: row.cost, hp_loss_per_application: effect.hp_loss_per_application, damage_per_enemy_per_application: effect.damage_per_enemy_per_application }),
+          strategyText(locale, 'draftCombustHpReserve', { current_hp: state.run.current_hp, max_hp: state.run.max_hp }),
+        ], strategyText(locale, 'draftTakeFirstCombust'));
       }
-      return review('hp-funded-area-coverage', [`HP ${state.run.current_hp}/${state.run.max_hp}; owned Combust: ${copies(owned(id))}; payable area sources: ${areaRoutes.map(labelCard).join(', ') || 'none'}.`]);
+      return review('hp-funded-area-coverage', [strategyText(locale, 'draftCombustCoverage', { current_hp: state.run.current_hp, max_hp: state.run.max_hp, copies: copies(owned(id)), areaRoutes: areaRoutes.map(labelCard).join(', ') || strategyText(locale, 'none') })]);
     }
     if (id === 'Uppercut') {
       if (early && !weakSources.length && copies(transitions) >= 3
@@ -932,32 +932,32 @@ function ordinaryRewardPolicy(state, cards, offers, profile) {
           && source.mechanics.combat_upgrade_scope === 'whole_hand'
           && source.mechanics.combat_upgrade_persistence === 'combat_only');
         return result('first-early-weak-attack', 'take', [
-          `Owned payable Weak sources: 0; transition attacks: ${copies(transitions)}. Uppercut adds ${row.enemyWeak} Weak turn(s) and ${row.enemyVulnerable} Vulnerable after its hit; ${row.cost} Energy leaves ${profile.baseEnergy - row.cost} base Energy.`,
-          ...upgrades.map(source => `${labelCard(source)} can upgrade Uppercut when both actually share Hand; paying both fits ${profile.baseEnergy} base Energy. The upgraded effect follows the native rule and lasts this combat.`),
-        ], 'Take a first recurring Weak source for protection with useful transition damage; its current duration and two-Energy payment remain part of the choice.');
+          strategyText(locale, 'draftUppercutEffect', { copies: copies(transitions), enemyWeak: row.enemyWeak, enemyVulnerable: row.enemyVulnerable, cost: row.cost, baseEnergy: profile.baseEnergy - row.cost }),
+          ...upgrades.map(source => strategyText(locale, 'draftUppercutHandUpgrade', { labelCard: labelCard(source), baseEnergy: profile.baseEnergy })),
+        ], strategyText(locale, 'draftTakeFirstUppercut'));
       }
-      return review('weak-attack-coverage', [`Owned payable Weak: ${weakSources.map(labelCard).join(', ') || 'none'}.`]);
+      return review('weak-attack-coverage', [strategyText(locale, 'draftOwnedPayableWeak', { weakSources: weakSources.map(labelCard).join(', ') || strategyText(locale, 'none') })]);
     }
     if (id === 'FeelNoPain') {
       if (early && !owned(id).length && row.type === 'Power' && row.cost === 1
           && row.blockPerExhaustAfterDeployment > 0 && reusableExhaust.length) {
         const once = cards.filter(source => source.mechanics.exhausts === true || source.mechanics.ethereal === true);
         return result('first-early-exhaust-block', 'take', [
-          `FeelNoPain: deploy for ${row.cost} Energy, then gain ${row.blockPerExhaustAfterDeployment} Block per actual card Exhaust. That Block protects the trigger turn and follows ordinary Block loss.`,
+          strategyText(locale, 'draftFeelNoPainEffect', { cost: row.cost, blockPerExhaustAfterDeployment: row.blockPerExhaustAfterDeployment }),
           ...reusableExhaust.map(source => source.card.card === 'BurningPact'
-            ? `${labelCard(source)} costs ${source.persistent_cost} Energy: select one other Hand card to Exhaust, then request ${source.mechanics.draw_cards} draws. Each later use needs redraw, payment and a Hand target; each selected card gives one Block trigger after deployment.`
-            : `${labelCard(source)} costs ${source.persistent_cost} Energy and Exhausts other Hand cards under its native selection rule; each actual Exhaust gives one Block trigger after deployment.`),
-          ...once.map(source => `${labelCard(source)}: ${source.mechanics.exhausts === true ? 'Exhaust after play' : 'Ethereal Exhaust if still in Hand at turn end'}. This gives one Block trigger after deployment; the exhausted copy leaves ordinary redraws, with a separate recovery effect needed for another use.`),
-        ], 'A first deployed Exhaust-block function has owned fuel. Compare its actual trigger quantity and timing with protection delivered directly by another offered card.');
+            ? strategyText(locale, 'draftTargetedExhaustDrawFuel', { labelCard: labelCard(source), persistent_cost: source.persistent_cost, draw_cards: source.mechanics.draw_cards })
+            : strategyText(locale, 'draftOtherHandExhaustFuel', { labelCard: labelCard(source), persistent_cost: source.persistent_cost })),
+          ...once.map(source => strategyText(locale, 'draftSingleExhaustFuel', { labelCard: labelCard(source), exhausts: source.mechanics.exhausts === true ? strategyText(locale, 'exhaustAfterPlay') : strategyText(locale, 'draftEtherealFuel') })),
+        ], strategyText(locale, 'draftCompareFirstFeelNoPain'));
       }
-      return review('exhaust-block-fuel-coverage', [`Owned payable reusable other-card Exhaust: ${reusableExhaust.map(labelCard).join(', ') || 'none'}.`]);
+      return review('exhaust-block-fuel-coverage', [strategyText(locale, 'draftReusableExhaustCoverage', { reusableExhaust: reusableExhaust.map(labelCard).join(', ') || strategyText(locale, 'none') })]);
     }
     if (id === 'Cleave') {
       if (earlyArea.some(offer => offer.command === row.command)) return result('first-early-area-output', 'take',
-        [`Owned payable fixed area attacks: ${area.map(source => `${labelCard(source)}, ${source.persistent_damage} base damage per hit`).join('; ') || 'none'}.`,
-          `Cleave requests ${row.baseDamagePerHit} damage to each enemy for 1 Energy before modifiers.`],
-        'Take a first stronger standalone area hit for early multi-enemy fights.');
-      return review('area-output-coverage', [`Owned payable fixed area attacks: ${area.map(labelCard).join(', ') || 'none'}.`]);
+        [strategyText(locale, 'draftFixedAreaCoverage', { area: area.map(source => strategyText(locale, 'draftBaseDamagePerHit', { labelCard: labelCard(source), persistent_damage: source.persistent_damage })).join('; ') || strategyText(locale, 'none') }),
+          strategyText(locale, 'draftCleaveEffect', { baseDamagePerHit: row.baseDamagePerHit })],
+        strategyText(locale, 'draftTakeFirstCleave'));
+      return review('area-output-coverage', [strategyText(locale, 'draftFixedAreaCoverage', { area: area.map(labelCard).join(', ') || strategyText(locale, 'none') })]);
     }
     if (id === 'Hemokinesis') {
       if (early && (earlyHandUpgrade.length || earlyArea.length) && copies(transitions) >= 4
@@ -968,12 +968,12 @@ function ordinaryRewardPolicy(state, cards, offers, profile) {
           && !cards.some(source => ['Rupture', 'BloodForBlood'].includes(source.card.card))
           && !(state.relics ?? []).some(relic => ['RunicCube', 'CentennialPuzzle', 'RedSkull'].includes(relic.relic))) {
         return result('existing-output-over-hp-transition', 'preserve',
-          [`Owned payable transition attacks: ${copies(transitions)} (${transitions.map(labelCard).join(', ')}).`,
+          [strategyText(locale, 'removalOwnedAttacks', { count: copies(transitions), cards: transitions.map(labelCard).join(', ') }),
             ...retrievalTargets.map(target => target.fact),
-            'Hemokinesis adds a 15-damage single-target request and 2 base HP loss per play; this reward supplies a first upgrade or area function.'],
-          'Prefer the supplied new function over another HP-funded single-target transition attack in this covered output inventory.');
+            strategyText(locale, 'draftHemokinesisOpportunity')],
+          strategyText(locale, 'draftPreferFunctionOverHemokinesis'));
       }
-      return review('hp-transition-coverage', [`Owned payable transition attacks: ${copies(transitions)}.`]);
+      return review('hp-transition-coverage', [strategyText(locale, 'ownedPayableAttackCount', { count: copies(transitions) })]);
     }
     if (id === 'Barricade') {
       const basicBlock = cards.filter(source => source.persistent_block > 0);
@@ -987,11 +987,11 @@ function ordinaryRewardPolicy(state, cards, offers, profile) {
         && (state.relics ?? []).every(relic => ['BurningBlood', 'SingingBowl'].includes(relic.relic));
       if (earlyRetrieval.length && basicFoundation && row.type === 'Power' && row.cost === profile.baseEnergy) {
         return result('early-retrieval-over-unfunded-retention', 'preserve',
-          [`Owned Block requests: ${basicBlock.map(labelCard).join(', ')}; each at most 5 Block for at least 1 Energy.`,
-            `Barricade deployment costs all ${profile.baseEnergy} base Energy. This reward also supplies a first useful Headbutt.`],
-          'Prefer the supplied retrieval of existing strong output here. Retention development needs larger Block production or deployment support; keep that future investment for its supported comparison.');
+          [strategyText(locale, 'draftSmallBlockRequests', { basicBlock: basicBlock.map(labelCard).join(', ') }),
+            strategyText(locale, 'draftBarricadeDeploymentOpportunity', { baseEnergy: profile.baseEnergy })],
+          strategyText(locale, 'draftPreferRetrievalOverBarricade'));
       }
-      return review('retention-foundation', [`Owned Block production: ${basicBlock.map(labelCard).join(', ') || 'none'}.`]);
+      return review('retention-foundation', [strategyText(locale, 'draftBlockProductionCoverage', { basicBlock: basicBlock.map(labelCard).join(', ') || strategyText(locale, 'none') })]);
     }
     if (id === 'WildStrike') {
       if (coveredLaterOutput && row.type === 'Attack' && row.cost === 1 && row.exhausts === false
@@ -1003,19 +1003,19 @@ function ordinaryRewardPolicy(state, cards, offers, profile) {
           && row.statusInjections[0].persistence === 'persistent' && !profile.statusPayoffs.length
           && strikeIncrement <= 3) return result('covered-output-over-wound-transition', 'preserve', [
         ...outputCoverageFacts,
-        `WildStrike adds a 12-base-damage hit and one Wound into Draw per play. Its Strike tag adds ${strikeIncrement} base damage summed across original Strike-scaling copies, before modifiers and combat pile changes.`,
-        'Owned cleanup can remove an accessed Wound through its own selection and payment; the inserted Wound may obstruct a draw before that cleanup.',
-      ], 'Preserve access to existing output, protection and draw over another ordinary attack with a Draw-pile Wound in this covered output pool.');
+        strategyText(locale, 'draftWildStrikeTagEffect', { strikeIncrement: strikeIncrement }),
+        strategyText(locale, 'draftWoundCleanupTiming'),
+      ], strategyText(locale, 'draftPreserveAgainstWildStrike'));
       if (earlyRetrieval.length && copies(transitions) >= 3 && row.type === 'Attack' && row.cost === 1
           && row.baseDamagePerHit === 12 && row.attackDelivery?.targets === 'selected_enemy'
           && row.attackDelivery.hits?.count === 1 && row.statusInjections?.length === 1
           && row.statusInjections[0].card === 'Wound' && row.statusInjections[0].count === 1
           && row.statusInjections[0].destination === 'draw_pile' && !profile.statusPayoffs.length
           && strikeIncrement <= 3) return result('early-retrieval-over-wound-transition', 'preserve',
-        [`Owned payable transition attacks: ${copies(transitions)} (${transitions.map(labelCard).join(', ')}).`,
-          `Adding one Strike-tagged copy changes each original Strike-scaling attack by its own coefficient; summed across original copies: ${strikeIncrement} base damage before pile changes. WildStrike inserts one Wound into Draw per play.`],
-        'Prefer the first useful retrieval of owned strong output over another ordinary transition attack that adds Draw-pile obstruction. Existing cleanup uses its own access, selection and payment.');
-      return review('wound-transition-increment', [`Owned payable transition attacks: ${copies(transitions)}; owned Status payoff Powers: ${profile.statusPayoffs.map(source => source.card).join(', ') || 'none'}.`]);
+        [strategyText(locale, 'removalOwnedAttacks', { count: copies(transitions), cards: transitions.map(labelCard).join(', ') }),
+          strategyText(locale, 'draftWildStrikeIncrement', { strikeIncrement: strikeIncrement })],
+        strategyText(locale, 'draftPreferRetrievalOverWildStrike'));
+      return review('wound-transition-increment', [strategyText(locale, 'draftTransitionStatusCoverage', { copies: copies(transitions), statusPayoffs: profile.statusPayoffs.map(source => source.card).join(', ') || strategyText(locale, 'none') })]);
     }
     if (id === 'InfernalBlade') {
       const exhaustPayoff = profile.exhaustDraw.length || cards.some(source => source.mechanics.exhaust_block_power > 0)
@@ -1024,18 +1024,18 @@ function ordinaryRewardPolicy(state, cards, offers, profile) {
           && row.randomAttackToHand?.count === 1 && row.randomAttackToHand.cost_for_turn === 0
           && !exhaustPayoff && !profile.skillExhaustPowers.length && !owned('MasterReality').length) {
         const facts = [...outputCoverageFacts,
-          'InfernalBlade+ uses one permanent draw slot to generate one random class Attack for Hand, then Exhausts. The generated card costs 0 this turn and follows its own play conditions; Hand overflow goes to Discard. It remains combat-only, using its ordinary cost after turn end.',
+          strategyText(locale, 'draftInfernalBladeEffect'),
           ...(attackRelics.length ? [
-            `Owned 0/1-Energy Attacks: ${profile.attacks.filter(source => source.cost >= 0 && source.cost <= 1).map(source => `${source.card} (${source.cost} Energy)`).join('; ') || 'none'}. These still need actual Hand access and their own play conditions.`,
-            `Owned Attack-play relics: ${attackRelics.map(source => source.relic).join(', ')}. A playable generated Attack contributes one actual Attack play to their counters; each hit of a multi-hit card shares that one play.`,
+            strategyText(locale, 'draftCheapAttackInventory', { attacks: profile.attacks.filter(source => source.cost >= 0 && source.cost <= 1).map(source => strategyText(locale, 'draftCardEnergyCost', { labelCard: source.card, persistent_cost: source.cost })).join('; ') || strategyText(locale, 'none') }),
+            strategyText(locale, 'draftGeneratedAttackRelicPlay', { attackRelics: attackRelics.map(source => source.relic).join(', ') }),
           ] : []),
         ];
         return result('covered-output-random-free-attack', attackRelics.length && !owned(id).length ? 'compare' : 'preserve', facts,
           attackRelics.length && !owned(id).length
-            ? 'Compare a first free random Attack for the owned Attack-play relic with keeping access to existing output and protection. The result and whether it is playable are revealed in combat.'
-            : 'Preserve access to existing output and protection over an additional random attack generator in this covered output pool.');
+            ? strategyText(locale, 'draftCompareFreeRandomAttack')
+            : strategyText(locale, 'draftPreserveAgainstRandomAttack'));
       }
-      return review('random-free-attack-support', [`Owned Attack-play relics: ${attackRelics.map(source => source.relic).join(', ') || 'none'}; owned Exhaust payoff: ${exhaustPayoff ? 'present' : 'absent'}.`]);
+      return review('random-free-attack-support', [strategyText(locale, 'draftAttackRelicExhaustCoverage', { attackRelics: attackRelics.map(source => source.relic).join(', ') || strategyText(locale, 'none'), exhaustPayoff: exhaustPayoff ? strategyText(locale, 'draftSupportPresent') : strategyText(locale, 'draftSupportAbsent') })]);
     }
     if (id === 'Havoc') {
       const planners = cards.filter(source => payable(source)
@@ -1046,39 +1046,39 @@ function ordinaryRewardPolicy(state, cards, offers, profile) {
           && row.topDeckPlay?.exhaust_after_play === true && row.topDeckPlay.bypass_fixed_energy_cost === true
           && row.topDeckPlay.x_cost_uses_current_energy === true
           && planners.length && powers.length) return result('first-planned-free-topdeck-play', 'take',
-        [`Owned topdeck planning: ${planners.map(labelCard).join(', ')}; owned payable Powers: ${powers.map(labelCard).join(', ')}. Owned Havoc: 0 copies.`],
-        'Take a first Havoc+ for a planned free top-card play. Put a useful target on top before Havoc; deployment, target selection and Exhaust follow that card\'s actual play rules.');
-      return review('planned-topdeck-play-coverage', [`Owned topdeck planning: ${planners.map(labelCard).join(', ') || 'none'}.`]);
+        [strategyText(locale, 'draftHavocOwnedPlanning', { planners: planners.map(labelCard).join(', '), powers: powers.map(labelCard).join(', ') })],
+        strategyText(locale, 'draftTakeFirstHavoc'));
+      return review('planned-topdeck-play-coverage', [strategyText(locale, 'draftTopdeckPlanningCoverage', { planners: planners.map(labelCard).join(', ') || strategyText(locale, 'none') })]);
     }
     if (id === 'Armaments') {
       const wholeHand = owned(id).filter(source => payable(source)
         && source.mechanics.combat_upgrade_scope === 'whole_hand');
       if (earlyHandUpgrade.some(offer => offer.command === row.command)) return result('first-early-hand-upgrades', 'take',
-        [`Owned upgradeable one-Energy basics with at least 3 additional damage or Block: ${copies(upgradeTargets.basics)} copies.`,
+        [strategyText(locale, 'draftUpgradeableBasics', { copies: copies(upgradeTargets.basics) }),
           ...upgradeTargets.access.map(target => target.fact),
-          'Armaments upgrades other eligible cards sharing its actual Hand when played. Those upgrades last for this combat; subsequent draws may bring other targets for another play.'],
-        'Take a first Armaments+ to improve the existing basic and access cards while gaining its own Block.');
+          strategyText(locale, 'draftArmamentsUpgradeScope')],
+        strategyText(locale, 'draftTakeFirstArmaments'));
       if (established && copies(wholeHand) >= 2 && row.combatUpgradeScope === 'whole_hand') {
         return result('covered-combat-upgrades', 'preserve',
-          [`Owned payable whole-Hand Armaments: ${copies(wholeHand)} copies.`],
-          'Preserve access to setup and output over a third whole-Hand combat-upgrade copy.');
+          [strategyText(locale, 'draftWholeHandArmamentsCoverage', { copies: copies(wholeHand) })],
+          strategyText(locale, 'draftPreserveAgainstThirdArmaments'));
       }
-      return review('combat-upgrade-coverage', [`Owned payable whole-Hand Armaments: ${copies(wholeHand)} copies.`]);
+      return review('combat-upgrade-coverage', [strategyText(locale, 'draftWholeHandArmamentsCoverage', { copies: copies(wholeHand) })]);
     }
     if (id === 'Headbutt') {
       if (earlyRetrieval.some(offer => offer.command === row.command)) return result('first-early-output-retrieval', 'take',
-        [...retrievalTargets.map(target => target.fact), 'Owned Headbutt: 0 copies. Owned payable on-play draw provides a subsequent access route.',
-          'Play Headbutt after the useful target enters Discard, then draw the placed target and pay for its next play. A later turn can supply that draw and payment.'],
-        'Take a first Headbutt to reuse the listed existing output.');
+        [...retrievalTargets.map(target => target.fact), strategyText(locale, 'draftHeadbuttDrawRoute'),
+          strategyText(locale, 'draftHeadbuttSequence')],
+        strategyText(locale, 'draftTakeFirstHeadbuttOutput'));
       const reusable = cards.filter(source => ['SpotWeakness', 'Rampage', 'Entrench'].includes(source.card.card)
         && source.mechanics.exhausts === false && source.persistent_cost >= 0
         && source.persistent_cost + row.cost <= profile.baseEnergy);
       if (smallSkillWindow && established && !owned(id).length && row.type === 'Attack'
           && row.cost === 1 && reusable.length && profile.onPlayDrawCoverage.copies >= 1
           && profile.onPlayDrawCoverage.copies <= 2) return result('first-key-discard-retrieval', 'take',
-        [`Owned payable repeat-use targets: ${reusable.map(labelCard).join(', ')}. Owned Headbutt: 0 copies.`],
-        'Take a first Headbutt for its printed Discard-to-top-of-Draw selection. A useful target must be in Discard; reach it with a later draw and pay for its next use.');
-      return review('discard-retrieval-coverage', [`Owned repeat-use targets payable with Headbutt: ${reusable.map(labelCard).join(', ') || 'none'}.`]);
+        [strategyText(locale, 'draftHeadbuttRepeatTargets', { reusable: reusable.map(labelCard).join(', ') })],
+        strategyText(locale, 'draftTakeFirstHeadbuttSelection'));
+      return review('discard-retrieval-coverage', [strategyText(locale, 'draftHeadbuttPayableTargets', { reusable: reusable.map(labelCard).join(', ') || strategyText(locale, 'none') })]);
     }
     if (id === 'TrueGrit') {
       const cleanup = cards.filter(source => ['Strike', 'Defend', 'AscendersBane'].includes(source.card.card));
@@ -1086,9 +1086,9 @@ function ordinaryRewardPolicy(state, cards, offers, profile) {
       if (smallSkillWindow && !owned(id).length && copies(cleanup) >= 4 && copies(existing) <= 1
           && row.type === 'Skill' && row.cost === 1 && row.blockRequest >= 9
           && row.targetedHandExhaust && row.exhausts === false) return result('first-protective-cleanup', 'take',
-        [`Owned basic cleanup pool: ${copies(cleanup)} copies. Owned payable other-card Exhaust: ${copies(existing)} copies.`],
-        'Take a first targeted TrueGrit+ for protection and repeated weak-Hand-card cleanup. Burn a weak or obstructive card while keeping useful functions available.');
-      return review('protective-cleanup-coverage', [`Owned basic cleanup pool: ${copies(cleanup)}; owned payable other-card Exhaust: ${copies(existing)} copies.`]);
+        [strategyText(locale, 'draftTrueGritCleanupPool', { copies: copies(cleanup), copies2: copies(existing) })],
+        strategyText(locale, 'draftTakeFirstTrueGrit'));
+      return review('protective-cleanup-coverage', [strategyText(locale, 'draftCleanupExhaustCoverage', { copies: copies(cleanup), copies2: copies(existing) })]);
     }
     if (id === 'ShrugItOff') {
       const count = copies(owned(id));
@@ -1096,8 +1096,8 @@ function ordinaryRewardPolicy(state, cards, offers, profile) {
           && row.blockRequest >= 11 && row.onPlayDraw?.requested === 1
           && row.onPlayDraw.topdeck === 0 && row.onPlayDraw.handChange === 0
           && row.exhausts === false) return result('early-protective-replacement', 'take',
-        [`Owned ShrugItOff: ${count} copies. Owned payable setup: ${setup.map(source => source.card).join(', ')}.`],
-        'Take an upgraded first or second ShrugItOff for repeatable protection while drawing its replacement during setup and later turns.');
+        [strategyText(locale, 'draftShrugSetupCoverage', { count: count, setup: setup.map(source => source.card).join(', ') })],
+        strategyText(locale, 'draftTakeUpgradedShrug'));
       const matching = owned(id).filter(source => payable(source) && source.mechanics.card_type === 'Skill'
         && source.persistent_cost <= row.cost && source.persistent_block >= row.blockRequest
         && source.mechanics.draw_cards >= row.onPlayDraw?.requested
@@ -1107,11 +1107,11 @@ function ordinaryRewardPolicy(state, cards, offers, profile) {
           && row.blockRequest >= 11 && row.onPlayDraw?.requested === 1 && row.onPlayDraw.topdeck === 0
           && row.onPlayDraw.handChange === 0 && row.exhausts === false && firstReduction.length) {
         return result('first-reduction-over-repeated-replacement', 'preserve',
-          [`Owned payable ShrugItOff at least matching this offer: ${copies(matching)} copies.`,
-            `First payable persistent reduction offered: ${firstReduction.map(source => source.command).join(', ')}.`],
-          'Prefer the first persistent enemy Strength reduction over another already-covered protective replacement in this reward. It reduces each affected later attack hit, subject to enemy debuff prevention and clears.');
+          [strategyText(locale, 'draftMatchingShrugCoverage', { copies: copies(matching) }),
+            strategyText(locale, 'draftFirstPersistentReductionOffer', { firstReduction: firstReduction.map(source => source.command).join(', ') })],
+          strategyText(locale, 'draftPreferPersistentReduction'));
       }
-      return review('protective-draw-coverage', [`Owned ShrugItOff: ${count} copies.`]);
+      return review('protective-draw-coverage', [strategyText(locale, 'draftShrugCopies', { count: count })]);
     }
     if (id === 'Warcry') {
       const count = copies(owned(id));
@@ -1119,22 +1119,22 @@ function ordinaryRewardPolicy(state, cards, offers, profile) {
           && profile.onPlayDrawCoverage.copies <= 2 && row.type === 'Skill' && row.cost === 0
           && row.onPlayDraw?.requested === 2 && row.onPlayDraw.topdeck === 1
           && row.onPlayDraw.handChange === 0 && row.exhausts === true) return result('first-free-hand-planning', 'take',
-        [`Owned Warcry: 0 copies. Owned payable setup: ${setup.map(source => source.card).join(', ')}.`,
-          `Owned on-play multi-draw: ${profile.onPlayDrawCoverage.copies} copies.`],
-        'Take a first Warcry+ to inspect two fresh cards and place one Hand card on top for a later draw. Its own Exhaust removes this copy from later ordinary reshuffles.');
-      return review('hand-planning-coverage', [`Owned Warcry: ${count} copies; owned on-play multi-draw: ${profile.onPlayDrawCoverage.copies} copies.`]);
+        [strategyText(locale, 'draftWarcrySetup', { setup: setup.map(source => source.card).join(', ') }),
+          strategyText(locale, 'draftMultiDrawCopies', { copies: profile.onPlayDrawCoverage.copies })],
+        strategyText(locale, 'draftTakeFirstWarcry'));
+      return review('hand-planning-coverage', [strategyText(locale, 'draftWarcryDrawCoverage', { count: count, copies: profile.onPlayDrawCoverage.copies })]);
     }
     if (id === 'Disarm') {
       if ((act >= 2 || coveredEarlyOutput) && row.cost >= 0 && row.cost <= profile.baseEnergy && row.enemyStrengthReduction?.amount > 0
           && row.enemyStrengthReduction.restoration === 'no_scheduled_restoration' && !profile.persistentReduction.length) {
         return result('first-persistent-reduction', 'take', [
-          'Owned persistent enemy Strength reduction: 0.',
-          ...(act === 1 ? [`Owned payable transition attacks: ${copies(transitions)} with stronger focused output; a first Disarm supplies a separate protection function.`] : []),
-          `${row.command}: ${row.cost} Energy; reduce one enemy's Strength by ${row.enemyStrengthReduction.amount} with no scheduled restoration, subject to debuff prevention and clearing. Each later Attack hit uses the remaining Strength; the card Exhausts after play.`,
+          strategyText(locale, 'draftNoPersistentReduction'),
+          ...(act === 1 ? [strategyText(locale, 'draftDisarmSeparateFunction', { copies: copies(transitions) })] : []),
+          strategyText(locale, 'draftDisarmEffect', { command: row.command, cost: row.cost, amount: row.enemyStrengthReduction.amount }),
         ],
-          'Take the first payable Disarm for persistent reduction during setup and later attack turns.');
+          strategyText(locale, 'draftTakeFirstDisarm'));
       }
-      return review('persistent-reduction-coverage', [`Owned persistent reduction sources: ${profile.persistentReduction.length}.`]);
+      return review('persistent-reduction-coverage', [strategyText(locale, 'draftPersistentReductionCoverage', { length: profile.persistentReduction.length })]);
     }
     if (id === 'BloodForBlood') {
       const fuel = cards.filter(source => source.mechanics.end_of_turn_hp_loss_and_damage?.hp_loss_per_application > 0);
@@ -1144,19 +1144,19 @@ function ordinaryRewardPolicy(state, cards, offers, profile) {
           && fuel.length && offers.some(offer => offer.card === 'Disarm'
             && offer.enemyStrengthReduction?.restoration === 'no_scheduled_restoration'
             && !profile.persistentReduction.length)) return result('delayed-discount-or-first-protection', 'preserve', [
-        `BloodForBlood starts at ${row.cost} Energy against ${profile.baseEnergy} base Energy. Each positive HP-loss event lowers this copy's cost by 1 to a floor of 0 while it is in Hand, Draw or Discard.`,
-        ...fuel.map(source => `${labelCard(source)} must deploy first; each actual player turn-end trigger requests ${source.mechanics.end_of_turn_hp_loss_and_damage.hp_loss_per_application} HP loss. Cost reduction follows actual positive loss, then the attack still needs access and payment.`),
-        `Existing payable focused output is already supplied by ${retrievalTargets.map(target => labelCard(target.source)).join(', ')}. This reward also supplies first persistent enemy Strength reduction.`,
-      ], 'Prefer the first protection function over another delayed-discount output card in this covered early attack pool. The owned HP-loss combination is real and retains its stated deployment and event timing.');
-      return review('hp-loss-discount-coverage', [`Owned recurring HP-loss requests: ${fuel.map(labelCard).join(', ') || 'none'}.`]);
+        strategyText(locale, 'draftBloodForBloodDiscount', { cost: row.cost, baseEnergy: profile.baseEnergy }),
+        ...fuel.map(source => strategyText(locale, 'draftHpLossDeploymentTiming', { labelCard: labelCard(source), hp_loss_per_application: source.mechanics.end_of_turn_hp_loss_and_damage.hp_loss_per_application })),
+        strategyText(locale, 'draftBloodForBloodOpportunity', { retrievalTargets: retrievalTargets.map(target => labelCard(target.source)).join(', ') }),
+      ], strategyText(locale, 'draftPreferProtectionOverDiscount'));
+      return review('hp-loss-discount-coverage', [strategyText(locale, 'draftRecurringHpLossCoverage', { fuel: fuel.map(labelCard).join(', ') || strategyText(locale, 'none') })]);
     }
     if (id === 'Clash') {
       if (owned('AscendersBane').length && !clearsHand.length
           && !profile.skillExhaustPowers.length && !profile.exhaustDraw.length) return result('conditional-attack-hand', 'preserve',
-        ['Owned AscendersBane; owned payable Attack-preserving whole-Hand non-Attack clearing routes: 0.',
-          ...owned('FiendFire').map(source => `${labelCard(source)} clears the whole remaining Hand, including Clash itself. It supplies burst and cleanup; keeping Clash needs a different route.`)],
-        'Preserve the draw slot while Clash requires clearing every non-Attack from Hand.');
-      return review('conditional-attack-hand', [`Owned Attack-preserving whole-Hand clearing routes: ${clearsHand.map(labelCard).join(', ') || 'none'}.`]);
+        [strategyText(locale, 'draftClashClearingRequirement'),
+          ...owned('FiendFire').map(source => strategyText(locale, 'draftClashConsumedByCleanup', { labelCard: labelCard(source) }))],
+        strategyText(locale, 'draftPreserveAgainstClash'));
+      return review('conditional-attack-hand', [strategyText(locale, 'draftAttackPreservingCleanupCoverage', { clearsHand: clearsHand.map(labelCard).join(', ') || strategyText(locale, 'none') })]);
     }
     if (['TwinStrike', 'SwordBoomerang', 'HeavyBlade'].includes(id)) {
       if (id === 'HeavyBlade' && coveredLaterOutput && !strengthSupport && row.upgrades === 0
@@ -1164,8 +1164,8 @@ function ordinaryRewardPolicy(state, cards, offers, profile) {
           && row.attackDelivery?.amount?.kind === 'base' && row.attackDelivery.targets === 'selected_enemy'
           && row.attackDelivery.hits?.kind === 'fixed' && row.attackDelivery.hits.count === 1) {
         return result('covered-output-without-strength', 'preserve', [...outputCoverageFacts,
-          'Owned reviewed Strength support: 0. HeavyBlade currently supplies one 14-base-damage hit for 2 Energy; its Strength multiplier becomes useful after an actual Strength source supplies a gain.',
-        ], 'Preserve access to the supplied output and protection instead of another two-Energy attack whose added Strength payoff needs a new source.');
+          strategyText(locale, 'draftHeavyBladeNeedsSource'),
+        ], strategyText(locale, 'draftPreserveAgainstHeavyBlade'));
       }
       if (id === 'SwordBoomerang' && coveredEarlyOutput && !strengthSupport
           && row.cost === 1 && row.exhausts === false && row.baseDamagePerHit === 3
@@ -1173,14 +1173,14 @@ function ordinaryRewardPolicy(state, cards, offers, profile) {
           && row.attackDelivery.targets === 'random_enemy_per_hit'
           && cards.some(source => source.persistent_cost === 1 && retrievalOutput(source, profile)?.total >= 9)) {
         return result('covered-unscaled-random-hits', 'preserve', [
-          `Owned payable transition attacks: ${copies(transitions)}; one-Energy focused requests at least 9 already exist. Reviewed owned Strength support: 0. SwordBoomerang requests 3 x 3 base damage with independent random targets; its hits share one card play.`,
-        ], 'Preserve the draw slot over an additional unscaled random-hit attack in this supplied output pool. Existing Strength support changes this comparison.');
+          strategyText(locale, 'draftSwordBoomerangUnscaled', { copies: copies(transitions) }),
+        ], strategyText(locale, 'draftPreserveAgainstUnscaledRandomHits'));
       }
       if (established && multiHit.length && focused.length) return result('covered-strength-payoff', 'preserve',
-        [`Owned enduring Strength: ${profile.strengthSources.map(row => row.card).join(', ')}.`,
-          `Owned payable transition attacks: ${copies(transitions)}; focused attacks: ${copies(focused)}; multi-hit payoffs: ${copies(multiHit)}.`],
-        'Preserve access to the existing Strength and attack plan over another plain Strength payoff.');
-      return review('strength-payoff-coverage', [`Preparation Act ${act}; owned payable transition attacks: ${copies(transitions)}; multi-hit payoffs: ${copies(multiHit)}.`]);
+        [strategyText(locale, 'draftEnduringStrengthCoverage', { strengthSources: profile.strengthSources.map(row => row.card).join(', ') }),
+          strategyText(locale, 'draftStrengthAttackCoverage', { copies: copies(transitions), copies2: copies(focused), copies3: copies(multiHit) })],
+        strategyText(locale, 'draftPreserveStrengthPlan'));
+      return review('strength-payoff-coverage', [strategyText(locale, 'draftActAttackPayoffs', { act: act, copies: copies(transitions), copies2: copies(multiHit) })]);
     }
     if (id === 'Pummel') {
       const burst = transitions.filter(source => ['Pummel', 'HeavyBlade', 'FiendFire'].includes(source.card.card)
@@ -1191,10 +1191,10 @@ function ordinaryRewardPolicy(state, cards, offers, profile) {
           && !burst.length && row.cost >= 0 && row.cost <= 1 && row.exhausts === true
           && row.attackDelivery?.targets === 'selected_enemy' && row.attackDelivery.hits?.kind === 'fixed'
           && row.attackDelivery.hits.count >= 4) return result('first-focused-strength-burst', 'take',
-        [`Owned payable enduring Strength: ${profile.strengthSources.filter(source => source.cost >= 0 && source.cost <= profile.baseEnergy).map(source => source.card).join(', ')}.`,
-          `Owned payable focused high-Strength burst attacks: 0; offered Pummel costs ${row.cost}, hits ${row.attackDelivery.hits.count} times, then Exhausts.`],
-        'Take a first cheap focused Strength burst. Use it after the owned Strength gain; the played copy leaves later draws through Exhaust.');
-      return review('focused-strength-burst-coverage', [`Owned payable focused high-Strength burst attacks: ${burst.map(labelCard).join(', ') || 'none'}.`]);
+        [strategyText(locale, 'removalOwnedStrength', { cards: profile.strengthSources.filter(source => source.cost >= 0 && source.cost <= profile.baseEnergy).map(source => source.card).join(', ') }),
+          strategyText(locale, 'draftPummelFocusedBurst', { cost: row.cost, count: row.attackDelivery.hits.count })],
+        strategyText(locale, 'draftTakeFirstPummel'));
+      return review('focused-strength-burst-coverage', [strategyText(locale, 'draftFocusedStrengthBurstCoverage', { burst: burst.map(labelCard).join(', ') || strategyText(locale, 'none') })]);
     }
     if (id === 'ThunderClap') {
       const vulnerable = cards.filter(source => payable(source) && source.mechanics.vulnerable > 0 && source.mechanics.exhausts === false);
@@ -1204,11 +1204,11 @@ function ordinaryRewardPolicy(state, cards, offers, profile) {
       if (established && vulnerable.length && area.length && !owned('Dropkick').length
           && !owned('SadisticNature').length && !(state.relics ?? []).some(relic => relic.relic === 'ChampionsBelt')) {
         return result('covered-area-vulnerable-transition', 'preserve',
-          [`Owned payable reusable Vulnerable: ${vulnerable.map(labelCard).join(', ')}.`,
-            `Owned payable area damage: ${area.map(labelCard).join(', ')}.`],
-          'Preserve access to the established damage and setup plan over another small area-damage and Vulnerable transition card.');
+          [strategyText(locale, 'draftReusableVulnerableCoverage', { vulnerable: vulnerable.map(labelCard).join(', ') }),
+            strategyText(locale, 'draftPayableAreaDamageCoverage', { area: area.map(labelCard).join(', ') })],
+          strategyText(locale, 'draftPreserveAgainstSmallVulnerableAttack'));
       }
-      return review('area-vulnerable-coverage', [`Owned payable reusable Vulnerable: ${vulnerable.map(labelCard).join(', ') || 'none'}; area damage: ${area.map(labelCard).join(', ') || 'none'}.`]);
+      return review('area-vulnerable-coverage', [strategyText(locale, 'draftVulnerableAreaCoverage', { vulnerable: vulnerable.map(labelCard).join(', ') || strategyText(locale, 'none'), area: area.map(labelCard).join(', ') || strategyText(locale, 'none') })]);
     }
     if (id === 'IronWave') {
       const blocks = cards.filter(source => payable(source) && source.persistent_cost <= row.cost
@@ -1216,10 +1216,10 @@ function ordinaryRewardPolicy(state, cards, offers, profile) {
       if (established && row.cost >= 0 && row.cost <= 1 && row.blockRequest > 0 && copies(blocks) >= 3
           && blocks.some(source => source.persistent_block >= row.blockRequest * 2) && !owned('Juggernaut').length) {
         return result('covered-attack-block-transition', 'preserve',
-          [`Owned payable transition attacks: ${copies(transitions)}; Block requests at least ${row.blockRequest} for at most ${row.cost} Energy: ${blocks.map(labelCard).join(', ')}.`],
-          'Preserve access to the established damage and protection plan over another small combined attack and Block transition card.');
+          [strategyText(locale, 'draftAttackAndBlockCoverage', { copies: copies(transitions), blockRequest: row.blockRequest, cost: row.cost, blocks: blocks.map(labelCard).join(', ') })],
+          strategyText(locale, 'draftPreserveAgainstSmallAttackBlock'));
       }
-      return review('attack-block-coverage', [`Owned same-or-lower-cost Block coverage: ${blocks.map(labelCard).join(', ') || 'none'}.`]);
+      return review('attack-block-coverage', [strategyText(locale, 'draftSameOrLowerCostBlockCoverage', { blocks: blocks.map(labelCard).join(', ') || strategyText(locale, 'none') })]);
     }
     if (id === 'PerfectedStrike') {
       const originals = owned(id).filter(payable);
@@ -1229,14 +1229,14 @@ function ordinaryRewardPolicy(state, cards, offers, profile) {
           && originals[0].mechanics.damage?.delivery?.amount?.per_card >= 3
           && retrievalOutput(originals[0], profile)?.total >= 6 + 2 * (profile.strikeTags.copies + 1)) {
         return result('covered-additional-strike-output', 'preserve', [...outputCoverageFacts,
-          `Adding this Strike-tagged card changes the original pool ${profile.strikeTags.copies}->${profile.strikeTags.copies + 1}. Its initial request is 6 + 2 x ${profile.strikeTags.copies + 1} = ${6 + 2 * (profile.strikeTags.copies + 1)} before modifiers and pile changes.`,
-          `${labelCard(originals[0])} also gains ${originals[0].mechanics.damage.delivery.amount.per_card} requested damage from that added tag while it remains counted. Exhausting counted cards lowers these requests.`,
-        ], 'Preserve the draw slot over another weaker two-Energy Strike-count attack; its increment to the owned copy is included in this preference.');
+          strategyText(locale, 'draftPerfectedStrikeAddedPool', { copies: profile.strikeTags.copies, copies2: profile.strikeTags.copies + 1, copies3: profile.strikeTags.copies + 1, value: 6 + 2 * (profile.strikeTags.copies + 1) }),
+          strategyText(locale, 'draftOwnedStrikeScalingIncrement', { labelCard: labelCard(originals[0]), per_card: originals[0].mechanics.damage.delivery.amount.per_card }),
+        ], strategyText(locale, 'draftPreserveAgainstWeakerPerfectedStrike'));
       }
       if (established && owned(id).some(payable)) return result('covered-strike-transition', 'preserve',
-        [`Owned payable PerfectedStrike: ${copies(owned(id).filter(payable))}; payable transition attacks: ${copies(transitions)}.`],
-        'Preserve access to the established damage plan over another two-Energy Strike-count transition attack.');
-      return review('strike-transition-coverage', [`Owned payable PerfectedStrike: ${copies(owned(id).filter(payable))}.`]);
+        [strategyText(locale, 'draftPerfectedStrikeAttackCoverage', { copies: copies(owned(id).filter(payable)), copies2: copies(transitions) })],
+        strategyText(locale, 'draftPreserveAgainstAnotherPerfectedStrike'));
+      return review('strike-transition-coverage', [strategyText(locale, 'draftPerfectedStrikeCoverage', { copies: copies(owned(id).filter(payable)) })]);
     }
     if (id === 'SearingBlow') {
       if (coveredLaterOutput && !owned(id).length && row.upgrades === 0 && row.type === 'Attack'
@@ -1247,11 +1247,11 @@ function ordinaryRewardPolicy(state, cards, offers, profile) {
         const upgrades = cards.filter(source => payable(source) && source.mechanics.combat_upgrade_scope === 'whole_hand'
           && source.mechanics.combat_upgrade_persistence === 'combat_only');
         return result('covered-output-before-repeat-upgrades', 'preserve', [...outputCoverageFacts,
-          'SearingBlow currently requests 12 damage for 2 Energy. Its repeat-upgrade curve requires actual upgrade actions; permanent upgrades use preparation opportunities.',
-          ...upgrades.map(source => `${labelCard(source)} can improve SearingBlow in the same actual Hand at its printed ${source.persistent_cost}-Energy cost; changes last this combat. Each further improvement needs another accessible upgrade use under its actual payment and lifecycle.`),
-        ], 'Prefer existing output access over starting another upgrade-dependent attack. Owned combat upgrading is a real conditional benefit, with its own access and payment.');
+          strategyText(locale, 'draftSearingBlowUpgradeInvestment'),
+          ...upgrades.map(source => strategyText(locale, 'draftSearingBlowCombatUpgrade', { labelCard: labelCard(source), persistent_cost: source.persistent_cost })),
+        ], strategyText(locale, 'draftPreserveAgainstUpgradeAttack'));
       }
-      return review('repeat-upgrade-output-coverage', [`Owned SearingBlow copies: ${copies(owned(id))}; payable transition attacks: ${copies(transitions)}.`]);
+      return review('repeat-upgrade-output-coverage', [strategyText(locale, 'draftSearingBlowCoverage', { copies: copies(owned(id)), copies2: copies(transitions) })]);
     }
     if (id === 'Flex') {
       const persistence = (state.relics ?? []).some(row => row.relic === 'OrangePellets');
@@ -1272,24 +1272,24 @@ function ordinaryRewardPolicy(state, cards, offers, profile) {
         const burst = owned('FiendFire').filter(payable);
         return result('covered-output-temporary-strength', 'preserve', [
           ...outputCoverageFacts,
-          `Flex adds ${row.temporaryStrength} same-turn Strength for reached and paid attacks, with a separate ${row.strengthLossAtTurnEnd}-Strength loss at turn end. It occupies another permanent draw slot. Other owned attacks use fixed one-hit deliveries.`,
+          strategyText(locale, 'draftFlexTiming', { temporaryStrength: row.temporaryStrength, strengthLossAtTurnEnd: row.strengthLossAtTurnEnd }),
           ...burst.map(source => {
             const perHit = source.persistent_damage, boost = row.temporaryStrength;
-            return `Same-Hand example with Flex, ${labelCard(source)}, and 3 other cards: Exhausting Flex as fuel requests 4 x ${perHit} = ${4 * perHit}; playing Flex first requests 3 x (${perHit} + ${boost}) = ${3 * (perHit + boost)}. Increment ${3 * boost - perHit} before other Strength and modifiers. Actual draws and prior plays change the fuel count.`;
+            return strategyText(locale, 'draftFlexFiendFireSequence', { labelCard: labelCard(source), perHit: perHit, value: 4 * perHit, perHit2: perHit, boost: boost, value2: 3 * (perHit + boost), value3: 3 * boost - perHit });
           }),
-        ], 'Preserve access to existing damage, protection and draw over an additional temporary Strength setup in this single-hit and Hand-consuming burst pool.');
+        ], strategyText(locale, 'draftPreserveAgainstFlexHandBurst'));
       }
       if (early && copies(transitions) >= 4 && singleHitPool && !strengthAmplifiers.length
           && !persistence && !artifactSupport && !owned('DualWield').length
           && row.type === 'Skill' && row.cost === 0 && row.exhausts === false) {
         return result('single-hit-temporary-strength', 'preserve', [
-          `Owned attacks use fixed single hits; transition attacks: ${copies(transitions)}. Flex spends one draw for temporary same-turn Strength shared by attacks actually reached and paid that turn. Owned LimitBreak, OrangePellets, Artifact-persistence support and DualWield: 0.`,
-        ], 'Preserve the draw slot over an additional temporary Strength setup in this already supplied single-hit output pool.');
+          strategyText(locale, 'draftFlexSingleHitInventory', { copies: copies(transitions) }),
+        ], strategyText(locale, 'draftPreserveAgainstFlexSingleHit'));
       }
       if (established && multiHit.length && !strengthAmplifiers.length && !persistence) return result('covered-strength-source', 'preserve',
-        [`Owned enduring Strength: ${profile.strengthSources.map(row => row.card).join(', ')}; owned LimitBreak: 0; owned OrangePellets: 0.`],
-        'Preserve access to the enduring Strength plan over an extra draw spent on temporary Strength.');
-      return review('temporary-strength-combination', [`Owned Strength amplifiers: ${strengthAmplifiers.map(labelCard).join(', ') || 'none'}; OrangePellets: ${persistence ? 'owned' : 'absent'}.`]);
+        [strategyText(locale, 'draftFlexEnduringStrengthInventory', { strengthSources: profile.strengthSources.map(row => row.card).join(', ') })],
+        strategyText(locale, 'draftPreserveEnduringStrengthAccess'));
+      return review('temporary-strength-combination', [strategyText(locale, 'draftAmplifierPelletsCoverage', { strengthAmplifiers: strengthAmplifiers.map(labelCard).join(', ') || strategyText(locale, 'none'), persistence: persistence ? strategyText(locale, 'draftSupportOwned') : strategyText(locale, 'draftSupportAbsent') })]);
     }
     return review('uncovered-reward-card', []);
   });
@@ -1307,15 +1307,15 @@ function ordinaryRewardPolicy(state, cards, offers, profile) {
     commands: unresolved.length ? [] : takes.length ? takes : [...comparisons, skip],
     ...(comparisons.length && !takes.length ? {
       defaultCommands: [skip],
-      question: 'Compare the supplied free Attack toward the owned Attack-play relic with keeping access to existing damage and protection. Use its supplied play conditions, uncertainty and lifecycle.',
+      question: strategyText(locale, 'draftFreeAttackComparisonQuestion'),
     } : {}),
     conditions: [...new Set(assessments.flatMap(row => row.facts))],
-    preference: unresolved.length ? 'Review the retained candidates against a supplied drafting policy.'
-      : takes.length ? 'Use the additional function accepted by the checked conditions.'
-        : comparisons.length ? 'Default to preserving existing access; compare the supplied free-Attack interaction with that preservation.'
-          : 'Preserve the current deck under the checked coverage rules.',
+    preference: unresolved.length ? strategyText(locale, 'draftReviewRetainedCandidates')
+      : takes.length ? strategyText(locale, 'draftUseAcceptedFunction')
+        : comparisons.length ? strategyText(locale, 'draftDefaultPreserveAccess')
+          : strategyText(locale, 'draftPreserveCheckedDeck'),
     ...(unresolved.length ? { gap: { kind: 'strategy', reason: 'uncovered-reward-condition',
-      message: 'This reward needs reviewed conditions for the retained candidates.',
+      message: strategyText(locale, 'draftRetainedConditionsRequired'),
       candidates: unresolved.map(({ command, card, policy, facts }) => ({ command, card, policy, facts })) } } : {}) };
 }
 
@@ -1476,7 +1476,7 @@ function rewardFunctionComparisonPolicy(observation, offers, profile, normalize)
   return cardVariantComparisonPolicy(observation, offers, normalize);
 }
 
-export function preparationCardPolicies(observation, profile, normalize = command => command) {
+export function preparationCardPolicies(observation, profile, normalize = command => command, locale = 'en') {
   const state = observation.position.observation.observation;
   const act = state.run?.pending_act_entry ?? state.run?.act;
   const cards = observation.deck_evidence.cards;
@@ -1591,7 +1591,7 @@ export function preparationCardPolicies(observation, profile, normalize = comman
   }
   if (!rules.length && state.context.kind === 'card_reward'
       && profile.candidates.some(row => row.kind === 'preserve')) {
-    rules.push(ordinaryRewardPolicy(state, cards, offers, profile));
+    rules.push(ordinaryRewardPolicy(state, cards, offers, profile, locale));
   }
   if (rules.length) {
     const common = rules[0].commands.filter(command => rules.every(rule => rule.commands.includes(command)));

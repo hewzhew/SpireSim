@@ -439,6 +439,46 @@ function lastingStrengthReward() {
   return input;
 }
 
+test('ordinary drafting languages preserve automatic comparison and review decisions with native facts intact', () => {
+  const show = new Set(['facts', 'ownedFacts', 'preference', 'conditions', 'question', 'message',
+    'comparisonGuidance', 'inputBudget', 'inventory', 'change']);
+  const decisions = value => Array.isArray(value) ? value.map(decisions)
+    : value && typeof value === 'object' ? Object.fromEntries(Object.entries(value)
+      .filter(([key]) => !show.has(key)).map(([key, item]) => [key, decisions(item)])) : value;
+  const upgrade = earlyReward(earlyUpgradeDeck(), [hemokinesis(), wholeHandUpgrade(), cleave()]);
+  const uncovered = lastingStrengthReward();
+  uncovered.position.observation.observation.run.current_hp = 40;
+  const kinds = new Set();
+  for (const input of [lastingStrengthReward(), earlyReward(), earlyAreaReward(), upgrade, uncovered]) {
+    const original = JSON.stringify(input);
+    for (const reverse of [false, true]) {
+      const variant = structuredClone(input);
+      if (reverse) variant.position.actions.reverse();
+      const en = preparationCardChoice(variant), zh = preparationCardChoice(variant, undefined, 'zh-CN');
+      assert.deepEqual(decisions(en), decisions(zh));
+      const english = en.rules.find(rule => rule.id === 'ordinary-reward-defaults');
+      const chinese = zh.rules.find(rule => rule.id === 'ordinary-reward-defaults');
+      assert.ok(english && chinese);
+      assert.match(chinese.preference, /[\u4e00-\u9fff]/);
+      assert.match(chinese.conditions.join('\n'), /[\u4e00-\u9fff]/);
+      for (let index = 0; index < english.assessments.length; index++) {
+        assert.notEqual(english.assessments[index].preference, chinese.assessments[index].preference);
+      }
+      assert.deepEqual(en.candidates.map(row => row.nativeReading), zh.candidates.map(row => row.nativeReading));
+      kinds.add(en.route.kind);
+    }
+    assert.equal(JSON.stringify(input), original);
+  }
+  assert.deepEqual([...kinds].sort(), ['automatic', 'model', 'review']);
+  const frame = preparationCardChoice(lastingStrengthReward(), undefined, 'zh-CN');
+  const facts = frame.rules.find(rule => rule.id === 'ordinary-reward-defaults').conditions.join('\n');
+  assert.match(facts, /3 生命.*3 能量/);
+  assert.match(facts, /Inflame/);
+  const upgraded = preparationCardChoice(upgrade, undefined, 'zh-CN');
+  assert.match(upgraded.rules.find(rule => rule.id === 'ordinary-reward-defaults').conditions.join('\n'),
+    /PommelStrike 的升级：能量 1->1；打出时抽牌请求 1->2/);
+});
+
 test('first lasting Strength remains a stable default while HP payment and copying attacks retain their own conditions', () => {
   const input = lastingStrengthReward();
   for (const reverse of [false, true]) {
