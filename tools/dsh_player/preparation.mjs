@@ -38,10 +38,10 @@ export function preparationReadingSupply(observation, normalize = command => com
   const native = observation.preparation_reading;
   if (native?.schema !== 'sts-preparation-reading-v1'
       || !native.public_snapshot_id || native.public_snapshot_id !== observation.position?.public_snapshot_id) {
-    throw Object.assign(new Error('Preparation reading is not bound to the current public snapshot.'),
+    throw Object.assign(new Error(preparationText(locale, 'readingSourceMismatch')),
       { preparationGap: { kind: 'facts', reason: 'preparation-reading-source' } });
   }
-  const commands = new Set(preparationCandidates(observation, normalize));
+  const commands = new Set(preparationCandidates(observation, normalize, locale));
   const omissions = sameGameContextSource(observation.preparationOmissions?.source, observation)
     ? new Set(observation.preparationOmissions.commands.map(command => normalize(command, observation))) : new Set();
   const candidates = {}, reading = [];
@@ -50,7 +50,7 @@ export function preparationReadingSupply(observation, normalize = command => com
     const command = normalize(block.command, observation);
     if (omissions.has(command)) continue;
     if (commands.has(command)) {
-      if (Object.hasOwn(candidates, command)) throw new Error(`Duplicate rendered preparation command: ${command}`);
+      if (Object.hasOwn(candidates, command)) throw new Error(preparationText(locale, 'duplicateRenderedCommand', { command: command }));
       candidates[command] = block;
     } else reading.push(`${command}  |  ${block.label}\n${block.view}`);
   }
@@ -76,23 +76,23 @@ export function preparationStageGuide(progress, classification, context, draft, 
 
 // Rust supplies exact tokens and the ordered domain. Rate targets individually;
 // a multi-card choice is assembled at adoption without expanding combinations.
-function preparationSelectionFamily(observation) {
+function preparationSelectionFamily(observation, locale = 'en') {
   const rows = (observation.position?.actions ?? []).filter(row => row.run_selection_family);
   if (!rows.length) return;
-  if (rows.length !== 1) throw new Error('Preparation requires one current card-selection family.');
+  if (rows.length !== 1) throw new Error(preparationText(locale, 'selectionFamilyRequired'));
   const family = rows[0].run_selection_family;
   if (!Array.isArray(family.card_tokens) || family.card_tokens.length !== family.selectable_cards?.length
       || new Set(family.card_tokens).size !== family.card_tokens.length
       || family.card_tokens.some(token => typeof token !== 'string' || !token || /[\s,]/.test(token))
       || !Number.isSafeInteger(family.min_choices) || !Number.isSafeInteger(family.max_choices)
       || family.min_choices < 0 || family.min_choices > family.max_choices) {
-    throw new Error('Preparation card selection lacks its exact Rust tokens or choice range.');
+    throw new Error(preparationText(locale, 'selectionTokensMissing'));
   }
   return family;
 }
 
-function preparationSelectionTargets(observation, normalize = command => command) {
-  const family = preparationSelectionFamily(observation);
+function preparationSelectionTargets(observation, normalize = command => command, locale = 'en') {
+  const family = preparationSelectionFamily(observation, locale);
   if (family) return family.selectable_cards.map((card, index) => ({ card,
     command: normalize(`act select:${family.card_tokens[index]}`, observation),
     reading: family.card_readings?.[index] }));
@@ -100,19 +100,19 @@ function preparationSelectionTargets(observation, normalize = command => command
     ? [{ ...row.run_selection_target, command: normalize(`act ${row.semantic_action}`, observation) }] : []);
 }
 
-export function preparationCandidates(observation, normalize = command => command) {
+export function preparationCandidates(observation, normalize = command => command, locale = 'en') {
   const actions = observation.position?.actions;
-  if (!Array.isArray(actions) || !actions.length) throw new Error('Preparation classification requires current legal candidates.');
+  if (!Array.isArray(actions) || !actions.length) throw new Error(preparationText(locale, 'legalCandidatesRequired'));
   return actions.flatMap(action => {
     if (action.run_selection_family) {
-      const family = preparationSelectionFamily(observation);
+      const family = preparationSelectionFamily(observation, locale);
       return [...family.card_tokens.map(token => normalize(`act select:${token}`, observation)),
         ...(family.min_choices === 0 ? ['act select:none'] : [])];
     }
     const semantic = action.candidate?.action?.kind === 'submit_run_selection'
       ? `act ${action.semantic_action}` : action.semantic_action;
     const command = normalize(semantic, observation);
-    if (typeof command !== 'string' || !command.trim()) throw new Error('Preparation candidate lacks a semantic command.');
+    if (typeof command !== 'string' || !command.trim()) throw new Error(preparationText(locale, 'semanticCommandMissing'));
     return command;
   });
 }
@@ -247,9 +247,9 @@ export function preparationRewardProgress(previous, before, after, action) {
 // The strategic observation groups copies by all public instance modifiers.
 // Actions expose only the card/upgrades and ordinal, so multiple public groups
 // of that name/upgrade stay separate until the target can be bound explicitly.
-export function preparationCandidateGroups(observation, normalize = command => command) {
-  const commands = preparationCandidates(observation, normalize);
-  if (new Set(commands).size !== commands.length) throw new Error('Preparation candidates have duplicate commands.');
+export function preparationCandidateGroups(observation, normalize = command => command, locale = 'en') {
+  const commands = preparationCandidates(observation, normalize, locale);
+  if (new Set(commands).size !== commands.length) throw new Error(preparationText(locale, 'duplicateCandidateCommands'));
   const state = observation.position.observation.observation;
   // Bottles bind a particular lineage through relic state. The grouped public
   // cards omit that identity; preserve individual choices while it is present.
@@ -258,7 +258,7 @@ export function preparationCandidateGroups(observation, normalize = command => c
   }
   const cards = state.cards ?? [];
   const attributes = ['misc_value', 'base_damage_override', 'base_block_override', 'cost_modifier'];
-  const targets = preparationSelectionTargets(observation, normalize);
+  const targets = preparationSelectionTargets(observation, normalize, locale);
   if (targets.length) {
     const buckets = new Map();
     targets.forEach(({ card, command }) => {
@@ -323,7 +323,7 @@ export function preparationConditionBindings(observation, normalize = command =>
   const bindings = [...specific, ...preparationDeckConditionBindings(observation, normalize, locale)
     .filter(row => !specific.some(binding => binding.command === row.command))];
   const profile = preparationDeckComparison(observation, normalize, locale);
-  return [...bindings, ...preparationCandidateGroups(observation, normalize)
+  return [...bindings, ...preparationCandidateGroups(observation, normalize, locale)
     .filter(group => !bindings.some(binding => binding.command === group.command))
     .map(group => ({ command: group.command, id: 'preparation-effect-tradeoff-v1',
       fixedMechanics: [],
@@ -350,7 +350,7 @@ export function preparationConditionBindings(observation, normalize = command =>
 }
 
 function attackUpgradeConditionBindings(observation, normalize, locale = 'en') {
-  return preparationCandidateGroups(observation, normalize).flatMap(group => {
+  return preparationCandidateGroups(observation, normalize, locale).flatMap(group => {
     const action = observation.position.actions.find(row => normalize(row.semantic_action, observation) === group.command)?.candidate?.action;
     if (action?.kind !== 'smith') return [];
     const evidence = observation.decision_evidence?.candidates?.find(row =>
@@ -404,7 +404,7 @@ function attackUpgradeConditionBindings(observation, normalize, locale = 'en') {
 
 function etherealUpgradeConditionBindings(observation, normalize, locale = 'en') {
   const state = observation.position.observation.observation;
-  return preparationCandidateGroups(observation, normalize).flatMap(group => {
+  return preparationCandidateGroups(observation, normalize, locale).flatMap(group => {
     const action = observation.position.actions.find(row => normalize(row.semantic_action, observation) === group.command)?.candidate?.action;
     if (action?.kind !== 'smith') return [];
     const evidence = observation.decision_evidence?.candidates?.find(row => (row.semantic_actions ?? [row.semantic_action])
@@ -482,7 +482,7 @@ function temporaryStrengthConditionBindings(observation, normalize, locale = 'en
   const state = observation.position.observation.observation;
   const profile = preparationDeckComparison(observation, normalize, locale);
   const ownsRelic = relic => (state.relics ?? []).some(row => row.relic === relic);
-  return preparationCandidateGroups(observation, normalize).flatMap(group => {
+  return preparationCandidateGroups(observation, normalize, locale).flatMap(group => {
     const row = observation.position.actions.find(row => normalize(row.semantic_action, observation) === group.command);
     const acquisition = preparationCardAcquisition(observation, row);
     const definition = acquisition?.mechanics;
@@ -509,7 +509,7 @@ function temporaryStrengthConditionBindings(observation, normalize, locale = 'en
 function statusDrawConditionBindings(observation, normalize, locale = 'en') {
   const profile = preparationDeckComparison(observation, normalize, locale);
   if (!profile) return [];
-  return preparationCandidateGroups(observation, normalize).flatMap(group => {
+  return preparationCandidateGroups(observation, normalize, locale).flatMap(group => {
     const row = observation.position.actions.find(row => normalize(row.semantic_action, observation) === group.command);
     const acquisition = preparationCardAcquisition(observation, row);
     if (!['Evolve', 'FireBreathing'].includes(acquisition?.card) || acquisition.mechanics?.card_type !== 'Power') return [];
@@ -653,7 +653,7 @@ function routeConditionBindings(observation, normalize, locale = 'en') {
   const evidence = observation.decision_evidence;
   const state = observation.position.observation.observation;
   if (state.context?.kind !== 'map' || evidence?.kind !== 'route_paths') return [];
-  const commands = new Set(preparationCandidates(observation, normalize));
+  const commands = new Set(preparationCandidates(observation, normalize, locale));
   const range = value => Number.isSafeInteger(value?.min) && Number.isSafeInteger(value?.max)
     && value.min >= 0 && value.max >= value.min ? `${value.min}..${value.max}` : undefined;
   return evidence.candidates.flatMap(candidate => {
@@ -684,8 +684,8 @@ function routeConditionBindings(observation, normalize, locale = 'en') {
 function duplicateTargetFacts(observation, normalize, locale = 'en') {
   const state = observation.position.observation.observation;
   if (state.context?.reason !== 'Duplicate' || state.context?.kind !== 'run_choice') return [];
-  const targets = new Map(preparationSelectionTargets(observation, normalize).map(row => [row.command, row]));
-  return preparationCandidateGroups(observation, normalize).flatMap(group => {
+  const targets = new Map(preparationSelectionTargets(observation, normalize, locale).map(row => [row.command, row]));
+  return preparationCandidateGroups(observation, normalize, locale).flatMap(group => {
     const target = targets.get(group.command), current = target?.reading?.current;
     const definition = current?.definition, cost = current?.persistent_cost;
     if (!definition || definition.card !== target.card.card || definition.upgrades !== target.card.upgrades
@@ -728,7 +728,7 @@ function preparationEnergyBindings(observation, normalize, locale = 'en') {
   const state = observation.position.observation.observation;
   const energy = state.base_energy_per_turn;
   if (!Number.isSafeInteger(energy) || energy < 0) return [];
-  return preparationCandidateGroups(observation, normalize).flatMap(group => {
+  return preparationCandidateGroups(observation, normalize, locale).flatMap(group => {
     const row = observation.position.actions.find(row => normalize(row.semantic_action, observation) === group.command);
     const action = row?.candidate?.action, acquisition = preparationCardAcquisition(observation, row);
     if (action?.kind !== 'smith' && !acquisition) return [];
@@ -765,7 +765,7 @@ function armamentsConditionBindings(observation, normalize, locale = 'en') {
   if (!(state.cards ?? []).some(card => card.card === 'LimitBreak' && card.count > 0 && card.upgrades === 0)) return [];
   const corruption = owns('Corruption'), recovery = owns('Exhume');
   const spoon = (state.relics ?? []).some(row => row.relic === 'StrangeSpoon');
-  return preparationCandidateGroups(observation, normalize).flatMap(group => {
+  return preparationCandidateGroups(observation, normalize, locale).flatMap(group => {
     const row = observation.position.actions.find(row => normalize(row.semantic_action, observation) === group.command);
     const acquisition = preparationCardAcquisition(observation, row);
     if (acquisition?.card !== 'Armaments') return [];
@@ -795,12 +795,12 @@ export function preparationClassificationContext(observation, normalize, draft, 
   const potionScope = shopPotionReplacementScope(observation, normalize, locale);
   if (potionScope) return renderShopPotionComparison(potionScope, draft, locale);
   const spendingScope = shopSpendingScope(observation, normalize, locale);
-  if (spendingScope) return renderShopSpendingComparison(observation, spendingScope, preparationCandidateGroups(observation, normalize), draft, locale);
+  if (spendingScope) return renderShopSpendingComparison(observation, spendingScope, preparationCandidateGroups(observation, normalize, locale), draft, locale);
   const state = observation.position.observation.observation;
   const cards = state.cards ?? [];
   const owns = (id, upgrades) => cards.some(card => card.card === id && card.count > 0
     && (upgrades === undefined || card.upgrades === upgrades));
-  const allGroups = preparationCandidateGroups(observation, normalize);
+  const allGroups = preparationCandidateGroups(observation, normalize, locale);
   const accepted = sameGameContextSource(draft?.source, observation) ? draft.rows : [];
   const groups = allGroups.filter(group => !accepted.some(row => row.command === group.command));
   const bindings = preparationConditionBindings(observation, normalize, locale);
@@ -810,91 +810,91 @@ export function preparationClassificationContext(observation, normalize, draft, 
   const offered = id => observation.position.actions.some(row => row.candidate?.action?.card === id
     || preparationCardAcquisition(observation, row)?.card === id);
   const checks = [
-    'Access and protection: a normal draw reaches a card before payment. A Power card supplies triggered draw after that card is played and its trigger occurs. An acquired passive relic is active from combat start and responds to each of its supplied triggers independently. A deployed Power can add another trigger source for that relic. Persistent mitigation protects later hits; an ordinary played card needs its own access and payment.',
-    'Payment: track Gold for acquisition and Energy for combat play separately. Compare printed cost with base Energy per turn and owned Energy sources or cost reductions. An HP-loss cost reduction becomes available after the required actual HP-loss events; include that setup in the realization condition.',
+    preparationText(locale, 'checkAccessProtection'),
+    preparationText(locale, 'checkPayment'),
   ];
   if (state.context?.kind === 'event') checks.push(
-    'Event: compare the supplied resource changes and delivery method. Random rewards are evaluated before their identities are revealed; use the declared pool and known cost. Reward-screen potions can be inspected before choosing which bottles fit the slots. Gold retained plus income before a later shop supplies that shop\'s budget.');
-  const selection = preparationSelectionFamily(observation)
+    preparationText(locale, 'checkEvent'));
+  const selection = preparationSelectionFamily(observation, locale)
     ?? (state.context?.kind === 'run_choice' ? state.context : undefined);
   if (selection) checks.push(
-    `Card selection: ${selection.reason}; choose ${selection.min_choices}..${selection.max_choices} distinct targets. Classify each supplied target's incremental effect. For several targets, compare their combined change and submit one act select: command joining their exact card tokens with commas. The table rates targets individually.`,
-    ...(selection.reason === 'Purge' ? ['Selected cards are permanently removed; compare first draw, later redraws and the functions given up.'] : []),
-    ...(selection.reason === 'Transform' ? ['Selected cards are replaced by the supplied random transformation pool. Compare the functions given up and the declared replacement distribution.'] : []),
+    preparationText(locale, 'selectionInstruction', { reason: selection.reason, minimum: selection.min_choices, maximum: selection.max_choices }),
+    ...(selection.reason === 'Purge' ? [preparationText(locale, 'purgeInstruction')] : []),
+    ...(selection.reason === 'Transform' ? [preparationText(locale, 'transformInstruction')] : []),
   );
   if (selection?.reason === 'Duplicate' || observation.position.actions.some(row => row.candidate?.action?.public_semantics
       ?.structured_semantics?.effects?.some(effect => effect.effect === 'duplicate_card'))) checks.push(preparationText(locale, 'duplication'));
   if (state.context?.kind === 'card_reward') checks.push(
-    'Card reward: taking adds a permanent copy to the current deck; skipping preserves its current size. Both choices retain the same Gold. Assess the added card\'s function and draw cost alongside the existing copies.');
+    preparationText(locale, 'checkCardReward'));
   if (state.context?.kind === 'boss_relic') checks.push(
-    'Boss relic: compare once-on-pickup resources with recurring resources through the upcoming fights. For HP-loss draw, evaluate each owned on-play self-loss source, deployed recurring self-loss source and enemy HP-loss event separately; use the actual HP cost and the timing of those draws.');
+    preparationText(locale, 'checkBossRelic'));
   if (state.context?.kind === 'map') checks.push(
-    'Route: compare each connected path\'s preparation before its first hard fight and its later development. HP on arrival depends on intervening fights and events. A shop\'s useful capacity depends on Gold; a campfire offers recovery or one upgrade. Use the displayed connected path to relate these opportunities. Missing Emerald can be collected from a later Act\'s burning elite.');
+    preparationText(locale, 'checkRoute'));
   if (state.run?.pending_act_entry) checks.push(
-    `Act-entry preparation: this Act's Boss is completed. Current choices prepare for Act ${state.run.pending_act_entry}; Act-entry HP recovery follows the supplied transition rule. Evaluate setup protection, payable output and draw access for that upcoming Act.`);
+    preparationText(locale, 'checkActEntry', { pending_act_entry: state.run.pending_act_entry }));
   if (state.run?.act === 1 && !state.run?.pending_act_entry) checks.push(
-    'Act 1 development: ordinary fights supply a card-choice opportunity and Gold after victory. Compare those development opportunities and their expected HP cost before the first elite with recovery, upgrades and shop spending on the same connected route. Question-mark outcomes remain unrevealed. Early damage depends on cards payable when drawn; a cost-lowering upgrade can make a previously gated attack available before taking damage.');
+    preparationText(locale, 'checkActOne'));
   if (state.public_map?.boss === 'TimeEater' || state.run?.act === 4) checks.push(
-    'Played-card triggers: Time Warp and Beat of Death count actual card uses during combat. Permanent deck size affects draw access; the number of plays depends on which drawn cards are used and repeated. Assess a card\'s Block, damage and other effects together with the triggers from its actual uses.');
+    preparationText(locale, 'checkCardPlayTriggers'));
   if (owns('DemonForm') && owns('LimitBreak')) checks.push(
-    'Strength plan: DemonForm supplies repeated Strength after deployment; LimitBreak doubles the Strength available when used. Protect the deployment turn and reach the damage cards afterward. Extra scaling competes with access and protection in this owned plan.');
+    preparationText(locale, 'checkStrengthPlan'));
   if (offered('Disarm')) checks.push(
-    'Disarm: reducing Strength also works on a target starting at zero, taking it below zero. Its upgrade adds one point of reduction to every affected later attack hit until a debuff-clear effect removes negative Strength. Compare affected hits, duration and Artifact coverage.');
+    preparationText(locale, 'checkDisarm'));
   if (offered('Armaments') && !armamentsBound) checks.push(
-    'Armaments: compare actual unupgraded owned targets and their upgrade deltas. The target must share Hand with Armaments before its use; later campfire upgrades change the purchase\'s marginal value. Baseline Block plus an upgrade opportunity is compared with occupying another draw.');
+    preparationText(locale, 'checkArmaments'));
   if (offered('Armaments') && owns('LimitBreak', 0) && !owns('Corruption') && !armamentsBound) checks.push(
-    'Armaments with LimitBreak: upgrading LimitBreak before use allows it to return to the draw/discard cycle for repeated doubling. This needs shared Hand access, a positive Strength source, later redraws and protection while cycling.');
+    preparationText(locale, 'checkArmamentsLimit'));
   if (owns('Corruption') && owns('LimitBreak') && !armamentsBound) checks.push(
-    'Corruption with LimitBreak: compare deployment schedules. Before Corruption deployment, played LimitBreak normally Exhausts and played LimitBreak+ normally enters Discard for later redraws. Repeated ordinary LimitBreak+ uses cycle through Discard while Corruption awaits deployment. After Corruption deployment, both versions cost 0 and Exhaust when played. '
-    + (offered('Armaments') ? 'Armaments changes the printed upgrade state; its upgrade payoff depends on the deployment schedule that preserves redraws. ' : '')
-    + 'Evaluate the supplied recovery effects and their available uses separately from ordinary Draw/Discard cycling.');
+    preparationText(locale, 'checkCorruptionLimit')
+    + (offered('Armaments') ? preparationText(locale, 'checkArmamentsSchedule') : '')
+    + preparationText(locale, 'checkRecoveryVersusCycling'));
   if (owns('Exhume') && owns('LimitBreak') && !armamentsBound) checks.push(
-    'Exhume with LimitBreak: its printed play returns one eligible card other than Exhume from Exhaust to Hand, then Exhume itself Exhausts. Returning the unupgraded LimitBreak already supplies another use. '
-    + (owns('Corruption') ? 'With Corruption deployed, the returned base or upgraded LimitBreak both cost 0 and Exhaust after that play. ' : '')
-    + 'Compare this recovery use with the additional destination change supplied by upgrading LimitBreak.');
+    preparationText(locale, 'checkExhumeLimit')
+    + (owns('Corruption') ? preparationText(locale, 'checkCorruptionRecoveredLimit') : '')
+    + preparationText(locale, 'checkRecoveryDestination'));
   if (offered('Evolve')) checks.push(
-    'Evolve: use the supplied encounter links to identify Status sources and the pile receiving them. Deployment before the Status draw supplies extra draw; assess early setup and later cycles. Compare its deployment cost and access with the draw it unlocks in those encounters.');
+    preparationText(locale, 'checkEvolve'));
   if (offered('Rupture') || owns('Rupture')) checks.push(
-    'Rupture payoff: count actual positive self HP-loss events after deployment, multiplied by the active Rupture Strength per event. Use the owned source counts and their repetition rules in the mechanism links. A single on-play source supplies one event when that copy is used; later gains need its redraw, copying or recovery. Assess the resulting Strength, deployment cost and access through the next hard fight.');
+    preparationText(locale, 'checkRupture'));
   if (offered('DualWield') || owns('DualWield')) checks.push(
-    'DualWield payoff: name the specific useful owned Attack or Power target. This target must share Hand with DualWield before copying, and the resulting plays need Hand room and total Energy for both the copying card and the copied uses. Assess that target\'s incremental output or triggers, then compare the whole sequence with keeping the draw slot.');
+    preparationText(locale, 'checkDualWield'));
   if (offered('Clash')) checks.push(
-    'Clash: its all-Attack Hand requirement interacts with the owned Skills, Powers, Curses and encounter Statuses. Evaluate the available ways to clear that Hand and the cost of draws where the condition is unmet.');
+    preparationText(locale, 'checkClash'));
   const bindingByCommand = new Map(bindings.map(binding => [binding.command, binding]));
   const guidance = preparationExpertGuidance(observation, normalize);
   const adviceByCommand = new Map((guidance?.candidates ?? []).map(row => [row.command, row]));
   return [...(observation.declinedRewardItems?.length ? [
-    `Completed card decisions for this inventory: reward items ${observation.declinedRewardItems.map(i => i + 1).join(', ')} were declined. The candidates below are the remaining preparation work.`
-  ] : []), `Current classification candidates: ${groups.length} pending output rows of ${allGroups.length}. Fill one row per command below.`,
-    `Pending commands: ${groups.map(group => group.command).join('; ')}.`,
-    ...(sameGameContextSource(draft?.source, observation) && draft.pendingChoice ? [`Saved choice: ${draft.pendingChoice}. Complete the remaining rows through classify.`] : []),
-    ...(accepted.length ? ['Accepted classification rows (recorded):', ...allGroups.flatMap(group => {
+    preparationText(locale, 'declinedRewards', { declinedRewardItems: observation.declinedRewardItems.map(i => i + 1).join(', ') })
+  ] : []), preparationText(locale, 'pendingClassificationCount', { pending: groups.length, total: allGroups.length }),
+    preparationText(locale, 'pendingCommands', { groups: groups.map(group => group.command).join('; ') }),
+    ...(sameGameContextSource(draft?.source, observation) && draft.pendingChoice ? [preparationText(locale, 'savedClassificationChoice', { pendingChoice: draft.pendingChoice })] : []),
+    ...(accepted.length ? [preparationText(locale, 'acceptedRows'), ...allGroups.flatMap(group => {
       const row = accepted.find(row => row.command === group.command);
       return row ? [`  ${row.command} | ${row.category} | ${row.realization} | ${row.conditionIds.join(',')}`] : [];
     })] : []),
-    ...(sameGameContextSource(draft?.source, observation) && draft.issues?.length ? ['Last submission corrections:', ...draft.issues.map(issue => `  ${issue.message}`)] : []),
-    'Row format: command | high/medium/low/review | direct/sequence/future/review | @reference[, @reference]. Use the references beside that command.',
+    ...(sameGameContextSource(draft?.source, observation) && draft.issues?.length ? [preparationText(locale, 'submissionCorrections'), ...draft.issues.map(issue => `  ${issue.message}`)] : []),
+    preparationText(locale, 'classificationRowFormat'),
     ...(groups.some(group => group.members.length > 1)
-      ? ['For grouped copies, classify one copy on its command line. The host expands the row to the matching legal commands.'] : []),
+      ? [preparationText(locale, 'groupedRowInstruction')] : []),
     renderDeckComparison(preparationDeckComparison(observation, normalize, locale), { candidateCommands: allGroups.map(group => group.command), locale }),
     renderExpertGuidance(guidance, { includeCandidates: false }),
     renderShopBudget(observation.shopBudget, observation.shopPlan, locale),
     ...(observation.shopRemovalPolicy ? [
-      `Removal target strategy (maintainer preference): ${observation.shopRemovalPolicy.preference}`,
-      ...observation.shopRemovalPolicy.conditions.map(text => `  Checked: ${text}`),
+      preparationText(locale, 'removalTargetStrategy', { preference: observation.shopRemovalPolicy.preference }),
+      ...observation.shopRemovalPolicy.conditions.map(text => preparationText(locale, 'checkedFact', { text: text })),
     ] : []),
-    'Applicable mechanism and preparation checks:', ...checks.map(check => `  ${check}`),
+    preparationText(locale, 'applicableChecks'), ...checks.map(check => `  ${check}`),
     ...groups.flatMap(group => {
       const binding = bindingByCommand.get(group.command);
       return [
-      `Condition references for ${binding.command}:`,
-      ...(group.members.length > 1 ? [`  Shared one-copy evaluation: ${group.members.length} copies with identical public attributes.`] : []),
+      preparationText(locale, 'conditionReferences', { command: binding.command }),
+      ...(group.members.length > 1 ? [preparationText(locale, 'sharedCopyEvaluation', { length: group.members.length })] : []),
       ...(copyFacts.has(group.command) ? [`  ${copyFacts.get(group.command).join(' ')}`] : []),
       ...(observation.candidateReadings?.[binding.command]
         ? [observation.candidateReadings[binding.command].view] : []),
       ...[renderCandidateExpertGuidance(adviceByCommand.get(binding.command))].filter(Boolean).map(text => `  ${text}`),
-      ...binding.fixedMechanics.map(text => `  Fixed mechanics: ${text}`),
-      ...binding.choices.map(choice => `  ${choice.id}${choice.realizations ? ` [realization: ${choice.realizations.join('/')}]` : ''}: ${choice.text}`),
+      ...binding.fixedMechanics.map(text => preparationText(locale, 'fixedMechanics', { text: text })),
+      ...binding.choices.map(choice => `  ${choice.id}${choice.realizations ? preparationText(locale, 'realizationLabel', { realizations: choice.realizations.join('/') }) : ''}: ${choice.text}`),
       ];
     })].join('\n');
 }
@@ -902,7 +902,7 @@ export function preparationClassificationContext(observation, normalize, draft, 
 export function parsePreparationClassification(basis, observation, normalize = command => command, locale = 'en') {
   const collected = collectPreparationClassification(basis, observation, normalize, undefined, undefined, locale);
   if (collected.issues.length) throw new Error(collected.issues.map(issue => issue.message).join('\n'));
-  if (!collected.complete) throw new Error(`Classify remaining candidates: ${collected.pendingCommands.join(', ')}`);
+  if (!collected.complete) throw new Error(preparationText(locale, 'classifyRemaining', { pendingCommands: collected.pendingCommands.join(', ') }));
   return collected.rows;
 }
 
@@ -912,8 +912,8 @@ export function collectPreparationClassification(basis, observation, normalize =
   const potionScope = shopPotionReplacementScope(observation, normalize, locale);
   const spendingScope = shopSpendingScope(observation, normalize, locale);
   const simpleScope = potionScope ?? spendingScope;
-  if (typeof basis !== 'string' || !basis.trim()) throw new Error(`Supply basis. ${simpleScope ? 'One row per supplied command: command | high/medium/low/review.' : PREPARATION_BASIS}`);
-  const groups = preparationCandidateGroups(observation, normalize), rows = new Map();
+  if (typeof basis !== 'string' || !basis.trim()) throw new Error(preparationText(locale, 'supplyBasis', { format: simpleScope ? preparationText(locale, 'simpleBasisFormat') : preparationInstructions(locale).basis }));
+  const groups = preparationCandidateGroups(observation, normalize, locale), rows = new Map();
   const bindings = new Map(preparationConditionBindings(observation, normalize, locale).map(binding => [binding.command, binding]));
   const membership = new Map(groups.flatMap(group => group.members.map(command => [command, group])));
   if (sameGameContextSource(previous?.source, observation)) {
@@ -935,9 +935,9 @@ export function collectPreparationClassification(basis, observation, normalize =
   for (const [index, line] of lines.entries()) {
     try {
       const group = groups.find(group => group.command === suppliedCommands[index]);
-      if (group && rows.has(group.command)) throw new Error(`Already accepted: ${group.command}. Continue with the pending rows.`);
+      if (group && rows.has(group.command)) throw new Error(preparationText(locale, 'alreadyAccepted', { command: group.command }));
       if (group && occurrences.get(group.command) > 1) {
-        throw new Error(`Duplicate classification for ${group.command}. Its ${group.members.length} matching legal command(s) share one output row using ${group.command}.`);
+        throw new Error(preparationText(locale, 'duplicateClassification', { command: group.command, copies: group.members.length, groupCommand: group.command }));
       }
       // A clearly separated trailing explanation does not change the emitted
       // recommendation. Bind that grade to native facts; retain prose only in
@@ -949,9 +949,9 @@ export function collectPreparationClassification(basis, observation, normalize =
         simple[2] === 'review' ? 'review' : potion?.realization ?? null,
         simple[2] === 'review' ? '@review-access' : potion?.reference ?? '@shop-tradeoff'] : null)
         : /^\s*([^|]+?)\s*\|\s*(high|medium|low|review)\s*\|\s*(direct|sequence|future|review)\s*\|\s*(\S.*)\s*$/.exec(line);
-      if (!match) throw new Error(`Classification row ${index + 1} format: ${simpleScope ? 'command | high/medium/low/review' : PREPARATION_BASIS}`);
+      if (!match) throw new Error(preparationText(locale, 'invalidRowFormat', { line: index + 1, format: simpleScope ? preparationText(locale, 'simpleRowGrammar') : preparationInstructions(locale).basis }));
       const [, , category, realization, reason] = match;
-      if (!group) throw new Error(`Classification row ${index + 1} requires one of the supplied pending commands.`);
+      if (!group) throw new Error(preparationText(locale, 'pendingCommandRequired', { index: index + 1 }));
       const binding = bindings.get(group.command);
       const conditionIds = reason.split(',').map(id => id.trim());
       const conditions = conditionIds.map(id => binding.choices.find(choice => choice.id === id));
@@ -960,17 +960,17 @@ export function collectPreparationClassification(basis, observation, normalize =
         const trailingIds = extraColumns.length === 2 ? extraColumns[1].split(',').map(id => id.trim()) : [];
         const replacement = trailingIds.length && new Set(trailingIds).size === trailingIds.length
           && trailingIds.every(id => binding.choices.some(choice => choice.id === id))
-          ? ` Replacement row, preserving your ratings and references: ${group.command} | ${category} | ${realization} | ${trailingIds.join(',')}` : '';
-        throw new Error(`Use supplied condition references for ${group.command}. Fourth column: comma-separated reference IDs. Row format: ${group.command} | ${category} | ${realization} | @reference[, @reference]. Supplied IDs: ${binding.choices.map(choice => choice.id).join(', ')}.${replacement}`);
+          ? preparationText(locale, 'replacementRow', { command: group.command, category: category, realization: realization, references: trailingIds.join(',') }) : '';
+        throw new Error(preparationText(locale, 'invalidConditionReferences', { command: group.command, rowCommand: group.command, category: category, realization: realization, references: binding.choices.map(choice => choice.id).join(', '), replacement: replacement }));
       }
       if ((category === 'review' || realization === 'review') !== conditionIds.includes('@review-access')) {
-        throw new Error(`For ${group.command}, pair @review-access with a review dimension; assessed dimensions use the benefit/tradeoff references.`);
+        throw new Error(preparationText(locale, 'reviewDimensionRequired', { command: group.command }));
       }
       // Validate typed benefit paths without changing the player's ratings.
       // A standalone Block play cannot be classified as needing acquisition.
       const paths = conditions.filter(choice => choice.realizations);
       if (realization !== 'review' && paths.some(choice => !choice.realizations.includes(realization))) {
-        throw new Error(`For ${group.command}, select benefit references matching realization: ${paths.map(choice => `${choice.id} uses ${choice.realizations.join('/')}`).join('; ')}. Record the main benefit path and matching realization.`);
+        throw new Error(preparationText(locale, 'realizationReferenceMismatch', { command: group.command, paths: paths.map(choice => preparationText(locale, 'referenceRealizations', { id: choice.id, realizations: choice.realizations.join('/') })).join('; ') }));
       }
       rows.set(group.command, { category, realization, reason: [...conditions.map(choice => choice.text), ...binding.fixedMechanics].join(' '),
         basisKind: potionScope ? 'host-bound-potion-tradeoff' : spendingScope ? 'host-bound-shop-tradeoff' : 'condition-references', bindingId: binding.id, conditionIds,
@@ -986,10 +986,10 @@ export function collectPreparationClassification(basis, observation, normalize =
   let choiceIssue = submission.choiceIssue;
   if (!choiceIssue && submission.choice?.trim()) {
     try {
-      const selected = preparationChoiceMembers(submission.choice, observation, normalize).command;
+      const selected = preparationChoiceMembers(submission.choice, observation, normalize, locale).command;
       if (pendingChoice && (selected !== pendingChoice
           || (submission.comparison !== undefined && submission.comparison !== pendingComparison))) {
-        throw new Error(`Saved choice: ${pendingChoice}. Classification corrections retain this choice and its comparison. After the table is complete, submit command choose with the intended choice to change it.`);
+        throw new Error(preparationText(locale, 'savedChoiceImmutable', { pendingChoice: pendingChoice }));
       }
       pendingChoice ??= selected;
       pendingComparison ??= submission.comparison;
@@ -999,7 +999,7 @@ export function collectPreparationClassification(basis, observation, normalize =
   }
   if (choiceIssue) issues.push({ field: 'choice', message: choiceIssue });
   return { source: gameContextSource(observation), complete: pendingCommands.length === 0,
-    rows: preparationCandidates(observation, normalize).flatMap(command => {
+    rows: preparationCandidates(observation, normalize, locale).flatMap(command => {
       const row = rows.get(membership.get(command).command);
       return row ? [{ ...row, command }] : [];
     }), acceptedCommands, pendingCommands, issues,
@@ -1007,22 +1007,22 @@ export function collectPreparationClassification(basis, observation, normalize =
     ...(choiceIssue ? { choiceIssue } : {}) };
 }
 
-export function preparationClassificationReceipt(draft) {
-  return [`Classification rows recorded: ${draft.acceptedCommands.length} newly accepted; ${draft.rows.length} covered legal commands.`,
-    ...draft.issues.map(issue => `Correction: ${issue.message}`),
-    ...(draft.pendingChoice ? [`Saved choice: ${draft.pendingChoice}.`] : []),
-    draft.complete ? 'Complete current table recorded.' : `Classify remaining candidates: ${draft.pendingCommands.join(', ')}`].join('\n');
+export function preparationClassificationReceipt(draft, locale = 'en') {
+  return [preparationText(locale, 'classificationReceipt', { accepted: draft.acceptedCommands.length, covered: draft.rows.length }),
+    ...draft.issues.map(issue => preparationText(locale, 'correction', { message: issue.message })),
+    ...(draft.pendingChoice ? [preparationText(locale, 'savedChoiceShort', { pendingChoice: draft.pendingChoice })] : []),
+    draft.complete ? preparationText(locale, 'completeTableRecorded') : preparationText(locale, 'classifyRemaining', { pendingCommands: draft.pendingCommands.join(', ') })].join('\n');
 }
 
 export function preparationRecordedTable(classification, observation, normalize, locale = 'en') {
   const potionScope = shopPotionReplacementScope(observation, normalize, locale);
-  if (potionScope) return ['Recorded shop bottle recommendations:', ...potionScope.candidates.map(candidate => {
+  if (potionScope) return [preparationText(locale, 'recordedBottleRecommendations'), ...potionScope.candidates.map(candidate => {
     const row = classification.rows.find(row => row.command === candidate.command);
     return `  ${row.command} | ${row.category}\n    ${candidate.fact}`;
-  }), 'Submit command choose and the selected complete command in choice.'].join('\n');
+  }), preparationText(locale, 'chooseRecordedCommand')].join('\n');
   const spendingScope = shopSpendingScope(observation, normalize, locale);
-  if (spendingScope) return renderShopSpendingComparison(observation, spendingScope, preparationCandidateGroups(observation, normalize), classification, locale);
-  const representatives = preparationCandidateGroups(observation, normalize);
+  if (spendingScope) return renderShopSpendingComparison(observation, spendingScope, preparationCandidateGroups(observation, normalize, locale), classification, locale);
+  const representatives = preparationCandidateGroups(observation, normalize, locale);
   const rows = representatives.map(group => classification.rows.find(row => row.command === group.command));
   // Preserve every recorded condition and fact, including old reason-only
   // rows. Exact shared text is rendered once with its owning commands.
@@ -1043,41 +1043,41 @@ export function preparationRecordedTable(classification, observation, normalize,
     texts.push(text);
     shared.set(key, texts);
   }
-  return ['Recorded classifications: benefit | realization | basis',
-    ...(classification.pendingChoice ? [`Saved choice: ${classification.pendingChoice}.`] : []),
-    'This table records your classify submission for the current decision.', ...representatives.map(group => {
+  return [preparationText(locale, 'recordedClassificationHeading'),
+    ...(classification.pendingChoice ? [preparationText(locale, 'savedChoiceShort', { pendingChoice: classification.pendingChoice })] : []),
+    preparationText(locale, 'recordedSubmission'), ...representatives.map(group => {
     const row = classification.rows.find(row => row.command === group.command);
-    return `  ${row.command} | ${row.category} | ${row.realization} | ${row.conditionIds?.join(',') ?? 'recorded basis below'}`;
+    return `  ${row.command} | ${row.category} | ${row.realization} | ${row.conditionIds?.join(',') ?? preparationText(locale, 'basisBelow')}`;
   }), renderDeckComparison(preparationDeckComparison(observation, normalize, locale), { candidateCommands: representatives.map(group => group.command), locale }),
   renderExpertGuidance(preparationExpertGuidance(observation, normalize)),
-  'Recorded basis facts and conditions:', ...[...shared].flatMap(([commands, texts]) => [
-    `  Applies to ${commands}:`, ...texts.map(text => `    ${text}`),
+  preparationText(locale, 'recordedFacts'), ...[...shared].flatMap(([commands, texts]) => [
+    preparationText(locale, 'appliesTo', { commands: commands }), ...texts.map(text => `    ${text}`),
   ]),
   renderShopBudget(observation.shopBudget, observation.shopPlan, locale),
   ...(observation.position?.observation?.observation?.context?.kind === 'map'
-    ? ['Map adoption: choose from the highest-rated assessed routes. Close tradeoffs may share a rating.'] : []),
-  ...(preparationSelectionFamily(observation) ? [
-    `Selection adoption: choose ${preparationSelectionFamily(observation).min_choices}..${preparationSelectionFamily(observation).max_choices} distinct card tokens in one act select: command. Several targets use comma-separated tokens; each selected target binds its recorded row.`,
-  ] : representatives.length === 1 ? [`Sole candidate adoption: command ${representatives[0].command}. The host supplies its sole recorded row as basis.`] : [])].join('\n');
+    ? [preparationText(locale, 'mapAdoption')] : []),
+  ...(preparationSelectionFamily(observation, locale) ? [
+    preparationText(locale, 'selectionAdoption', { minimum: preparationSelectionFamily(observation, locale).min_choices, maximum: preparationSelectionFamily(observation, locale).max_choices }),
+  ] : representatives.length === 1 ? [preparationText(locale, 'soleCandidateAdoption', { command: representatives[0].command })] : [])].join('\n');
 }
 
 // One immutable task root, independent of model conclusions and message history.
 // Preparation tools can only read or adopt gameplay. The controller head also
 // changes on an adopted choice in an evidence workspace whose state revision
 // stays at the original external checkpoint.
-export function preparationTaskRoot(observation) {
+export function preparationTaskRoot(observation, locale = 'en') {
   const task = gameDecisionTask(observation);
-  if (!families.has(task.family)) throw new Error('A preparation task starts at a strategic decision: shop, campfire, event, reward, card choice, map or run transition.');
+  if (!families.has(task.family)) throw new Error(preparationText(locale, 'strategicTaskRequired'));
   const gold = observation.position?.observation?.observation?.run?.gold;
   return { source: gameContextSource(observation), task,
     ...(Number.isSafeInteger(gold) ? { startingGold: gold } : {}) };
 }
 
-export function preparationTaskProgress(root, observation) {
+export function preparationTaskProgress(root, observation, locale = 'en') {
   const source = gameContextSource(observation);
   const task = gameDecisionTask(observation, root.task);
   if (source.session_id !== root.source.session_id || source.state_revision < root.source.state_revision) {
-    throw new Error('Preparation task root differs from the bound game; start a new task from its actual state.');
+    throw new Error(preparationText(locale, 'taskRootMismatch'));
   }
   if (sameGameContextSource(root.source, observation)) return 'pending';
   const site = observation.position?.observation?.observation?.context?.kind;
@@ -1114,40 +1114,40 @@ export function restoredPreparationDecision(session) {
   }
 }
 
-function preparationChoiceMembers(choice, observation, normalize) {
+function preparationChoiceMembers(choice, observation, normalize, locale = 'en') {
   const command = normalize(choice.trim(), observation);
-  const candidates = preparationCandidates(observation, normalize);
-  const family = preparationSelectionFamily(observation);
+  const candidates = preparationCandidates(observation, normalize, locale);
+  const family = preparationSelectionFamily(observation, locale);
   const members = family && command.startsWith('act select:') && command !== 'act select:none'
     ? command.slice('act select:'.length).split(',').map(token => `act select:${token}`) : [command];
   if (family && command.startsWith('act ')) {
     const count = command === 'act select:none' ? 0 : members.length;
     if (new Set(members).size !== members.length || count < family.min_choices || count > family.max_choices) {
-      throw new Error(`Select ${family.min_choices}..${family.max_choices} distinct classified targets in one act select: command.`);
+      throw new Error(preparationText(locale, 'selectTargetCount', { minimum: family.min_choices, maximum: family.max_choices }));
     }
   }
   if (members.some(member => !candidates.includes(member))) {
-    throw new Error('Select classified current candidates using their supplied commands. A complete card selection starts with act select: and joins the classified card tokens with commas.');
+    throw new Error(preparationText(locale, 'selectCurrentTargets'));
   }
   return { command, members };
 }
 
 export function preparationCommandBasis([command, args], progress, basis, observation, classification, normalize = command => command, locale = 'en') {
   if (!['pending', 'selection'].includes(progress) || queries.has(command)) return;
-  const candidates = preparationCandidates(observation, normalize);
+  const candidates = preparationCandidates(observation, normalize, locale);
   if (!classification || !sameGameContextSource(classification.source, observation)
       || !Array.isArray(classification.rows) || classification.rows.length !== candidates.length
       || candidates.some(candidate => !classification.rows.some(row => row.command === candidate))) {
-    throw new Error('Call classify with the complete current table, then compare and adopt a preparation.');
+    throw new Error(preparationText(locale, 'completeClassificationRequired'));
   }
-  const { command: selected, members } = preparationChoiceMembers([command, ...args].join(' '), observation, normalize);
-  const family = preparationSelectionFamily(observation);
+  const { command: selected, members } = preparationChoiceMembers([command, ...args].join(' '), observation, normalize, locale);
+  const family = preparationSelectionFamily(observation, locale);
   const selectedRows = members.map(member => classification.rows.find(row => row.command === member));
   if (selectedRows.some(row => row.category === 'review' || row.realization === 'review')) {
-    throw Object.assign(new Error('Record the selected candidate\'s missing fact through sts_feedback for maintainer review.'),
+    throw Object.assign(new Error(preparationText(locale, 'selectedReviewRequired')),
       { preparationReviewCandidate: selected });
   }
-  const groups = preparationCandidateGroups(observation, normalize);
+  const groups = preparationCandidateGroups(observation, normalize, locale);
   const renderRow = item => `${item.command} | ${item.category} | ${item.realization} | ${item.reason.replace(/\s+/g, ' ')}`;
   const selectedGroups = groups.filter(group => group.members.some(member => members.includes(member)));
   const alternatives = groups.filter(group => !selectedGroups.includes(group));
@@ -1155,7 +1155,7 @@ export function preparationCommandBasis([command, args], progress, basis, observ
     const rank = { high: 3, medium: 2, low: 1 };
     const higher = classification.rows.filter(row => row.realization !== 'review'
       && rank[row.category] > rank[selectedRows[0].category]);
-    if (higher.length) throw new Error(`Map choice ${selected} is rated ${selectedRows[0].category}; higher recorded recommendations: ${higher.map(row => `${row.command} (${row.category})`).join('; ')}. Submit choose with a highest-rated assessed route, or record the unresolved route tradeoff through sts_feedback.`);
+    if (higher.length) throw new Error(preparationText(locale, 'higherRatedRoutes', { command: selected, category: selectedRows[0].category, higher: higher.map(row => `${row.command} (${row.category})`).join('; ') }));
   }
   const multi = family && family.max_choices > 1 && selected.startsWith('act select:');
   const bound = { command: selected, ...(selectedRows.length === 1 ? { selectedRow: selectedRows[0] } : {}), selectedRows };
@@ -1163,23 +1163,23 @@ export function preparationCommandBasis([command, args], progress, basis, observ
   if (shopSpendingScope(observation, normalize, locale)) {
     const keep = /^(?:then\s+)?keep the balance$/.test(basis?.trim() ?? '');
     const match = basis?.trim() && !keep ? /^then\s+([^|\r\n]+)$/.exec(basis.trim()) : undefined;
-    if (basis?.trim() && !match && !keep) throw new Error('An optional second spend uses comparison: then FOLLOW_UP_COMMAND from the selected first spend\'s budget row; keeping the balance uses keep the balance.');
+    if (basis?.trim() && !match && !keep) throw new Error(preparationText(locale, 'followupGrammar'));
     const continuation = match ? shopContinuation(observation, selected, match[1].trim(), locale) : undefined;
     return { ...bound, basisKind: 'shop-recommendations', alternativeRow: null,
       comparisonIds: [], comparisons: [], ...(continuation ? { shopContinuation: continuation } : {}),
-      renderedBasis: `${selected} | ${selectedRows[0].category}${continuation ? `; then ${continuation.next}` : ''}; native budget bound by host.` };
+      renderedBasis: preparationText(locale, 'shopRenderedBasis', { command: selected, category: selectedRows[0].category, continuation: continuation ? preparationText(locale, 'renderedFollowup', { next: continuation.next }) : '' }) };
   }
   if (multi) return { ...bound, basisKind: 'selection-set',
     unselectedRows: classification.rows.filter(row => !members.includes(row.command)),
-    comparisonIds: [], comparisons: [], renderedBasis: `${rendered}; Selected targets bound to the complete current classification.` };
+    comparisonIds: [], comparisons: [], renderedBasis: preparationText(locale, 'selectionRenderedBasis', { rendered: rendered }) };
   if (!alternatives.length) return { ...bound, alternativeRow: null,
-    comparisonIds: [], comparisons: [], basisKind: 'sole-candidate', renderedBasis: `${rendered}; ${groups.length === 1 ? 'Sole classified candidate.' : 'All classification groups selected.'}` };
-  const priorityComparisons = preparationPriorityBaselines(observation, normalize);
+    comparisonIds: [], comparisons: [], basisKind: 'sole-candidate', renderedBasis: `${rendered}; ${groups.length === 1 ? preparationText(locale, 'soleClassifiedCandidate') : preparationText(locale, 'allGroupsSelected')}` };
+  const priorityComparisons = preparationPriorityBaselines(observation, normalize, locale);
   let comparisonBasis = basis, basisKind = 'player-comparison';
   if (!basis?.trim()) {
     const required = priorityComparisons.filter(baseline => !members.some(member => baseline.commands.includes(member)));
     const eligible = alternatives.filter(group => required.every(baseline => group.members.some(member => baseline.commands.includes(member))));
-    if (!eligible.length) throw new Error('The current comparison priorities require maintainer review of their shared legal alternatives.');
+    if (!eligible.length) throw new Error(preparationText(locale, 'priorityReviewRequired'));
     const rank = { high: 3, medium: 2, low: 1, review: 0 };
     const alternative = eligible.map(group => classification.rows.find(row => row.command === group.command))
       .sort((left, right) => rank[right.category] - rank[left.category])[0];
@@ -1188,33 +1188,34 @@ export function preparationCommandBasis([command, args], progress, basis, observ
     basisKind = 'host-comparison';
   }
   const match = /^\s*([^|]+?)\s*\|\s*([^|\r\n]+?)(?:\s*\|\s*then\s+([^|\r\n]+))?\s*$/.exec(comparisonBasis);
-  if (!match) throw new Error(`Supply comparison basis: ${PREPARATION_COMPARISON_BASIS}`);
+  if (!match) throw new Error(preparationText(locale, 'supplyComparison', { format: preparationInstructions(locale).comparisonBasis }));
   const alternative = normalize(match[1].trim(), observation);
   const alternativeRow = classification.rows.find(row => row.command === alternative);
   if (!alternativeRow || !alternatives.some(group => group.members.includes(alternative))) {
-    throw new Error(`Compare with another current legal target or candidate: ${alternatives.map(group => group.command).join('; ')}. Use its command before the | separator.`);
+    throw new Error(preparationText(locale, 'alternativeRequired', { alternatives: alternatives.map(group => group.command).join('; ') }));
   }
   const comparisonIds = match[2].split(',').map(id => id.trim());
-  const comparisons = comparisonIds.map(id => PREPARATION_COMPARISONS.find(item => item.id === id));
+  const comparisonDefinitions = preparationInstructions(locale).comparisons;
+  const comparisons = comparisonIds.map(id => comparisonDefinitions.find(item => item.id === id));
   if (comparisons.some(item => !item) || new Set(comparisonIds).size !== comparisonIds.length) {
-    throw new Error(`Use supplied comparison references: ${PREPARATION_COMPARISONS.map(item => item.id).join(', ')}.`);
+    throw new Error(preparationText(locale, 'comparisonReferencesRequired', { pREPARATION_COMPARISONS: comparisonDefinitions.map(item => item.id).join(', ') }));
   }
   for (const baseline of priorityComparisons) {
     if (!members.some(member => baseline.commands.includes(member)) && !baseline.commands.includes(alternative)) {
-      throw new Error(`Compare this choice with a current ${baseline.id} candidate: ${baseline.commands.join('; ')}. Use its command as the alternative and include ${baseline.comparisonIds.join(',')}.`);
+      throw new Error(preparationText(locale, 'priorityAlternativeRequired', { priority: baseline.id, commands: baseline.commands.join('; '), references: baseline.comparisonIds.join(',') }));
     }
     if (baseline.comparisonIds.some(id => !comparisonIds.includes(id))) {
-      throw new Error(`Include ${baseline.comparisonIds.join(',')} when comparing this choice under ${baseline.id}; weigh access with the actual function, protection and resource tradeoff.`);
+      throw new Error(preparationText(locale, 'priorityReferencesRequired', { references: baseline.comparisonIds.join(','), priority: baseline.id }));
     }
   }
   const continuation = match[3] ? shopContinuation(observation, selected, match[3].trim(), locale) : undefined;
   return { ...bound, alternativeRow, comparisonIds, comparisons, basisKind,
     ...(priorityComparisons.length ? { priorityComparisons } : {}), ...(continuation ? { shopContinuation: continuation } : {}),
-    renderedBasis: `${rendered}; Compared with ${renderRow(alternativeRow)}; Emphasis: ${comparisonIds.join(',')}` };
+    renderedBasis: preparationText(locale, 'comparedBasis', { selected: rendered, alternative: renderRow(alternativeRow), emphasis: comparisonIds.join(',') }) };
 }
 
-function preparationPriorityBaselines(observation, normalize) {
-  const legal = new Set(preparationCandidates(observation, normalize));
+function preparationPriorityBaselines(observation, normalize, locale = 'en') {
+  const legal = new Set(preparationCandidates(observation, normalize, locale));
   return (preparationExpertGuidance(observation, normalize)?.construction?.priorities ?? []).flatMap(priority => {
     const baseline = priority.comparisonBaseline;
     const commands = baseline?.commands.filter(command => legal.has(command));
@@ -1222,7 +1223,7 @@ function preparationPriorityBaselines(observation, normalize) {
   });
 }
 
-export function assertPreparationCommand([command, args], progress, observation, normalize = command => command) {
+export function assertPreparationCommand([command, args], progress, observation, normalize = command => command, locale = 'en') {
   if (queries.has(command) && args.length === 0) return;
   if (progress === 'complete') throw new Error(preparationProgressText(progress));
   if (command === 'classify' && !args.length && ['pending', 'selection'].includes(progress)) return;
@@ -1230,20 +1231,20 @@ export function assertPreparationCommand([command, args], progress, observation,
     const site = observation.position?.observation?.observation?.context?.kind;
     if (site !== 'run_choice' || !args.length || !/^select(?::|$)/.test(args[0])
         || args.some(token => token.includes(':') && !token.startsWith('select:'))) {
-      throw new Error('Use a displayed preparation choice; act select:<card> is for its attached card selection.');
+      throw new Error(preparationText(locale, 'displayedPreparationRequired'));
     }
     return;
   }
-  const candidates = preparationCandidates(observation, normalize);
+  const candidates = preparationCandidates(observation, normalize, locale);
   if (!candidates.includes(normalize([command, ...args].join(' '), observation))) {
     const labelSeparator = args.indexOf('|');
     const commandOnly = labelSeparator >= 0 ? normalize([command, ...args.slice(0, labelSeparator)].join(' '), observation) : undefined;
     if (candidates.includes(commandOnly)) {
-      throw new Error(`Copy the command ${commandOnly} into choice. Its display label is separate text.`);
+      throw new Error(preparationText(locale, 'copyIntoChoice', { commandOnly: commandOnly }));
     }
     if (command === 'buy' || command.startsWith('buy:')) {
-      throw new Error('Copy a complete command ID from the first column of the current candidate table into choice, such as buy:Card#0. Use read to recover the current table.');
+      throw new Error(preparationText(locale, 'copyCompleteCommand'));
     }
-    throw new Error('This task completes one preparation. Use a supplied candidate, read for recovery, options for attached choices, or sts_feedback for a missing fact.');
+    throw new Error(preparationText(locale, 'onePreparationTask'));
   }
 }

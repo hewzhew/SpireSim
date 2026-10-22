@@ -101,7 +101,7 @@ export async function apply(ctx, config) {
       reading.ownedRelicReadings = supply.relicReadings;
     }
     if (reading.position?.observation?.observation?.context?.kind !== 'shop'
-        || (preparationRoot && preparationTaskProgress(preparationRoot, reading) !== 'pending')) return reading;
+        || (preparationRoot && preparationTaskProgress(preparationRoot, reading, presentation.locale) !== 'pending')) return reading;
     if (!shopBudget || !sameGameContextSource(shopBudget.source, reading)) {
       shopBudget = await preparationShopBudget(reading, actions => game.preview(actions, { signal }), strategicOptionCommand, presentation.locale);
       if (shopBudget && !sameGameContextSource(shopBudget.source, await game.observe({ signal }))) {
@@ -133,8 +133,8 @@ export async function apply(ctx, config) {
     const context = reading.position?.observation?.observation?.context;
     preparationContext = context ? { ...context, potionReplacement: shopPotionReplacementScope(reading, strategicOptionCommand, presentation.locale),
       shopSpending: shopSpendingScope(reading, strategicOptionCommand, presentation.locale) } : context;
-    preparationRoot ??= preparationTaskRoot(reading);
-    taskProgress = preparationTaskProgress(preparationRoot, reading);
+    preparationRoot ??= preparationTaskRoot(reading, presentation.locale);
+    taskProgress = preparationTaskProgress(preparationRoot, reading, presentation.locale);
     if (classification && !sameGameContextSource(classification.source, reading)) classification = undefined;
     if (classificationDraft && !sameGameContextSource(classificationDraft.source, reading)) {
       classificationDraft = undefined;
@@ -286,7 +286,7 @@ export async function apply(ctx, config) {
               }
               if (group[0] === 'choose') {
                 if (!classification) throw new Error('Current stage: submit the requested classification rows and choice with command classify.');
-              } else assertPreparationCommand(group, taskProgress, reading, strategicOptionCommand);
+              } else assertPreparationCommand(group, taskProgress, reading, strategicOptionCommand, presentation.locale);
               if (group[0] === 'classify') {
                 if (!classification) {
                   let normalizedChoice, choiceIssue;
@@ -305,7 +305,7 @@ export async function apply(ctx, config) {
                   }) + '\n');
                   classificationDraft = collected;
                   preparationFailures = collected.acceptedCommands.length ? 0 : preparationFailures + 1;
-                  const receipt = preparationClassificationReceipt(collected);
+                  const receipt = preparationClassificationReceipt(collected, presentation.locale);
                   if (!collected.complete) {
                     requestBranchReset(exec.agent);
                     if (preparationFailures >= 3) {
@@ -332,7 +332,7 @@ export async function apply(ctx, config) {
                     shopBudget: reading.shopBudget, shopPlan: reading.shopPlan,
                     classificationContext: preparationClassificationContext(reading, strategicOptionCommand, undefined, presentation.locale),
                     runRules: rulesText,
-                    groups: preparationCandidateGroups(reading, strategicOptionCommand),
+                    groups: preparationCandidateGroups(reading, strategicOptionCommand, presentation.locale),
                     conditionBindings: preparationConditionBindings(reading, strategicOptionCommand, presentation.locale),
                   }) + '\n');
                   classification = recorded;
@@ -352,7 +352,7 @@ export async function apply(ctx, config) {
                   return { text: `${preparationRecordedTable(classification, reading, strategicOptionCommand, presentation.locale)}\n\n${progressText()}` };
                 }
                 group = preparationChoiceGroup(adoptionChoice);
-                assertPreparationCommand(group, taskProgress, reading, strategicOptionCommand);
+                assertPreparationCommand(group, taskProgress, reading, strategicOptionCommand, presentation.locale);
                 adoptionBasis = choiceComparison;
               }
               const comparison = preparationCommandBasis(group, taskProgress, adoptionBasis, reading, classification, strategicOptionCommand, presentation.locale);

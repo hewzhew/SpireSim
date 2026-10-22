@@ -130,7 +130,7 @@ export async function runPlayer(options, display = console.log) {
   if (taskScope === 'preparation' && !preparationRoot) {
     const { openRunPlay } = await import(pathToFileURL(join(repository, 'tools/run_play/client.mjs')));
     const probe = await openRunPlay({ repository, session, binary, agentLocale, recordDirectory: join(output, 'task-root-wire') });
-    try { preparationRoot = preparationTaskRoot(await probe.observe()); }
+    try { preparationRoot = preparationTaskRoot(await probe.observe(), agentLocale); }
     finally { await probe.close(); }
   }
   Object.assign(binding, { taskScope, agentLocale, supervised: Boolean(options.supervised), ...(preparationRoot ? { preparationRoot } : {}), ...(rewardProgress ? { rewardProgress } : {}) });
@@ -308,7 +308,7 @@ export async function runPlayer(options, display = console.log) {
         game = await openRunPlay({ repository, session, binary, agentLocale, recordDirectory: join(output, 'final-observation-wire') });
         const observation = await game.observe();
         finalGameSource = gameContextSource(observation);
-        if (preparationRoot) result.preparationProgress = preparationTaskProgress(preparationRoot, observation);
+        if (preparationRoot) result.preparationProgress = preparationTaskProgress(preparationRoot, observation, agentLocale);
         await writeFile(join(output, 'final-observation.json'), JSON.stringify(observation, null, 2) + '\n');
         const position = observation.position;
         result.gamePosition = position.kind === 'terminal'

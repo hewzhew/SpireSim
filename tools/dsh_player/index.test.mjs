@@ -261,6 +261,21 @@ test('both languages record acknowledged decisions on a failed tool result befor
   }
 });
 
+test('Chinese preparation tool repairs classifications and returns its localized recorded table without executing a choice', async t => {
+  const f = await fixture(t, 'Opaque {{rules}} 原文');
+  await f.setPosition(scopedPosition('campfire', 1));
+  const handle = await f.create({ taskScope: 'preparation', agentLocale: 'zh-CN' });
+  t.after(() => handle.dispose());
+  const partial = await rawGameExec(f.ctx, handle.agent, 'classify', 'buy:BottledFlame#0 | medium | direct | @foreign');
+  assert.equal(Boolean(partial.isError), false, resultText(partial));
+  assert.match(resultText(partial), /已记录分类行：.*修正：使用 buy:BottledFlame#0 所供的条件/s);
+  const complete = await rawGameExec(f.ctx, handle.agent, 'classify', fixtureBasis());
+  assert.equal(Boolean(complete.isError), false, resultText(complete));
+  assert.match(resultText(complete), /已记录分类：收益/);
+  assert.equal((await f.classifications()).length, 1);
+  assert.ok(!(await f.calls()).some(call => /^(buy:|leave$)/.test(typeof call === 'string' ? call : '')));
+});
+
 test('bound rules are loaded before play, remain scoped, and close with the player', async t => {
   const rules = 'Run rules | A20\nAct transition: heal 75% of missing HP. {{literal}}';
   const f = await fixture(t, rules);
