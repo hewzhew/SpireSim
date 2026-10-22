@@ -3,6 +3,7 @@
 import { readFile, readdir, mkdir, writeFile, realpath } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { createHash } from 'node:crypto';
+import { createPresentation } from '@sts-simulator/presentation';
 import { Context } from '@deepseek-ai/cordis';
 import { Session, SessionId } from '@deepseek-ai/dsh-session';
 import Projections from '@deepseek-ai/dsh-session-projection';
@@ -12,13 +13,17 @@ import { workspaceFacts } from './native.mjs';
 import { recordedGameReading } from './context.mjs';
 
 const usage = 'observe [STEP [input] | live | list] [--home DSH_HOME] [--chat ID_FRAGMENT] [--turn N]';
+function nativeObservationText(locale, key, parameters = {}) {
+  return createPresentation({ locale }).text(`native:inspection.${key}`,
+    Object.fromEntries(Object.entries(parameters).map(([name, value]) => [name, String(value)])));
+}
 const textOf = message => (message?.content ?? []).filter(block => block.type === 'text').map(block => block.text).join('\n');
 const sourceSchema = 'sts-native-observation-source-v1';
 const number = value => /^[1-9]\d*$/.test(value ?? '') && Number.isSafeInteger(Number(value));
 const samePath = (a, b) => typeof a === 'string' && typeof b === 'string' && (process.platform === 'win32'
   ? resolve(a).toLowerCase() === resolve(b).toLowerCase() : resolve(a) === resolve(b));
 
-export function parseNativeObservation(args) {
+export function parseNativeObservation(args, locale = 'en') {
   const options = {}, positional = [];
   for (let i = 0; i < args.length; i++) {
     const key = args[i];
@@ -40,7 +45,7 @@ export function parseNativeObservation(args) {
       options.step = Number(positional[0]); options.input = positional[1] === 'input';
     }
   }
-  if (options.mode === 'live' && options.turn !== undefined) throw new Error('live reads the present game, not a historical turn.');
+  if (options.mode === 'live' && options.turn !== undefined) throw new Error(nativeObservationText(locale, 'liveNotHistorical'));
   return options;
 }
 
@@ -49,7 +54,7 @@ async function optionalJson(path) {
   catch (error) { if (error.code === 'ENOENT') return null; throw error; }
 }
 
-async function nativeBindings(repository) {
+async function nativeBindings(repository, locale = 'en') {
   const root = join(repository, '.oracle-lab/run-play');
   let entries;
   try { entries = await readdir(root, { withFileTypes: true }); }
@@ -61,23 +66,23 @@ async function nativeBindings(repository) {
     const digest = typeof binding.agent === 'string' && createHash('sha256').update(binding.agent).digest('hex').slice(0, 24);
     if (binding.schema !== 'sts-dsh-native-binding-v1' || !samePath(binding.repository, repository)
         || !samePath(binding.session, session) || entry.name !== `dsh-native-${digest}`) {
-      throw new Error(`Invalid native chat binding: ${session}`);
+      throw new Error(nativeObservationText(locale, 'invalidBinding', { session: session }));
     }
     bindings.push(binding);
   }
   return bindings;
 }
 
-export async function nativeJournalSummary(log, binding, { turn: wantedTurn, step: wantedStep, input = false } = {}) {
-  if (log.meta.id !== binding.agent || !samePath(log.meta.cwd, binding.repository)) throw new Error('Journal and game binding belong to different chats or workspaces.');
+export async function nativeJournalSummary(log, binding, { turn: wantedTurn, step: wantedStep, input = false, locale = 'en' } = {}) {
+  if (log.meta.id !== binding.agent || !samePath(log.meta.cwd, binding.repository)) throw new Error(nativeObservationText(locale, 'journalBindingMismatch'));
   for (const event of log.events.filter(event => event.type === 'tool/result' && event.data.meta?.schema === 'sts-native-game-v1')) {
     if (event.data.meta.agent !== binding.agent || !samePath(event.data.meta.session, binding.session)) {
-      throw new Error(`Native tool result ${event.seq} belongs to another game.`);
+      throw new Error(nativeObservationText(locale, 'foreignToolResult', { event: event.seq }));
     }
   }
   const { events } = log, starts = events.filter(event => event.type === 'turn/start');
   const start = wantedTurn === undefined ? starts.at(-1) : starts.find(event => event.data.turn === wantedTurn);
-  if (!start && wantedTurn !== undefined) throw new Error(`No recorded turn ${wantedTurn}.`);
+  if (!start && wantedTurn !== undefined) throw new Error(nativeObservationText(locale, 'turnUnavailable', { turn: wantedTurn }));
   const end = start && events.find(event => event.seq > start.seq && event.type === 'turn/end' && event.data.turn === start.data.turn);
   const stop = end ? end.seq + 1 : events.length;
   const owned = start ? events.slice(start.seq, stop) : [];
@@ -87,7 +92,7 @@ export async function nativeJournalSummary(log, binding, { turn: wantedTurn, ste
     return { number: event.data.step, seq: event.seq, members,
       calls: members.filter(member => member.type === 'tool/call').map(call => ({ ...call.data, seq: call.seq, result: results.get(call.data.callId) })) };
   });
-  if (wantedStep !== undefined && !steps.some(step => step.number === wantedStep)) throw new Error(`No step ${wantedStep} in this turn.`);
+  if (wantedStep !== undefined && !steps.some(step => step.number === wantedStep)) throw new Error(nativeObservationText(locale, 'stepUnavailable', { step: wantedStep }));
   const calls = steps.flatMap(step => step.calls), gameCalls = calls.filter(call => call.name === 'sts');
   const gameResults = events.filter(event => event.seq < stop && event.type === 'tool/result'
     && event.data.meta?.schema === 'sts-native-game-v1' && !event.data.message.isError);
@@ -142,18 +147,18 @@ export async function nativeJournalSummary(log, binding, { turn: wantedTurn, ste
             || boundary.turn !== report.turn || boundary.step !== step.number
             || !Number.isSafeInteger(boundary.attempt) || boundary.attempt < 1
             || !Number.isSafeInteger(boundary.throughSeq) || boundary.throughSeq < step.seq || boundary.throughSeq >= event.seq) {
-          throw new Error(`Invalid captured request boundary at event ${event.seq}.`);
+          throw new Error(nativeObservationText(locale, 'invalidCapturedBoundary', { event: event.seq }));
         }
         return { eventSeq: event.seq, throughSeq: boundary.throughSeq, attempt: boundary.attempt,
           precision: boundary.snapshot ? 'captured-sdk-request' : 'digest-checked-journal-at-sdk-dispatch',
-          requestHash: boundary.requestHash, request: requestFromBoundary(log, boundary) };
+          requestHash: boundary.requestHash, request: requestFromBoundary(log, boundary, locale) };
       }) : deliveries.map(event => {
         const { throughSeq, sessionId, sessionFormatVersion } = event.data;
         if (sessionId !== log.meta.id || sessionFormatVersion !== log.meta.version
             || !Number.isSafeInteger(throughSeq) || throughSeq < step.seq || throughSeq >= event.seq) {
-          throw new Error(`Invalid delivery boundary at event ${event.seq}.`);
+          throw new Error(nativeObservationText(locale, 'invalidDeliveryBoundary', { event: event.seq }));
         }
-        return { eventSeq: event.seq, throughSeq, precision: 'journal-derived-at-recorded-delivery', request: journalRequest(log, throughSeq) };
+        return { eventSeq: event.seq, throughSeq, precision: 'journal-derived-at-recorded-delivery', request: journalRequest(log, throughSeq, locale) };
       });
     }
   }
@@ -165,94 +170,96 @@ export function commandOf(call) {
   catch { return call.arguments; }
 }
 
-export function renderNativeObservation(report) {
-  const phase = { open: 'running or interrupted without a recorded end', empty: 'no model turn' }[report.status] ?? report.status;
+export function renderNativeObservation(report, locale = 'en') {
+  const phase = { open: nativeObservationText(locale, 'openTurn'), empty: nativeObservationText(locale, 'noModelTurn') }[report.status] ?? report.status;
   const { binding } = report;
-  const lines = [`${report.title}\nChat ${binding.agent}\nGame ${binding.session}`,
-    `Turn ${report.turn ?? 'none'}: ${phase} | ${report.steps} model steps | ${report.gameCalls} game calls | ${report.errors.length} errors`];
+  const lines = [nativeObservationText(locale, 'chat', { title: report.title, agent: binding.agent, session: binding.session }),
+    nativeObservationText(locale, 'turn', { turn: report.turn ?? nativeObservationText(locale, 'none'), phase: phase, steps: report.steps, gameCalls: report.gameCalls, errors: report.errors.length })];
   if (report.selected) {
     const selected = report.selected;
-    lines.push(`\nStep ${selected.number}`);
+    lines.push(nativeObservationText(locale, 'step', { number: selected.number }));
     if (report.inputs) {
-      lines.push('Input reconstructed from the official journal at its recorded delivery boundary; no SDK checksum or provider HTTP payload was saved.');
-      if (!report.inputs.length) lines.push('No delivery boundary recorded; the original input is unavailable.');
-      for (const item of report.inputs) lines.push(`Delivery event ${item.eventSeq}, through event ${item.throughSeq}:`, JSON.stringify(item.request, null, 2));
+      if (report.inputs.length) lines.push(nativeObservationText(locale, report.inputs.every(item =>
+        ['captured-sdk-request', 'digest-checked-journal-at-sdk-dispatch'].includes(item.precision)) ? 'verifiedInput' : 'legacyInput'));
+      if (!report.inputs.length) lines.push(nativeObservationText(locale, 'noDeliveryBoundary'));
+      for (const item of report.inputs) lines.push(nativeObservationText(locale, 'delivery', { event: item.eventSeq, through: item.throughSeq }), JSON.stringify(item.request, null, 2));
     } else {
-      lines.push(selected.before ? `Last successful game result before this step (event ${selected.before.seq}):\n${textOf(selected.before.data.message)}` : 'No earlier successful game result.');
-      if (selected.intervening.length) lines.push('Intervening game calls may have changed the game; this earlier result is not a verified execution boundary.');
+      lines.push(selected.before ? nativeObservationText(locale, 'lastResultBefore', { event: selected.before.seq, text: textOf(selected.before.data.message) }) : nativeObservationText(locale, 'noEarlierResult'));
+      if (selected.intervening.length) lines.push(nativeObservationText(locale, 'interveningCalls'));
       for (const event of selected.members.filter(event => ['assistant/message', 'assistant/attempt'].includes(event.type))) {
-        if (event.type === 'assistant/attempt') lines.push('Uncommitted assistant attempt:');
+        if (event.type === 'assistant/attempt') lines.push(nativeObservationText(locale, 'uncommittedAttempt'));
         for (const block of settlementBlocks(event).filter(block => ['reasoning', 'text'].includes(block.type))) lines.push(`${block.type}:\n${block.text}`);
       }
-      for (const call of selected.calls) lines.push(`${call.name} ${commandOf(call)}\n${call.result ? textOf(call.result.data.message) : 'No result recorded; execution is unconfirmed.'}`);
+      for (const call of selected.calls) lines.push(`${call.name} ${commandOf(call)}\n${call.result ? textOf(call.result.data.message) : nativeObservationText(locale, 'noResult')}`);
       const following = report.following;
       if (following) {
-        lines.push(`\nNext recorded model step ${following.number}:`);
+        lines.push(nativeObservationText(locale, 'nextStep', { number: following.number }));
         const messages = following.members.filter(event => ['assistant/message', 'assistant/attempt'].includes(event.type));
-        if (!messages.length && !following.calls.length) lines.push('No model output or command recorded yet.');
+        if (!messages.length && !following.calls.length) lines.push(nativeObservationText(locale, 'noOutputYet'));
         for (const event of messages) {
-          if (event.type === 'assistant/attempt') lines.push('Uncommitted assistant attempt:');
+          if (event.type === 'assistant/attempt') lines.push(nativeObservationText(locale, 'uncommittedAttempt'));
           for (const block of settlementBlocks(event).filter(block => block.type === 'text')) lines.push(block.text);
         }
-        for (const call of following.calls) lines.push(`Command: ${call.name} ${commandOf(call)}`);
-      } else lines.push('\nNo following model step recorded in this turn.');
+        for (const call of following.calls) lines.push(nativeObservationText(locale, 'command', { name: call.name, command: commandOf(call) }));
+      } else lines.push(nativeObservationText(locale, 'noFollowingStep'));
     }
     return lines.join('\n') + '\n';
   }
   if (report.accounting) {
     const a = report.accounting.totals, input = a.uncachedInputTokens + a.cacheReadTokens + a.cacheWriteTokens;
-    lines.push(`Session totals through this turn: ${input + a.outputTokens} tokens | uncached input ${a.uncachedInputTokens} | cached input ${a.cacheReadTokens} | cache write ${a.cacheWriteTokens} | output ${a.outputTokens}`);
+    lines.push(nativeObservationText(locale, 'totals', { total: input + a.outputTokens, uncachedInput: a.uncachedInputTokens, cacheRead: a.cacheReadTokens, cacheWrite: a.cacheWriteTokens, output: a.outputTokens }));
     const last = report.accounting.last;
-    if (last) lines.push(`Last reported request input: ${last.uncachedInputTokens + last.cacheReadTokens + last.cacheWriteTokens} tokens`);
-  } else lines.push('Token usage was not reported.');
+    if (last) lines.push(nativeObservationText(locale, 'lastInput', { tokens: last.uncachedInputTokens + last.cacheReadTokens + last.cacheWriteTokens }));
+  } else lines.push(nativeObservationText(locale, 'usageUnreported'));
   if (report.recorded) {
     const compact = report.recorded.currentReading?.summary
       ?? report.recorded.text.split('\n').slice(0, 8).join('\n');
-    lines.push(`Last recorded successful game result (step ${report.recorded.step}, event ${report.recorded.seq}; not a live read):\n${compact.trimEnd()}`);
-  } else lines.push('No successful game result recorded.');
-  if (report.intervening.length) lines.push('Later game calls failed or have no result; the recorded page may no longer describe the current game. Use observe live to check.');
-  if (report.returnedAfterRecord) lines.push('The game was returned after this recorded page. Use observe live for the actual current state.');
+    lines.push(nativeObservationText(locale, 'lastRecordedResult', { step: report.recorded.step, event: report.recorded.seq, text: compact.trimEnd() }));
+  } else lines.push(nativeObservationText(locale, 'noSuccessfulResult'));
+  if (report.intervening.length) lines.push(nativeObservationText(locale, 'recordedMayBeStale'));
+  if (report.returnedAfterRecord) lines.push(nativeObservationText(locale, 'returnedAfterRecord'));
   if (report.errors.length) {
-    lines.push('Recent errors:');
+    lines.push(nativeObservationText(locale, 'recentErrors'));
     for (const call of report.errors.slice(-8)) {
-      const text = textOf(call.result.data.message), reasons = text.split('\n').filter(line => line.startsWith('Error:'));
-      lines.push(`  Step ${call.step}: ${commandOf(call)}\n    ${reasons.at(-1) ?? text.split('\n')[0]}${text.includes('Applied before error:') ? '\n    Earlier actions were reported as applied.' : ''}`);
+      const rawLines = textOf(call.result.data.message).split('\n');
+      lines.push(nativeObservationText(locale, 'recentError', { step: call.step, command: commandOf(call), text: rawLines.slice(0, 8).join('\n') }));
+      if (rawLines.length > 8) lines.push(nativeObservationText(locale, 'moreErrorLines', { count: rawLines.length - 8, step: call.step }));
     }
-    if (report.errors.length > 8) lines.push(`${report.errors.length - 8} earlier errors omitted from this summary; select their step for full output.`);
+    if (report.errors.length > 8) lines.push(nativeObservationText(locale, 'earlierErrorsOmitted', { count: report.errors.length - 8 }));
   }
-  if (report.pending.length) lines.push(`Unconfirmed tool calls: ${report.pending.map(call => `${call.name} at step ${call.step}`).join(', ')}`);
-  lines.push('Full step: observe N | input: observe N input | current game and deck: observe live');
+  if (report.pending.length) lines.push(nativeObservationText(locale, 'unconfirmedCalls', { calls: report.pending.map(call => nativeObservationText(locale, 'callAtStep', { name: call.name, step: call.step })).join(', ') }));
+  lines.push(nativeObservationText(locale, 'expandHelp'));
   return lines.join('\n') + '\n';
 }
 
-export async function readLiveGame(binding, repository, open) {
+export async function readLiveGame(binding, repository, open, locale = 'en') {
   open ??= (await import('@sts-simulator/run-play')).openWorkbench;
-  const game = await open({ repository, session: binding.session, manual: binding.manual ?? false, commandPrefix: '' });
+  const game = await open({ repository, session: binding.session, manual: binding.manual ?? false, agentLocale: locale, commandPrefix: '' });
   try {
     const before = await game.observe();
     const reading = await game.execute(before.position?.kind === 'terminal' ? 'read' : 'read, inventory');
     const after = await game.observe();
     if (before.head_revision !== after.head_revision || before.state_revision !== after.state_revision
         || before.position?.public_snapshot_id !== after.position?.public_snapshot_id) {
-      throw new Error('Game changed during the live read; the combined page and inventory are not a consistent snapshot.');
+      throw new Error(nativeObservationText(locale, 'liveChanged'));
     }
     return { headRevision: after.head_revision, stateRevision: after.state_revision,
       publicSnapshotId: after.position?.public_snapshot_id ?? null, text: reading.text };
   } finally { await game.close(); }
 }
 
-export async function observeNative({ repository, parameters = [] }, { openWorkbench } = {}) {
+export async function observeNative({ repository, parameters = [], locale = 'en' }, { openWorkbench } = {}) {
   repository = await realpath(repository);
-  const options = parseNativeObservation(parameters);
+  const options = parseNativeObservation(parameters, locale);
   const file = join(repository, '.oracle-lab/run-play-records/native-observation-source.json');
   const saved = await optionalJson(file);
   if (saved && (saved.schema !== sourceSchema || typeof saved.home !== 'string' || typeof saved.chat !== 'string')) {
-    throw new Error('Unsupported observation source configuration.');
+    throw new Error(nativeObservationText(locale, 'unsupportedSource'));
   }
   const configuredHome = options.home ?? saved?.home ?? process.env.DSH_HOME;
-  if (!configuredHome) throw new Error(`Select a dsh home with --home and a chat with --chat. ${usage}`);
+  if (!configuredHome) throw new Error(nativeObservationText(locale, 'selectHome', { usage: usage }));
   const home = await realpath(resolve(repository, configuredHome));
-  const bindings = await nativeBindings(repository);
+  const bindings = await nativeBindings(repository, locale);
   if (options.mode === 'list') {
     const rows = [];
     for (const binding of bindings) {
@@ -260,19 +267,19 @@ export async function observeNative({ repository, parameters = [] }, { openWorkb
         const log = await readPlayerJournal(home, binding.agent, { compression: 'zstd' });
         const last = log.events.filter(event => event.type === 'turn/start').at(-1);
         const title = log.events.filter(event => event.type === 'session/title').at(-1)?.data.title ?? binding.agent;
-        rows.push(`${binding.agent} | ${title} | ${last ? `last turn ${last.data.turn}` : 'no model turn'}`);
+        rows.push(`${binding.agent} | ${title} | ${last ? nativeObservationText(locale, 'lastTurn', { turn: last.data.turn }) : nativeObservationText(locale, 'noModelTurn')}`);
       } catch (error) { if (error.name !== 'SessionPersistenceNotFoundError') throw error; }
     }
-    return { text: rows.length ? rows.join('\n') + '\n' : 'No native game chats in this dsh home.\n' };
+    return { text: rows.length ? rows.join('\n') + '\n' : nativeObservationText(locale, 'noChats') };
   }
   const selected = options.chat ?? (saved?.home && samePath(home, saved.home) ? saved.chat : null);
-  if (!selected) throw new Error('Select a native game chat with --chat ID_FRAGMENT; observe list --home DSH_HOME lists them.');
+  if (!selected) throw new Error(nativeObservationText(locale, 'selectChat'));
   const matches = bindings.filter(binding => binding.agent === selected || binding.agent.includes(selected));
-  if (matches.length !== 1) throw new Error(`Chat selector matched ${matches.length} native games; use a unique ID. Matches: ${matches.map(binding => binding.agent).join(', ')}`);
+  if (matches.length !== 1) throw new Error(nativeObservationText(locale, 'ambiguousChat', { count: matches.length, matches: matches.map(binding => binding.agent).join(', ') }));
   const binding = matches[0], log = await readPlayerJournal(home, binding.agent, { compression: 'zstd' });
-  const report = await nativeJournalSummary(log, binding, options);
-  const live = options.mode === 'live' ? await readLiveGame(binding, repository, openWorkbench) : null;
-  const text = renderNativeObservation(report) + (live ? `\nLive game read at h${live.headRevision}, state ${live.stateRevision}:\n${live.text}` : '');
+  const report = await nativeJournalSummary(log, binding, { ...options, locale });
+  const live = options.mode === 'live' ? await readLiveGame(binding, repository, openWorkbench, locale) : null;
+  const text = renderNativeObservation(report, locale) + (live ? nativeObservationText(locale, 'liveReading', { head: live.headRevision, state: live.stateRevision, text: live.text }) : '');
   // Explicit source selection remembers only how to observe; gameplay focus,
   // the journal, the player prompt and game state are never updated here.
   if (options.home || options.chat) {

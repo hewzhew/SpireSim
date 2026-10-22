@@ -83,7 +83,7 @@ export async function main() {
   if (args.length === 1 && ['help', '--help', '-h'].includes(args[0])) usage(0);
   if (args[0] === 'observe') {
     const { observeNative } = await import('../dsh_player/native-inspection.mjs');
-    const result = await observeNative({ repository, parameters: args.slice(1) });
+    const result = await observeNative({ repository, parameters: args.slice(1), locale: presentation.locale });
     process.stdout.write(result.text);
     return;
   }

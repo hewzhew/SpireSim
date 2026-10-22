@@ -94,6 +94,9 @@ test('native observer expands digest-checked dispatch inputs and rejects altered
   assert.equal(selected.inputs.length, 1);
   assert.equal(selected.inputs[0].precision, 'digest-checked-journal-at-sdk-dispatch');
   assert.deepEqual(selected.inputs[0].request, f.requests[1]);
+  assert.match(renderNativeObservation(selected), /request digest checked/);
+  assert.doesNotMatch(renderNativeObservation(selected), /no SDK checksum/);
+  assert.match(renderNativeObservation(selected, 'zh-CN'), /请求摘要已核验/);
   const altered = structuredClone(f.log);
   altered.events.find(event => event.type === 'plugin:sts/request-boundary' && event.data.turn === 1 && event.data.step === 2).data.requestHash = 'wrong';
   await assert.rejects(nativeJournalSummary(altered, f.binding, { turn: 1, step: 2, input: true }), /input digest/);
@@ -133,6 +136,12 @@ test('native observer reads official compressed logs, scopes turns and leaves ga
   assert.equal(first.report.errors.length, 1); assert.equal(first.report.errors[0].step, 2);
   assert.deepEqual(first.report.accounting.totals, { uncachedInputTokens: 30, cacheReadTokens: 300, cacheWriteTokens: 0, outputTokens: 15 });
   assert.match(first.text, /345 tokens/); assert.match(first.text, /recorded page may no longer/);
+  const chinese = await observeNative({ repository: f.repository, parameters: args, locale: 'zh-CN' }, { openWorkbench: neverOpen });
+  assert.deepEqual(chinese.report, first.report);
+  assert.match(chinese.text, /轮次 1：completed/);
+  assert.match(chinese.text, /近期错误：/);
+  assert.ok(chinese.text.includes('Applied before error: discard potion\nError: invalid choice'));
+  assert.doesNotMatch(chinese.text, /Earlier actions were reported as applied/);
   const remembered = await observeNative({ repository: f.repository }, { openWorkbench: neverOpen });
   assert.equal(remembered.report.turn, 2); assert.equal(remembered.report.errors.length, 0);
   assert.equal(remembered.report.accounting.totals.outputTokens, 25);
@@ -298,8 +307,10 @@ test('cold return-point inspection queries only Rust and manual returns make old
 test('native live observation makes only queries, closes the connection and rejects concurrent game changes', async t => {
   const f = await fixture(t), calls = [], snapshot = { head_revision: 40, state_revision: 40, position: { public_snapshot_id: 'same' } };
   let changed = false, read = 0;
+  let expectedLocale = 'en';
   const openWorkbench = async options => {
     assert.equal(options.session, f.session);
+    assert.equal(options.agentLocale, expectedLocale);
     return {
       observe: async () => { calls.push('observe'); return changed && ++read === 2 ? { ...snapshot, state_revision: 41 } : snapshot; },
       execute: async command => { calls.push(command); return { text: 'Read-only current game and deck.' }; },
@@ -310,6 +321,12 @@ test('native live observation makes only queries, closes the connection and reje
   const value = await observeNative({ repository: f.repository, parameters: args }, { openWorkbench });
   assert.match(value.text, /Live game read at h40, state 40/);
   assert.deepEqual(calls, ['observe', 'read, inventory', 'observe', 'close']);
+  expectedLocale = 'zh-CN'; calls.length = 0;
+  const chinese = await observeNative({ repository: f.repository, parameters: ['live'], locale: 'zh-CN' }, { openWorkbench });
+  assert.match(chinese.text, /实时游戏读数，h40，状态 40/);
+  assert.ok(chinese.text.includes('Read-only current game and deck.'));
+  assert.deepEqual(calls, ['observe', 'read, inventory', 'observe', 'close']);
+  expectedLocale = 'en';
   changed = true; calls.length = 0;
   await assert.rejects(observeNative({ repository: f.repository, parameters: ['live'] }, { openWorkbench }), /changed during/);
   assert.equal(calls.at(-1), 'close');
@@ -344,6 +361,27 @@ test('native list skips bindings absent from this home, and CLI inspection needs
   await rm(f.focus);
   const text = execFileSync(process.execPath, [join(f.repository, 'tools/run_play/play.mjs'), 'observe', '--home', f.home, '--chat', f.id], { encoding: 'utf8', windowsHide: true });
   assert.match(text, /Turn 2: completed/);
+  const chinese = execFileSync(process.execPath, [join(f.repository, 'tools/run_play/play.mjs'), '--locale', 'zh-CN', 'observe', '--home', f.home, '--chat', f.id], { encoding: 'utf8', windowsHide: true });
+  assert.match(chinese, /轮次 2：completed/);
+});
+
+test('recent native errors preserve raw text in any language without interpreting English headings', () => {
+  const report = { binding: { agent: 'raw-errors', session: 'opaque-session' }, title: '原始标题 {{kept}}',
+    turn: 1, status: 'completed', steps: 2, gameCalls: 2, accounting: null, pending: [], intervening: [],
+    errors: ['已经生效：丢弃药水\n错误：无效选择', 'Error: Applied before error: is literal user text.\nActual detail'].map((text, index) => ({
+      step: index + 1, arguments: JSON.stringify({ command: 'broken' }), result: { data: { message: { content: [{ type: 'text', text }] } } },
+    })) };
+  const saved = structuredClone(report);
+  for (const locale of ['en', 'zh-CN']) {
+    const text = renderNativeObservation(report, locale);
+    for (const call of report.errors) assert.ok(text.includes(call.result.data.message.content[0].text));
+    assert.doesNotMatch(text, /Earlier actions were reported as applied/);
+    assert.ok(text.includes(report.title));
+  }
+  assert.deepEqual(report, saved);
+  report.errors[0].result.data.message.content[0].text = Array.from({ length: 12 }, (_, i) => 'raw error line ' + i).join('\n');
+  assert.match(renderNativeObservation(report), /4 more error lines; observe 1/);
+  assert.match(renderNativeObservation(report, 'zh-CN'), /还有 4 行错误；observe 1/);
 });
 
 test('observer rejects ambiguous arguments and unavailable turn or step instead of selecting another boundary', async t => {

@@ -140,6 +140,7 @@ if (process.argv.slice(2).join(' ') === '--check') {
           const entry = join(installed, 'native.mjs');
           within(verification, await realpath(createRequire(entry).resolve('@sts-simulator/presentation')));
           const { nativeGuide } = await import(pathToFileURL(entry).href);
+          const { renderNativeObservation } = await import(pathToFileURL(join(installed, 'native-inspection.mjs')).href);
           const { playerGuide, apply: applyScripted } = await import(pathToFileURL(join(installed, 'index.mjs')).href);
           const { continuationTask, runPlayer } = await import(pathToFileURL(join(installed, 'launch.mjs')).href);
           const { preparationInstructions, preparationStageGuide } = await import(pathToFileURL(join(installed, 'preparation.mjs')).href);
@@ -154,7 +155,13 @@ if (process.argv.slice(2).join(' ') === '--check') {
                 || manual.includes('research whole_combat') || !assisted.includes('research whole_combat 8000 work 200000')) {
               throw new Error(`Installed native guide lost its language or play mode: ${locale}`);
             }
-            report.installed_native_checks.push({ package: manifest.name, locale, imported_entry: true, preserved_mode_and_commands: true });
+            const nativeInspection = renderNativeObservation({ binding: { agent: 'offline-agent', session: 'offline-game' }, title: 'Opaque {{title}}',
+              status: 'empty', steps: 0, gameCalls: 0, errors: [], pending: [], intervening: [], accounting: null }, locale);
+            if (!nativeInspection.includes(locale === 'en' ? 'Token usage was not reported.' : '未报告 token 用量。')
+                || !nativeInspection.includes('Opaque {{title}}') || !nativeInspection.includes('observe N input')) {
+              throw new Error(`Installed native inspection lost language, record or command: ${locale}`);
+            }
+            report.installed_native_checks.push({ package: manifest.name, locale, imported_entry: true, preserved_mode_and_commands: true, inspection_operator_language: true });
             const guide = playerGuide(locale), task = 'Opaque {{operator}}\nact play:Strike@0';
             if (!guide.includes(locale === 'en' ? 'Bare info expands the current options' : '无参数 info 展开当前选项')
                 || !guide.includes('research whole_combat 8000 work 200000')
