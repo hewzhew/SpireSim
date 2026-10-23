@@ -477,7 +477,8 @@ async function main() {
       return el;
     };
     const maxY = Math.max(...map.nodes.map(node => node.y));
-    const point = node => [48 + node.x * 66, 56 + (maxY - node.y) * 58];
+    // The boss is a shared destination; center its display without changing its source coordinate.
+    const point = node => [node.room === 'boss' ? 246 : 48 + node.x * 66, 56 + (maxY - node.y) * 58];
     const glyphs = { monster: 'swords', elite: 'map-elite', rest: 'flame', shop: 'coin', treasure: 'map-chest', boss: 'map-boss', question_mark: 'intent-unknown' };
     const svg = svgNode('svg', { viewBox: `0 0 492 ${100 + maxY * 58}`, class: 'map-graph', role: 'group', 'aria-label': t('nav.map') });
     const edges = svgNode('g', { class: 'map-edges', 'aria-hidden': 'true' });
