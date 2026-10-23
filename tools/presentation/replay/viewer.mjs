@@ -2,11 +2,13 @@ import { createPresentation, preferredLocale } from '../index.mjs';
 import { neowOptionRuns } from './neow-option.mjs';
 import { intentView } from './intent-view.mjs';
 import { handTransition, sequenceView } from './sequence.mjs';
+import { recordedJourney, replayMap } from './journey.mjs';
 
 async function main() {
   const data = JSON.parse(document.getElementById('data').textContent);
   const story = JSON.parse(document.getElementById('story').textContent);
   const { frames } = data, { scenes } = story;
+  const journeys = recordedJourney(story);
   let savedLocale;
   try { savedLocale = localStorage.getItem('spiresim.demo.locale'); } catch {}
   const display = await createPresentation({ locale: savedLocale || preferredLocale(navigator.languages), onMissing: gap => console.warn('Missing display name', gap) });
@@ -23,6 +25,9 @@ async function main() {
   let actionCursor = 0;
   let sequenceDetailsOpen = false;
   let historyObserver;
+  let scrollMapToCurrent = () => {};
+  let mapOpen = false;
+  let mapAvailable = false;
   const activeMotion = new Set();
   const openPiles = new Set();
   const byId = id => document.getElementById(id);
@@ -172,6 +177,7 @@ async function main() {
     if (action.kind === 'claim_reward') return t('sequence.claimGold', { amount: action.amount });
     if (action.kind === 'open_card_reward') return t('sequence.openCards');
     if (action.kind === 'skip_card_reward') return t('sequence.skipCards');
+    if (action.kind === 'singing_bowl') return t('sequence.maxHpReward', { amount: action.max_hp_gain });
     if (action.kind === 'proceed') return t('sequence.returnToMap');
     const card = display.cardName(action.card.card_id, action.card.upgrades);
     if (action.kind === 'take_card') return t('sequence.takeCard', { card });
@@ -180,13 +186,23 @@ async function main() {
   function postCombatBoard(state, playback, completed) {
     const board = node('section', undefined, 'combat-board sequence-board');
     const hud = node('div', undefined, 'combat-hud'); hud.append(resources(state));
+    if (state.kind === 'map') { board.append(hud, playback); return board; }
     const result = node('div', undefined, 'battle-outcome');
-    result.append(node('h2', t(state.kind === 'map' ? 'sequence.mapReached' : state.kind === 'card_reward' ? 'sequence.chooseCard' : 'sequence.victory'), 'outcome-title'));
+    result.append(node('h2', t(state.kind === 'card_reward' ? 'sequence.chooseCard' : 'sequence.victory'), 'outcome-title'));
     if (state.kind === 'card_reward') {
       result.classList.add('card-reward-outcome');
       const cards = node('div', undefined, 'reward-cards');
       for (const card of state.reward_cards) cards.append(gameCard(card));
       result.append(cards);
+      const alternatives = node('div', undefined, 'reward-alternatives');
+      alternatives.setAttribute('role', 'group'); alternatives.setAttribute('aria-label', t('sequence.otherChoices'));
+      for (const option of state.reward_alternatives) {
+        const label = option.kind === 'skip_card_reward' ? t('sequence.skip') : t('sequence.maxHpReward', { amount: option.max_hp_gain });
+        const entry = node('span', label, 'reward-alternative'); entry.dataset.command = option.command;
+        if (option.kind === 'singing_bowl') { entry.prepend(icon('heart')); entry.title = name('relic', 'SingingBowl'); }
+        alternatives.append(entry);
+      }
+      result.append(alternatives);
     } else {
       const panel = node('section', undefined, 'combat-reward-panel');
       if (state.kind === 'reward') panel.append(node('h3', t('scene.rewards')));
@@ -202,6 +218,7 @@ async function main() {
       if (state.reward_gold || claimedGold) rewardRow('coin', t('sequence.goldReward', { amount: state.reward_gold || claimedGold }), !state.reward_gold);
       if (state.has_card_reward) rewardRow('cards', t('sequence.addCard'), false);
       for (const action of completed.filter(action => action.kind === 'take_card')) rewardRow('cards', t('sequence.takeCard', { card: display.cardName(action.card.card_id, action.card.upgrades) }), true);
+      for (const action of completed.filter(action => action.kind === 'skip_card_reward' || action.kind === 'singing_bowl')) rewardRow(action.kind === 'singing_bowl' ? 'heart' : 'chevron-right', sequenceActionLabel(action), true);
       panel.append(rewards); result.append(panel);
     }
     board.append(hud, result, playback); return board;
@@ -303,6 +320,7 @@ async function main() {
       }
     }
     actionCursor = index; render(motion);
+    if (scenes[selected].snapshots[index].kind === 'map') setMapOpen(true);
     const target = focus ? byId('stage').querySelector(focus) : null;
     (target?.disabled ? byId('sequence-progress') : target)?.focus({ preventScroll: true });
   }
@@ -394,12 +412,112 @@ async function main() {
     ? t('sequence.preparedBattle', { encounter: name('encounter', scene.encounter_id) }) : t('sequence.manual')
     : scene.kind === 'event' ? t('scene.start') : scene.kind === 'combat' ? t('scene.turn', { turn: scene.turn }) : t('scene.floor', { floor: scene.floor }); }
   function renderNavigation() {
-    byId('timeline').replaceChildren();
-    scenes.forEach((scene, index) => {
-      const button = node('button', undefined, 'scene-link'); button.type = 'button'; button.dataset.scene = scene.id;
-      const text = node('span', undefined, 'scene-text'); text.append(node('strong', scene.kind === 'combat' ? label(scene) : title(scene)), node('small', scene.kind === 'sequence' ? label(scene) : scene.kind === 'event' ? t('scene.initialReward') : scene.kind === 'combat' ? title(scene) : name('card', scene.chosen_card_id)));
-      button.append(node('span', String(index + 1).padStart(2, '0'), 'scene-index'), text); button.addEventListener('click', () => select(index)); byId('timeline').append(button);
+    const { recording } = activeJourney();
+    byId('recording').replaceChildren(...journeys.map(record => {
+      const option = node('option', t(record.title_key)); option.value = record.id; return option;
+    }));
+    byId('recording').value = recording.id;
+    byId('timeline').replaceChildren(); byId('timeline').dataset.recording = recording.id;
+    let chapter;
+    recording.visits.forEach((visit, visitIndex) => {
+      if (!chapter || chapter.dataset.chapterAct !== String(visit.act)) {
+        chapter = node('section', undefined, 'journey-act'); chapter.dataset.chapterAct = visit.act;
+        chapter.append(node('h2', t('scene.act', { act: visit.act }))); byId('timeline').append(chapter);
+      }
+      const room = node('div', undefined, 'journey-visit');
+      const button = node('button', undefined, 'visit-link'); button.type = 'button'; button.dataset.visit = visitIndex;
+      const title = visit.event_id ? name('event', visit.event_id) : visit.encounter_id ? name('encounter', visit.encounter_id) : t('nav.room');
+      button.append(node('span', visit.floor === 0 ? '—' : number(visit.floor), 'floor-number'), node('span', title));
+      const first = visit.phases[0]; button.addEventListener('click', () => select(scenes.findIndex(scene => scene.id === first.scene_id), true, first.cursor));
+      const phases = node('div', undefined, 'visit-phases'); phases.dataset.visit = visitIndex;
+      visit.phases.forEach((phase, phaseIndex) => {
+        const target = scenes.find(scene => scene.id === phase.scene_id);
+        const caption = target.kind === 'combat' ? t('scene.turn', { turn: target.turn }) : t('nav.phase.' + phase.kind);
+        const entry = node('button', caption, 'scene-link'); entry.type = 'button'; entry.dataset.scene = phase.scene_id;
+        entry.dataset.phase = visitIndex + ':' + phaseIndex;
+        entry.addEventListener('click', () => select(scenes.findIndex(scene => scene.id === phase.scene_id), true, phase.cursor)); phases.append(entry);
+      });
+      room.append(button, phases); chapter.append(room);
     });
+  }
+  function activeJourney() {
+    for (const recording of journeys) for (const [visitIndex, visit] of recording.visits.entries()) {
+      const phaseIndex = visit.phases.findIndex(phase => phase.scene_id === scenes[selected].id && actionCursor >= phase.cursor && actionCursor <= phase.end_cursor);
+      if (phaseIndex >= 0) return { recording, visit, visitIndex, phaseIndex };
+    }
+    throw new Error('No recorded visit for the current boundary');
+  }
+  function updateNavigation() {
+    const { recording, visit, visitIndex, phaseIndex } = activeJourney();
+    if (byId('timeline').dataset.recording !== recording.id) renderNavigation();
+    for (const entry of byId('timeline').querySelectorAll('[data-visit]')) {
+      const current = entry.dataset.visit === String(visitIndex);
+      if (entry.matches('.visit-phases')) entry.hidden = !current;
+      else {
+        entry.classList.toggle('is-current', current);
+        const floor = recording.visits[Number(entry.dataset.visit)].floor;
+        entry.setAttribute('aria-label', (floor === 0 ? t('scene.start') : t('scene.floor', { floor })) + ' ' + entry.lastElementChild.textContent);
+      }
+    }
+    for (const entry of byId('timeline').querySelectorAll('[data-phase]')) {
+      if (entry.dataset.phase === visitIndex + ':' + phaseIndex) entry.setAttribute('aria-current', 'step'); else entry.removeAttribute('aria-current');
+    }
+    for (const entry of document.querySelectorAll('[data-act]')) entry.textContent = t('scene.act', { act: visit.act });
+    byId('map-location').textContent = t('scene.floor', { floor: visit.floor });
+  }
+  function renderMap(scene) {
+    const map = scene.kind === 'sequence' ? replayMap(scene, actionCursor) : null;
+    mapAvailable = Boolean(map); byId('map-toggle').hidden = !mapAvailable;
+    byId('journey-map').hidden = !map || !mapOpen; byId('map-toggle').setAttribute('aria-expanded', String(mapAvailable && mapOpen));
+    byId('map-content').replaceChildren();
+    if (!map) return;
+    const svgNode = (tag, attributes = {}) => {
+      const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+      for (const [key, value] of Object.entries(attributes)) el.setAttribute(key, value);
+      return el;
+    };
+    const maxY = Math.max(...map.nodes.map(node => node.y));
+    const point = node => [48 + node.x * 66, 56 + (maxY - node.y) * 58];
+    const glyphs = { monster: 'swords', elite: 'map-elite', rest: 'flame', shop: 'coin', treasure: 'map-chest', boss: 'map-boss', question_mark: 'intent-unknown' };
+    const svg = svgNode('svg', { viewBox: `0 0 492 ${100 + maxY * 58}`, class: 'map-graph', role: 'group', 'aria-label': t('nav.map') });
+    const edges = svgNode('g', { class: 'map-edges', 'aria-hidden': 'true' });
+    for (const origin of map.nodes) for (const destination of origin.destinations) {
+      const next = map.nodes.find(node => node.x === destination[0] && node.y === destination[1]);
+      const from = point(origin), to = point(next), travelled = map.route.some(([a, b]) => a === `${origin.x},${origin.y}` && b === String(destination));
+      edges.append(svgNode('path', { d: `M${from} L${to}`, class: travelled ? 'is-travelled' : '' }));
+    }
+    svg.append(edges);
+    for (const room of map.nodes) {
+      const [x, y] = point(room), label = t('nav.mapNode', { room: name('room', room.room), x: room.x, y: room.y })
+        + (room.current ? ' ' + t('nav.currentRoom') : '') + (room.emerald_key ? ' ' + t('nav.emerald') : '');
+      const group = svgNode('g', { transform: `translate(${x} ${y})`, class: 'map-node' + (room.current ? ' is-current' : '') + (room.target ? ' is-visited' : '') + (room.emerald_key ? ' has-key' : ''),
+        role: room.target ? 'button' : 'img', 'aria-label': label, ...(room.target ? { tabindex: 0 } : {}) });
+      const title = svgNode('title'); title.textContent = label; group.append(title, svgNode('circle', { r: room.room === 'boss' ? 23 : 17 }));
+      const glyph = icon(glyphs[room.room]); glyph.setAttribute('x', '-11'); glyph.setAttribute('y', '-11'); glyph.setAttribute('width', '22'); glyph.setAttribute('height', '22'); group.append(glyph);
+      if (room.target) {
+        group.dataset.mapCursor = room.target.cursor;
+        const follow = () => select(scenes.findIndex(scene => scene.id === room.target.scene_id), true, room.target.cursor);
+        group.addEventListener('click', follow);
+        group.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); follow(); } });
+      }
+      if (room.room === 'boss' && map.boss) { const boss = svgNode('text', { x: 0, y: -33, class: 'map-boss-name' }); boss.textContent = name('encounter', map.boss); group.append(boss); }
+      svg.append(group);
+    }
+    const viewport = node('div', undefined, 'map-viewport'); viewport.append(svg);
+    const legend = node('div', undefined, 'map-legend');
+    for (const [kind, glyph] of Object.entries(glyphs)) legend.append(iconText(glyph, name('room', kind)));
+    byId('map-content').append(viewport, legend);
+    const current = map.nodes.find(node => node.current);
+    scrollMapToCurrent = () => {
+      if (current) viewport.scrollTop = Math.max(0, point(current)[1] * (Math.min(viewport.clientWidth, 492) / 492) - viewport.clientHeight * .7);
+    };
+    if (mapOpen) scrollMapToCurrent();
+  }
+  function setMapOpen(value) {
+    mapOpen = value;
+    byId('journey-map').hidden = !mapAvailable || !mapOpen;
+    byId('map-toggle').setAttribute('aria-expanded', String(mapAvailable && mapOpen));
+    if (mapAvailable && mapOpen) scrollMapToCurrent();
   }
   function renderChrome() {
     document.documentElement.lang = display.locale;
@@ -414,7 +532,7 @@ async function main() {
     const scene = scenes[selected]; byId('heading').textContent = title(scene); byId('turn-label').textContent = label(scene);
     const scrollLeft = byId('stage').dataset.scene === scene.id ? byId('stage').querySelector('.hand')?.scrollLeft ?? 0 : 0;
     clearMotion(); historyObserver?.disconnect(); document.body.classList.toggle('has-sequence', scene.kind === 'sequence');
-    for (const [index, button] of [...byId('timeline').children].entries()) { if (index === selected) button.setAttribute('aria-current', 'step'); else button.removeAttribute('aria-current'); }
+    updateNavigation(); renderMap(scene);
     byId('stage').replaceChildren();
     if (scene.kind === 'sequence') renderSequence(scene, motion, scrollLeft); else if (scene.kind === 'combat') renderCombat(scene); else if (scene.kind === 'event') renderEvent(scene); else renderRewards(scene);
     byId('stage').dataset.scene = scene.id;
@@ -422,12 +540,19 @@ async function main() {
     byId('raw-record').hidden = manual; byId('record-model').hidden = manual;
     if (!manual) renderRaw(scene);
   }
-  function select(index, updateHash = true) {
+  function select(index, updateHash = true, cursor = 0) {
     if (index < 0 || index >= scenes.length) return;
-    selected = index; actionCursor = 0; sequenceDetailsOpen = false; openPiles.clear(); turnRecordOpen = true; byId('raw-record').open = false; render();
+    selected = index; actionCursor = cursor; sequenceDetailsOpen = false; openPiles.clear(); turnRecordOpen = true; byId('raw-record').open = false; render();
+    if (scenes[selected].kind === 'sequence' && scenes[selected].snapshots[cursor].kind === 'map') setMapOpen(true);
     if (updateHash) history.replaceState(null, '', '#' + scenes[selected].id);
   }
   byId('brand-mark').append(icon('cards')); byId('run-icon').append(icon('swords')); byId('crumb-arrow').append(icon('chevron-right'));
+  byId('map-toggle-icon').append(icon('map'));
+  byId('map-toggle').addEventListener('click', () => setMapOpen(!mapOpen));
+  byId('recording').addEventListener('change', event => {
+    const recording = journeys.find(recording => recording.id === event.currentTarget.value);
+    setMapOpen(false); select(scenes.findIndex(scene => scene.id === recording.scene_ids[0]));
+  });
   window.addEventListener('keydown', event => {
     if (scenes[selected].kind !== 'sequence' || event.defaultPrevented || event.isComposing || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey
         || event.target.closest?.('input, select, textarea, [contenteditable]:not([contenteditable="false"]), [role="slider"], [role="listbox"], [role="combobox"], [role="tablist"]')

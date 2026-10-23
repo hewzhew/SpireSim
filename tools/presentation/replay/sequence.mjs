@@ -1,5 +1,6 @@
 // Project recorded public observations. No game execution or private state.
 import { rewardCardView } from './reward-card.mjs';
+import { publicMapView } from './journey.mjs';
 
 const supportedCards = new Set(['Strike', 'Defend', 'Bash', 'ShrugItOff', 'AscendersBane']);
 const snake = value => value.replace(/[A-Z]/g, (letter, index) => (index ? '_' : '') + letter.toLowerCase());
@@ -43,14 +44,34 @@ function cardView(card, definitions) {
     cost: card.effective_cost < 0 ? null : card.effective_cost, effects };
 }
 
-function snapshot(frame, definitions) {
+function snapshot(frame, definitions, maps) {
   const state = boundary(frame);
+  const context = frame.position.observation.run_context;
+  const run = frame.position.observation.domain === 'strategic' ? state.run : context;
+  const map = publicMapView(state.public_map ?? context?.public_map);
+  const location = { act: run?.act, floor: run?.floor };
+  if (map) {
+    const graph = { act: run.act, boss: map.boss, nodes: map.nodes };
+    let captured = maps.find(item => JSON.stringify(item.graph) === JSON.stringify(graph));
+    if (!captured) { captured = { id: 'map-' + maps.length, graph }; maps.push(captured); }
+    Object.assign(location, { map_id: captured.id, node: map.current });
+  }
   const source = { session_id: frame.session_id, head_revision: frame.head_revision, public_snapshot_id: frame.position.public_snapshot_id };
   if (frame.position.observation.domain === 'strategic') {
     if (!['reward', 'card_reward', 'map'].includes(state.context.kind)) throw new Error('Unbound post-combat scene');
     const rewards = state.context.pending_rewards ?? [];
     if (rewards.some(reward => !['gold', 'card_reward'].includes(reward.kind))) throw new Error('Unbound recorded reward');
-    return { source, kind: state.context.kind, hp: state.run.current_hp, max_hp: state.run.max_hp, gold: state.run.gold,
+    const reward_alternatives = state.context.kind === 'card_reward' ? frame.position.actions.flatMap(candidate => {
+      if (candidate.candidate.domain !== 'strategic') return [];
+      const kind = candidate.candidate.action.kind;
+      if (kind === 'skip_card_reward') return [{ kind, command: candidate.semantic_action }];
+      if (kind !== 'singing_bowl') return [];
+      const evidence = frame.decision_evidence?.resource_options?.find(option => option.semantic_action === candidate.semantic_action);
+      if (!Number.isSafeInteger(evidence?.max_hp_gain)) throw new Error('Missing captured Singing Bowl resource evidence');
+      return [{ kind, command: candidate.semantic_action, max_hp_gain: evidence.max_hp_gain }];
+    }) : [];
+    return { source, location, kind: state.context.kind, hp: state.run.current_hp, max_hp: state.run.max_hp, gold: state.run.gold,
+      reward_alternatives,
       relic_ids: state.relics.map(relic => relic.relic), deck_count: state.cards.reduce((count, card) => count + card.count, 0),
       reward_gold: rewards.filter(reward => reward.kind === 'gold').reduce((total, reward) => total + reward.amount, 0),
       has_card_reward: rewards.some(reward => reward.kind === 'card_reward'),
@@ -76,7 +97,7 @@ function snapshot(frame, definitions) {
       cards: ordered ? pile.cards.map(card => ({ card_id: card.card_id, upgrades: card.upgrades, count: 1 })) : cardGroups(pile.cards) };
   }
   return {
-    source, kind: 'combat',
+    source, location, kind: 'combat',
     hp: state.player.hp, max_hp: state.player.max_hp, gold: state.player.gold, block: state.player.block,
     relic_ids: state.player.relics.map(relic => relic.id),
     turn: state.turn.turn_count + 1, energy: state.turn.energy,
@@ -93,7 +114,7 @@ export function recordedSequence(entries, definitions, id) {
   const first = entries[0].before;
   const operator = entries[0].operator;
   if (!['developer', 'model'].includes(operator) || entries.some(entry => entry.operator !== operator)) throw new Error('Missing or mixed sequence operators');
-  const snapshots = [snapshot(first, definitions)], actions = [];
+  const maps = [], snapshots = [snapshot(first, definitions, maps)], actions = [];
   for (const entry of entries) {
     const previous = snapshots.at(-1).source;
     if (entry.source_revision !== entries[0].source_revision || entry.before.session_id !== first.session_id || entry.after.session_id !== first.session_id
@@ -112,16 +133,17 @@ export function recordedSequence(entries, definitions, id) {
     else if (action.candidate.domain === 'strategic' && chosen.kind === 'claim_reward' && chosen.reward.kind === 'gold') projected = { amount: chosen.reward.amount };
     else if (action.candidate.domain === 'strategic' && chosen.kind === 'take_card') projected = { card: rewardCardView({ card_id: chosen.card, upgrades: chosen.upgrades }, definitions) };
     else if (action.candidate.domain === 'strategic' && ['open_card_reward', 'skip_card_reward'].includes(chosen.kind)) projected = {};
+    else if (action.candidate.domain === 'strategic' && chosen.kind === 'singing_bowl') projected = { max_hp_gain: boundary(entry.after).run.max_hp - state.run.max_hp };
     else if (action.candidate.domain === 'strategic' && chosen.kind === 'proceed' && chosen.site === 'reward') projected = {};
     else throw new Error('Unbound recorded action');
     actions.push({ kind: chosen.kind, ...projected, command: entry.action,
       source_snapshot_id: previous.public_snapshot_id, result_snapshot_id: entry.after.position.public_snapshot_id });
-    snapshots.push(snapshot(entry.after, definitions));
+    snapshots.push(snapshot(entry.after, definitions, maps));
   }
   const context = first.position.observation.run_context;
   return { id, kind: 'sequence', provenance: { operator, source_revision: entries[0].source_revision, session_id: first.session_id },
     encounter_id: context.encounter_id, turn: snapshots[0].turn, floor: context.floor,
-    actions, snapshots, indices: [] };
+    actions, snapshots, maps: maps.map(({ id, graph }) => ({ id, ...graph })), indices: [] };
 }
 
 export function sequenceView(scene, cursor) {

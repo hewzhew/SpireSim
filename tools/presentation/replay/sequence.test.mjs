@@ -171,3 +171,25 @@ test('reward offers become full faces only at their recorded selection boundary'
   assert.ok(scene.snapshots[1].reward_cards.every(card => card.printed_lines.en.length));
   assert.equal(sequenceView(scene, 0).completed.length, 0);
 });
+
+test('reward alternatives follow legal candidates and native resource evidence, including blocked healing', () => {
+  const before = { session_id: 'reward', head_revision: 0, capabilities: { permission_envelope: { information_ceiling: 'public_only' } },
+    position: { kind: 'decision', public_snapshot_id: 'r0', actions: [
+      { semantic_action: 'skip-card#0', candidate: { domain: 'strategic', action: { kind: 'skip_card_reward' } } },
+      { semantic_action: 'singing-bowl#0', candidate: { domain: 'strategic', action: { kind: 'singing_bowl' } } },
+    ], observation: { domain: 'strategic', run_context: {}, observation: {
+      run: { act: 1, floor: 2, current_hp: 60, max_hp: 80, gold: 110 }, relics: [], cards: [], context: { kind: 'card_reward', pending_rewards: [] },
+    } } }, decision_evidence: { resource_options: [{ semantic_action: 'singing-bowl#0', max_hp_gain: 2, hp_gain: 0 }] } };
+  const after = structuredClone(before); after.head_revision = 1; after.position.public_snapshot_id = 'r1';
+  after.position.observation.observation.run.max_hp = 82; after.position.observation.observation.context.kind = 'reward';
+  const rows = [{ before, after, action: 'singing-bowl#0', operator: 'model', source_revision: 'source' }];
+  const scene = recordedSequence(rows, [], 'bowl');
+  assert.deepEqual(scene.snapshots[0].reward_alternatives, [
+    { kind: 'skip_card_reward', command: 'skip-card#0' }, { kind: 'singing_bowl', command: 'singing-bowl#0', max_hp_gain: 2 },
+  ]);
+  assert.equal(scene.actions[0].max_hp_gain, 2);
+  assert.equal(scene.snapshots[1].hp, 60);
+  assert.deepEqual(scene.snapshots[1].reward_alternatives, []);
+  delete before.decision_evidence;
+  assert.throws(() => recordedSequence(rows, [], 'bowl'), /Singing Bowl resource evidence/);
+});

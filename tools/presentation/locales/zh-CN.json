@@ -2495,7 +2495,15 @@
     "nav": {
       "label": "对局导航",
       "timeline": "对局过程",
-      "language": "显示语言"
+      "language": "显示语言",
+      "recording": "选择记录",
+      "openingRecording": "Flash 首战",
+      "map": "地图",
+      "room": "房间",
+      "currentRoom": "当前位置",
+      "mapNode": "{{room}}（{{x}}，{{y}}）",
+      "emerald": "绿钥匙精英",
+      "phase": { "combat": "战斗", "reward": "战后奖励", "map": "地图", "event": "初始奖励" }
     },
     "scene": {
       "act": "第 {{act}} 幕",
@@ -2528,6 +2536,9 @@
       "mapReached": "已返回地图",
       "victory": "战斗胜利",
         "chooseCard": "选择一张牌",
+        "skip": "跳过",
+        "otherChoices": "其他选择",
+        "maxHpReward": "获得 {{amount}} 点生命上限",
         "addCard": "将一张卡牌加入你的牌组中",
         "claimed": "已领取",
         "earlierActions": "查看更早的操作",
