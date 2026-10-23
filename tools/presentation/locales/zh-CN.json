@@ -5682,6 +5682,15 @@
       "step": "  动作 {{index}} [{{choice}}] {{action}}，耗时 {{elapsed}} ms，结果={{outcome}}",
       "empty": "空线路",
       "final": "  终点：{{outcome}}"
+    },
+    "show": {
+      "terminal": "终局：{{outcome}}",
+      "stored": "当前显示保存的资料；本次构建未重建这个决策。"
+    },
+    "advice": {
+      "provenance": "策略来源：{{producer}}，版本={{revision}}，访问={{access}}，局面={{snapshot}}",
+      "choice": "建议动作={{action}}，选项={{candidate}}",
+      "unavailable": "暂无策略建议，原因={{reason}}"
     }
   },
   "publicDecision": {

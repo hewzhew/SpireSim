@@ -1657,7 +1657,7 @@ fn run(cli: Cli) -> Result<(), String> {
                 batch_count,
                 session.display()
             );
-            print!("{}", render_show_v1(controller.head())?);
+            print!("{}", render_show_v1(controller.head(), locale)?);
         }
         Command::Import {
             session,
@@ -1685,7 +1685,7 @@ fn run(cli: Cli) -> Result<(), String> {
                 },
             )?;
             describe_session_v1(&paths, RunPlaySessionPurposeV1::Archive, None)?;
-            print!("{}", render_show_v1(&workspace.head)?);
+            print!("{}", render_show_v1(&workspace.head, locale)?);
         }
         Command::SnapshotCurrent { session, output } => {
             snapshot_current_for_reroot_v1(RunPlayPathsV1::new(session), &output)?;
@@ -1703,7 +1703,7 @@ fn run(cli: Cli) -> Result<(), String> {
                 workspace.head.position.archive_node_id(),
                 target.display(),
             );
-            print!("{}", render_show_v1(&workspace.head)?);
+            print!("{}", render_show_v1(&workspace.head, locale)?);
         }
         Command::RerootCurrent {
             session,
@@ -1829,7 +1829,7 @@ fn run(cli: Cli) -> Result<(), String> {
                     path.display()
                 )),
             );
-            print!("{}", render_show_v1(&workspace.head)?);
+            print!("{}", render_show_v1(&workspace.head, locale)?);
         }
         Command::PromoteBranch { source, target } => {
             let source_head = RunPlayPathsV1::new(&source).load_head()?;
@@ -1918,10 +1918,13 @@ fn run(cli: Cli) -> Result<(), String> {
                 let workspace = paths.load()?;
                 if stored_only {
                     println!(
-                        "Stored evidence only; this build has not reconstructed this decision."
+                        "{}",
+                        locale
+                            .text("compact", "show.stored", &[])
+                            .expect("stored evidence message")
                     );
                 }
-                print!("{}", render_show_v1(&workspace.head)?);
+                print!("{}", render_show_v1(&workspace.head, locale)?);
             } else {
                 let controller = RunPlayControllerV1::open(paths)?;
                 if let Some(output) = public_output {
@@ -1969,7 +1972,7 @@ fn run(cli: Cli) -> Result<(), String> {
                         .map_err(|error| error.to_string())?;
                     println!("{text}");
                 } else {
-                    print!("{}", render_show_v1(controller.head())?);
+                    print!("{}", render_show_v1(controller.head(), locale)?);
                 }
             }
         }
@@ -3266,7 +3269,7 @@ fn run(cli: Cli) -> Result<(), String> {
                 let inspection = inspect_advice_at_v1(paths, &selector, detail)?;
                 print!(
                     "{}",
-                    render_advice_v1(&inspection.advice, &inspection.decision)?
+                    render_advice_v1(&inspection.advice, &inspection.decision, locale)?
                 );
                 if let Some(detail) = inspection.detail {
                     print!("{}", render_advice_detail_v1(&detail, locale));
@@ -3279,7 +3282,7 @@ fn run(cli: Cli) -> Result<(), String> {
                     .current_decision
                     .as_ref()
                     .ok_or_else(|| "run-play advice requires a decision head".to_string())?;
-                print!("{}", render_advice_v1(&advice, decision)?);
+                print!("{}", render_advice_v1(&advice, decision, locale)?);
                 if detail {
                     let detail = controller.advice_detail_v1()?;
                     print!("{}", render_advice_detail_v1(&detail, locale));
@@ -3881,7 +3884,7 @@ fn run(cli: Cli) -> Result<(), String> {
                 budget_override,
                 manual,
             )?;
-            print!("{}", render_show_v1(&workspace.head)?);
+            print!("{}", render_show_v1(&workspace.head, locale)?);
         }
         Command::Preview {
             session,
@@ -4013,7 +4016,7 @@ fn run(cli: Cli) -> Result<(), String> {
                 if workspace.head.scratch {
                     render_status_v1(&workspace.head, locale)?
                 } else {
-                    render_show_v1(&workspace.head)?
+                    render_show_v1(&workspace.head, locale)?
                 }
             );
         }
@@ -4087,7 +4090,7 @@ fn run(cli: Cli) -> Result<(), String> {
                 if workspace.head.scratch {
                     render_status_v1(&workspace.head, locale)?
                 } else {
-                    render_show_v1(&workspace.head)?
+                    render_show_v1(&workspace.head, locale)?
                 }
             );
         }
@@ -4227,7 +4230,7 @@ fn run(cli: Cli) -> Result<(), String> {
         }
         Command::Jump { session, selector } => {
             let workspace = jump_v1(&RunPlayPathsV1::new(session), &selector)?;
-            print!("{}", render_show_v1(&workspace.head)?);
+            print!("{}", render_show_v1(&workspace.head, locale)?);
         }
         Command::Shell { session } => run_shell_v1(session, locale)?,
         Command::AgentShell {
@@ -4263,13 +4266,13 @@ fn run(cli: Cli) -> Result<(), String> {
         Command::Checkpoint { session } => {
             let mut controller = RunPlayControllerV1::open(RunPlayPathsV1::new(session))?;
             controller.checkpoint()?;
-            print!("{}", render_show_v1(controller.head())?);
+            print!("{}", render_show_v1(controller.head(), locale)?);
         }
         Command::CompactActive { session, commit } => {
             let (workspace, profile) = compact_active_v1(&RunPlayPathsV1::new(session), commit)?;
             print_active_compaction_profile_v1(profile, commit);
             if commit {
-                print!("{}", render_show_v1(&workspace.head)?);
+                print!("{}", render_show_v1(&workspace.head, locale)?);
             }
         }
         Command::ProfileOpen { session } => {
@@ -4755,7 +4758,7 @@ fn run_shell_v1(session: PathBuf, locale: Locale) -> Result<(), String> {
                     print_shell_reading_v1(&mut controller, &mut known, &mut displayed, locale)?
                 }
                 "status" => print_shell_view_v1(&render_status_v1(controller.head(), locale)?),
-                "show" => print_shell_view_v1(&render_show_v1(controller.head())?),
+                "show" => print_shell_view_v1(&render_show_v1(controller.head(), locale)?),
                 "actions" => print_shell_actions_v1(controller.head(), locale)?,
                 "info" => {
                     let query = words.collect::<Vec<_>>().join(" ");
@@ -4780,7 +4783,7 @@ fn run_shell_v1(session: PathBuf, locale: Locale) -> Result<(), String> {
                         controller.head().current_decision.as_ref().ok_or_else(|| {
                             cli_presentation::message(locale, "shell.adviceHead", &[])
                         })?;
-                    print!("{}", render_advice_v1(&advice, decision)?);
+                    print!("{}", render_advice_v1(&advice, decision, locale)?);
                 }
                 "advice-detail" => {
                     let advice = controller.advise_v1()?;
@@ -4788,7 +4791,7 @@ fn run_shell_v1(session: PathBuf, locale: Locale) -> Result<(), String> {
                         controller.head().current_decision.as_ref().ok_or_else(|| {
                             cli_presentation::message(locale, "shell.adviceHead", &[])
                         })?;
-                    print!("{}", render_advice_v1(&advice, decision)?);
+                    print!("{}", render_advice_v1(&advice, decision, locale)?);
                     let detail = controller.advice_detail_v1()?;
                     print!("{}", render_advice_detail_v1(&detail, locale));
                 }

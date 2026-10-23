@@ -5682,6 +5682,15 @@
       "step": "  step {{index}} [{{choice}}] {{action}} elapsed_ms={{elapsed}} outcome={{outcome}}",
       "empty": "empty",
       "final": "  final {{outcome}}"
+    },
+    "show": {
+      "terminal": "terminal {{outcome}}",
+      "stored": "Stored evidence only; this build has not reconstructed this decision."
+    },
+    "advice": {
+      "provenance": "owner producer={{producer}} revision={{revision}} access={{access}} snapshot={{snapshot}}",
+      "choice": "owner_choice action={{action}} candidate={{candidate}}",
+      "unavailable": "owner_unavailable reason={{reason}}"
     }
   },
   "publicDecision": {

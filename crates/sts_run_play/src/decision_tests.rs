@@ -4245,10 +4245,17 @@ fn act_returns_the_successor_reading_and_selection_jump_renders_after_commit() {
     };
     game.choose_bound_v1(&selected).unwrap();
     game.jump(&format!("n{root}")).unwrap();
-    let rendered = crate::render::render_show_v1(game.head()).unwrap();
-    assert!(rendered.contains("<parameterized>"), "{rendered}");
+    let rendered = crate::render::render_show_v1(game.head(), Locale::En).unwrap();
     let restored = game.decision_reading_v1(&[], None, Locale::En).unwrap();
     assert_eq!(restored.selections.len(), 1);
+    assert!(
+        rendered.contains(&restored.selections[0].label),
+        "{rendered}"
+    );
+    assert!(
+        rendered.contains(&restored.selections[0].members[0].label),
+        "{rendered}"
+    );
     assert!(
         game.choose_bound_v1(&selected).is_err(),
         "old choices remain stale after jumping back"

@@ -7323,9 +7323,11 @@ mod tests {
             let retained = old_paths.load().unwrap();
             assert_eq!(retained.head, before.head);
             assert_eq!(retained.state, before.state);
-            assert!(!crate::render::render_show_v1(&retained.head)
-                .unwrap()
-                .is_empty());
+            assert!(
+                !crate::render::render_show_v1(&retained.head, sts_presentation::Locale::En)
+                    .unwrap()
+                    .is_empty()
+            );
         }
     }
 

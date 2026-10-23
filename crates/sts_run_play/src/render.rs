@@ -95,7 +95,10 @@ use crate::selector::{
     transactional_play_alias_for_choice_v1,
 };
 
-pub fn render_show_v1(head: &crate::model::RunPlayHeadV1) -> Result<String, String> {
+pub fn render_show_v1(
+    head: &crate::model::RunPlayHeadV1,
+    locale: Locale,
+) -> Result<String, String> {
     let mut output = String::new();
     let mode = if head.scratch {
         "mode=scratch".to_string()
@@ -119,13 +122,41 @@ pub fn render_show_v1(head: &crate::model::RunPlayHeadV1) -> Result<String, Stri
     .expect("string write");
     match &head.position {
         RunPlayPositionV1::Terminal { outcome, .. } => {
-            writeln!(output, "terminal {outcome:?}").expect("string write");
+            writeln!(
+                output,
+                "{}",
+                locale
+                    .text(
+                        "compact",
+                        "show.terminal",
+                        &[(
+                            "outcome",
+                            &crate::compact::render_outcome_compact(outcome, locale)
+                        )]
+                    )
+                    .expect("terminal display message")
+            )
+            .expect("string write");
         }
         RunPlayPositionV1::Decision { archive_node_id } => {
             let decision = head.current_decision.as_ref().ok_or_else(|| {
                 format!("run-play head has no cached decision for {archive_node_id}")
             })?;
-            render_decision_v1(&mut output, decision)?;
+            if head.scratch
+                || crate::model::RunPlayEvidenceIdentityV1::require_current_v1(
+                    head.evidence_identity.as_ref(),
+                )
+                .is_ok()
+            {
+                let public = decision.public_decision_v1()?;
+                let reading =
+                    crate::decision::read_preview_decision_v1(&public, None, false, locale)?;
+                output.push_str(&reading.view);
+            } else {
+                // Retained, unverified sources keep their fixed diagnostic
+                // representation; reading them does not reproject a new runtime.
+                render_decision_v1(&mut output, decision)?;
+            }
         }
     }
     Ok(output)
@@ -134,16 +165,33 @@ pub fn render_show_v1(head: &crate::model::RunPlayHeadV1) -> Result<String, Stri
 pub fn render_advice_v1(
     advice: &RunPlayStrategicOwnerAdviceV1,
     decision: &TaskRunBranchDecisionInventoryV1,
+    locale: Locale,
 ) -> Result<String, String> {
     let public = decision.public_decision_v1()?;
+    let text = |key: &str, parameters: &[(&str, &str)]| {
+        locale
+            .text("compact", &format!("advice.{key}"), parameters)
+            .expect("owner advice message")
+    };
     let mut output = String::new();
     writeln!(
         output,
-        "owner producer={} revision={} access={:?} snapshot={}",
-        advice.support.provenance.producer_name,
-        advice.support.provenance.producer_revision,
-        advice.support.provenance.access,
-        short_id(&advice.support.root_public_snapshot_id)
+        "{}",
+        text(
+            "provenance",
+            &[
+                ("producer", &advice.support.provenance.producer_name),
+                (
+                    "revision",
+                    &advice.support.provenance.producer_revision.to_string()
+                ),
+                ("access", &format!("{:?}", advice.support.provenance.access)),
+                (
+                    "snapshot",
+                    short_id(&advice.support.root_public_snapshot_id)
+                )
+            ]
+        )
     )
     .expect("string write");
     match &advice.support.outcome {
@@ -156,18 +204,34 @@ pub fn render_advice_v1(
                 .candidates
                 .get(root)
                 .ok_or_else(|| "owner advice root candidate is missing".to_string())?;
+            let TaskPublicObservationV1::Strategic { observation } = &public.observation else {
+                return Err("strategic owner advice requires a strategic observation".into());
+            };
+            let action = advice
+                .semantic_action
+                .as_deref()
+                .ok_or_else(|| "owner advice choice has no stable semantic action".to_string())?;
+            let label = crate::decision::option_label(
+                candidate,
+                observation,
+                &public.observation,
+                false,
+                locale,
+            )?;
             writeln!(
                 output,
-                "owner_choice action={} candidate={}",
-                advice.semantic_action.as_deref().ok_or_else(|| {
-                    "owner advice choice has no stable semantic action".to_string()
-                })?,
-                render_candidate_with_observation(candidate, Some(&public.observation))
+                "{}",
+                text("choice", &[("action", action), ("candidate", &label)])
             )
             .expect("string write");
         }
         TaskPrivilegedStrategicSupportOutcomeV1::Unavailable { reason } => {
-            writeln!(output, "owner_unavailable reason={reason:?}").expect("string write");
+            writeln!(
+                output,
+                "{}",
+                text("unavailable", &[("reason", &format!("{reason:?}"))])
+            )
+            .expect("string write");
         }
     }
     Ok(output)

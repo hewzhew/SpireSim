@@ -73,6 +73,53 @@ fn detailed_comparisons_localize_steps_successors_draws_and_exhaust_without_muta
 }
 
 #[test]
+fn current_show_localizes_without_reprojecting_retained_unverified_sources() {
+    let dir = TestDirectory::new();
+    for kind in [
+        "reward",
+        "shop",
+        "shop_poor",
+        "route",
+        "astrolabe",
+        "combat_multiturn",
+        "combat_discovery",
+        "combat_exhaust",
+    ] {
+        let mut game = controller_with_session(&dir.0, kind, &fixture(kind));
+        let head = game.head().clone();
+        let fingerprint = game.current_state_fingerprints_v1().unwrap();
+        let en = crate::render::render_show_v1(&head, Locale::En).unwrap();
+        let zh = crate::render::render_show_v1(&head, Locale::ZhCn).unwrap();
+        assert_ne!(en, zh, "{kind}");
+        assert_eq!(
+            en.lines().next(),
+            zh.lines().next(),
+            "source metadata remains fixed"
+        );
+        assert!(!en.contains("{{") && !zh.contains("{{"));
+        assert!(zh.contains("生命") || zh.contains("HP"), "{kind}: {zh}");
+        assert_eq!(game.head(), &head);
+        assert_eq!(game.current_state_fingerprints_v1().unwrap(), fingerprint);
+
+        let mut stored = head.clone();
+        stored.scratch = false;
+        stored.evidence_identity = None;
+        let before = serde_json::to_value(&stored).unwrap();
+        let raw_en = crate::render::render_show_v1(&stored, Locale::En).unwrap();
+        let raw_zh = crate::render::render_show_v1(&stored, Locale::ZhCn).unwrap();
+        assert_eq!(
+            raw_en, raw_zh,
+            "retained diagnostic data stays in its original form"
+        );
+        assert!(
+            raw_en.contains("evidence_compatibility=legacy_unscoped")
+                && raw_en.contains("candidates=")
+        );
+        assert_eq!(serde_json::to_value(&stored).unwrap(), before);
+    }
+}
+
+#[test]
 fn permanent_card_changes_do_not_cancel_same_name_card_identities() {
     let dir = TestDirectory::new();
     let game = controller_with_session(&dir.0, "card-identity-change", &fixture("reward"));
@@ -300,4 +347,50 @@ fn compact_combat_status_lists_each_actual_hand_card_on_its_own_line() {
         assert!(!status.contains("Damage: per-target hit"));
         assert_eq!(game.head(), &head);
     }
+}
+
+#[test]
+fn advice_localizes_the_selected_public_candidate_and_preserves_provenance() {
+    use sts_oracle_learning::agent::task::{
+        TaskPrivilegedStrategicSupportOutcomeV1, TaskPrivilegedStrategicSupportUnavailableV1,
+        TaskPrivilegedStrategicSupportV1, TaskPrivilegedSupportAccessV1,
+        TaskPrivilegedSupportProvenanceV1, TaskPublicChoiceV1,
+    };
+    let dir = TestDirectory::new();
+    let game = controller_with_session(&dir.0, "advice", &fixture("reward"));
+    let head = game.head().clone();
+    let decision = head.current_decision.as_ref().unwrap();
+    let public = decision.public_decision_v1().unwrap();
+    let choice = TaskPublicChoiceV1::one(0);
+    let mut advice = crate::model::RunPlayStrategicOwnerAdviceV1 {
+        semantic_action: Some(
+            crate::selector::semantic_action_for_choice_v1(&public, &choice).unwrap(),
+        ),
+        support: TaskPrivilegedStrategicSupportV1 {
+            root_public_snapshot_id: public.information.snapshot_id,
+            provenance: TaskPrivilegedSupportProvenanceV1 {
+                access: TaskPrivilegedSupportAccessV1::PrivilegedExactStrategicOwner,
+                producer_name: "constructed-owner-display".into(),
+                producer_revision: 1,
+            },
+            outcome: TaskPrivilegedStrategicSupportOutcomeV1::Choice { choice },
+        },
+    };
+    let original = serde_json::to_value(&advice).unwrap();
+    let en = crate::render::render_advice_v1(&advice, decision, Locale::En).unwrap();
+    let zh = crate::render::render_advice_v1(&advice, decision, Locale::ZhCn).unwrap();
+    assert!(en.contains("Shrug It Off") && zh.contains("耸肩无视"));
+    for rendered in [&en, &zh] {
+        assert!(rendered.contains("constructed-owner-display"));
+        assert!(rendered.contains(advice.semantic_action.as_ref().unwrap()));
+        assert!(rendered.contains("PrivilegedExactStrategicOwner"));
+    }
+    assert_eq!(serde_json::to_value(&advice).unwrap(), original);
+    advice.semantic_action = None;
+    advice.support.outcome = TaskPrivilegedStrategicSupportOutcomeV1::Unavailable {
+        reason: TaskPrivilegedStrategicSupportUnavailableV1::OwnerCandidateNotRepresented,
+    };
+    let zh = crate::render::render_advice_v1(&advice, decision, Locale::ZhCn).unwrap();
+    assert!(zh.contains("暂无策略建议") && zh.contains("OwnerCandidateNotRepresented"));
+    assert_eq!(game.head(), &head);
 }
