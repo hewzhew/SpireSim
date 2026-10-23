@@ -29,6 +29,11 @@ async function main() {
     return svg;
   }
   const cardIcon = type => ({ attack: 'swords', skill: 'shield', curse: 'lock' })[type];
+  const cardFrame = {
+    attack: 'M4 4H96V73L50 96L4 73Z',
+    skill: 'M4 4H96V72Q96 96 50 96Q4 96 4 72Z',
+    curse: 'M14 4H86L96 16V84L86 96H14L4 84V16Z',
+  };
   const effectKeys = { damage: 'damage', block: 'block', apply: 'apply', draw: 'draw', unplayable: 'unplayable', ethereal: 'ethereal', double_block: 'doubleBlock', random_damage: 'randomDamage' };
   function gameCard(card, chosen = false) {
     const el = node('article', undefined, 'playing-card ' + card.type + (chosen ? ' chosen' : ''));
@@ -37,14 +42,19 @@ async function main() {
     const cost = node('span', card.cost === null ? undefined : number(card.cost), 'card-cost');
     if (card.cost === null) cost.append(icon('lock'));
     top.append(cost, node('h3', name('card', card.card_id), 'card-name'));
+    const portrait = node('div', undefined, 'card-portrait');
+    const frame = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    for (const [key, value] of Object.entries({ viewBox: '0 0 100 100', preserveAspectRatio: 'none', 'aria-hidden': 'true', class: 'card-frame' })) frame.setAttribute(key, value);
+    const outline = document.createElementNS('http://www.w3.org/2000/svg', 'path'); outline.setAttribute('d', cardFrame[card.type]); frame.append(outline);
     const art = node('div', undefined, 'card-symbol'); art.append(icon(cardIcon(card.type)));
+    portrait.append(frame, art, node('div', name('cardType', card.type), 'card-type'));
     const rules = node('div', undefined, 'card-rule');
     for (const effect of card.effects) {
       const params = { ...effect };
       if (effect.power_id) params.power = name('power', effect.power_id);
       rules.append(node('div', display.text('game:effect.' + effectKeys[effect.kind], params)));
     }
-    el.append(top, art, node('div', name('cardType', card.type), 'card-type'), rules);
+    el.append(top, portrait, rules);
     if (chosen) { const mark = node('div', t('reward.chosen'), 'chosen-mark'); mark.prepend(icon('check')); el.append(mark); }
     return el;
   }
