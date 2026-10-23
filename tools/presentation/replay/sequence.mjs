@@ -61,6 +61,8 @@ function snapshot(frame, definitions, maps) {
       event_id: state.context.event,
       event_options: state.context.kind === 'event' ? frame.position.actions.filter(item => item.candidate.action.kind === 'choose_event_option').map(item => ({
         command: item.semantic_action, event_id: item.candidate.action.event, option_index: item.candidate.action.option_index,
+        action: item.candidate.action.action,
+        transition: item.candidate.action.public_semantics.structured_semantics?.transition,
         effects: item.candidate.action.public_semantics.structured_semantics?.effects,
       })) : [],
       reward_alternatives,
@@ -137,7 +139,8 @@ export function recordedSequence(entries, definitions, id) {
       source_snapshot_id: previous.public_snapshot_id, result_snapshot_id: entry.after.position.public_snapshot_id });
     snapshots.push(snapshot(entry.after, definitions, maps));
   }
-  const context = first.position.observation.run_context;
+  const view = first.position.observation;
+  const context = view.domain === 'strategic' ? view.observation.run : view.run_context;
   return { id, kind: 'sequence', provenance: { operator, source_revision: entries[0].source_revision, session_id: first.session_id },
     encounter_id: context.encounter_id, turn: snapshots[0].turn, floor: context.floor,
     actions, snapshots, maps: maps.map(({ id, graph }) => ({ id, ...graph })), indices: [] };

@@ -1,20 +1,17 @@
 import { mkdir, appendFile, readFile, writeFile } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
 import { createHash } from 'node:crypto';
+import { isDeepStrictEqual } from 'node:util';
 import { conciseCardCommand } from '../../run_play/contract.mjs';
 
-export function recordedClient(game, record, context) {
-  return Object.freeze({ ...game, async act(actions, options) {
-    const before = await game.observe();
-    if (before.capabilities?.permission_envelope?.information_ceiling !== 'public_only') throw new Error('Replay capture requires a public-only connection');
-    const metadata = context();
-    const result = await game.act(actions, options);
-    const matches = actions.length === 1 ? before.position.actions.filter(item => item.semantic_action === actions[0]
-      || conciseCardCommand(item.semantic_action) === actions[0]) : [];
-    await record({ ...metadata, actions, action: matches.length === 1 ? matches[0].semantic_action : null,
-      before, after: result.raw.observation });
-    return result;
-  } });
+export function recordedTransition(before, input, candidate) {
+  const options = before.position.actions;
+  const matches = input.command === 'act' && input.actions.length === 1
+    ? options.filter(item => item.semantic_action === input.actions[0] || conciseCardCommand(item.semantic_action) === input.actions[0])
+    : input.command === 'choose' && candidate && !input.following_rewards?.length
+      ? options.filter(item => isDeepStrictEqual(item.candidate, candidate)) : [];
+  const action = matches.length === 1 ? matches[0].semantic_action : null;
+  return { input, actions: input.command === 'act' ? input.actions : action ? [action] : [], action };
 }
 
 function publicCardIds(frame) {
@@ -34,8 +31,15 @@ export async function createRecording({ directory, metadata }) {
   await writeFile(join(root, 'manifest.json'), JSON.stringify(manifest, null, 2) + '\n', { flag: 'wx' });
   const known = new Set();
   return Object.freeze({
-    wrap(game, context = () => ({})) {
-      return recordedClient(game, async row => {
+    observer(game, context = () => ({})) {
+      return async event => {
+        if (event.phase === 'before') {
+          if (manifest.status !== 'recording') throw new Error('Recording is already sealed');
+          if (event.before.capabilities?.permission_envelope?.information_ceiling !== 'public_only') throw new Error('Replay capture requires a public-only connection');
+          return { ...context(), ...recordedTransition(event.before, event.input, event.candidate) };
+        }
+        if (event.phase !== 'committed') throw new Error('Unknown recording transition phase');
+        const row = { ...event.context, before: event.before, after: event.after };
         await appendFile(join(root, 'actions.jsonl'), JSON.stringify({ ...row, operator: metadata.operator, source_revision: metadata.source_revision }) + '\n');
         manifest.actions++;
         const missing = [...new Set([...publicCardIds(row.before), ...publicCardIds(row.after)])].filter(card => !known.has(card));
@@ -44,10 +48,7 @@ export async function createRecording({ directory, metadata }) {
             await appendFile(join(root, 'facts.jsonl'), JSON.stringify(fact) + '\n'); known.add(fact.definition.current.card);
           }
         }
-      }, () => {
-        if (manifest.status !== 'recording') throw new Error('Recording is already sealed');
-        return context();
-      });
+      };
     },
     async seal({ modelRecord } = {}) {
       if (manifest.status !== 'recording') throw new Error('Recording is already sealed');

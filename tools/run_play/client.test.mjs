@@ -35,7 +35,7 @@ lines.on('line', line => {
 async function fixture(t, timeoutMs = 5000, extra = {}) {
   const base = await realpath(tmpdir());
   const root = await mkdtemp(join(base, 'run-play-pipe-'));
-  const config = { repository: root, session: root, recordDirectory: join(root, 'wire'), binary: process.execPath, timeoutMs, closeTimeoutMs: 200, locale: extra.locale ?? 'en' };
+  const config = { repository: root, session: root, recordDirectory: join(root, 'wire'), binary: process.execPath, timeoutMs, closeTimeoutMs: 200, locale: extra.locale ?? 'en', onTransition: extra.onTransition };
   let client;
   t.after(async () => {
     try {
@@ -152,6 +152,58 @@ test('observe returns the resident typed observation without starting another pr
   assert.equal(Object.isFrozen(observation.position),true);
   const request=JSON.parse((await readFile(join(root,'wire','exchange-000.jsonl'),'utf8')).split('\n')[0]);
   assert.equal(request.command,'observe');
+});
+
+const observedServer = `
+let revision=0;
+const candidate={domain:'strategic',action:{kind:'choose_route_node',x:5,y:0}};
+const observation=()=>({head_revision:revision,position:{public_snapshot_id:'s'+revision,actions:[{semantic_action:'go 5,0',candidate}]}});
+require('node:readline').createInterface({input:process.stdin}).on('line',line=>{
+  const r=JSON.parse(line);
+  if(r.command==='choose'||r.command==='act') revision++;
+  const reading={view:'Native '+revision,source:{head_revision:revision},options:[{label:'Pick',choice:{ordinal_path:[9]},candidate}]};
+  const result=r.command==='observe'?{kind:'observation',observation:observation()}
+    :r.command==='act'?{kind:'acted',reading,observation:observation()}:{reading};
+  process.stdout.write(JSON.stringify({schema:'sts-run-play-agent-response-v1',request_id:r.request_id,status:'ok',result})+'\\n');
+});`;
+
+test('shared execution observer captures choose and act with original native results', async t => {
+  const events=[];
+  const {client}=await fixture(t,5000,{server:observedServer,onTransition:async event=>{
+    events.push(event);
+    return {saved:'context'};
+  }});
+  const decision=await client.decision();
+  const chosen=await decision.options[0].choose();
+  assert.equal(chosen.view,'Native 1'); assert.equal(chosen.raw.observation,undefined);
+  const acted=await client.act(['end']);
+  assert.equal(acted.raw.observation.head_revision,2);
+  assert.deepEqual(events.map(e=>[e.phase,e.input.command,e.before.head_revision,e.after?.head_revision]),[
+    ['before','choose',0,undefined],['committed','choose',0,1],['before','act',1,undefined],['committed','act',1,2],
+  ]);
+  assert.equal(events[0].candidate.action.x,5);
+  assert.deepEqual(events[1].context,{saved:'context'});
+  assert.deepEqual(events[0].input.selection.choice,{ordinal_path:[9]});
+});
+
+test('a rejecting pre-execution observer sends no mutation', async t => {
+  const {client,root}=await fixture(t,5000,{server:observedServer,onTransition:async()=>{throw new Error('Capture refused');}});
+  const reading=await client.decision();
+  await assert.rejects(reading.options[0].choose(),/Capture refused/);
+  assert.equal((await client.observe()).head_revision,0);
+  const requests=await Promise.all((await readdir(join(root,'wire'))).filter(name=>name.endsWith('.jsonl')).map(async name=>JSON.parse((await readFile(join(root,'wire',name),'utf8')).split('\n')[0])));
+  assert.ok(requests.every(r=>r.command!=='choose'&&r.command!=='act'));
+});
+
+test('a post-execution observer failure identifies the committed action without resending it', async t => {
+  const {client,root}=await fixture(t,5000,{server:observedServer,onTransition:async event=>{
+    if(event.phase==='committed')throw new Error('Capture write failed');
+  }});
+  const reading=await client.decision();
+  await assert.rejects(reading.options[0].choose(),error=>error.actionCommitted===true&&error.message==='Capture write failed');
+  assert.equal((await client.observe()).head_revision,1);
+  const requests=await Promise.all((await readdir(join(root,'wire'))).filter(name=>name.endsWith('.jsonl')).map(async name=>JSON.parse((await readFile(join(root,'wire',name),'utf8')).split('\n')[0])));
+  assert.equal(requests.filter(r=>r.command==='choose').length,1);
 });
 
 test('command errors preserve the server code and leave the connection usable', async t => {

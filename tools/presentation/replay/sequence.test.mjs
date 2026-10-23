@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { cardGroups, handTransition, recordedSequence, sequenceView } from './sequence.mjs';
 import { cardFaceView } from './card-face.mjs';
+import { neowStructuredRuns } from './neow-option.mjs';
 
 const card = id => ({ card_id: id, upgrades: 0, effective_cost: 1, current_block: id === 'ShrugItOff' ? 8 : id === 'Defend' ? 5 : 0,
   current_magic_number: id === 'ShrugItOff' ? 1 : 0, current_damage: id === 'Strike' ? 6 : 0, damage_by_monster_order: id === 'Strike' ? [9] : [] });
@@ -192,4 +193,22 @@ test('reward alternatives follow legal candidates and native resource evidence, 
   assert.deepEqual(scene.snapshots[1].reward_alternatives, []);
   delete before.decision_evidence;
   assert.throws(() => recordedSequence(rows, [], 'bowl'), /Singing Bowl resource evidence/);
+});
+
+test('a continuous recording can start at Neow and bind its completion option', () => {
+  const before = { session_id: 'neow', head_revision: 0, capabilities: { permission_envelope: { information_ceiling: 'public_only' } },
+    position: { kind: 'decision', public_snapshot_id: 'n0', actions: [{ semantic_action: 'event:Neow:0', candidate: { domain: 'strategic', action: {
+      kind: 'choose_event_option', event: 'Neow', screen: 2, option_index: 0, action: 'Leave',
+      public_semantics: { structured_semantics: { effects: [], transition: { kind: 'complete' } } },
+    } } }], observation: { domain: 'strategic', observation: {
+      run: { act: 1, floor: 0, current_hp: 68, max_hp: 75, gold: 99 }, relics: [], cards: [], context: { kind: 'event', event: 'Neow', screen: 2 },
+    } } } };
+  const after = structuredClone(before); after.head_revision = 1; after.position.public_snapshot_id = 'n1';
+  after.position.observation.observation.context = { kind: 'map' };
+  const scene = recordedSequence([{ before, after, action: 'event:Neow:0', operator: 'model', source_revision: 'source' }], [], 'neow');
+  assert.equal(scene.floor, 0); assert.equal(scene.encounter_id, undefined);
+  const option = scene.snapshots[0].event_options[0];
+  assert.equal(neowStructuredRuns(option, 'zh-CN').map(run => run.text).join(''), '[离开]');
+  assert.equal(neowStructuredRuns(option, 'en').map(run => run.text).join(''), '[Leave]');
+  assert.throws(() => neowStructuredRuns({ ...option, action: 'Gain' }, 'en'), /Unbound/);
 });

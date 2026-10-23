@@ -3,6 +3,8 @@
 `client.mjs` 通过 stdin/stdout 直连 `run_play.exe agent-shell`，没有 PTY 标题序列和命令回显。
 Rust 拥有状态、来源检查、真实执行和提交；客户端只保存返回对象和传输记录。
 
+`openRunPlay({ onTransition })` 可观察 `act()` 与来源绑定的 `choose()` 执行边界。异步回调依次接收 `before`（公开前态、原始输入、选项的 typed candidate）和 `committed`（另含实际后态与前一回调返回的 context），不替换原生返回。`before` 抛错时不发送动作；动作成功后的采集错误带 `actionCommitted: true`，原生收据保留在传输记录中，调用者应停止采集并核对状态，不能重发动作。未设置回调时不增加观察请求。离线展示的接入见[录制与构建回放](../presentation/README.md#录制与构建回放)。
+
 `observe()` 的战略观察另含 `preparation_reading`（`sts-preparation-reading-v1`），与 `position.public_snapshot_id` 绑定同一公开帧。它提供概要、选项、选牌提示、库存、商店商品和路线的文字块。候选通过完整命令定位，卡牌规则通过稳定 ID 和升级等级定位，遗物通过稳定 ID 定位；商品包含 typed action、槽位和价格，买不起或其他受阻商品的 `command` 为 `null`。`card_rules.available` 来自源端规则覆盖。消费者按这些字段选择完整文字，不解析展示标题或译名。战斗和终局不提供这份战略准备投影；普通 `read` 和 `inventory effects` 的文字仍由原有 renderer 输出。
 
 从源码使用 Node 工作台前，在 `tools/presentation` 与 `tools/run_play` 各执行一次 `npm ci`。工作台通过正式依赖消费共用语言资源；[分发构建](../../docs/runbooks/release.md)捆绑该依赖及其运行库，并用离线安装检查实际中英文读数；开发源码链接保持不动。

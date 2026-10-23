@@ -69,6 +69,6 @@ Retained free returns can cross the original game's save boundaries. Describe th
 
 Keep the actual model and reasoning setting, task, stopping condition, errors, returns and reported token buckets alongside the trace. Report the position reached and decisions made. For a bug, copy the selected input, command and complete return so the first differing step can be reproduced.
 
-For an offline replay, wrap the public game connection with the [recording adapter](../tools/presentation/README.md#录制与构建回放), then build the sealed record with `node scripts/replay.mjs build --input RECORDING --output NEW_DIRECTORY`. The viewer derives floor navigation and map visits from the recorded public boundaries. A model recording retains its actual call records; replay construction does not run a player.
+For an offline replay, attach the [recording observer](../tools/presentation/README.md#录制与构建回放) when opening the public game connection, then build the sealed record with `node scripts/replay.mjs build --input RECORDING --output NEW_DIRECTORY`. The observer captures both actions and source-bound choices. The viewer derives floor navigation and map visits from the recorded public boundaries. A model recording retains its actual call records; replay construction does not run a player.
 
 The short run demonstrates model interaction, actual transitions and observation. Full-run strategy evaluation has its own recorded scope. [Original-game comparison and training acceptance](architecture/environment-acceptance.md) describe the environment verification workflow.

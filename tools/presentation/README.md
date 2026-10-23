@@ -1,6 +1,6 @@
 # SpireSim 展示语言与共用名称
 
-这个模块提供中英文游戏名称、原版卡牌文本和消息格式化。名称与展示核心不读取游戏存档或执行游戏。`replay/` 拥有离线演示、录制适配器与构建入口；录制适配器包裹调用者提供的公开连接，保存实际执行的前后边界，不修改模型请求。实际记录和构建结果保存在 artifact。dsh 地图与工作台使用宿主语言服务，领域名称消费共用词典；Rust 卡牌、药水查询和战斗读数也从这里取名称、牌面与消息。
+这个模块提供中英文游戏名称、原版卡牌文本和消息格式化。名称与展示核心不读取游戏存档或执行游戏。`replay/` 拥有离线演示、录制观察器与构建入口；观察器接入公开连接的实际执行边界，保存前后状态，不修改模型请求。实际记录和构建结果保存在 artifact。dsh 地图与工作台使用宿主语言服务，领域名称消费共用词典；Rust 卡牌、药水查询和战斗读数也从这里取名称、牌面与消息。
 
 演示中的涅奥选项从导入的原版按钮片段取文字与颜色标记，数值来自记录的公开效果，以四行列表呈现。[neow-option.mjs](replay/neow-option.mjs) 绑定当前记录的四种选项组合，保留原版的代价与收益顺序，不以选项序号推断奖励，也不改写原始记录。
 
@@ -32,17 +32,21 @@
 
 ## 录制与构建回放
 
-在已有公开连接外使用 [createRecording](replay/recording.mjs)：
+创建公开连接时接入 [createRecording](replay/recording.mjs)：
 
 ```js
 const recording = await createRecording({ directory: freshDirectory,
   metadata: { id, operator: 'model', character_id: 'ironclad', source_revision, model } });
-const capturedGame = recording.wrap(game, () => ({ call: actualModelCall }));
-await capturedGame.act([canonicalAction], { advance: 'one_public_action' });
+let observer;
+const game = await openRunPlay({ repository, session, recordDirectory, manual: true,
+  onTransition: event => observer(event) });
+observer = recording.observer(game, () => ({ call: actualModelCall }));
+// Both act() and source-bound option.choose() use this execution observer.
+await game.act([canonicalAction], { advance: 'one_public_action' });
 await recording.seal({ modelRecord });
 ```
 
-调用者负责创建、限额、暂停和关闭玩家及连接；录制器不启动模型。连接必须为 `public_only`，已封存录制拒绝继续动作。每次实际执行保存原始输入、规范动作和完整公开前后态，并自动查询这次边界中首次出现的卡牌定义。为逐动作回放，每次提交一个动作；合批记录保留原样，不补造组内边界。卡牌事实查询只用于采集展示材料，不插入模型消息。
+调用者负责创建、限额、暂停和关闭玩家及连接，并在首次动作前设置观察器；录制器不启动模型。连接必须为 `public_only`，已封存录制拒绝继续动作。客户端在 `act` 和来源绑定 `choose` 的共同执行边界调用观察器，保留原生返回；选项按同帧 typed candidate 对应规范动作，不解析标签或按序号猜测。每次实际执行保存原始输入、规范动作和完整公开前后态，并自动查询这次边界中首次出现的卡牌定义。为逐动作回放，每次提交一个动作；合批记录保留原样，不补造组内边界。卡牌事实查询只用于采集展示材料，不插入模型消息。
 
 录制目录含 `manifest.json`、`actions.jsonl`、`facts.jsonl`；模型录制还需包含实际调用和请求的 `model-record.json`。封存保存文件 SHA256，构建核对摘要、动作连续性和模型调用关联。采集失败时保留现有文件，未封存材料不用于正式构建。
 
@@ -256,4 +260,4 @@ node tools/presentation/bundle.mjs --entry <viewer.mjs> --output <demo.js>
 
 上述命令从仓库根目录运行。构建入口会先检查资源，再把消息库和词典打包进浏览器脚本。原始模型记录和结构化展示数据由消费者分别保存；切换语言不翻译或覆盖原始请求、工具返回和摘要。
 
-当前离线演示对一份固定的历史公开工具记录做构建期整理，浏览器不再解析英文游戏文本。这不是新的通用采集协议；新采集的正式展示应沿原生 owner 取得 typed 公开状态。原始文本与结构化展示必须保留来源关系。
+回放在构建期从原生 typed 公开状态生成展示数据，浏览器不解析英文游戏文本。原始模型请求、执行收据与结构化展示保留来源关系。

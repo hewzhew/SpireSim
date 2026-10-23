@@ -56,7 +56,7 @@ export async function openRunPlay(options) {
   }
 }
 
-async function connectRunPlay({ repository, session, recordDirectory, binary, manual = false, locale = 'en', timeoutMs = 30000, closeTimeoutMs = 2000 }, release) {
+async function connectRunPlay({ repository, session, recordDirectory, binary, manual = false, locale = 'en', timeoutMs = 30000, closeTimeoutMs = 2000, onTransition }, release) {
   if (!repository || !session || !recordDirectory) throw new Error(clientText(locale, 'connectionArgumentsRequired'));
   if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1) throw new Error(clientText(locale, 'invalidTimeout'));
   if (!Number.isSafeInteger(closeTimeoutMs) || closeTimeoutMs < 1) throw new Error(clientText(locale, 'invalidCloseTimeout'));
@@ -176,6 +176,25 @@ async function connectRunPlay({ repository, session, recordDirectory, binary, ma
     });
   }
 
+  // Observe both semantic actions and source-bound choices at their shared
+  // execution boundary. The optional observer never replaces a native reply.
+  async function observedRequest(command, fields, metadata = {}) {
+    if (!onTransition) return request(command, fields);
+    const before = freeze((await request('observe')).observation);
+    const input = freeze(JSON.parse(JSON.stringify({ command, ...fields })));
+    const context = await onTransition({ phase: 'before', before, input, ...metadata });
+    const result = await request(command, fields);
+    try {
+      const after = freeze(result.observation ?? (await request('observe')).observation);
+      await onTransition({ phase: 'committed', before, after, input, context, ...metadata });
+    } catch (error) {
+      // A capture failure must not be mistaken for an unexecuted action.
+      error.actionCommitted = true;
+      throw error;
+    }
+    return result;
+  }
+
   function frame(result) {
     freeze(result);
     const reading = result.reading;
@@ -196,10 +215,10 @@ async function connectRunPlay({ repository, session, recordDirectory, binary, ma
           // Retain the original source even after a later view is returned.
           ready();
           epoch++;
-          return frame(await request('choose', {
+          return frame(await observedRequest('choose', {
             selection: { source: reading.source, choice: option.choice },
             ...(retainContext ? { known_context: reading.context } : {}),
-          }));
+          }, { candidate: option.candidate }));
         },
       })));
       if (reading.can_collect_rewards) {
@@ -212,11 +231,11 @@ async function connectRunPlay({ repository, session, recordDirectory, binary, ma
           if (new Set(indices).size !== indices.length) throw new Error(clientText(locale, 'duplicateReward'));
           ready();
           epoch++;
-          return frame(await request('choose', {
+          return frame(await observedRequest('choose', {
             selection: { source: reading.source, choice: reading.options[indices[0]].choice },
             following_rewards: indices.slice(1).map(i => reading.options[i].choice),
             ...(retainContext ? { known_context: reading.context } : {}),
-          }));
+          }, { candidates: indices.map(i => reading.options[i].candidate) }));
         };
       }
       value.selections = Object.freeze((reading.selections ?? []).map(selection => {
@@ -230,7 +249,7 @@ async function connectRunPlay({ repository, session, recordDirectory, binary, ma
             const indices = selectionIndices(chosen, members, selection.min, selection.max, locale);
             ready();
             epoch++;
-            return frame(await request('choose', {
+            return frame(await observedRequest('choose', {
               selection: { source: reading.source, choice: {
                 ordinal_path: [...selection.choice.ordinal_path, ...indices.map(i => selection.members[i].ordinal)],
               } },
@@ -495,7 +514,7 @@ async function connectRunPlay({ repository, session, recordDirectory, binary, ma
         throw new Error(clientText(locale, 'invalidAdvance'));
       }
       epoch++;
-      const acted = await request('act', {
+      const acted = await observedRequest('act', {
         actions,
         ...(advance === undefined ? {} : { advance }),
       });

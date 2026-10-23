@@ -428,12 +428,12 @@ async function main() {
     for (const option of state.event_options) {
       const entry = node('li', undefined, 'event-option');
       const label = node('span', undefined, 'option-label');
-      for (const run of neowStructuredRuns(option.effects, display.locale)) label.append(node('span', run.text, 'option-text-' + run.tone));
+      for (const run of neowStructuredRuns(option, display.locale)) label.append(node('span', run.text, 'option-text-' + run.tone));
       entry.append(label); options.append(entry);
     }
     layout.append(options); board.append(hud, layout, playback); return board;
   }
-  function title(scene) { return scene.kind === 'sequence' ? t(scene.provenance.scope === 'continuous' ? 'sequence.modelRunTitle' : scene.provenance.operator === 'model' ? 'sequence.modelTitle' : 'sequence.title') : scene.kind === 'event' ? name('event', scene.event_id) : scene.kind === 'combat' ? name('encounter', scene.encounter_id) : t('scene.rewards'); }
+  function title(scene) { return scene.kind === 'sequence' ? t(scene.provenance.operator === 'model' ? scene.provenance.scope === 'continuous' ? 'sequence.modelRunTitle' : 'sequence.modelTitle' : 'sequence.title') : scene.kind === 'event' ? name('event', scene.event_id) : scene.kind === 'combat' ? name('encounter', scene.encounter_id) : t('scene.rewards'); }
   function label(scene) { return scene.kind === 'sequence' && scene.provenance.scope === 'continuous'
     ? t('scene.floor', { floor: scene.snapshots[actionCursor].location.floor }) : scene.kind === 'sequence' ? scene.provenance.preparation === 'developer-natural'
     ? t('sequence.preparedBattle', { encounter: name('encounter', scene.encounter_id) }) : t('sequence.manual')

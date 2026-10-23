@@ -25,8 +25,10 @@ export function neowOptionRuns(effects, locale) {
   return labelRuns(label);
 }
 
-export function neowStructuredRuns(effects, locale) {
-  const { REWARD_TEXT: text, UNIQUE_REWARDS: unique } = original.events[resolveLocale(locale)].Neow;
+export function neowStructuredRuns(option, locale) {
+  const { effects, action, transition } = option;
+  const { REWARD_TEXT: text, UNIQUE_REWARDS: unique, OPTIONS: options } = original.events[resolveLocale(locale)].Neow;
+  if (action === 'Leave' && transition?.kind === 'complete' && effects.length === 0) return labelRuns(options[3]);
   const shape = effects.map(effect => effect.effect).sort().join(',');
   const amount = kind => {
     const value = effects.find(effect => effect.effect === kind)?.amount;
