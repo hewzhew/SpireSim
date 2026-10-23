@@ -901,9 +901,12 @@ mod tests {
             "history-reward",
             &crate::decision_tests::fixture("reward"),
         );
-        let selector =
-            crate::selector::parse_action_selector_v1("take:ShrugItOff", "history regression")
-                .unwrap();
+        let selector = crate::selector::parse_action_selector_v1(
+            "take:ShrugItOff",
+            "history regression",
+            sts_presentation::Locale::En,
+        )
+        .unwrap();
         game.choose_action_v1(&selector, true).unwrap();
         let paths = crate::storage::RunPlayPathsV1::new(directory.0.join("history-reward"));
         let before = paths.load().unwrap();
@@ -944,7 +947,12 @@ mod tests {
             &crate::decision_tests::fixture("combat_finish"),
         );
         game.choose_action_v1(
-            &crate::selector::parse_action_selector_v1("play:Strike@0", "history test").unwrap(),
+            &crate::selector::parse_action_selector_v1(
+                "play:Strike@0",
+                "history test",
+                sts_presentation::Locale::En,
+            )
+            .unwrap(),
             true,
         )
         .unwrap();

@@ -1449,13 +1449,17 @@ fn load_retained_mirror_prefix_v1(
         .skip(omitted_legacy_intro_steps)
         .take(through_depth - omitted_legacy_intro_steps)
         .map(|step| {
-            let selector = parse_action_selector_v1(&step.semantic_action, "replay-mirror-prefix")
-                .map_err(|error| {
-                    format!(
-                        "retained mirror plan depth {} has invalid semantic action {:?}: {error}",
-                        step.depth, step.semantic_action
-                    )
-                })?;
+            let selector = parse_action_selector_v1(
+                &step.semantic_action,
+                "replay-mirror-prefix",
+                sts_presentation::Locale::En,
+            )
+            .map_err(|error| {
+                format!(
+                    "retained mirror plan depth {} has invalid semantic action {:?}: {error}",
+                    step.depth, step.semantic_action
+                )
+            })?;
             Ok(RunPlayRetainedSemanticPrefixStepV1 {
                 source_depth: step.depth,
                 expected_site: step.site,
@@ -2114,7 +2118,7 @@ fn run(cli: Cli) -> Result<(), String> {
                     .as_ref()
                     .ok_or("deck-lab requires a decision")?
                     .public_decision_v1()?;
-                let selectors = selector::parse_action_line_v1(&line, "deck-lab after")?;
+                let selectors = selector::parse_action_line_v1(&line, "deck-lab after", locale)?;
                 let (prepared, actions) =
                     controller.prepare_resources_for_deck_lab_v1(&selectors)?;
                 let after = prepared
@@ -3764,7 +3768,7 @@ fn run(cli: Cli) -> Result<(), String> {
             println!("exported combat case={}", output.display());
         }
         Command::ProposalAudit { session, line } => {
-            let choices = parse_action_line_v1(&line, "proposal-audit")?;
+            let choices = parse_action_line_v1(&line, "proposal-audit", locale)?;
             let mut controller = RunPlayControllerV1::open(RunPlayPathsV1::new(session))?;
             let audit = controller.proposal_audit_v1(
                 &choices,
@@ -3787,7 +3791,7 @@ fn run(cli: Cli) -> Result<(), String> {
                     ));
                 }
             }
-            let parsed = parse_comparison_lines_v1(lines.iter().map(String::as_str))?;
+            let parsed = parse_comparison_lines_v1(lines.iter().map(String::as_str), locale)?;
             let paths = RunPlayPathsV1::new(session);
             let mut controller = match at {
                 Some(selector) => RunPlayControllerV1::open_at(paths, &selector)?,
@@ -3810,7 +3814,7 @@ fn run(cli: Cli) -> Result<(), String> {
             print!("{}", render_comparison_v1(&comparison, detail, locale)?);
         }
         Command::AnchorLine { session, line } => {
-            let choices = parse_action_line_v1(&line, "anchor-line")?;
+            let choices = parse_action_line_v1(&line, "anchor-line", locale)?;
             let mut controller = RunPlayControllerV1::open(RunPlayPathsV1::new(session))?;
             controller.anchor_action_line_v1(&choices)?;
             print!("{}", render_status_v1(controller.head(), locale)?);
@@ -3904,6 +3908,7 @@ fn run(cli: Cli) -> Result<(), String> {
             let selectors = parse_shell_actions_v1(
                 &actions.iter().map(String::as_str).collect::<Vec<_>>(),
                 "preview",
+                locale,
             )?;
             if let Some(selector) = at.as_deref() {
                 require_exact_node_selector_v1(selector, "preview")?;
@@ -3963,6 +3968,7 @@ fn run(cli: Cli) -> Result<(), String> {
             let selectors = parse_shell_actions_v1(
                 &actions.iter().map(String::as_str).collect::<Vec<_>>(),
                 "act",
+                locale,
             )?;
             if auto_combat && selectors.len() != 1 {
                 return Err(
@@ -4601,9 +4607,14 @@ fn compact_action_input_v1<T: AsRef<str>>(parts: &[T]) -> String {
 fn parse_shell_actions_v1(
     words: &[&str],
     command: &str,
+    locale: sts_presentation::Locale,
 ) -> Result<Vec<selector::RunPlayActionSelectorV1>, String> {
     if words.is_empty() {
-        return Err(format!("{command} requires at least one action"));
+        return Err(selector::syntax_message(
+            locale,
+            "shellActions",
+            &[("command", &(command.to_owned()))],
+        ));
     }
     let mut selectors = Vec::new();
     let mut index = 0;
@@ -4615,18 +4626,25 @@ fn parse_shell_actions_v1(
             while index < words.len() && !shell_action_start_v1(words[index]) {
                 let card = words[index];
                 if card.is_empty() || card.contains(',') || card.starts_with('@') {
-                    return Err(format!(
-                        "{command} select needs card names separated by spaces; use select:<card> for an explicit action"
+                    return Err(selector::syntax_message(
+                        locale,
+                        "shellSelectNames",
+                        &[("command", &(command.to_owned()))],
                     ));
                 }
                 index += 1;
             }
             if index == start {
-                return Err(format!("{command} select requires at least one card"));
+                return Err(selector::syntax_message(
+                    locale,
+                    "shellSelectEmpty",
+                    &[("command", &(command.to_owned()))],
+                ));
             }
             selectors.push(parse_action_selector_v1(
                 &format!("select:{}", words[start..index].join(",")),
                 command,
+                locale,
             )?);
             continue;
         }
@@ -4639,11 +4657,15 @@ fn parse_shell_actions_v1(
             _ => None,
         };
         let mut spec = if let Some(verb) = spaced_verb {
-            let name = words
-                .get(index + 1)
-                .ok_or_else(|| format!("{word} requires a name"))?;
+            let name = words.get(index + 1).ok_or_else(|| {
+                selector::syntax_message(locale, "shellName", &[("word", &(word.to_owned()))])
+            })?;
             if name.starts_with('@') || name.contains(':') {
-                return Err(format!("{word} requires a plain name after the verb"));
+                return Err(selector::syntax_message(
+                    locale,
+                    "shellPlainName",
+                    &[("word", &(word.to_owned()))],
+                ));
             }
             index += 1;
             format!("{verb}:{name}")
@@ -4656,12 +4678,19 @@ fn parse_shell_actions_v1(
                 .is_some_and(|next| next.starts_with('@'))
         {
             if spec.contains('@') {
-                return Err(format!("target specified twice in {command}: {spec}"));
+                return Err(selector::syntax_message(
+                    locale,
+                    "shellTargetTwice",
+                    &[
+                        ("command", &(command.to_owned())),
+                        ("spec", &(spec.to_owned())),
+                    ],
+                ));
             }
             index += 1;
             spec.push_str(words[index]);
         }
-        selectors.push(parse_action_selector_v1(&spec, command)?);
+        selectors.push(parse_action_selector_v1(&spec, command, locale)?);
         index += 1;
     }
     Ok(selectors)
@@ -4705,11 +4734,14 @@ fn shell_action_start_v1(word: &str) -> bool {
 fn parse_shell_single_action_v1(
     words: &[&str],
     command: &str,
+    locale: sts_presentation::Locale,
 ) -> Result<selector::RunPlayActionSelectorV1, String> {
-    let selectors = parse_shell_actions_v1(words, "shell")?;
+    let selectors = parse_shell_actions_v1(words, "shell", locale)?;
     if selectors.len() != 1 {
-        return Err(format!(
-            "{command} accepts exactly one action; use act for a sequence"
+        return Err(selector::syntax_message(
+            locale,
+            "shellSingle",
+            &[("command", &(command.to_owned()))],
         ));
     }
     Ok(selectors.into_iter().next().expect("checked one action"))
@@ -4799,7 +4831,7 @@ fn run_shell_v1(session: PathBuf, locale: Locale) -> Result<(), String> {
                     print!("{}", render_advice_detail_v1(&detail, locale));
                 }
                 "compare" | "compare-detail" => {
-                    let lines = parse_comparison_lines_v1(words)?;
+                    let lines = parse_comparison_lines_v1(words, locale)?;
                     let comparison = controller.compare_action_lines_v1(&lines)?;
                     print!(
                         "{}",
@@ -4813,7 +4845,7 @@ fn run_shell_v1(session: PathBuf, locale: Locale) -> Result<(), String> {
                     if words.next().is_some() {
                         return Err(cli_presentation::message(locale, "shell.anchorSingle", &[]));
                     }
-                    let choices = parse_action_line_v1(spec, "anchor")?;
+                    let choices = parse_action_line_v1(spec, "anchor", locale)?;
                     controller.anchor_action_line_v1(&choices)?;
                     println!("Completed: anchor {spec}");
                     print_shell_reading_v1(&mut controller, &mut known, &mut displayed, locale)?;
@@ -4855,7 +4887,7 @@ fn run_shell_v1(session: PathBuf, locale: Locale) -> Result<(), String> {
                 }
                 "act" => {
                     let actions = words.collect::<Vec<_>>();
-                    let selectors = parse_shell_actions_v1(&actions, "act")?;
+                    let selectors = parse_shell_actions_v1(&actions, "act", locale)?;
                     if selectors.len() == 1 {
                         controller.choose_action_v1(&selectors[0], true)?;
                     } else {
@@ -4867,7 +4899,7 @@ fn run_shell_v1(session: PathBuf, locale: Locale) -> Result<(), String> {
                 "play" | "use" | "claim" | "take" | "buy" | "remove" | "smith" | "toke"
                 | "choose" | "discard-potion" | "boss-relic" => {
                     let actions = std::iter::once(command).chain(words).collect::<Vec<_>>();
-                    let selector = parse_shell_single_action_v1(&actions, command)?;
+                    let selector = parse_shell_single_action_v1(&actions, command, locale)?;
                     controller.choose_action_v1(&selector, true)?;
                     println!("Completed: {}", actions.join(" "));
                     print_shell_reading_v1(&mut controller, &mut known, &mut displayed, locale)?;
@@ -4887,7 +4919,7 @@ fn run_shell_v1(session: PathBuf, locale: Locale) -> Result<(), String> {
                             &[("command", command)],
                         ));
                     }
-                    let selector = parse_action_selector_v1(action, command)?;
+                    let selector = parse_action_selector_v1(action, command, locale)?;
                     controller.choose_action_v1(&selector, command == "manual")?;
                     println!("Completed: {command} {action}");
                     print_shell_reading_v1(&mut controller, &mut known, &mut displayed, locale)?;
@@ -4980,7 +5012,7 @@ fn run_shell_v1(session: PathBuf, locale: Locale) -> Result<(), String> {
                             .choose_bound_v1(&decision::RunPlayBoundChoiceV1 { source, choice })?;
                         println!("Completed: {index} ({label})");
                     } else {
-                        let selector = parse_action_selector_v1(unknown, "shell")?;
+                        let selector = parse_action_selector_v1(unknown, "shell", locale)?;
                         controller.choose_action_v1(&selector, true)?;
                         println!("Completed: {unknown}");
                     }
@@ -5143,16 +5175,53 @@ fn run_agent_shell_v1(
 
 fn parse_comparison_lines_v1<'a>(
     specs: impl IntoIterator<Item = &'a str>,
+    locale: sts_presentation::Locale,
 ) -> Result<Vec<Vec<selector::RunPlayActionSelectorV1>>, String> {
     specs
         .into_iter()
-        .map(|spec| parse_action_line_v1(spec, "compare"))
+        .map(|spec| parse_action_line_v1(spec, "compare", locale))
         .collect()
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn shell_action_language_preserves_actions_and_localizes_input_errors() {
+        for words in [
+            vec!["play", "Strike+0#0", "@0", "end"],
+            vec!["go", "2,2"],
+            vec!["select", "Strike+0#0", "Defend+0#0"],
+        ] {
+            assert_eq!(
+                parse_shell_actions_v1(&words, "act", Locale::En),
+                parse_shell_actions_v1(&words, "act", Locale::ZhCn)
+            );
+        }
+        for words in [
+            vec![],
+            vec!["select"],
+            vec!["select", "Strike,"],
+            vec!["play"],
+            vec!["play", "@0"],
+            vec!["play:Strike@0", "@1"],
+        ] {
+            let english = parse_shell_actions_v1(&words, "act", Locale::En).unwrap_err();
+            let chinese = parse_shell_actions_v1(&words, "act", Locale::ZhCn).unwrap_err();
+            assert_ne!(english, chinese, "{words:?}");
+            assert!(
+                chinese
+                    .chars()
+                    .any(|character| ('\u{4e00}'..='\u{9fff}').contains(&character)),
+                "{chinese}"
+            );
+        }
+        assert_ne!(
+            parse_shell_single_action_v1(&["end", "end"], "end", Locale::En).unwrap_err(),
+            parse_shell_single_action_v1(&["end", "end"], "end", Locale::ZhCn).unwrap_err()
+        );
+    }
 
     #[test]
     fn map_cli_separates_route_examples_and_full_grid() {
@@ -5384,6 +5453,7 @@ mod tests {
                 "end",
             ],
             "act",
+            sts_presentation::Locale::En,
         )
         .unwrap();
         assert_eq!(
@@ -5405,13 +5475,20 @@ mod tests {
                     },
                     target_monster_slot: Some(1),
                 },
-                parse_action_selector_v1("play:Defend", "act").unwrap(),
+                parse_action_selector_v1("play:Defend", "act", sts_presentation::Locale::En)
+                    .unwrap(),
                 selector::RunPlayActionSelectorV1::EndTurn,
             ]
         );
         assert_eq!(
-            parse_shell_actions_v1(&["play", "SeverSoul+@0"], "shell").unwrap(),
-            parse_action_line_v1("play:SeverSoul+@0", "shell").unwrap()
+            parse_shell_actions_v1(
+                &["play", "SeverSoul+@0"],
+                "shell",
+                sts_presentation::Locale::En
+            )
+            .unwrap(),
+            parse_action_line_v1("play:SeverSoul+@0", "shell", sts_presentation::Locale::En)
+                .unwrap()
         );
     }
 
@@ -5419,15 +5496,15 @@ mod tests {
     fn shell_accepts_the_displayed_map_action_and_powershell_comma_coercion() {
         let expected = vec![selector::RunPlayActionSelectorV1::ChooseRoute { x: 2, y: 2 }];
         assert_eq!(
-            parse_shell_actions_v1(&["go", "2,2"], "act").unwrap(),
+            parse_shell_actions_v1(&["go", "2,2"], "act", sts_presentation::Locale::En).unwrap(),
             expected
         );
         assert_eq!(
-            parse_shell_actions_v1(&["go", "2 2"], "act").unwrap(),
+            parse_shell_actions_v1(&["go", "2 2"], "act", sts_presentation::Locale::En).unwrap(),
             expected
         );
         assert_eq!(
-            parse_shell_actions_v1(&["route:2.2"], "act").unwrap(),
+            parse_shell_actions_v1(&["route:2.2"], "act", sts_presentation::Locale::En).unwrap(),
             expected
         );
     }
@@ -5440,16 +5517,26 @@ mod tests {
             vec!["play", "Strike@0", "@1"],
             vec!["play", "Strike", "@x"],
         ] {
-            assert!(parse_shell_actions_v1(&words, "act").is_err(), "{words:?}");
+            assert!(
+                parse_shell_actions_v1(&words, "act", sts_presentation::Locale::En).is_err(),
+                "{words:?}"
+            );
         }
     }
 
     #[test]
     fn spaced_multi_card_select_is_one_action_in_shell_and_cli() {
         let words = ["select", "Strike+0#0", "Strike+0#1", "Strike+0#2"];
-        let expected =
-            parse_action_line_v1("select:Strike+0#0,Strike+0#1,Strike+0#2", "test").unwrap();
-        assert_eq!(parse_shell_actions_v1(&words, "shell").unwrap(), expected);
+        let expected = parse_action_line_v1(
+            "select:Strike+0#0,Strike+0#1,Strike+0#2",
+            "test",
+            sts_presentation::Locale::En,
+        )
+        .unwrap();
+        assert_eq!(
+            parse_shell_actions_v1(&words, "shell", sts_presentation::Locale::En).unwrap(),
+            expected
+        );
         for verb in ["preview", "act"] {
             let mut args = vec!["run_play", verb, "--session", "fixture"];
             args.extend(words);
@@ -5461,23 +5548,40 @@ mod tests {
             assert_eq!(
                 parse_shell_actions_v1(
                     &actions.iter().map(String::as_str).collect::<Vec<_>>(),
-                    verb
+                    verb,
+                    sts_presentation::Locale::En
                 )
                 .unwrap(),
                 expected
             );
         }
         assert_eq!(
-            parse_shell_actions_v1(&["select:Strike+0#0,Strike+0#1"], "act").unwrap(),
-            parse_action_line_v1("select:Strike+0#0,Strike+0#1", "test").unwrap()
+            parse_shell_actions_v1(
+                &["select:Strike+0#0,Strike+0#1"],
+                "act",
+                sts_presentation::Locale::En
+            )
+            .unwrap(),
+            parse_action_line_v1(
+                "select:Strike+0#0,Strike+0#1",
+                "test",
+                sts_presentation::Locale::En
+            )
+            .unwrap()
         );
         assert_eq!(
             parse_shell_actions_v1(
                 &["select", "Entrench+", "play", "PommelStrike+@1", "end"],
-                "preview"
+                "preview",
+                sts_presentation::Locale::En
             )
             .unwrap(),
-            parse_action_line_v1("select:Entrench+/play:PommelStrike+@1/end", "test").unwrap()
+            parse_action_line_v1(
+                "select:Entrench+/play:PommelStrike+@1/end",
+                "test",
+                sts_presentation::Locale::En
+            )
+            .unwrap()
         );
         for invalid in [
             vec!["select"],
@@ -5485,7 +5589,7 @@ mod tests {
             vec!["select", "Strike+0#0,Strike+0#1"],
         ] {
             assert!(
-                parse_shell_actions_v1(&invalid, "act").is_err(),
+                parse_shell_actions_v1(&invalid, "act", sts_presentation::Locale::En).is_err(),
                 "{invalid:?}"
             );
         }
@@ -5508,8 +5612,9 @@ mod tests {
             (vec!["boss-relic", "RunicDome#0"], "boss-relic:RunicDome#0"),
         ] {
             assert_eq!(
-                parse_shell_single_action_v1(&words, words[0]).unwrap(),
-                parse_action_selector_v1(canonical, "shell").unwrap(),
+                parse_shell_single_action_v1(&words, words[0], sts_presentation::Locale::En)
+                    .unwrap(),
+                parse_action_selector_v1(canonical, "shell", sts_presentation::Locale::En).unwrap(),
                 "{words:?}"
             );
         }
@@ -5524,7 +5629,8 @@ mod tests {
             vec!["claim", "BronzeScales", "end"],
         ] {
             assert!(
-                parse_shell_single_action_v1(&words, words[0]).is_err(),
+                parse_shell_single_action_v1(&words, words[0], sts_presentation::Locale::En)
+                    .is_err(),
                 "{words:?}"
             );
         }

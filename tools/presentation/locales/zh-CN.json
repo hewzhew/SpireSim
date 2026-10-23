@@ -6144,5 +6144,35 @@
     "ordinalAddressing": "{{context}} 不接受 ordinal 寻址；请原样复制当前选项中的语义动作",
     "candidateDetails": "候选详情",
     "continuationAudit": "续接审计"
+  },
+  "selector": {
+    "emptyLine": "run-play {{command}} 的动作序列不能为空",
+    "emptyAction": "run-play {{command}} 的动作序列中有空动作",
+    "unknownAction": "{{command}} 中的语义动作 {{spec}} 无法识别；请复制当前选项中的完整语义动作，例如 event:Neow:0 或 play:Strike#0@0。行号不是语义动作。含空格的名称需放在同一个引号参数中，例如 play:\"Spot Weakness\"@0",
+    "route": "{{command}} 中的路线动作必须为 go <x>,<y> 或 route:<x>.<y>",
+    "event": "{{command}} 中的事件动作必须为 event:<event>:<option-index>",
+    "eventName": "{{command}} 中的事件名称不能为空",
+    "verb": "run-play 语义动作的动词 {{verb}} 无法识别",
+    "ordinalEmpty": "{{command}} 中的显式 ordinal 路径不能为空",
+    "fullwidthPlus": "{{command}} 中使用了全角加号；升级标记请使用 ASCII '+'（U+002B）：Card+ 或 Card+1 表示升级一次，Card+0 表示未升级",
+    "emptyName": "{{command}} 中的具名动作不能使用空名称",
+    "upgradeSuffix": "{{command}} 中的升级后缀无效；Card+ 或 Card+1 表示升级一次，Card+0 表示未升级，Card+N 表示升级 N 次",
+    "number": "{{command}} 中的{{label}} {{value}} 无效：{{error}}",
+    "field": {
+      "routeX": "路线 x 坐标",
+      "routeY": "路线 y 坐标",
+      "eventOption": "事件选项编号",
+      "monsterSlot": "敌人栏位",
+      "upgradeCount": "升级次数",
+      "occurrence": "同名序号",
+      "ordinal": "ordinal 编号"
+    },
+    "shellActions": "{{command}} 至少需要一个动作",
+    "shellSelectNames": "{{command}} select 的卡牌名称需用空格分隔；显式动作请使用 select:<card>",
+    "shellSelectEmpty": "{{command}} select 至少需要一张卡牌",
+    "shellName": "{{word}} 需要名称",
+    "shellPlainName": "{{word}} 后需提供普通名称",
+    "shellTargetTwice": "{{command}} 重复指定了目标：{{spec}}",
+    "shellSingle": "{{command}} 只接受一个动作；动作序列请使用 act"
   }
 }

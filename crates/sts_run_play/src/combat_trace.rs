@@ -627,7 +627,13 @@ pub fn trace_verified_combat_source_v1(
         let line = proof
             .steps
             .iter()
-            .map(|step| parse_action_selector_v1(&step.action, "combat-trace artifact"))
+            .map(|step| {
+                parse_action_selector_v1(
+                    &step.action,
+                    "combat-trace artifact",
+                    sts_presentation::Locale::En,
+                )
+            })
             .collect::<Result<Vec<_>, _>>()?;
         proofs.push(proof);
         lines.push(line);

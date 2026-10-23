@@ -1044,7 +1044,12 @@ mod tests {
                 .unwrap()
                 .into_session()
                 .unwrap();
-            let selectors = crate::selector::parse_action_line_v1(line, "deck-lab after").unwrap();
+            let selectors = crate::selector::parse_action_line_v1(
+                line,
+                "deck-lab after",
+                sts_presentation::Locale::En,
+            )
+            .unwrap();
             let (prepared, actions) = game.prepare_resources_for_deck_lab_v1(&selectors).unwrap();
             let resources = prepared
                 .current_run_decision_checkpoint_for_run_play_v1()
@@ -1096,8 +1101,12 @@ mod tests {
             let mut game = controller_with_session(&dir.0, kind, &fixture(kind));
             let before = game.head().clone();
             for line in lines {
-                let selectors =
-                    crate::selector::parse_action_line_v1(line, "deck-lab after").unwrap();
+                let selectors = crate::selector::parse_action_line_v1(
+                    line,
+                    "deck-lab after",
+                    sts_presentation::Locale::En,
+                )
+                .unwrap();
                 assert!(game.prepare_resources_for_deck_lab_v1(&selectors).is_err());
                 assert_eq!(game.head(), &before);
                 assert_eq!(game.paths().load_head().unwrap(), before);
@@ -1122,8 +1131,12 @@ mod tests {
         };
         let mut game = controller_with_session(&dir.0, "bottled-preparation", &session);
         let before = game.head().clone();
-        let incomplete =
-            crate::selector::parse_action_line_v1("buy:BottledFlame#0", "deck-lab after").unwrap();
+        let incomplete = crate::selector::parse_action_line_v1(
+            "buy:BottledFlame#0",
+            "deck-lab after",
+            sts_presentation::Locale::En,
+        )
+        .unwrap();
         assert!(game
             .prepare_resources_for_deck_lab_v1(&incomplete)
             .err()
@@ -1133,6 +1146,7 @@ mod tests {
         let complete = crate::selector::parse_action_line_v1(
             "buy:BottledFlame#0/select:Bash#0",
             "deck-lab after",
+            sts_presentation::Locale::En,
         )
         .unwrap();
         let (prepared, _) = game.prepare_resources_for_deck_lab_v1(&complete).unwrap();

@@ -6144,5 +6144,35 @@
     "ordinalAddressing": "{{context}} rejects ordinal addressing; copy a semantic action from current options verbatim",
     "candidateDetails": "candidate details",
     "continuationAudit": "continuation audit"
+  },
+  "selector": {
+    "emptyLine": "run-play {{command}} line must not be empty",
+    "emptyAction": "empty action in run-play {{command}} line",
+    "unknownAction": "unknown semantic action {{spec}} in {{command}}; copy a semantic action from current options, e.g. event:Neow:0 or play:Strike#0@0. Row numbers are not semantic actions. Keep names with spaces in one quoted token, e.g. play:\"Spot Weakness\"@0",
+    "route": "route action in {{command}} must be go <x>,<y> or route:<x>.<y>",
+    "event": "event action in {{command}} must be event:<event>:<option-index>",
+    "eventName": "event name in {{command}} must not be empty",
+    "verb": "unknown run-play semantic action verb {{verb}}",
+    "ordinalEmpty": "explicit ordinal path in {{command}} must not be empty",
+    "fullwidthPlus": "invalid fullwidth plus in {{command}}; use ASCII '+' (U+002B) for upgrades: Card+ or Card+1 for one upgrade, Card+0 for base",
+    "emptyName": "named action in {{command}} must not have an empty name",
+    "upgradeSuffix": "invalid upgrade suffix in {{command}}; use Card+ or Card+1 for one upgrade, Card+0 for base, or Card+N for N upgrades",
+    "number": "invalid {{label}} {{value}} in {{command}}: {{error}}",
+    "field": {
+      "routeX": "route x",
+      "routeY": "route y",
+      "eventOption": "event option",
+      "monsterSlot": "monster slot",
+      "upgradeCount": "upgrade count",
+      "occurrence": "occurrence",
+      "ordinal": "ordinal"
+    },
+    "shellActions": "{{command}} requires at least one action",
+    "shellSelectNames": "{{command}} select needs card names separated by spaces; use select:<card> for an explicit action",
+    "shellSelectEmpty": "{{command}} select requires at least one card",
+    "shellName": "{{word}} requires a name",
+    "shellPlainName": "{{word}} requires a plain name after the verb",
+    "shellTargetTwice": "target specified twice in {{command}}: {{spec}}",
+    "shellSingle": "{{command}} accepts exactly one action; use act for a sequence"
   }
 }

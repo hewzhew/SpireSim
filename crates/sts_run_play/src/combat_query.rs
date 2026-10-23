@@ -718,7 +718,13 @@ pub fn anchor_combat_trajectory_query_artifact_v2(
         .proof
         .semantic_action_line
         .iter()
-        .map(|action| parse_action_selector_v1(action, "anchor-combat-query artifact"))
+        .map(|action| {
+            parse_action_selector_v1(
+                action,
+                "anchor-combat-query artifact",
+                sts_presentation::Locale::En,
+            )
+        })
         .collect::<Result<Vec<RunPlayActionSelectorV1>, _>>()?;
     let comparison = controller.compare_action_lines_v1(std::slice::from_ref(&selectors))?;
     let replayed = comparison

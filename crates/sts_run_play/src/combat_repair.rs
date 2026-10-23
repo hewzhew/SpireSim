@@ -951,7 +951,13 @@ fn repair_turn_damage_cutpoint_from_verified_source_v1(
     let selectors = proof
         .steps
         .iter()
-        .map(|step| parse_action_selector_v1(&step.action, "combat-damage-challenge artifact"))
+        .map(|step| {
+            parse_action_selector_v1(
+                &step.action,
+                "combat-damage-challenge artifact",
+                sts_presentation::Locale::En,
+            )
+        })
         .collect::<Result<Vec<_>, _>>()?;
     let compared = controller.compare_action_lines_v1(&[selectors])?;
     let compared = compared
@@ -1234,7 +1240,13 @@ fn repair_feed_from_verified_source_internal_v1(
     let selectors = proof
         .steps
         .iter()
-        .map(|step| parse_action_selector_v1(&step.action, "combat-feed-repair artifact"))
+        .map(|step| {
+            parse_action_selector_v1(
+                &step.action,
+                "combat-feed-repair artifact",
+                sts_presentation::Locale::En,
+            )
+        })
         .collect::<Result<Vec<_>, _>>()?;
     let compared = controller.compare_action_lines_v1(&[selectors])?;
     let compared = compared

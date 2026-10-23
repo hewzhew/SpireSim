@@ -6501,7 +6501,12 @@ mod tests {
         let mut controller = RunPlayControllerV1::open(paths.clone()).unwrap();
         controller
             .choose_action_v1(
-                &crate::selector::parse_action_selector_v1("event:Neow:0", "act").unwrap(),
+                &crate::selector::parse_action_selector_v1(
+                    "event:Neow:0",
+                    "act",
+                    sts_presentation::Locale::En,
+                )
+                .unwrap(),
                 true,
             )
             .unwrap();
@@ -6553,7 +6558,12 @@ mod tests {
         let mut controller = RunPlayControllerV1::open(paths.clone()).unwrap();
         controller
             .choose_action_v1(
-                &crate::selector::parse_action_selector_v1("event:Neow:0", "act").unwrap(),
+                &crate::selector::parse_action_selector_v1(
+                    "event:Neow:0",
+                    "act",
+                    sts_presentation::Locale::En,
+                )
+                .unwrap(),
                 true,
             )
             .unwrap();
@@ -6798,7 +6808,12 @@ mod tests {
         let mut controller = RunPlayControllerV1::open(paths.clone()).unwrap();
         controller
             .choose_action_v1(
-                &crate::selector::parse_action_selector_v1("event:Neow:0", "act").unwrap(),
+                &crate::selector::parse_action_selector_v1(
+                    "event:Neow:0",
+                    "act",
+                    sts_presentation::Locale::En,
+                )
+                .unwrap(),
                 true,
             )
             .unwrap();
@@ -6849,7 +6864,12 @@ mod tests {
         let mut controller = RunPlayControllerV1::open(paths.clone()).unwrap();
         controller
             .choose_action_v1(
-                &crate::selector::parse_action_selector_v1("event:Neow:0", "act").unwrap(),
+                &crate::selector::parse_action_selector_v1(
+                    "event:Neow:0",
+                    "act",
+                    sts_presentation::Locale::En,
+                )
+                .unwrap(),
                 true,
             )
             .unwrap();
@@ -7101,7 +7121,12 @@ mod tests {
         let mut controller = RunPlayControllerV1::open(source.clone()).unwrap();
         controller
             .choose_action_v1(
-                &crate::selector::parse_action_selector_v1("event:Neow:0", "act").unwrap(),
+                &crate::selector::parse_action_selector_v1(
+                    "event:Neow:0",
+                    "act",
+                    sts_presentation::Locale::En,
+                )
+                .unwrap(),
                 true,
             )
             .unwrap();
@@ -7173,7 +7198,12 @@ mod tests {
         let mut controller = RunPlayControllerV1::open(paths).unwrap();
         controller
             .choose_action_v1(
-                &crate::selector::parse_action_selector_v1("event:Neow:0", "act").unwrap(),
+                &crate::selector::parse_action_selector_v1(
+                    "event:Neow:0",
+                    "act",
+                    sts_presentation::Locale::En,
+                )
+                .unwrap(),
                 true,
             )
             .unwrap();

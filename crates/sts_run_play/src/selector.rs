@@ -1,3 +1,13 @@
+pub(crate) fn syntax_message(
+    locale: sts_presentation::Locale,
+    key: &str,
+    parameters: &[(&str, &str)],
+) -> String {
+    locale
+        .text("selector", key, parameters)
+        .expect("action syntax message")
+}
+
 use sts_oracle_learning::agent::information::action::{
     PublicCombatAtomicActionV1, PublicCombatIndexedChoiceCandidateV1,
     PublicCombatSelectionDomainCandidateV1,
@@ -74,28 +84,38 @@ pub struct NamedOccurrenceV1 {
 pub fn parse_action_line_v1(
     spec: &str,
     command: &str,
+    locale: sts_presentation::Locale,
 ) -> Result<Vec<RunPlayActionSelectorV1>, String> {
     if spec.is_empty() {
-        return Err(format!("run-play {command} line must not be empty"));
+        return Err(syntax_message(
+            locale,
+            "emptyLine",
+            &[("command", &(command.to_owned()))],
+        ));
     }
     spec.split('/')
-        .map(|step| parse_action_selector_v1(step, command))
+        .map(|step| parse_action_selector_v1(step, command, locale))
         .collect()
 }
 
 pub fn parse_action_selector_v1(
     spec: &str,
     command: &str,
+    locale: sts_presentation::Locale,
 ) -> Result<RunPlayActionSelectorV1, String> {
     if spec.is_empty() {
-        return Err(format!("empty action in run-play {command} line"));
+        return Err(syntax_message(
+            locale,
+            "emptyAction",
+            &[("command", &(command.to_owned()))],
+        ));
     }
     if spec == "open-card" {
         return Ok(RunPlayActionSelectorV1::OpenCardReward { occurrence: None });
     }
     if let Some(occurrence) = spec.strip_prefix("open-card#") {
         return Ok(RunPlayActionSelectorV1::OpenCardReward {
-            occurrence: Some(parse_number(occurrence, "occurrence", command)?),
+            occurrence: Some(parse_number(occurrence, "occurrence", command, locale)?),
         });
     }
     if spec == "singing-bowl" {
@@ -103,12 +123,12 @@ pub fn parse_action_selector_v1(
     }
     if let Some(occurrence) = spec.strip_prefix("singing-bowl#") {
         return Ok(RunPlayActionSelectorV1::SingingBowl {
-            occurrence: Some(parse_number(occurrence, "occurrence", command)?),
+            occurrence: Some(parse_number(occurrence, "occurrence", command, locale)?),
         });
     }
     if let Some(occurrence) = spec.strip_prefix("skip-card#") {
         return Ok(RunPlayActionSelectorV1::SkipCardReward {
-            occurrence: Some(parse_number(occurrence, "occurrence", command)?),
+            occurrence: Some(parse_number(occurrence, "occurrence", command, locale)?),
         });
     }
     match spec {
@@ -128,33 +148,38 @@ pub fn parse_action_selector_v1(
         _ => {}
     }
     let (verb, payload) = spec.split_once(':').ok_or_else(|| {
-        format!(
-            "unknown semantic action {spec:?} in {command}; copy a semantic action from current options, e.g. event:Neow:0 or play:Strike#0@0. Row numbers are not semantic actions. Keep names with spaces in one quoted token, e.g. play:\"Spot Weakness\"@0"
+        syntax_message(
+            locale,
+            "unknownAction",
+            &[
+                ("spec", &(format!("{spec:?}"))),
+                ("command", &(command.to_owned())),
+            ],
         )
     })?;
     match verb {
         "ordinal" => Ok(RunPlayActionSelectorV1::OrdinalPath(parse_ordinal_path(
-            payload, command,
+            payload, command, locale,
         )?)),
         "play" => {
-            let (name, target_monster_slot) = parse_optional_target(payload, command)?;
+            let (name, target_monster_slot) = parse_optional_target(payload, command, locale)?;
             Ok(RunPlayActionSelectorV1::PlayCard {
-                card: parse_named_occurrence(name, command)?,
+                card: parse_named_occurrence(name, command, locale)?,
                 target_monster_slot,
             })
         }
         "use-potion" => {
-            let (name, target_monster_slot) = parse_optional_target(payload, command)?;
+            let (name, target_monster_slot) = parse_optional_target(payload, command, locale)?;
             Ok(RunPlayActionSelectorV1::UsePotion {
-                potion: parse_named_occurrence(name, command)?,
+                potion: parse_named_occurrence(name, command, locale)?,
                 target_monster_slot,
             })
         }
         "discard-potion" => Ok(RunPlayActionSelectorV1::DiscardPotion(
-            parse_named_occurrence(payload, command)?,
+            parse_named_occurrence(payload, command, locale)?,
         )),
         "choose" => Ok(RunPlayActionSelectorV1::ChooseIndexed(
-            parse_named_occurrence(payload, command)?,
+            parse_named_occurrence(payload, command, locale)?,
         )),
         "route" => {
             // PowerShell coerces an unquoted `2,2` argument passed to a
@@ -167,57 +192,67 @@ pub fn parse_action_selector_v1(
                 .filter(|part| !part.is_empty())
                 .collect::<Vec<_>>();
             let [x, y] = coordinates.as_slice() else {
-                return Err(format!(
-                    "route action in {command} must be go <x>,<y> or route:<x>.<y>"
+                return Err(syntax_message(
+                    locale,
+                    "route",
+                    &[("command", &(command.to_owned()))],
                 ));
             };
             Ok(RunPlayActionSelectorV1::ChooseRoute {
-                x: parse_number(x, "route x", command)?,
-                y: parse_number(y, "route y", command)?,
+                x: parse_number(x, "routeX", command, locale)?,
+                y: parse_number(y, "routeY", command, locale)?,
             })
         }
         "claim" => Ok(RunPlayActionSelectorV1::ClaimReward(
-            parse_named_occurrence(payload, command)?,
+            parse_named_occurrence(payload, command, locale)?,
         )),
         "take" => Ok(RunPlayActionSelectorV1::TakeCard(parse_named_occurrence(
-            payload, command,
+            payload, command, locale,
         )?)),
         "buy" => Ok(RunPlayActionSelectorV1::Buy(parse_named_occurrence(
-            payload, command,
+            payload, command, locale,
         )?)),
         "remove" => Ok(RunPlayActionSelectorV1::RemoveCard(parse_named_occurrence(
-            payload, command,
+            payload, command, locale,
         )?)),
         "smith" => Ok(RunPlayActionSelectorV1::Smith(parse_named_occurrence(
-            payload, command,
+            payload, command, locale,
         )?)),
         "toke" => Ok(RunPlayActionSelectorV1::Toke(parse_named_occurrence(
-            payload, command,
+            payload, command, locale,
         )?)),
         "select" => Ok(RunPlayActionSelectorV1::SelectCards(if payload == "none" {
             Vec::new()
         } else {
             payload
                 .split(',')
-                .map(|card| parse_named_occurrence(card, command))
+                .map(|card| parse_named_occurrence(card, command, locale))
                 .collect::<Result<Vec<_>, _>>()?
         })),
         "boss-relic" => Ok(RunPlayActionSelectorV1::TakeBossRelic(
-            parse_named_occurrence(payload, command)?,
+            parse_named_occurrence(payload, command, locale)?,
         )),
         "event" => {
             let (event, option) = payload.rsplit_once(':').ok_or_else(|| {
-                format!("event action in {command} must be event:<event>:<option-index>")
+                syntax_message(locale, "event", &[("command", &(command.to_owned()))])
             })?;
             if event.is_empty() {
-                return Err(format!("event name in {command} must not be empty"));
+                return Err(syntax_message(
+                    locale,
+                    "eventName",
+                    &[("command", &(command.to_owned()))],
+                ));
             }
             Ok(RunPlayActionSelectorV1::EventOption {
                 event: event.to_string(),
-                option_index: parse_number(option, "event option", command)?,
+                option_index: parse_number(option, "eventOption", command, locale)?,
             })
         }
-        _ => Err(format!("unknown run-play semantic action verb {verb:?}")),
+        _ => Err(syntax_message(
+            locale,
+            "verb",
+            &[("verb", &(format!("{verb:?}")))],
+        )),
     }
 }
 
@@ -679,7 +714,7 @@ pub fn transactional_play_alias_for_choice_v1(
     let RunPlayActionSelectorV1::PlayCard {
         mut card,
         target_monster_slot,
-    } = parse_action_selector_v1(&exact, "transaction-alias")?
+    } = parse_action_selector_v1(&exact, "transaction-alias", sts_presentation::Locale::En)?
     else {
         return Ok(None);
     };
@@ -705,7 +740,11 @@ fn validate_generated_semantic_action_v1(
     choice: &TaskPublicChoiceV1,
     spec: &str,
 ) -> Result<(), String> {
-    let parsed = parse_action_selector_v1(spec, "generated-semantic-action")?;
+    let parsed = parse_action_selector_v1(
+        spec,
+        "generated-semantic-action",
+        sts_presentation::Locale::En,
+    )?;
     let resolved = resolve_action_selector_v1(decision, &parsed)?;
     if resolved != *choice {
         return Err(format!(
@@ -1942,14 +1981,20 @@ fn no_match_message(decision: &TaskPublicDecisionV1, selector: &str) -> String {
     )
 }
 
-fn parse_ordinal_path(payload: &str, command: &str) -> Result<Vec<usize>, String> {
+fn parse_ordinal_path(
+    payload: &str,
+    command: &str,
+    locale: sts_presentation::Locale,
+) -> Result<Vec<usize>, String> {
     let ordinals = payload
         .split('.')
-        .map(|value| parse_number(value, "ordinal", command))
+        .map(|value| parse_number(value, "ordinal", command, locale))
         .collect::<Result<Vec<_>, _>>()?;
     if ordinals.is_empty() {
-        return Err(format!(
-            "explicit ordinal path in {command} must not be empty"
+        return Err(syntax_message(
+            locale,
+            "ordinalEmpty",
+            &[("command", &(command.to_owned()))],
         ));
     }
     Ok(ordinals)
@@ -1958,19 +2003,30 @@ fn parse_ordinal_path(payload: &str, command: &str) -> Result<Vec<usize>, String
 fn parse_optional_target<'a>(
     payload: &'a str,
     command: &str,
+    locale: sts_presentation::Locale,
 ) -> Result<(&'a str, Option<u8>), String> {
     let Some((name, target)) = payload.rsplit_once('@') else {
         return Ok((payload, None));
     };
-    Ok((name, Some(parse_number(target, "monster slot", command)?)))
+    Ok((
+        name,
+        Some(parse_number(target, "monsterSlot", command, locale)?),
+    ))
 }
 
-fn parse_named_occurrence(payload: &str, command: &str) -> Result<NamedOccurrenceV1, String> {
+fn parse_named_occurrence(
+    payload: &str,
+    command: &str,
+    locale: sts_presentation::Locale,
+) -> Result<NamedOccurrenceV1, String> {
     let (name_and_upgrade, occurrence) = match payload.rsplit_once('#') {
-        Some((name, occurrence)) => (name, Some(parse_number(occurrence, "occurrence", command)?)),
+        Some((name, occurrence)) => (
+            name,
+            Some(parse_number(occurrence, "occurrence", command, locale)?),
+        ),
         None => (payload, None),
     };
-    let (name, upgrades) = parse_card_upgrade(name_and_upgrade, command)?;
+    let (name, upgrades) = parse_card_upgrade(name_and_upgrade, command, locale)?;
     Ok(NamedOccurrenceV1 {
         name: name.to_string(),
         upgrades,
@@ -1981,41 +2037,65 @@ fn parse_named_occurrence(payload: &str, command: &str) -> Result<NamedOccurrenc
 pub(crate) fn parse_card_upgrade<'a>(
     payload: &'a str,
     command: &str,
+    locale: sts_presentation::Locale,
 ) -> Result<(&'a str, Option<u8>), String> {
     if payload.contains('\u{ff0b}') {
-        return Err(format!(
-            "invalid fullwidth plus in {command}; use ASCII '+' (U+002B) for upgrades: Card+ or Card+1 for one upgrade, Card+0 for base"
+        return Err(syntax_message(
+            locale,
+            "fullwidthPlus",
+            &[("command", &(command.to_owned()))],
         ));
     }
     let (name, upgrades) = if let Some(name) = payload.strip_suffix('+') {
         (name, Some(1))
     } else if let Some((name, upgrades)) = payload.rsplit_once('+') {
-        let upgrades = parse_number::<u8>(upgrades, "upgrade count", command)?;
+        let upgrades = parse_number::<u8>(upgrades, "upgradeCount", command, locale)?;
         (name, Some(upgrades))
     } else {
         (payload, None)
     };
     if name.is_empty() {
-        return Err(format!(
-            "named action in {command} must not have an empty name"
+        return Err(syntax_message(
+            locale,
+            "emptyName",
+            &[("command", &(command.to_owned()))],
         ));
     }
     if name.contains('+') {
-        return Err(format!(
-            "invalid upgrade suffix in {command}; use Card+ or Card+1 for one upgrade, Card+0 for base, or Card+N for N upgrades"
+        return Err(syntax_message(
+            locale,
+            "upgradeSuffix",
+            &[("command", &(command.to_owned()))],
         ));
     }
     Ok((name, upgrades))
 }
 
-fn parse_number<T>(value: &str, label: &str, command: &str) -> Result<T, String>
+fn parse_number<T>(
+    value: &str,
+    label: &str,
+    command: &str,
+    locale: sts_presentation::Locale,
+) -> Result<T, String>
 where
     T: std::str::FromStr,
     T::Err: std::fmt::Display,
 {
-    value
-        .parse::<T>()
-        .map_err(|error| format!("invalid {label} {value:?} in {command}: {error}"))
+    value.parse::<T>().map_err(|error| {
+        syntax_message(
+            locale,
+            "number",
+            &[
+                (
+                    "label",
+                    &(syntax_message(locale, &format!("field.{label}"), &[])),
+                ),
+                ("value", &(format!("{value:?}"))),
+                ("command", &(command.to_owned())),
+                ("error", &(error.to_string())),
+            ],
+        )
+    })
 }
 
 fn name_matches(requested: &str, actual: &str) -> bool {
@@ -2033,6 +2113,82 @@ fn normalized_name(value: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn syntax_languages_preserve_commands_and_typed_action_identity() {
+        use sts_presentation::Locale;
+        for command in [
+            "advance",
+            "end",
+            "play:Strike+0#0@0",
+            "use-potion:FirePotion#0@1",
+            "discard-potion:BlockPotion",
+            "choose:FlurryOfBlows#1",
+            "route:2.2",
+            "route:2,2",
+            "route:2 2",
+            "open-card#1",
+            "singing-bowl#0",
+            "claim:Gold#0",
+            "take:ShrugItOff",
+            "skip-card#0",
+            "buy:Anchor#0",
+            "remove:Strike#0",
+            "smith:Bash#0",
+            "toke:Strike",
+            "select:Strike+0#0,Defend+0#0",
+            "select:none",
+            "boss-relic:RunicPyramid#0",
+            "event:Neow:0",
+            "play:Spot Weakness@0",
+        ] {
+            assert_eq!(
+                parse_action_selector_v1(command, "test", Locale::En),
+                parse_action_selector_v1(command, "test", Locale::ZhCn),
+                "{command}"
+            );
+        }
+        let line = "play:Strike+0#0@0/select:Defend+0#0/end";
+        assert_eq!(
+            parse_action_line_v1(line, "test", Locale::En),
+            parse_action_line_v1(line, "test", Locale::ZhCn)
+        );
+        for command in [
+            "",
+            "42",
+            "bad:thing",
+            "route:1",
+            "route:x.2",
+            "route:1.x",
+            "event:Neow",
+            "event::0",
+            "event:Neow:x",
+            "play:Strike@bad",
+            "open-card#bad",
+            "ordinal:bad",
+            "play:Strike+bad",
+            "play:+",
+            "play:Strike++",
+            "play:Strike＋",
+        ] {
+            let english = parse_action_selector_v1(command, "test", Locale::En).unwrap_err();
+            let chinese = parse_action_selector_v1(command, "test", Locale::ZhCn).unwrap_err();
+            assert_ne!(english, chinese, "{command}");
+            assert!(
+                chinese
+                    .chars()
+                    .any(|character| ('\u{4e00}'..='\u{9fff}').contains(&character)),
+                "{chinese}"
+            );
+        }
+        for locale in [Locale::En, Locale::ZhCn] {
+            assert!(parse_action_line_v1("", "act", locale).is_err());
+            // Raw parameters are inserted once; template-like command input remains literal.
+            assert!(parse_action_selector_v1("{{raw_input}}", "act", locale)
+                .unwrap_err()
+                .contains("{{raw_input}}"));
+        }
+    }
     use sts_oracle_learning::agent::task::{
         TaskDecisionSiteV1, TaskStrategicCardV1, TaskStrategicObservationV1,
     };
@@ -2191,7 +2347,12 @@ mod tests {
     #[test]
     fn parses_semantic_combat_line() {
         assert_eq!(
-            parse_action_line_v1("play:Defend/play:Whirlwind/end", "compare").unwrap(),
+            parse_action_line_v1(
+                "play:Defend/play:Whirlwind/end",
+                "compare",
+                sts_presentation::Locale::En
+            )
+            .unwrap(),
             vec![
                 RunPlayActionSelectorV1::PlayCard {
                     card: NamedOccurrenceV1 {
@@ -2216,12 +2377,18 @@ mod tests {
 
     #[test]
     fn bare_ordinals_are_not_semantic_actions() {
-        let error = parse_action_line_v1("5/7/0", "compare").unwrap_err();
+        let error =
+            parse_action_line_v1("5/7/0", "compare", sts_presentation::Locale::En).unwrap_err();
         assert!(error.contains("unknown semantic action"));
         assert!(error.contains("copy a semantic action from current options"));
         assert!(!error.contains("explicit ordinal"));
         assert_eq!(
-            parse_action_line_v1("ordinal:5/ordinal:7/ordinal:0", "compare").unwrap(),
+            parse_action_line_v1(
+                "ordinal:5/ordinal:7/ordinal:0",
+                "compare",
+                sts_presentation::Locale::En
+            )
+            .unwrap(),
             vec![
                 RunPlayActionSelectorV1::OrdinalPath(vec![5]),
                 RunPlayActionSelectorV1::OrdinalPath(vec![7]),
@@ -2233,7 +2400,12 @@ mod tests {
     #[test]
     fn parses_occurrence_qualified_skip_and_multi_upgrade_card() {
         assert_eq!(
-            parse_action_line_v1("skip-card#2/take:SearingBlow+5#1", "act").unwrap(),
+            parse_action_line_v1(
+                "skip-card#2/take:SearingBlow+5#1",
+                "act",
+                sts_presentation::Locale::En
+            )
+            .unwrap(),
             vec![
                 RunPlayActionSelectorV1::SkipCardReward {
                     occurrence: Some(2),
@@ -2250,7 +2422,12 @@ mod tests {
     #[test]
     fn explicit_zero_upgrade_preserves_generated_card_identity() {
         assert_eq!(
-            parse_action_selector_v1("select:DoubleTap+0#0,DoubleTap+#0", "generated").unwrap(),
+            parse_action_selector_v1(
+                "select:DoubleTap+0#0,DoubleTap+#0",
+                "generated",
+                sts_presentation::Locale::En
+            )
+            .unwrap(),
             RunPlayActionSelectorV1::SelectCards(vec![
                 NamedOccurrenceV1 {
                     name: "DoubleTap".to_string(),
@@ -2278,16 +2455,32 @@ mod tests {
     #[test]
     fn numeric_one_upgrade_matches_the_canonical_suffix_and_rejects_repeated_plus() {
         for verb in ["play", "select", "take"] {
-            let one = parse_action_selector_v1(&format!("{verb}:Strike+1#0"), "test").unwrap();
-            let canonical = parse_action_selector_v1(&format!("{verb}:Strike+#0"), "test").unwrap();
+            let one = parse_action_selector_v1(
+                &format!("{verb}:Strike+1#0"),
+                "test",
+                sts_presentation::Locale::En,
+            )
+            .unwrap();
+            let canonical = parse_action_selector_v1(
+                &format!("{verb}:Strike+#0"),
+                "test",
+                sts_presentation::Locale::En,
+            )
+            .unwrap();
             assert_eq!(one, canonical);
-            assert!(
-                parse_action_selector_v1(&format!("{verb}:Strike++#0"), "test")
-                    .unwrap_err()
-                    .contains("invalid upgrade suffix")
-            );
-            let fullwidth =
-                parse_action_selector_v1(&format!("{verb}:Strike\u{ff0b}#0"), "test").unwrap_err();
+            assert!(parse_action_selector_v1(
+                &format!("{verb}:Strike++#0"),
+                "test",
+                sts_presentation::Locale::En
+            )
+            .unwrap_err()
+            .contains("invalid upgrade suffix"));
+            let fullwidth = parse_action_selector_v1(
+                &format!("{verb}:Strike\u{ff0b}#0"),
+                "test",
+                sts_presentation::Locale::En,
+            )
+            .unwrap_err();
             assert!(fullwidth.contains("use ASCII '+' (U+002B)"), "{fullwidth}");
         }
     }
@@ -2325,6 +2518,7 @@ mod tests {
         let manual = parse_action_selector_v1(
             "select:Strike+#0,Strike+#1,Defend+#0",
             "ordered-run-selection-test",
+            sts_presentation::Locale::En,
         )
         .unwrap();
         assert_eq!(
@@ -2351,20 +2545,34 @@ mod tests {
         };
         observation.cards[0].upgrades = 0;
 
-        let bare_base = parse_action_selector_v1("select:Strike#0,Strike+#0", "test").unwrap();
+        let bare_base = parse_action_selector_v1(
+            "select:Strike#0,Strike+#0",
+            "test",
+            sts_presentation::Locale::En,
+        )
+        .unwrap();
         assert_eq!(
             resolve_action_selector_v1(&decision, &bare_base).unwrap(),
             TaskPublicChoiceV1 {
                 ordinal_path: vec![0, 0, 1]
             }
         );
-        let missing_base_copy =
-            parse_action_selector_v1("select:Strike#1,Strike+#0", "test").unwrap();
+        let missing_base_copy = parse_action_selector_v1(
+            "select:Strike#1,Strike+#0",
+            "test",
+            sts_presentation::Locale::En,
+        )
+        .unwrap();
         assert!(resolve_action_selector_v1(&decision, &missing_base_copy)
             .unwrap_err()
             .contains("matched 1 deck card"));
 
-        let exact = parse_action_selector_v1("select:Strike+0#0,Strike+#0", "test").unwrap();
+        let exact = parse_action_selector_v1(
+            "select:Strike+0#0,Strike+#0",
+            "test",
+            sts_presentation::Locale::En,
+        )
+        .unwrap();
         assert_eq!(
             resolve_action_selector_v1(&decision, &exact).unwrap(),
             TaskPublicChoiceV1 {
@@ -2376,7 +2584,12 @@ mod tests {
             unreachable!()
         };
         observation.cards[0].upgrades = 1;
-        let only_upgraded = parse_action_selector_v1("select:Strike#0,Strike#1", "test").unwrap();
+        let only_upgraded = parse_action_selector_v1(
+            "select:Strike#0,Strike#1",
+            "test",
+            sts_presentation::Locale::En,
+        )
+        .unwrap();
         assert_eq!(
             resolve_action_selector_v1(&decision, &only_upgraded).unwrap(),
             TaskPublicChoiceV1 {
@@ -2414,18 +2627,24 @@ mod tests {
                 },
             },
         ];
-        let bare_base = parse_action_selector_v1("remove:Strike#0", "test").unwrap();
+        let bare_base =
+            parse_action_selector_v1("remove:Strike#0", "test", sts_presentation::Locale::En)
+                .unwrap();
         assert_eq!(
             resolve_action_selector_v1(&decision, &bare_base).unwrap(),
             TaskPublicChoiceV1 {
                 ordinal_path: vec![0]
             }
         );
-        let missing_base_copy = parse_action_selector_v1("remove:Strike#1", "test").unwrap();
+        let missing_base_copy =
+            parse_action_selector_v1("remove:Strike#1", "test", sts_presentation::Locale::En)
+                .unwrap();
         assert!(resolve_action_selector_v1(&decision, &missing_base_copy)
             .unwrap_err()
             .contains("matched 1 candidate"));
-        let exact = parse_action_selector_v1("remove:Strike+#0", "test").unwrap();
+        let exact =
+            parse_action_selector_v1("remove:Strike+#0", "test", sts_presentation::Locale::En)
+                .unwrap();
         assert_eq!(
             resolve_action_selector_v1(&decision, &exact).unwrap(),
             TaskPublicChoiceV1 {
@@ -2476,6 +2695,7 @@ mod tests {
         let selector = parse_action_selector_v1(
             "select:Shame+0#0,Strike+#0,Strike+#1",
             "ordered-run-selection-test",
+            sts_presentation::Locale::En,
         )
         .unwrap();
 
@@ -2493,6 +2713,7 @@ mod tests {
             parse_action_line_v1(
                 "claim:gold/open-card#1/take:PommelStrike+/singing-bowl/proceed",
                 "anchor-line",
+                sts_presentation::Locale::En
             )
             .unwrap(),
             vec![
@@ -2517,7 +2738,7 @@ mod tests {
             parse_action_line_v1(
                 "dig/lift/toke:Strike#2/recall/select:Hemokinesis,Strike#1/open-rewards/boss-relic:BlackBlood/skip-boss-relic/open-chest",
                 "anchor-line",
-            )
+             sts_presentation::Locale::En)
             .unwrap(),
             vec![
                 RunPlayActionSelectorV1::Dig,

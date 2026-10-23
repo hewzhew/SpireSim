@@ -307,6 +307,7 @@ mod tests {
                 let selector = crate::selector::parse_action_selector_v1(
                     &candidate.command,
                     "preparation test",
+                    sts_presentation::Locale::En,
                 )
                 .unwrap();
                 let choice =

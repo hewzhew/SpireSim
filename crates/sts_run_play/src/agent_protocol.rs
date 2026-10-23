@@ -796,7 +796,7 @@ fn validate_agent_semantic_action_v1(
             &[("context", &(context.to_owned()))],
         ));
     }
-    parse_action_selector_v1(action, context)?;
+    parse_action_selector_v1(action, context, locale)?;
     Ok(())
 }
 
@@ -3081,7 +3081,12 @@ mod private_preview_command_tests {
             let mut game = controller_with_session(&dir.0, kind, &fixture(kind));
             let head = game.head().clone();
             let fingerprints = game.current_state_fingerprints_v1().unwrap();
-            let actions = crate::selector::parse_action_line_v1(line, "locale test").unwrap();
+            let actions = crate::selector::parse_action_line_v1(
+                line,
+                "locale test",
+                sts_presentation::Locale::En,
+            )
+            .unwrap();
             let inspections = game.inspect_action_lines_v1(&[actions]).unwrap();
             let en = project_agent_inspection_v1(&inspections[0], Locale::En).unwrap();
             let zh = project_agent_inspection_v1(&inspections[0], Locale::ZhCn).unwrap();
@@ -3107,8 +3112,12 @@ mod private_preview_command_tests {
         session.run_state.event_state = Some(EventState::new(EventId::CursedTome));
         let mut game = controller_with_session(&dir.0, "private-event-commands", &session);
         let before = game.head().clone();
-        let actions =
-            crate::selector::parse_action_line_v1("event:CursedTome:0", "preview test").unwrap();
+        let actions = crate::selector::parse_action_line_v1(
+            "event:CursedTome:0",
+            "preview test",
+            sts_presentation::Locale::En,
+        )
+        .unwrap();
         let comparison = game.compare_action_lines_v1(&[actions.clone()]).unwrap();
         let projected = project_agent_probe_line_v1(&comparison.lines[0], Locale::En).unwrap();
         assert!(
@@ -3155,12 +3164,20 @@ mod private_preview_command_tests {
         session.run_state.event_state = Some(EventState::new(EventId::CursedTome));
         let mut game = controller_with_session(&dir.0, "partial-event", &session);
         let before = game.head().clone();
-        let prefix = crate::selector::parse_action_line_v1("event:CursedTome:0", "test").unwrap();
+        let prefix = crate::selector::parse_action_line_v1(
+            "event:CursedTome:0",
+            "test",
+            sts_presentation::Locale::En,
+        )
+        .unwrap();
         let expected = game.compare_action_lines_v1(&[prefix]).unwrap();
         let expected = project_agent_probe_line_v1(&expected.lines[0], Locale::En).unwrap();
-        let line =
-            crate::selector::parse_action_line_v1("event:CursedTome:0/play:Strike@0", "test")
-                .unwrap();
+        let line = crate::selector::parse_action_line_v1(
+            "event:CursedTome:0/play:Strike@0",
+            "test",
+            sts_presentation::Locale::En,
+        )
+        .unwrap();
         let inspections = game.inspect_action_lines_v1(&[line.clone()]).unwrap();
         let projected = project_agent_inspection_v1(&inspections[0], Locale::En).unwrap();
         assert_eq!(projected.endpoint, expected.endpoint);
@@ -3196,7 +3213,12 @@ mod private_preview_command_tests {
             .unwrap()
             .public_decision_v1()
             .unwrap();
-        let line = crate::selector::parse_action_line_v1("play:Corruption@0", "test").unwrap();
+        let line = crate::selector::parse_action_line_v1(
+            "play:Corruption@0",
+            "test",
+            sts_presentation::Locale::En,
+        )
+        .unwrap();
         let inspections = game.inspect_action_lines_v1(&[line]).unwrap();
         let projected = project_agent_inspection_v1(&inspections[0], Locale::En).unwrap();
         assert!(projected.steps.is_empty());
@@ -3217,7 +3239,9 @@ mod private_preview_command_tests {
         let mut game =
             controller_with_session(&dir.0, "partial-terminal", &fixture("combat_defeat"));
         let before = game.head().clone();
-        let line = crate::selector::parse_action_line_v1("end/end", "test").unwrap();
+        let line =
+            crate::selector::parse_action_line_v1("end/end", "test", sts_presentation::Locale::En)
+                .unwrap();
         let inspections = game.inspect_action_lines_v1(&[line.clone()]).unwrap();
         let projected = project_agent_inspection_v1(&inspections[0], Locale::En).unwrap();
         assert!(matches!(
@@ -3246,7 +3270,12 @@ mod private_preview_command_tests {
         let dir = TestDirectory::new();
         let mut game = controller_with_session(&dir.0, "partial-win", &fixture("combat_finish"));
         let before = game.head().clone();
-        let line = crate::selector::parse_action_line_v1("play:Strike@0/end", "test").unwrap();
+        let line = crate::selector::parse_action_line_v1(
+            "play:Strike@0/end",
+            "test",
+            sts_presentation::Locale::En,
+        )
+        .unwrap();
         let inspections = game.inspect_action_lines_v1(&[line]).unwrap();
         let projected = project_agent_inspection_v1(&inspections[0], Locale::En).unwrap();
         assert!(matches!(
@@ -3267,10 +3296,17 @@ mod private_preview_command_tests {
         let mut game =
             controller_with_session(&dir.0, "partial-next-turn", &fixture("combat_multiturn"));
         let before = game.head().clone();
-        let prefix = crate::selector::parse_action_line_v1("end", "test").unwrap();
+        let prefix =
+            crate::selector::parse_action_line_v1("end", "test", sts_presentation::Locale::En)
+                .unwrap();
         let expected = game.compare_action_lines_v1(&[prefix]).unwrap();
         let expected = project_agent_probe_line_v1(&expected.lines[0], Locale::En).unwrap();
-        let line = crate::selector::parse_action_line_v1("end/play:Corruption", "test").unwrap();
+        let line = crate::selector::parse_action_line_v1(
+            "end/play:Corruption",
+            "test",
+            sts_presentation::Locale::En,
+        )
+        .unwrap();
         let inspections = game.inspect_action_lines_v1(&[line]).unwrap();
         let projected = project_agent_inspection_v1(&inspections[0], Locale::En).unwrap();
         assert_eq!(projected.endpoint, expected.endpoint);
@@ -3300,8 +3336,12 @@ mod private_preview_command_tests {
         );
         let mut game = controller_with_session(&dir.0, "private-auto-turn", &session);
         let before = game.head().clone();
-        let line =
-            crate::selector::parse_action_line_v1("play:Defend#0/play:Corruption", "test").unwrap();
+        let line = crate::selector::parse_action_line_v1(
+            "play:Defend#0/play:Corruption",
+            "test",
+            sts_presentation::Locale::En,
+        )
+        .unwrap();
         let inspections = game
             .inspect_action_lines_v1(&[vec![line[0].clone()], line])
             .unwrap();
@@ -3721,7 +3761,8 @@ fn project_agent_card_reward_resources_v1(
     commands
         .into_iter()
         .map(|semantic_action| {
-            let selector = parse_action_selector_v1(&semantic_action, "agent reward resources")?;
+            let selector =
+                parse_action_selector_v1(&semantic_action, "agent reward resources", locale)?;
             let preview = controller.compare_action_lines_v1(&[vec![selector]])?;
             let next = preview
                 .lines
@@ -4850,7 +4891,13 @@ pub fn anchor_combat_research_artifact_candidate_v1(
     let selectors = replay
         .steps
         .iter()
-        .map(|step| parse_action_selector_v1(&step.action, "anchor-combat-plan artifact"))
+        .map(|step| {
+            parse_action_selector_v1(
+                &step.action,
+                "anchor-combat-plan artifact",
+                sts_presentation::Locale::En,
+            )
+        })
         .collect::<Result<Vec<_>, String>>()?;
     let source_public_snapshot_ids = replay
         .steps
@@ -5439,7 +5486,7 @@ fn handle_valid_request_v1(
         } => {
             let selectors = actions
                 .iter()
-                .map(|action| parse_action_selector_v1(action, "agent-shell act"))
+                .map(|action| parse_action_selector_v1(action, "agent-shell act", locale))
                 .collect::<Result<Vec<_>, String>>()?;
             let before = controller
                 .head()
@@ -5496,7 +5543,7 @@ fn handle_valid_request_v1(
                 .iter()
                 .map(|line| {
                     line.iter()
-                        .map(|action| parse_action_selector_v1(action, "agent-shell probe"))
+                        .map(|action| parse_action_selector_v1(action, "agent-shell probe", locale))
                         .collect::<Result<Vec<_>, String>>()
                 })
                 .collect::<Result<Vec<_>, String>>()?;
@@ -5901,7 +5948,11 @@ fn handle_valid_request_v1(
             let selectors = prefix_actions
                 .iter()
                 .map(|action| {
-                    parse_action_selector_v1(action, "agent-shell combat_prefix_horizon_audit")
+                    parse_action_selector_v1(
+                        action,
+                        "agent-shell combat_prefix_horizon_audit",
+                        locale,
+                    )
                 })
                 .collect::<Result<Vec<_>, String>>()?;
             let audit = controller.audit_combat_prefix_horizon_v1(
@@ -6221,7 +6272,9 @@ fn handle_valid_request_v1(
             }
             let selectors = line
                 .iter()
-                .map(|action| parse_action_selector_v1(action, "agent-shell combat_turn_reserve"))
+                .map(|action| {
+                    parse_action_selector_v1(action, "agent-shell combat_turn_reserve", locale)
+                })
                 .collect::<Result<Vec<_>, String>>()?;
             let reservation = controller.reserve_cached_combat_turn_line_v1(
                 root_head_revision,

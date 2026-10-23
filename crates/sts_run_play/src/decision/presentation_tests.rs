@@ -1942,8 +1942,12 @@ fn live_choice_commands_round_trip_while_preview_choices_remain_hypothetical() {
             } else {
                 command.strip_prefix("act ").unwrap_or(command).to_owned()
             };
-            let selector =
-                crate::selector::parse_action_selector_v1(&semantic, "rendered choice").unwrap();
+            let selector = crate::selector::parse_action_selector_v1(
+                &semantic,
+                "rendered choice",
+                sts_presentation::Locale::En,
+            )
+            .unwrap();
             let choice = crate::selector::resolve_action_selector_v1(&decision, &selector).unwrap();
             decision.validate_choice(&choice).unwrap();
             assert!(
@@ -1976,9 +1980,12 @@ fn live_choice_commands_round_trip_while_preview_choices_remain_hypothetical() {
             let count = selection.min.max(selection.max.min(2)) as usize;
             assert!(tokens.len() >= count);
             let command = format!("select:{}", tokens[..count].join(","));
-            let selector =
-                crate::selector::parse_action_selector_v1(&command, "rendered multi-selection")
-                    .unwrap();
+            let selector = crate::selector::parse_action_selector_v1(
+                &command,
+                "rendered multi-selection",
+                sts_presentation::Locale::En,
+            )
+            .unwrap();
             let choice = crate::selector::resolve_action_selector_v1(&decision, &selector).unwrap();
             assert!(choice
                 .ordinal_path
@@ -1986,9 +1993,12 @@ fn live_choice_commands_round_trip_while_preview_choices_remain_hypothetical() {
             decision.validate_choice(&choice).unwrap();
             if count > 1 {
                 let repeated = format!("select:{},{}", tokens[0], tokens[0]);
-                let repeated =
-                    crate::selector::parse_action_selector_v1(&repeated, "duplicate selection")
-                        .unwrap();
+                let repeated = crate::selector::parse_action_selector_v1(
+                    &repeated,
+                    "duplicate selection",
+                    sts_presentation::Locale::En,
+                )
+                .unwrap();
                 assert!(crate::selector::resolve_action_selector_v1(&decision, &repeated).is_err());
             }
             shown += 1;
@@ -2061,8 +2071,12 @@ fn localized_or_command_like_event_labels_do_not_change_choice_commands() {
                     "{}",
                     live.view
                 );
-                let selector =
-                    crate::selector::parse_action_selector_v1(&command, "event").unwrap();
+                let selector = crate::selector::parse_action_selector_v1(
+                    &command,
+                    "event",
+                    sts_presentation::Locale::En,
+                )
+                .unwrap();
                 assert_eq!(
                     crate::selector::resolve_action_selector_v1(&decision, &selector).unwrap(),
                     choice

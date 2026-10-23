@@ -796,8 +796,18 @@ fn different_gold_amounts_have_distinct_claim_commands_and_remain_readable() {
         .unwrap()
         .public_decision_v1()
         .unwrap();
-    let first = crate::selector::parse_action_selector_v1("claim:Gold#0", "test").unwrap();
-    let second = crate::selector::parse_action_selector_v1("claim:Gold#1", "test").unwrap();
+    let first = crate::selector::parse_action_selector_v1(
+        "claim:Gold#0",
+        "test",
+        sts_presentation::Locale::En,
+    )
+    .unwrap();
+    let second = crate::selector::parse_action_selector_v1(
+        "claim:Gold#1",
+        "test",
+        sts_presentation::Locale::En,
+    )
+    .unwrap();
     let first_choice = crate::selector::resolve_action_selector_v1(&public, &first).unwrap();
     let second_choice = crate::selector::resolve_action_selector_v1(&public, &second).unwrap();
     assert_ne!(first_choice, second_choice);
@@ -4079,14 +4089,24 @@ fn combat_selector_reports_an_extraneous_target_without_rewriting_the_action() {
         .unwrap()
         .public_decision_v1()
         .unwrap();
-    let targeted = crate::selector::parse_action_selector_v1("play:Defend#0@0", "test").unwrap();
+    let targeted = crate::selector::parse_action_selector_v1(
+        "play:Defend#0@0",
+        "test",
+        sts_presentation::Locale::En,
+    )
+    .unwrap();
     let error = crate::selector::resolve_action_selector_v1(&decision, &targeted).unwrap_err();
     assert!(
         error.contains("legal play without a monster target"),
         "{error}"
     );
     assert!(error.contains("omit @0"), "{error}");
-    let untargeted = crate::selector::parse_action_selector_v1("play:Defend#0", "test").unwrap();
+    let untargeted = crate::selector::parse_action_selector_v1(
+        "play:Defend#0",
+        "test",
+        sts_presentation::Locale::En,
+    )
+    .unwrap();
     assert!(crate::selector::resolve_action_selector_v1(&decision, &untargeted).is_ok());
 }
 
@@ -4103,7 +4123,12 @@ fn combat_selector_explains_absent_cards_instead_of_encouraging_retries() {
         .public_decision_v1()
         .unwrap();
     for command in ["play:Apotheosis+0", "play:Apotheosis#0"] {
-        let action = crate::selector::parse_action_selector_v1(command, "test").unwrap();
+        let action = crate::selector::parse_action_selector_v1(
+            command,
+            "test",
+            sts_presentation::Locale::En,
+        )
+        .unwrap();
         let error = crate::selector::resolve_action_selector_v1(&decision, &action).unwrap_err();
         assert!(
             error.contains("not in the hand at this boundary"),
@@ -4228,7 +4253,9 @@ fn act_returns_the_successor_reading_and_selection_jump_renders_after_commit() {
     for (member, line) in reading.selections[0].members.iter().zip(displayed_commands) {
         let command = line.trim().split("  |  ").next().unwrap();
         let spec = command.strip_prefix("./p act ").unwrap();
-        let selector = crate::selector::parse_action_selector_v1(&spec, "test").unwrap();
+        let selector =
+            crate::selector::parse_action_selector_v1(&spec, "test", sts_presentation::Locale::En)
+                .unwrap();
         let actual = crate::selector::resolve_action_selector_v1(&public, &selector).unwrap();
         let mut expected = reading.selections[0].choice.clone();
         expected.ordinal_path.push(member.ordinal);

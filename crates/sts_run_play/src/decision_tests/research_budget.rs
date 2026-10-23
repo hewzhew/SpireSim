@@ -108,7 +108,12 @@ fn whole_combat_retained_replay_matches_independent_probe_through_settlement() {
                         &step.choice,
                     )
                     .unwrap();
-                    crate::selector::parse_action_selector_v1(&action, "compare").unwrap()
+                    crate::selector::parse_action_selector_v1(
+                        &action,
+                        "compare",
+                        sts_presentation::Locale::En,
+                    )
+                    .unwrap()
                 })
                 .collect::<Vec<_>>();
             let independent = game

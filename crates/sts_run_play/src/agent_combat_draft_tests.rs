@@ -231,7 +231,8 @@ fn analyst_draft_victory_uses_the_existing_combat_plan_transaction() {
                 .expect("one direct action before combat")
         };
         let selector =
-            parse_action_selector_v1(&semantic, "draft integration").expect("semantic selector");
+            parse_action_selector_v1(&semantic, "draft integration", sts_presentation::Locale::En)
+                .expect("semantic selector");
         controller
             .choose_action_v1(&selector, true)
             .expect("advance toward first combat");

@@ -484,7 +484,8 @@ fn preparation_selection_roots_execute_exact_single_and_multiple_targets() {
             .unwrap()
             .public_decision_v1()
             .unwrap();
-        let selection = parse_action_selector_v1(line, "selection-case").unwrap();
+        let selection =
+            parse_action_selector_v1(line, "selection-case", sts_presentation::Locale::En).unwrap();
         let resolved = resolve_action_selector_v1(&decision, &selection).unwrap();
         let before = roots[index].2.run_state.master_deck.len() as i32;
         let reading = game.decision_reading_v1(&[], None, Locale::En).unwrap();

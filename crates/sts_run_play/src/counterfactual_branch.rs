@@ -618,13 +618,22 @@ mod tests {
             "after evidence capture",
         )
         .expect("manifest");
-        let selector =
-            parse_action_selector_v1("event:Neow:1", "counterfactual test").expect("selector");
+        let selector = parse_action_selector_v1(
+            "event:Neow:1",
+            "counterfactual test",
+            sts_presentation::Locale::En,
+        )
+        .expect("selector");
         let mut controller = RunPlayControllerV1::open(target_paths.clone()).expect("controller");
         controller
             .choose_action_v1(&selector, true)
             .expect("Neow's Lament branch");
-        let leave = parse_action_selector_v1("event:Neow:0", "counterfactual test").expect("leave");
+        let leave = parse_action_selector_v1(
+            "event:Neow:0",
+            "counterfactual test",
+            sts_presentation::Locale::En,
+        )
+        .expect("leave");
         controller
             .choose_action_v1(&leave, true)
             .expect("explicit completed-Neow Leave");
@@ -721,8 +730,12 @@ mod tests {
         .expect("source");
         let mut source_controller =
             RunPlayControllerV1::open(source_paths.clone()).expect("source controller");
-        let proceed =
-            parse_action_selector_v1("event:Neow:0", "advance source root").expect("selector");
+        let proceed = parse_action_selector_v1(
+            "event:Neow:0",
+            "advance source root",
+            sts_presentation::Locale::En,
+        )
+        .expect("selector");
         source_controller
             .choose_action_v1(&proceed, true)
             .expect("advance to replayable source root");

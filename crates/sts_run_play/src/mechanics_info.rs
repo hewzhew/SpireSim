@@ -938,8 +938,9 @@ fn render_query(
         return Ok(out);
     }
     if lower.starts_with("card ") {
-        let (name, upgrades) = crate::selector::parse_card_upgrade(query[5..].trim(), query)
-            .map_err(|_| message("query.cardSyntax", &[("query", query)]))?;
+        let (name, upgrades) =
+            crate::selector::parse_card_upgrade(query[5..].trim(), query, locale)
+                .map_err(|_| message("query.cardSyntax", &[("query", query)]))?;
         // Exact simulator IDs are explicit identities, even when another card
         // shares their display name (e.g. the four starter Strikes).
         let card = cards::CardId::from_stable_id(name)
@@ -1047,7 +1048,7 @@ fn render_query(
     // An explicit card upgrade identifies a card definition even when the
     // unqualified name also denotes a Power, e.g. Corruption+.
     if query.contains(['+', '\u{ff0b}']) {
-        let (name, upgrades) = crate::selector::parse_card_upgrade(query, query)
+        let (name, upgrades) = crate::selector::parse_card_upgrade(query, query, locale)
             .map_err(|_| message("query.cardSyntax", &[("query", query)]))?;
         let card = cards::CardId::from_stable_id(name)
             .or_else(|| resolve::<cards::CardId>(name))

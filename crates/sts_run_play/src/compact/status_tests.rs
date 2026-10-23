@@ -8,7 +8,12 @@ fn ordinary_preview_uses_shared_localized_actions_and_terminal_health() {
         let mut game = controller_with_session(&dir.0, kind, &fixture(kind));
         let head = game.head().clone();
         let fingerprints = game.current_state_fingerprints_v1().unwrap();
-        let actions = crate::selector::parse_action_line_v1(action, "locale test").unwrap();
+        let actions = crate::selector::parse_action_line_v1(
+            action,
+            "locale test",
+            sts_presentation::Locale::En,
+        )
+        .unwrap();
         let comparison = game.compare_action_lines_v1(&[actions]).unwrap();
         let en = render_preview_v1(&comparison, false, Locale::En).unwrap();
         let zh = render_preview_v1(&comparison, false, Locale::ZhCn).unwrap();
@@ -40,8 +45,12 @@ fn detailed_comparisons_localize_steps_successors_draws_and_exhaust_without_muta
         let mut game = controller_with_session(&dir.0, kind, &fixture(kind));
         let head = game.head().clone();
         let fingerprint = game.current_state_fingerprints_v1().unwrap();
-        let actions =
-            crate::selector::parse_action_line_v1(action, "localized comparison").unwrap();
+        let actions = crate::selector::parse_action_line_v1(
+            action,
+            "localized comparison",
+            sts_presentation::Locale::En,
+        )
+        .unwrap();
         let comparison = game.compare_action_lines_v1(&[actions]).unwrap();
         let facts = || {
             comparison

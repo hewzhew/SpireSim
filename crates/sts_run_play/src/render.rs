@@ -3708,7 +3708,12 @@ mod tests {
             .unwrap()
             .observation;
         game.choose_action_v1(
-            &crate::selector::parse_action_selector_v1("play:Strike@0", "history test").unwrap(),
+            &crate::selector::parse_action_selector_v1(
+                "play:Strike@0",
+                "history test",
+                sts_presentation::Locale::En,
+            )
+            .unwrap(),
             true,
         )
         .unwrap();
@@ -3742,7 +3747,12 @@ mod tests {
             &crate::decision_tests::fixture("combat_defeat"),
         );
         game.choose_action_v1(
-            &crate::selector::parse_action_selector_v1("end", "terminal test").unwrap(),
+            &crate::selector::parse_action_selector_v1(
+                "end",
+                "terminal test",
+                sts_presentation::Locale::En,
+            )
+            .unwrap(),
             true,
         )
         .unwrap();
@@ -3774,8 +3784,12 @@ mod tests {
             &crate::decision_tests::fixture("reward"),
         );
         game.choose_action_v1(
-            &crate::selector::parse_action_selector_v1("take:ShrugItOff", "construction test")
-                .unwrap(),
+            &crate::selector::parse_action_selector_v1(
+                "take:ShrugItOff",
+                "construction test",
+                sts_presentation::Locale::En,
+            )
+            .unwrap(),
             true,
         )
         .unwrap();
