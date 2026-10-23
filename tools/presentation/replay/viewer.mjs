@@ -1,4 +1,4 @@
-import { createPresentation, preferredLocale } from '../index.mjs';
+import { createPresentation, preferredLocale, supportedLocales } from '../index.mjs';
 import { neowOptionRuns, neowStructuredRuns } from './neow-option.mjs';
 import { intentView } from './intent-view.mjs';
 import { handTransition, sequenceView } from './sequence.mjs';
@@ -11,7 +11,8 @@ async function main() {
   const journeys = recordedJourney(story);
   let savedLocale;
   try { savedLocale = localStorage.getItem('spiresim.demo.locale'); } catch {}
-  const display = await createPresentation({ locale: savedLocale || preferredLocale(navigator.languages), onMissing: gap => console.warn('Missing display name', gap) });
+  const requestedLocale = new URLSearchParams(location.search).get('locale');
+  const display = await createPresentation({ locale: supportedLocales.includes(requestedLocale) ? requestedLocale : savedLocale || preferredLocale(navigator.languages), onMissing: gap => console.warn('Missing display name', gap) });
   const t = (key, params) => display.text('replay:' + key, params);
   const name = (kind, id) => display.entity(kind, id);
   const number = value => display.number(value);
@@ -775,6 +776,7 @@ async function main() {
   }
   function writeLocation() {
     const url = new URL(location.href);
+    url.searchParams.set('locale', display.locale);
     if (actionCursor) url.searchParams.set('step', actionCursor); else url.searchParams.delete('step');
     url.hash = scenes[selected].id;
     history.replaceState(null, '', url);
@@ -823,6 +825,7 @@ async function main() {
     try {
       await display.setLocale(selector.value); renderChrome(); renderNavigation(); render();
       try { localStorage.setItem('spiresim.demo.locale', display.locale); } catch {}
+      writeLocation();
     } finally { selector.disabled = false; }
   });
   for (const button of document.querySelectorAll('[data-tab]')) {
