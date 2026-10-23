@@ -15,8 +15,8 @@ use crate::history::{
     RunPlayJourneyTerminalV1, RunPlayJourneyWindowV1,
 };
 use crate::history_state::{
-    card_counts_v1, combat_boundary_deltas_v1, multiset_delta_v1, push_scalar_delta_v1,
-    render_deck_v1, render_potions_v1, render_relics_v1,
+    combat_boundary_deltas_v1, push_scalar_delta_v1, render_deck_v1, render_potions_v1,
+    render_relics_v1,
 };
 use crate::render::{render_candidate_with_observation, short_id};
 use crate::selector::semantic_action_for_choice_v1;
@@ -510,9 +510,24 @@ fn render_episode_result_v1(
             );
             push_scalar_delta_v1(&mut deltas, "max_hp", before.run.max_hp, after.run.max_hp);
             push_scalar_delta_v1(&mut deltas, "gold", before.run.gold, after.run.gold);
-            let before_cards = card_counts_v1(before);
-            let after_cards = card_counts_v1(after);
-            let (added, removed) = multiset_delta_v1(&before_cards, &after_cards);
+            let (mut added, mut removed) = (Vec::new(), Vec::new());
+            for (label, delta) in crate::compact::permanent_card_changes_v1(
+                &before.cards,
+                &after.cards,
+                sts_presentation::Locale::En,
+            ) {
+                let count = delta.unsigned_abs();
+                let label = if count == 1 {
+                    label
+                } else {
+                    format!("{label}x{count}")
+                };
+                if delta > 0 {
+                    added.push(label);
+                } else {
+                    removed.push(label);
+                }
+            }
             if !added.is_empty() {
                 deltas.push(format!("cards+=[{}]", added.join(", ")));
             }
@@ -651,6 +666,34 @@ fn render_terminal_outcome_v1(outcome: &TaskEpisodeOutcomeV1) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn retained_reward_history_uses_real_adopted_card_change_without_mutating_the_source() {
+        let directory = crate::decision_tests::TestDirectory::new();
+        let mut game = crate::decision_tests::controller_with_session(
+            &directory.0,
+            "history-reward",
+            &crate::decision_tests::fixture("reward"),
+        );
+        let selector =
+            crate::selector::parse_action_selector_v1("take:ShrugItOff", "history regression")
+                .unwrap();
+        game.choose_action_v1(&selector, true).unwrap();
+        let paths = crate::storage::RunPlayPathsV1::new(directory.0.join("history-reward"));
+        let before = paths.load().unwrap();
+        let fingerprint = game.current_state_fingerprints_v1().unwrap();
+        let history =
+            crate::history::journey_history_v1(&paths, RunPlayJourneyWindowV1::Last { count: 2 })
+                .unwrap();
+        assert!(history.total_episodes > 0);
+        let text = render_journey_history_v1(&history, true);
+        assert!(text.contains("cards+=[Shrug It Off]"), "{text}");
+        assert!(!text.contains("cards-=["), "{text}");
+        let after = paths.load().unwrap();
+        assert_eq!(after.head, before.head);
+        assert_eq!(after.state, before.state);
+        assert_eq!(game.current_state_fingerprints_v1().unwrap(), fingerprint);
+    }
 
     #[test]
     fn combat_health_keeps_observed_damage_separate_from_post_combat_recovery() {

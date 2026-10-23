@@ -5,28 +5,28 @@ use sts_oracle_learning::agent::information::state::{CombatLearningPowerV1, Publ
 use sts_oracle_learning::agent::task::TaskStrategicObservationV1;
 use sts_oracle_learning::content::identity::gameplay_display_label_v1;
 
-use crate::render::format_card;
-
-pub(crate) fn card_counts_v1(observation: &TaskStrategicObservationV1) -> BTreeMap<String, usize> {
-    let mut cards = BTreeMap::new();
-    for card in &observation.cards {
-        let mut label = format_card(card.card, card.upgrades);
-        if card.misc_value != 0 {
-            write!(label, "{{misc={}}}", card.misc_value).expect("string write");
-        }
-        *cards.entry(label).or_default() += 1;
-    }
-    cards
-}
+use sts_presentation::Locale;
 
 pub(crate) fn render_deck_v1(observation: &TaskStrategicObservationV1) -> String {
-    card_counts_v1(observation)
+    let groups = crate::compact::inventory_card_groups_v1(&observation.cards);
+    let mut identities = BTreeMap::<_, std::collections::BTreeSet<_>>::new();
+    for (_, card) in &groups {
+        identities
+            .entry(Locale::En.entity("card", card.card.stable_id()))
+            .or_default()
+            .insert(card.card.stable_id());
+    }
+    groups
         .into_iter()
-        .map(|(card, count)| {
+        .map(|(count, card)| {
+            let mut label = crate::compact::permanent_card_label_v1(&card, Locale::En);
+            if identities[Locale::En.entity("card", card.card.stable_id())].len() > 1 {
+                write!(label, " [{}]", card.card.stable_id()).expect("string write");
+            }
             if count == 1 {
-                card
+                label
             } else {
-                format!("{card}x{count}")
+                format!("{label}x{count}")
             }
         })
         .collect::<Vec<_>>()
@@ -71,35 +71,6 @@ pub(crate) fn render_potions_v1(observation: &TaskStrategicObservationV1) -> Str
         })
         .collect::<Vec<_>>()
         .join(", ")
-}
-
-pub(crate) fn multiset_delta_v1(
-    before: &BTreeMap<String, usize>,
-    after: &BTreeMap<String, usize>,
-) -> (Vec<String>, Vec<String>) {
-    let mut added = Vec::new();
-    let mut removed = Vec::new();
-    for (item, after_count) in after {
-        let delta = after_count.saturating_sub(before.get(item).copied().unwrap_or(0));
-        if delta > 0 {
-            added.push(if delta == 1 {
-                item.clone()
-            } else {
-                format!("{item}x{delta}")
-            });
-        }
-    }
-    for (item, before_count) in before {
-        let delta = before_count.saturating_sub(after.get(item).copied().unwrap_or(0));
-        if delta > 0 {
-            removed.push(if delta == 1 {
-                item.clone()
-            } else {
-                format!("{item}x{delta}")
-            });
-        }
-    }
-    (added, removed)
 }
 
 pub(crate) fn push_scalar_delta_v1(deltas: &mut Vec<String>, label: &str, before: i32, after: i32) {
@@ -203,6 +174,80 @@ fn power_deltas(
 mod tests {
     use super::*;
 
+    fn observed_deck() -> TaskStrategicObservationV1 {
+        let directory = crate::decision_tests::TestDirectory::new();
+        let controller = crate::decision_tests::controller_with_session(
+            &directory.0,
+            "history-deck",
+            &crate::decision_tests::fixture("reward"),
+        );
+        let public = controller
+            .head()
+            .current_decision
+            .as_ref()
+            .unwrap()
+            .public_decision_v1()
+            .unwrap();
+        let sts_oracle_learning::agent::task::TaskPublicObservationV1::Strategic { observation } =
+            public.observation
+        else {
+            panic!()
+        };
+        observation
+    }
+
+    #[test]
+    fn history_deck_keeps_same_name_identities_and_all_permanent_modifiers() {
+        use sts_oracle_learning::content::{cards::CardId, relics::RelicId};
+        let mut observation = observed_deck();
+        let mut red = observation.cards[0];
+        red.card = CardId::Strike;
+        red.misc_value = 42;
+        red.base_damage_override = Some(17);
+        red.base_block_override = Some(9);
+        red.cost_modifier = -1;
+        red.bottled_by = Some(RelicId::BottledFlame);
+        let mut green = red;
+        green.card = CardId::StrikeG;
+        green.ordinal += 1;
+        observation.cards = vec![red, green];
+        let rendered = render_deck_v1(&observation);
+        assert!(
+            rendered.contains("[Strike]") && rendered.contains("[StrikeG]"),
+            "{rendered}"
+        );
+        for expected in ["42", "17", "9", "-1", "Bottled Flame"] {
+            assert!(rendered.contains(expected), "{rendered}");
+        }
+        for locale in [Locale::En, Locale::ZhCn] {
+            let changes = crate::compact::permanent_card_changes_v1(&[red], &[green], locale);
+            assert_eq!(changes.len(), 2);
+            assert_eq!(
+                changes.iter().map(|(_, count)| *count).collect::<Vec<_>>(),
+                [-1, 1]
+            );
+            assert!(changes[0].0.contains("[Strike]") && changes[1].0.contains("[StrikeG]"));
+            let mut reordered = red;
+            reordered.ordinal = 99;
+            assert!(
+                crate::compact::permanent_card_changes_v1(&[red], &[reordered], locale).is_empty()
+            );
+        }
+    }
+
+    #[test]
+    fn history_permanent_change_exposes_cost_changes_without_a_card_name_change() {
+        let observation = observed_deck();
+        let before = observation.cards[0];
+        let mut after = before;
+        after.cost_modifier += 1;
+        let changes = crate::compact::permanent_card_changes_v1(&[before], &[after], Locale::En);
+        assert_eq!(changes.len(), 2);
+        assert_eq!(changes[0].1, -1);
+        assert_eq!(changes[1].1, 1);
+        assert!(changes[1].0.contains("cost +1"), "{changes:?}");
+    }
+
     #[test]
     fn public_history_shows_separate_rosters_after_a_summon() {
         use sts_oracle_learning::agent::information::state::public_combat_state_v1;
@@ -241,20 +286,5 @@ mod tests {
         power_deltas(&mut changes, "M0", &[artifact.clone()], &[]);
         power_deltas(&mut changes, "M2", &[artifact.clone()], &[artifact]);
         assert_eq!(changes, ["M0 Artifact: 1 -> absent"]);
-    }
-
-    #[test]
-    fn multiset_delta_reports_only_real_deck_changes() {
-        let before = BTreeMap::from([("Strike".to_string(), 5), ("Defend".to_string(), 4)]);
-        let after = BTreeMap::from([
-            ("Strike".to_string(), 4),
-            ("Defend".to_string(), 4),
-            ("Impervious".to_string(), 1),
-        ]);
-
-        let (added, removed) = multiset_delta_v1(&before, &after);
-
-        assert_eq!(added, vec!["Impervious"]);
-        assert_eq!(removed, vec!["Strike"]);
     }
 }

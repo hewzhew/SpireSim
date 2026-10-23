@@ -1236,27 +1236,46 @@ pub(crate) fn render_deck_change_v1(
     else {
         return None;
     };
+    let changes = permanent_card_changes_v1(&before.cards, &after.cards, locale)
+        .into_iter()
+        .map(|(label, count)| match count {
+            1 => format!("+{label}"),
+            -1 => format!("-{label}"),
+            n if n > 1 => format!("+{n}× {label}"),
+            n => format!("-{}× {label}", -n),
+        })
+        .collect::<Vec<_>>();
+    (!changes.is_empty()).then(|| changes.join(", "))
+}
+
+/// All permanent instance fields participate before any display name is read.
+/// The renderer supplies labels only after the typed changes have been computed.
+pub(crate) fn permanent_card_changes_v1(
+    before: &[TaskStrategicCardV1],
+    after: &[TaskStrategicCardV1],
+    locale: Locale,
+) -> Vec<(String, i32)> {
     let mut changes = BTreeMap::<PermanentCardVariantKeyV1, (TaskStrategicCardV1, i32)>::new();
-    for card in &before.cards {
+    for card in before {
         changes
             .entry(permanent_card_variant_key_v1(card))
             .or_insert((*card, 0))
             .1 -= 1;
     }
-    for card in &after.cards {
+    for card in after {
         changes
             .entry(permanent_card_variant_key_v1(card))
             .or_insert((*card, 0))
             .1 += 1;
     }
     let mut names = BTreeMap::<_, std::collections::BTreeSet<_>>::new();
-    for card in before.cards.iter().chain(&after.cards) {
+    for card in before.iter().chain(after) {
         names
             .entry(locale.entity("card", card.card.stable_id()))
             .or_default()
             .insert(card.card.stable_id());
     }
-    let changes = changes
+    changes
         .into_values()
         .filter(|(_, count)| *count != 0)
         .map(|(card, count)| {
@@ -1264,15 +1283,9 @@ pub(crate) fn render_deck_change_v1(
             if names[locale.entity("card", card.card.stable_id())].len() > 1 {
                 write!(label, " [{}]", card.card.stable_id()).expect("string write");
             }
-            match count {
-                1 => format!("+{label}"),
-                -1 => format!("-{label}"),
-                n if n > 1 => format!("+{n}× {label}"),
-                n => format!("-{}× {label}", -n),
-            }
+            (label, count)
         })
-        .collect::<Vec<_>>();
-    (!changes.is_empty()).then(|| changes.join(", "))
+        .collect()
 }
 
 pub fn render_inventory_change_v1(
