@@ -376,6 +376,12 @@ pub enum AgentShellRequestV1 {
     },
 }
 
+fn request_message(locale: Locale, key: &str, parameters: &[(&str, &str)]) -> String {
+    locale
+        .text("protocol", key, parameters)
+        .expect("agent request message")
+}
+
 impl AgentShellRequestV1 {
     fn public_manual_operation(&self) -> bool {
         matches!(
@@ -461,15 +467,19 @@ impl AgentShellRequestV1 {
         }
     }
 
-    fn validate(&self) -> Result<(), String> {
+    fn validate(&self, locale: Locale) -> Result<(), String> {
         if self.schema() != AGENT_REQUEST_SCHEMA_V1 {
-            return Err(format!(
-                "unsupported agent request schema {:?}; expected {AGENT_REQUEST_SCHEMA_V1}",
-                self.schema()
+            return Err(request_message(
+                locale,
+                "schema",
+                &[
+                    ("actual", &(format!("{:?}", self.schema()))),
+                    ("expected", &(AGENT_REQUEST_SCHEMA_V1.to_owned())),
+                ],
             ));
         }
         if self.request_id().is_empty() {
-            return Err("agent request_id must not be empty".to_string());
+            return Err(request_message(locale, "requestId", &[]));
         }
         if let Self::CombatReview {
             report_id: Some(id),
@@ -481,22 +491,24 @@ impl AgentShellRequestV1 {
         } = self
         {
             if id.trim().is_empty() || id.len() > 256 {
-                return Err("combat report_id must contain 1..=256 bytes".into());
+                return Err(request_message(locale, "reportId", &[]));
             }
         }
         if let Self::GameFacts { entities, .. } = self {
             if entities.is_empty() || entities.len() > MAX_AGENT_GAME_FACT_ENTITIES {
-                return Err(format!(
-                    "agent-shell game_facts requires 1..={MAX_AGENT_GAME_FACT_ENTITIES} entities"
+                return Err(request_message(
+                    locale,
+                    "factsCount",
+                    &[("max", &(MAX_AGENT_GAME_FACT_ENTITIES.to_string()))],
                 ));
             }
             if entities.iter().collect::<HashSet<_>>().len() != entities.len() {
-                return Err("agent-shell game_facts entities must be distinct".to_string());
+                return Err(request_message(locale, "factsDistinct", &[]));
             }
         }
         if let Self::Info { query, .. } = self {
             if query.trim().is_empty() || query.len() > 256 {
-                return Err("agent-shell info query must contain 1..=256 bytes".to_string());
+                return Err(request_message(locale, "query", &[]));
             }
         }
         if let Self::Act {
@@ -504,71 +516,77 @@ impl AgentShellRequestV1 {
         } = self
         {
             if actions.is_empty() || actions.len() > MAX_ANCHOR_LINE_STEPS {
-                return Err(format!(
-                    "agent-shell act requires 1..={MAX_ANCHOR_LINE_STEPS} actions"
+                return Err(request_message(
+                    locale,
+                    "actionsCount",
+                    &[("max", &(MAX_ANCHOR_LINE_STEPS.to_string()))],
                 ));
             }
             if actions.len() > 1 && *advance != AgentAdvanceModeV1::OnePublicAction {
-                return Err(
-                    "agent-shell transactional action lines require one_public_action advance"
-                        .to_string(),
-                );
+                return Err(request_message(locale, "advance", &[]));
             }
             for action in actions {
-                validate_agent_semantic_action_v1(action, "agent-shell act")?;
+                validate_agent_semantic_action_v1(action, "agent-shell act", locale)?;
             }
         }
         if let Self::Probe { lines, .. } = self {
             if lines.is_empty() || lines.len() > MAX_AGENT_PROBE_LINES {
-                return Err(format!(
-                    "agent-shell probe requires 1..={MAX_AGENT_PROBE_LINES} lines"
+                return Err(request_message(
+                    locale,
+                    "probeCount",
+                    &[("max", &(MAX_AGENT_PROBE_LINES.to_string()))],
                 ));
             }
             for (line_index, line) in lines.iter().enumerate() {
                 // A line that can be published must also fit a private preview.
                 if line.is_empty() || line.len() > MAX_ANCHOR_LINE_STEPS {
-                    return Err(format!(
-                        "agent-shell probe line {} requires 1..={MAX_ANCHOR_LINE_STEPS} actions",
-                        line_index + 1
+                    return Err(request_message(
+                        locale,
+                        "probeActions",
+                        &[
+                            ("line", &((line_index + 1).to_string())),
+                            ("max", &(MAX_ANCHOR_LINE_STEPS.to_string())),
+                        ],
                     ));
                 }
                 for action in line {
-                    validate_agent_semantic_action_v1(action, "agent-shell probe")?;
+                    validate_agent_semantic_action_v1(action, "agent-shell probe", locale)?;
                 }
             }
         }
         if let Self::CombatMilestoneSuccessorDetails { candidate_ids, .. } = self {
             if candidate_ids.is_empty() {
-                return Err(
-                    "combat milestone successor details require at least one candidate id"
-                        .to_string(),
-                );
+                return Err(request_message(locale, "milestoneDetailsEmpty", &[]));
             }
             if candidate_ids.len() > MAX_AGENT_COMBAT_MILESTONE_SUCCESSOR_DETAILS {
-                return Err(format!(
-                    "combat milestone successor details exceed the bounded maximum: {} > {}",
-                    candidate_ids.len(),
-                    MAX_AGENT_COMBAT_MILESTONE_SUCCESSOR_DETAILS
+                return Err(request_message(
+                    locale,
+                    "milestoneDetailsCount",
+                    &[
+                        ("actual", &(candidate_ids.len().to_string())),
+                        (
+                            "max",
+                            &(MAX_AGENT_COMBAT_MILESTONE_SUCCESSOR_DETAILS.to_string()),
+                        ),
+                    ],
                 ));
             }
             if candidate_ids.iter().any(String::is_empty) {
-                return Err(
-                    "combat milestone successor detail candidate ids must be non-empty".to_string(),
-                );
+                return Err(request_message(locale, "milestoneDetailsId", &[]));
             }
             let distinct = candidate_ids.iter().collect::<HashSet<_>>();
             if distinct.len() != candidate_ids.len() {
-                return Err(
-                    "combat milestone successor detail candidate ids must be distinct".to_string(),
-                );
+                return Err(request_message(locale, "milestoneDetailsDistinct", &[]));
             }
         }
         if let Self::CombatReview { candidate_refs, .. } = self {
             if candidate_refs.is_empty()
                 || candidate_refs.len() > MAX_AGENT_COMBAT_REVIEW_CANDIDATES
             {
-                return Err(format!(
-                    "combat review requires 1..={MAX_AGENT_COMBAT_REVIEW_CANDIDATES} candidate refs"
+                return Err(request_message(
+                    locale,
+                    "reviewCount",
+                    &[("max", &(MAX_AGENT_COMBAT_REVIEW_CANDIDATES.to_string()))],
                 ));
             }
             if candidate_refs
@@ -576,27 +594,26 @@ impl AgentShellRequestV1 {
                 .any(|candidate_ref| candidate_ref.trim().is_empty() || candidate_ref.len() > 32)
                 || candidate_refs.iter().collect::<HashSet<_>>().len() != candidate_refs.len()
             {
-                return Err(
-                    "combat review candidate refs must be distinct 1..=32 byte values".to_string(),
-                );
+                return Err(request_message(locale, "reviewRefs", &[]));
             }
         }
         if let Self::CombatMilestoneContinuationAudit { candidate_ids, .. } = self {
             if candidate_ids.is_empty()
                 || candidate_ids.len() > MAX_AGENT_COMBAT_MILESTONE_SUCCESSOR_DETAILS
             {
-                return Err(format!(
-                    "combat milestone continuation audit requires 1..={} candidate ids",
-                    MAX_AGENT_COMBAT_MILESTONE_SUCCESSOR_DETAILS
+                return Err(request_message(
+                    locale,
+                    "milestoneAuditCount",
+                    &[(
+                        "max",
+                        &(MAX_AGENT_COMBAT_MILESTONE_SUCCESSOR_DETAILS.to_string()),
+                    )],
                 ));
             }
             if candidate_ids.iter().any(String::is_empty)
                 || candidate_ids.iter().collect::<HashSet<_>>().len() != candidate_ids.len()
             {
-                return Err(
-                    "combat milestone continuation audit candidate ids must be non-empty and distinct"
-                        .to_string(),
-                );
+                return Err(request_message(locale, "milestoneAuditIds", &[]));
             }
         }
         if let Self::CombatPrefixHorizonAudit {
@@ -608,32 +625,32 @@ impl AgentShellRequestV1 {
         } = self
         {
             if lineage_id.trim().is_empty() || lineage_id.len() > 256 {
-                return Err(
-                    "combat prefix horizon audit lineage_id must contain 1..=256 bytes".to_string(),
-                );
+                return Err(request_message(locale, "lineage", &[]));
             }
             if prefix_actions.is_empty() || prefix_actions.len() > MAX_AGENT_COMBAT_PREFIX_ACTIONS {
-                return Err(format!(
-                    "combat prefix horizon audit requires 1..={MAX_AGENT_COMBAT_PREFIX_ACTIONS} prefix actions"
+                return Err(request_message(
+                    locale,
+                    "prefixActions",
+                    &[("max", &(MAX_AGENT_COMBAT_PREFIX_ACTIONS.to_string()))],
                 ));
             }
             for action in prefix_actions {
                 validate_agent_semantic_action_v1(
                     action,
                     "agent-shell combat_prefix_horizon_audit",
+                    locale,
                 )?;
             }
             if expected_successor_public_snapshot_id.trim().is_empty()
                 || expected_successor_public_snapshot_id.len() > 256
             {
-                return Err(
-                    "combat prefix horizon audit expected snapshot must contain 1..=256 bytes"
-                        .to_string(),
-                );
+                return Err(request_message(locale, "snapshot", &[]));
             }
             if !(1..=MAX_AGENT_COMBAT_PREFIX_HORIZON_TURNS).contains(additional_turns) {
-                return Err(format!(
-                    "combat prefix horizon audit requires 1..={MAX_AGENT_COMBAT_PREFIX_HORIZON_TURNS} additional turns"
+                return Err(request_message(
+                    locale,
+                    "additionalTurns",
+                    &[("max", &(MAX_AGENT_COMBAT_PREFIX_HORIZON_TURNS.to_string()))],
                 ));
             }
         }
@@ -645,13 +662,13 @@ impl AgentShellRequestV1 {
         } = self
         {
             if !(1..=20_000).contains(max_search_ms) {
-                return Err("combat research max_search_ms must be in 1..=20000".into());
+                return Err(request_message(locale, "searchMs", &[]));
             }
             if let Some(work) = max_generation_work {
                 if *effort != AgentCombatResearchEffortV1::WholeCombat
                     || !(1..=1_000_000).contains(work)
                 {
-                    return Err("combat research max_generation_work must be in 1..=1000000 and requires whole_combat".into());
+                    return Err(request_message(locale, "searchWork", &[]));
                 }
             }
         }
@@ -662,7 +679,7 @@ impl AgentShellRequestV1 {
         } = self
         {
             if *turn == 0 || candidate_ref.is_empty() || candidate_ref.len() > 32 {
-                return Err("combat draft opening requires a candidate ref and turn >= 1".into());
+                return Err(request_message(locale, "draftOpen", &[]));
             }
         }
         if let Self::CombatDraftAdvance {
@@ -693,42 +710,42 @@ impl AgentShellRequestV1 {
         }
         if let Self::CommitCombatPlan { candidate_ref, .. } = self {
             if candidate_ref.trim().is_empty() || candidate_ref.len() > 32 {
-                return Err(
-                    "agent-shell commit_combat_plan requires a 1..=32 byte candidate_ref"
-                        .to_string(),
-                );
+                return Err(request_message(locale, "commitPlan", &[]));
             }
         }
         if let Self::CommitCombatMilestone { candidate_id, .. } = self {
             if candidate_id.trim().is_empty() || candidate_id.len() > 256 {
-                return Err(
-                    "agent-shell commit_combat_milestone requires a 1..=256 byte candidate_id"
-                        .to_string(),
-                );
+                return Err(request_message(locale, "commitMilestone", &[]));
             }
         }
         if let Self::CombatTurnCandidateDetails { candidate_ids, .. } = self {
-            validate_combat_turn_candidate_ids_v1(candidate_ids, "candidate details")?;
+            validate_combat_turn_candidate_ids_v1(candidate_ids, "candidateDetails", locale)?;
         }
         if let Self::CombatTurnReserve { line, .. } = self {
             if line.is_empty() || line.len() > MAX_AGENT_COMBAT_TURN_RESERVATION_ACTIONS {
-                return Err(format!(
-                    "combat-turn reservation requires 1..={MAX_AGENT_COMBAT_TURN_RESERVATION_ACTIONS} semantic actions"
+                return Err(request_message(
+                    locale,
+                    "reservationCount",
+                    &[(
+                        "max",
+                        &(MAX_AGENT_COMBAT_TURN_RESERVATION_ACTIONS.to_string()),
+                    )],
                 ));
             }
             for action in line {
-                validate_agent_semantic_action_v1(action, "agent-shell combat_turn_reserve")?;
+                validate_agent_semantic_action_v1(
+                    action,
+                    "agent-shell combat_turn_reserve",
+                    locale,
+                )?;
             }
         }
         if let Self::CombatTurnContinuationAudit { candidate_ids, .. } = self {
-            validate_combat_turn_candidate_ids_v1(candidate_ids, "continuation audit")?;
+            validate_combat_turn_candidate_ids_v1(candidate_ids, "continuationAudit", locale)?;
         }
         if let Self::CommitCombatTurn { candidate_id, .. } = self {
             if candidate_id.trim().is_empty() || candidate_id.len() > 256 {
-                return Err(
-                    "agent-shell commit_combat_turn requires a 1..=256 byte candidate_id"
-                        .to_string(),
-                );
+                return Err(request_message(locale, "commitTurn", &[]));
             }
         }
         Ok(())
@@ -738,28 +755,45 @@ impl AgentShellRequestV1 {
 fn validate_combat_turn_candidate_ids_v1(
     candidate_ids: &[String],
     operation: &str,
+    locale: Locale,
 ) -> Result<(), String> {
     if candidate_ids.is_empty() || candidate_ids.len() > MAX_AGENT_COMBAT_TURN_CONTINUATION_AUDITS {
-        return Err(format!(
-            "combat-turn {operation} requires 1..={MAX_AGENT_COMBAT_TURN_CONTINUATION_AUDITS} candidate ids"
-                ));
+        return Err(request_message(
+            locale,
+            "turnCandidatesCount",
+            &[
+                ("operation", &(request_message(locale, operation, &[]))),
+                (
+                    "max",
+                    &(MAX_AGENT_COMBAT_TURN_CONTINUATION_AUDITS.to_string()),
+                ),
+            ],
+        ));
     }
     if candidate_ids
         .iter()
         .any(|candidate_id| candidate_id.trim().is_empty() || candidate_id.len() > 256)
         || candidate_ids.iter().collect::<HashSet<_>>().len() != candidate_ids.len()
     {
-        return Err(format!(
-            "combat-turn {operation} candidate ids must be distinct 1..=256 byte values"
+        return Err(request_message(
+            locale,
+            "turnCandidatesIds",
+            &[("operation", &(request_message(locale, operation, &[])))],
         ));
     }
     Ok(())
 }
 
-fn validate_agent_semantic_action_v1(action: &str, context: &str) -> Result<(), String> {
+fn validate_agent_semantic_action_v1(
+    action: &str,
+    context: &str,
+    locale: Locale,
+) -> Result<(), String> {
     if action.starts_with("ordinal:") {
-        return Err(format!(
-            "{context} rejects ordinal addressing; copy a semantic action from current options verbatim"
+        return Err(request_message(
+            locale,
+            "ordinalAddressing",
+            &[("context", &(context.to_owned()))],
         ));
     }
     parse_action_selector_v1(action, context)?;
@@ -6361,6 +6395,7 @@ fn handle_valid_request_v1(
 fn run_agent_jsonl_transport_v1(
     input: impl BufRead,
     mut output: impl Write,
+    locale: Locale,
     mut handle_valid_request: impl FnMut(
         &AgentShellRequestV1,
     ) -> Result<(AgentShellResultV1, bool), String>,
@@ -6374,7 +6409,7 @@ fn run_agent_jsonl_transport_v1(
                 error_response_v1(None, started, "invalid_json", error.to_string()),
                 false,
             ),
-            Ok(request) => match request.validate() {
+            Ok(request) => match request.validate(locale) {
                 Err(error) => (
                     error_response_v1(
                         Some(request.request_id().to_string()),
@@ -6430,7 +6465,7 @@ pub fn run_agent_jsonl_v1(
     let mut combat_research_cache = None;
     let mut combat_turn_cache = None;
     let mut combat_draft = AgentCombatDraftRuntimeV1::default();
-    run_agent_jsonl_transport_v1(input, output, |request| {
+    run_agent_jsonl_transport_v1(input, output, locale, |request| {
         handle_valid_request_v1(
             controller,
             &capabilities,
@@ -6461,7 +6496,7 @@ pub fn run_terminal_agent_jsonl_v1(
         return Err("terminal agent transport requires a terminal head".to_string());
     }
     let observation = project_agent_observation_v1(head, capabilities.clone(), None, locale)?;
-    run_agent_jsonl_transport_v1(input, output, |request| match request {
+    run_agent_jsonl_transport_v1(input, output, locale, |request| match request {
         AgentShellRequestV1::Decision {
             details,
             known_context,
@@ -6513,6 +6548,154 @@ pub fn run_terminal_agent_jsonl_v1(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn request_validation_translates_messages_without_changing_rejections_or_wire_identity() {
+        use serde_json::{json, Value};
+        let request = |command: &str, fields: Value| {
+            let mut value =
+                json!({"schema":AGENT_REQUEST_SCHEMA_V1,"request_id":"invalid","command":command});
+            value
+                .as_object_mut()
+                .unwrap()
+                .extend(fields.as_object().unwrap().clone());
+            value
+        };
+        let prefix = |fields: Value| {
+            let mut value = json!({"root_head_revision":0,"lineage_id":"lineage","prefix_actions":["end"],"expected_successor_public_snapshot_id":"snapshot","additional_turns":1});
+            value
+                .as_object_mut()
+                .unwrap()
+                .extend(fields.as_object().unwrap().clone());
+            request("combat_prefix_horizon_audit", value)
+        };
+        let mut cases = vec![
+            request("hello", json!({"schema":"future-schema"})),
+            request("hello", json!({"request_id":""})),
+            request(
+                "combat_review",
+                json!({"report_id":" ","candidate_refs":["c0"]}),
+            ),
+            request("game_facts", json!({"entities":[]})),
+            request(
+                "game_facts",
+                json!({"entities":[{"kind":"card","card":"Bash"},{"kind":"card","card":"Bash"}]}),
+            ),
+            request("info", json!({"query":" "})),
+            request("act", json!({"actions":[]})),
+            request(
+                "act",
+                json!({"actions":["end","end"],"advance":"next_strategic_decision"}),
+            ),
+            request("probe", json!({"lines":[]})),
+            request("probe", json!({"lines":[[]]})),
+            request(
+                "combat_milestone_successor_details",
+                json!({"candidate_ids":[]}),
+            ),
+            request(
+                "combat_milestone_successor_details",
+                json!({"candidate_ids":vec!["x"; MAX_AGENT_COMBAT_MILESTONE_SUCCESSOR_DETAILS+1]}),
+            ),
+            request(
+                "combat_milestone_successor_details",
+                json!({"candidate_ids":[""]}),
+            ),
+            request(
+                "combat_milestone_successor_details",
+                json!({"candidate_ids":["x","x"]}),
+            ),
+            request("combat_review", json!({"candidate_refs":[]})),
+            request("combat_review", json!({"candidate_refs":["x","x"]})),
+            request(
+                "combat_milestone_continuation_audit",
+                json!({"candidate_ids":[]}),
+            ),
+            request(
+                "combat_milestone_continuation_audit",
+                json!({"candidate_ids":["x","x"]}),
+            ),
+            prefix(json!({"lineage_id":" "})),
+            prefix(json!({"prefix_actions":[]})),
+            prefix(json!({"expected_successor_public_snapshot_id":" "})),
+            prefix(json!({"additional_turns":0})),
+            request("combat_research", json!({"max_search_ms":0})),
+            request(
+                "combat_research",
+                json!({"effort":"whole_combat","max_generation_work":0}),
+            ),
+            request(
+                "combat_draft_open",
+                json!({"candidate_ref":"","turn":1,"effort":"standard"}),
+            ),
+            request("commit_combat_plan", json!({"candidate_ref":""})),
+            request("commit_combat_milestone", json!({"candidate_id":""})),
+            request("combat_turn_reserve", json!({"line":[]})),
+            request("commit_combat_turn", json!({"candidate_id":""})),
+            request("act", json!({"actions":["ordinal:0"]})),
+        ];
+        for command in [
+            "combat_turn_candidate_details",
+            "combat_turn_continuation_audit",
+        ] {
+            cases.push(request(command, json!({"candidate_ids":[]})));
+            cases.push(request(command, json!({"candidate_ids":["x","x"]})));
+        }
+        for (index, value) in cases.iter_mut().enumerate() {
+            if value["request_id"] != "" {
+                value["request_id"] = format!("invalid-{index}").into();
+            }
+            let typed: AgentShellRequestV1 = serde_json::from_value(value.clone()).unwrap();
+            let original = serde_json::to_value(&typed).unwrap();
+            let english = typed.validate(Locale::En).unwrap_err();
+            let chinese = typed.validate(Locale::ZhCn).unwrap_err();
+            assert_ne!(english, chinese, "{value}");
+            assert!(
+                chinese
+                    .chars()
+                    .any(|character| ('\u{4e00}'..='\u{9fff}').contains(&character)),
+                "{chinese}"
+            );
+            assert!(!english.contains("{{") && !chinese.contains("{{"));
+            assert_eq!(serde_json::to_value(&typed).unwrap(), original);
+        }
+        let mut input = cases
+            .iter()
+            .map(|value| serde_json::to_string(value).unwrap())
+            .collect::<Vec<_>>();
+        input.push(serde_json::to_string(&request("quit", json!({}))).unwrap());
+        let input = input.join("\n") + "\n";
+        let mut wire = Vec::new();
+        for locale in [Locale::En, Locale::ZhCn] {
+            let mut output = Vec::new();
+            run_agent_jsonl_transport_v1(
+                std::io::Cursor::new(input.as_bytes()),
+                &mut output,
+                locale,
+                |request| {
+                    assert!(matches!(request, AgentShellRequestV1::Quit { .. }));
+                    Ok((AgentShellResultV1::Quitting, true))
+                },
+            )
+            .unwrap();
+            let rows = String::from_utf8(output)
+                .unwrap()
+                .lines()
+                .map(|line| serde_json::from_str::<Value>(line).unwrap())
+                .collect::<Vec<_>>();
+            assert_eq!(rows.len(), cases.len() + 1);
+            for row in rows.iter().take(cases.len()) {
+                assert_eq!(row["error"]["code"], "invalid_request");
+            }
+            wire.push(rows);
+        }
+        for (english, chinese) in wire[0].iter().zip(&wire[1]) {
+            for key in ["schema", "request_id", "status"] {
+                assert_eq!(english[key], chinese[key]);
+            }
+            assert_eq!(english["error"]["code"], chinese["error"]["code"]);
+        }
+    }
 
     #[test]
     fn connection_locale_reaches_native_queries_and_source_bound_observation_without_state_changes()
@@ -7295,7 +7478,7 @@ mod tests {
                 request["request_id"] = "line-limits".into();
                 let typed: AgentShellRequestV1 = serde_json::from_value(request).unwrap();
                 assert_eq!(
-                    typed.validate().is_ok(),
+                    typed.validate(Locale::En).is_ok(),
                     accepted,
                     "{count} actions: {typed:?}"
                 );
@@ -7308,7 +7491,7 @@ mod tests {
         }))
         .unwrap();
         assert!(too_many_lines
-            .validate()
+            .validate(Locale::En)
             .unwrap_err()
             .contains("1..=4 lines"));
     }
@@ -7319,7 +7502,7 @@ mod tests {
             r#"{"schema":"sts-run-play-agent-request-v1","request_id":"r1","command":"act","actions":["take:Anger"]}"#,
         )
         .expect("valid act request");
-        assert_eq!(request.validate(), Ok(()));
+        assert_eq!(request.validate(Locale::En), Ok(()));
         assert!(matches!(
             request,
             AgentShellRequestV1::Act {
@@ -7331,17 +7514,17 @@ mod tests {
             r#"{"schema":"sts-run-play-agent-request-v1","request_id":"r1-line","command":"act","actions":["play:Strike+0#0@0","end"]}"#,
         )
         .expect("valid transactional act request");
-        assert_eq!(transactional.validate(), Ok(()));
+        assert_eq!(transactional.validate(Locale::En), Ok(()));
         let invalid_advance: AgentShellRequestV1 = serde_json::from_str(
             r#"{"schema":"sts-run-play-agent-request-v1","request_id":"r1-advance","command":"act","actions":["play:Strike+0#0@0","end"],"advance":"next_strategic_decision"}"#,
         )
         .expect("closed transactional act request");
-        assert!(invalid_advance.validate().is_err());
+        assert!(invalid_advance.validate(Locale::En).is_err());
         let game_facts: AgentShellRequestV1 = serde_json::from_str(
             r#"{"schema":"sts-run-play-agent-request-v1","request_id":"facts","command":"game_facts","entities":[{"kind":"card","card":"DoubleTap"},{"kind":"relic","relic":"OrangePellets"}]}"#,
         )
         .expect("typed game facts request");
-        assert_eq!(game_facts.validate(), Ok(()));
+        assert_eq!(game_facts.validate(Locale::En), Ok(()));
         assert!(serde_json::from_str::<AgentShellRequestV1>(
             r#"{"schema":"sts-run-play-agent-request-v1","request_id":"r2","command":"act","actions":["ordinal:0"],"extra":true}"#
         )
@@ -7350,15 +7533,15 @@ mod tests {
             r#"{"schema":"sts-run-play-agent-request-v1","request_id":"r3","command":"commit_combat_plan","candidate_ref":""}"#
         )
         .expect("typed combat-plan request")
-        .validate()
+        .validate(Locale::En)
         .is_err());
         let ordinal: AgentShellRequestV1 = serde_json::from_str(
             r#"{"schema":"sts-run-play-agent-request-v1","request_id":"r3","command":"act","actions":["ordinal:0"]}"#,
         )
         .expect("closed ordinal request");
-        assert!(ordinal.validate().is_err());
+        assert!(ordinal.validate(Locale::En).is_err());
         for action in ["ordinal:0", "ordinal:event:Neow:0"] {
-            let error = validate_agent_semantic_action_v1(action, "agent-shell act")
+            let error = validate_agent_semantic_action_v1(action, "agent-shell act", Locale::En)
                 .expect_err("ordinal addressing is not a player action");
             assert!(error.contains("copy a semantic action from current options verbatim"));
             assert!(!error.contains("invalid digit"));
@@ -7367,12 +7550,12 @@ mod tests {
             r#"{"schema":"sts-run-play-agent-request-v1","request_id":"r4","command":"probe","lines":[["event:Neow:0"],["event:Neow:2"]]}"#,
         )
         .expect("closed probe request");
-        assert_eq!(probe.validate(), Ok(()));
+        assert_eq!(probe.validate(Locale::En), Ok(()));
         let ordinal_probe: AgentShellRequestV1 = serde_json::from_str(
             r#"{"schema":"sts-run-play-agent-request-v1","request_id":"r5","command":"probe","lines":[["ordinal:0"]]}"#,
         )
         .expect("closed ordinal probe request");
-        assert!(ordinal_probe.validate().is_err());
+        assert!(ordinal_probe.validate(Locale::En).is_err());
         let expanded: AgentShellRequestV1 = serde_json::from_str(
             r#"{"schema":"sts-run-play-agent-request-v1","request_id":"r6","command":"combat_research","effort":"expanded"}"#,
         )
@@ -7401,17 +7584,17 @@ mod tests {
             r#"{"schema":"sts-run-play-agent-request-v1","request_id":"draft-advance","command":"combat_draft_advance","generation_work":1024,"engine_steps":65536}"#,
         )
         .expect("typed combat draft quantum");
-        assert_eq!(draft_advance.validate(), Ok(()));
+        assert_eq!(draft_advance.validate(Locale::En), Ok(()));
         let oversized_draft_advance: AgentShellRequestV1 = serde_json::from_str(
             r#"{"schema":"sts-run-play-agent-request-v1","request_id":"draft-too-large","command":"combat_draft_advance","generation_work":65537,"engine_steps":65536}"#,
         )
         .expect("closed oversized draft request");
-        assert!(oversized_draft_advance.validate().is_err());
+        assert!(oversized_draft_advance.validate(Locale::En).is_err());
         let draft_choice: AgentShellRequestV1 = serde_json::from_str(
             r#"{"schema":"sts-run-play-agent-request-v1","request_id":"draft-choose","command":"combat_draft_choose","frame_ref":"F2","option_ref":"T3"}"#,
         )
         .expect("frame-bound combat draft choice");
-        assert_eq!(draft_choice.validate(), Ok(()));
+        assert_eq!(draft_choice.validate(Locale::En), Ok(()));
         assert!(serde_json::from_str::<AgentShellRequestV1>(
             r#"{"schema":"sts-run-play-agent-request-v1","request_id":"depth-unsafe","command":"combat_draft_choose","selected_turn":2,"option_ref":"T3"}"#,
         ).is_err());
@@ -7427,7 +7610,7 @@ mod tests {
             r#"{"schema":"sts-run-play-agent-request-v1","request_id":"r7-review","command":"combat_review","candidate_refs":["c0"],"effort":"expanded"}"#,
         )
         .expect("typed combat review request");
-        assert_eq!(review.validate(), Ok(()));
+        assert_eq!(review.validate(Locale::En), Ok(()));
         assert!(matches!(
             review,
             AgentShellRequestV1::CombatReview {
@@ -7445,25 +7628,25 @@ mod tests {
             include_steps: false,
             compact: false,
         };
-        assert!(duplicate_review.validate().is_err());
+        assert!(duplicate_review.validate(Locale::En).is_err());
         assert!(serde_json::from_str::<AgentShellRequestV1>(
             r#"{"schema":"sts-run-play-agent-request-v1","request_id":"r8","command":"commit_combat_turn","candidate_id":""}"#
         )
         .expect("typed combat-turn request")
-        .validate()
+        .validate(Locale::En)
         .is_err());
         let details: AgentShellRequestV1 = serde_json::from_str(
             r#"{"schema":"sts-run-play-agent-request-v1","request_id":"r9","command":"combat_milestone_successor_details","candidate_ids":["candidate-a","candidate-b"],"effort":"expanded"}"#,
         )
         .expect("typed milestone successor detail request");
-        assert_eq!(details.validate(), Ok(()));
+        assert_eq!(details.validate(Locale::En), Ok(()));
         let duplicate_details = AgentShellRequestV1::CombatMilestoneSuccessorDetails {
             schema: AGENT_REQUEST_SCHEMA_V1.to_string(),
             request_id: "r10".to_string(),
             candidate_ids: vec!["candidate-a".to_string(), "candidate-a".to_string()],
             effort: AgentCombatResearchEffortV1::Expanded,
         };
-        assert!(duplicate_details.validate().is_err());
+        assert!(duplicate_details.validate(Locale::En).is_err());
         let oversized_details = AgentShellRequestV1::CombatMilestoneSuccessorDetails {
             schema: AGENT_REQUEST_SCHEMA_V1.to_string(),
             request_id: "r11".to_string(),
@@ -7472,17 +7655,17 @@ mod tests {
                 .collect(),
             effort: AgentCombatResearchEffortV1::Expanded,
         };
-        assert!(oversized_details.validate().is_err());
+        assert!(oversized_details.validate(Locale::En).is_err());
         let continuation_audit: AgentShellRequestV1 = serde_json::from_str(
             r#"{"schema":"sts-run-play-agent-request-v1","request_id":"r12","command":"combat_milestone_continuation_audit","candidate_ids":["candidate-a"],"effort":"expanded"}"#,
         )
         .expect("typed milestone continuation audit request");
-        assert_eq!(continuation_audit.validate(), Ok(()));
+        assert_eq!(continuation_audit.validate(Locale::En), Ok(()));
         let prefix_horizon: AgentShellRequestV1 = serde_json::from_str(
             r#"{"schema":"sts-run-play-agent-request-v1","request_id":"r13","command":"combat_prefix_horizon_audit","root_head_revision":159,"lineage_id":"candidate-a","prefix_actions":["play:Defend+0#0","end"],"expected_successor_public_snapshot_id":"snapshot-a","additional_turns":2}"#,
         )
         .expect("typed combat prefix horizon request");
-        assert_eq!(prefix_horizon.validate(), Ok(()));
+        assert_eq!(prefix_horizon.validate(Locale::En), Ok(()));
         let ordinal_prefix = AgentShellRequestV1::CombatPrefixHorizonAudit {
             schema: AGENT_REQUEST_SCHEMA_V1.to_string(),
             request_id: "r14".to_string(),
@@ -7492,29 +7675,31 @@ mod tests {
             expected_successor_public_snapshot_id: "snapshot-a".to_string(),
             additional_turns: 2,
         };
-        assert!(ordinal_prefix.validate().is_err());
+        assert!(ordinal_prefix.validate(Locale::En).is_err());
 
         let turn_continuation_audit: AgentShellRequestV1 = serde_json::from_str(
             r#"{"schema":"sts-run-play-agent-request-v1","request_id":"r15","command":"combat_turn_continuation_audit","candidate_ids":["candidate-a","candidate-b"],"effort":"expanded"}"#,
         )
         .expect("typed combat-turn continuation audit request");
-        assert_eq!(turn_continuation_audit.validate(), Ok(()));
+        assert_eq!(turn_continuation_audit.validate(Locale::En), Ok(()));
         let turn_candidate_details: AgentShellRequestV1 = serde_json::from_str(
             r#"{"schema":"sts-run-play-agent-request-v1","request_id":"r16","command":"combat_turn_candidate_details","candidate_ids":["candidate-a"]}"#,
         )
         .expect("typed combat-turn candidate details request");
-        assert_eq!(turn_candidate_details.validate(), Ok(()));
+        assert_eq!(turn_candidate_details.validate(Locale::En), Ok(()));
         let turn_reservation: AgentShellRequestV1 = serde_json::from_str(
             r#"{"schema":"sts-run-play-agent-request-v1","request_id":"r17","command":"combat_turn_reserve","line":["select:Bash+#0,Defend+0#0","play:DemonForm+0#0","end"]}"#,
         )
         .expect("typed combat-turn reservation request");
-        assert_eq!(turn_reservation.validate(), Ok(()));
+        assert_eq!(turn_reservation.validate(Locale::En), Ok(()));
         let duplicate_turn_candidate_details = AgentShellRequestV1::CombatTurnCandidateDetails {
             schema: AGENT_REQUEST_SCHEMA_V1.to_string(),
             request_id: "duplicate-turn-candidate-details".to_string(),
             candidate_ids: vec!["candidate-a".to_string(), "candidate-a".to_string()],
         };
-        assert!(duplicate_turn_candidate_details.validate().is_err());
+        assert!(duplicate_turn_candidate_details
+            .validate(Locale::En)
+            .is_err());
         for invalid_candidate_ids in [
             Vec::new(),
             vec!["candidate-a".to_string(), "candidate-a".to_string()],
@@ -7530,7 +7715,7 @@ mod tests {
                 candidate_ids: invalid_candidate_ids,
                 effort: AgentCombatResearchEffortV1::Standard,
             };
-            assert!(invalid.validate().is_err());
+            assert!(invalid.validate(Locale::En).is_err());
         }
     }
 
@@ -7584,7 +7769,7 @@ mod tests {
             let request: AgentShellRequestV1 = serde_json::from_value(serde_json::json!({
                 "schema":AGENT_REQUEST_SCHEMA_V1,"request_id":"resource-budget","command":"combat_research","max_potions_used":value,
             })).unwrap();
-            assert_eq!(request.validate(), Ok(()));
+            assert_eq!(request.validate(Locale::En), Ok(()));
         }
         for value in [
             serde_json::json!(-1),
@@ -8467,7 +8652,7 @@ mod tests {
                 serde_json::json!({"source_ref":"S0","preferences":preferences}),
             ))
             .unwrap();
-            parsed.validate().unwrap();
+            parsed.validate(Locale::En).unwrap();
             let encoded = serde_json::to_value(parsed).unwrap();
             assert_eq!(encoded["edit"]["preferences"], preferences);
         }
@@ -8478,10 +8663,10 @@ mod tests {
                 serde_json::json!({"source_ref":source,"preferences":[]})
             ))
             .unwrap()
-            .validate()
+            .validate(Locale::En)
             .is_err());
         }
-        assert!(request(Some(serde_json::json!({"source_ref":"S0","preferences":vec![serde_json::json!({"family":0,"choices":[]});5]}))).unwrap().validate().is_err());
+        assert!(request(Some(serde_json::json!({"source_ref":"S0","preferences":vec![serde_json::json!({"family":0,"choices":[]});5]}))).unwrap().validate(Locale::En).is_err());
     }
 
     #[test]
@@ -8503,7 +8688,7 @@ mod tests {
                 .unwrap()
                 .extend(fields.as_object().unwrap().clone());
             let parsed: AgentShellRequestV1 = serde_json::from_value(request).unwrap();
-            assert_eq!(parsed.validate().is_ok(), valid, "{fields}");
+            assert_eq!(parsed.validate(Locale::En).is_ok(), valid, "{fields}");
         }
     }
 
