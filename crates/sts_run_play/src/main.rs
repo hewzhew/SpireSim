@@ -1248,16 +1248,22 @@ fn parse_positive_usize(value: &str) -> Result<usize, String> {
     Ok(parsed)
 }
 
-fn require_exact_node_selector_v1(selector: &str, command: &str) -> Result<(), String> {
+fn require_exact_node_selector_v1(
+    selector: &str,
+    command: &str,
+    locale: Locale,
+) -> Result<(), String> {
     if selector.starts_with('n') && selector.len() > 1 {
         return Ok(());
     }
-    Err(format!(
-        "run-play {command} --at requires an exact nNODE selector; head revisions such as h108 are audit metadata, not decision identity"
+    Err(cli_presentation::message(
+        locale,
+        "control.exactNode",
+        &[("command", &(command.to_owned()))],
     ))
 }
 
-fn parse_construction_site_v1(value: &str) -> Result<TaskDecisionSiteV1, String> {
+fn parse_construction_site_v1(value: &str, locale: Locale) -> Result<TaskDecisionSiteV1, String> {
     match value {
         "card_reward" => Ok(TaskDecisionSiteV1::CardReward),
         "neow" => Ok(TaskDecisionSiteV1::Neow),
@@ -1268,11 +1274,15 @@ fn parse_construction_site_v1(value: &str) -> Result<TaskDecisionSiteV1, String>
         "reward" => Ok(TaskDecisionSiteV1::Reward),
         "run_choice" => Ok(TaskDecisionSiteV1::RunChoice),
         "treasure" => Ok(TaskDecisionSiteV1::Treasure),
-        "combat" | "map" => Err(format!(
-            "construction history excludes {value}; use `history` or `history --combat-detail`"
+        "combat" | "map" => Err(cli_presentation::message(
+            locale,
+            "control.constructionExcluded",
+            &[("value", &(value.to_owned()))],
         )),
-        _ => Err(format!(
-            "unknown construction site {value:?}; expected card_reward, neow, event, shop, campfire, boss_relic, reward, run_choice, or treasure"
+        _ => Err(cli_presentation::message(
+            locale,
+            "control.constructionSite",
+            &[("value", &(format!("{value:?}")))],
         )),
     }
 }
@@ -1917,7 +1927,11 @@ fn run(cli: Cli) -> Result<(), String> {
                             head.evidence_identity.as_ref(),
                         )?;
                     }
-                    return Err("a terminal has no public decision to export".into());
+                    return Err(cli_presentation::message(
+                        locale,
+                        "control.terminalExport",
+                        &[],
+                    ));
                 }
                 let workspace = paths.load()?;
                 if stored_only {
@@ -1948,11 +1962,10 @@ fn run(cli: Cli) -> Result<(), String> {
                             .expect("public export message")
                     );
                 } else if decision_json {
-                    let inventory = controller
-                        .head()
-                        .current_decision
-                        .as_ref()
-                        .ok_or("head has no public decision")?;
+                    let inventory =
+                        controller.head().current_decision.as_ref().ok_or_else(|| {
+                            cli_presentation::message(locale, "control.headDecision", &[])
+                        })?;
                     let decision = inventory.public_decision_v1()?;
                     // Attach the executable semantic action string per
                     // candidate, using the same projector the agent shell
@@ -1981,8 +1994,8 @@ fn run(cli: Cli) -> Result<(), String> {
             }
         }
         Command::Map { session, query } => {
-            let session =
-                session.ok_or("map requires --session (or a focused session via p.ps1)")?;
+            let session = session
+                .ok_or_else(|| cli_presentation::message(locale, "control.mapSession", &[]))?;
             let paths = RunPlayPathsV1::new(session);
             let saved = paths.load_head()?;
             let head = if saved.scratch && saved.current_decision.is_some() {
@@ -1993,14 +2006,14 @@ fn run(cli: Cli) -> Result<(), String> {
             let decision = head
                 .current_decision
                 .as_ref()
-                .ok_or("map requires a current public decision")?
+                .ok_or_else(|| cli_presentation::message(locale, "control.mapDecision", &[]))?
                 .public_decision_v1()?;
             let map = match &decision.observation {
                 TaskPublicObservationV1::Strategic { observation } => &observation.public_map,
                 TaskPublicObservationV1::Combat { run_context, .. } => match run_context {
                     sts_oracle_learning::agent::information::run::PublicCombatRunContextV1::Available { public_map, .. } => public_map,
                     sts_oracle_learning::agent::information::run::PublicCombatRunContextV1::Unavailable { .. } => {
-                        return Err("the current combat has no public map".into());
+                        return Err(cli_presentation::message(locale,"control.combatMap", &[]));
                     }
                 },
             };
@@ -2088,21 +2101,21 @@ fn run(cli: Cli) -> Result<(), String> {
             max_potion_uses,
             after,
         } => {
-            let session =
-                session.ok_or("deck-lab requires --session (or a focused session via p.ps1)")?;
+            let session = session
+                .ok_or_else(|| cli_presentation::message(locale, "control.deckSession", &[]))?;
             let mut controller = RunPlayControllerV1::open(RunPlayPathsV1::new(&session))?;
             let head = controller.head().clone();
             let exact = controller
                 .current_external_exact_checkpoint_v1()?
                 .into_session()?;
             if exact.active_combat.is_some() {
-                return Err("deck-lab requires an out-of-combat decision".into());
+                return Err(cli_presentation::message(locale, "control.deckCombat", &[]));
             }
             let source_position = compact::render_position_resources_v1(
                 &head
                     .current_decision
                     .as_ref()
-                    .ok_or("deck-lab requires a decision")?
+                    .ok_or_else(|| cli_presentation::message(locale, "control.deckDecision", &[]))?
                     .public_decision_v1()?
                     .observation,
                 locale,
@@ -2116,23 +2129,34 @@ fn run(cli: Cli) -> Result<(), String> {
                 let before = head
                     .current_decision
                     .as_ref()
-                    .ok_or("deck-lab requires a decision")?
+                    .ok_or_else(|| cli_presentation::message(locale, "control.deckDecision", &[]))?
                     .public_decision_v1()?;
                 let selectors = selector::parse_action_line_v1(&line, "deck-lab after", locale)?;
                 let (prepared, actions) =
                     controller.prepare_resources_for_deck_lab_v1(&selectors)?;
                 let after = prepared
                     .current_decision()
-                    .ok_or("deck-lab preparation has no decision")?
+                    .ok_or_else(|| {
+                        cli_presentation::message(locale, "control.deckPreparedDecision", &[])
+                    })?
                     .public_decision_v1()?;
                 let resources = prepared
                     .current_run_decision_checkpoint_for_run_play_v1()?
                     .into_session()?
                     .run_state;
-                preparation_text.push_str(&format!(
-                    "Preparation (private exact scratch RNG): {}\nHP {}/{} -> {}/{} | Gold {} -> {}\n",
-                    actions.join(" / "), original_run.current_hp, original_run.max_hp,
-                    resources.current_hp, resources.max_hp, original_run.gold, resources.gold));
+                preparation_text.push_str(&cli_presentation::message(
+                    locale,
+                    "control.preparation",
+                    &[
+                        ("actions", &actions.join(" / ")),
+                        ("hpBefore", &original_run.current_hp.to_string()),
+                        ("maxBefore", &original_run.max_hp.to_string()),
+                        ("hpAfter", &resources.current_hp.to_string()),
+                        ("maxAfter", &resources.max_hp.to_string()),
+                        ("goldBefore", &original_run.gold.to_string()),
+                        ("goldAfter", &resources.gold.to_string()),
+                    ],
+                ));
                 preparation_text.push_str(&compact::render_inventory_change_v1(
                     &before, &after, locale,
                 ));
@@ -2143,13 +2167,43 @@ fn run(cli: Cli) -> Result<(), String> {
                     locale,
                 )?);
                 if let TaskPublicObservationV1::Strategic { observation } = &after.observation {
-                    preparation_text.push_str(&format!("Base energy/turn {} | Potions: {}\n",
-                        agent_protocol::public_base_energy_per_turn_v1(&observation.relics),
-                        observation.potions.iter().map(|slot| format!("P{} {}", slot.slot,
-                            slot.potion.as_ref().map_or_else(|| "empty".into(), |potion|
-                                sts_oracle_learning::content::identity::gameplay_display_label_v1(potion.potion).to_string()))).collect::<Vec<_>>().join(", ")));
+                    let potions = observation
+                        .potions
+                        .iter()
+                        .map(|slot| {
+                            format!(
+                                "P{} {}",
+                                slot.slot,
+                                slot.potion.as_ref().map_or_else(
+                                    || crate::history_state::message(locale, "empty", &[]),
+                                    |potion| locale
+                                        .entity("potion", potion.potion.stable_id())
+                                        .to_owned()
+                                )
+                            )
+                        })
+                        .collect::<Vec<_>>()
+                        .join(", ");
+                    preparation_text.push_str(&cli_presentation::message(
+                        locale,
+                        "control.preparationResources",
+                        &[
+                            (
+                                "energy",
+                                &agent_protocol::public_base_energy_per_turn_v1(
+                                    &observation.relics,
+                                )
+                                .to_string(),
+                            ),
+                            ("potions", &potions),
+                        ],
+                    ));
                 }
-                preparation_text.push_str("Random preparations show one exact sampled outcome; combat tests then use the declared fixed diagnostic seeds.\n");
+                preparation_text.push_str(&cli_presentation::message(
+                    locale,
+                    "control.preparationRng",
+                    &[],
+                ));
                 preparation = Some(
                     serde_json::json!({ "actions": actions, "before": before, "after": after,
                     "rng_contract": "Preparation uses the exact scratch RNG on a private branch. A random preparation is one sampled outcome. Encounter diagnostics then replace combat RNG with the declared fixed diagnostic seeds." }),
@@ -2159,10 +2213,21 @@ fn run(cli: Cli) -> Result<(), String> {
                 original_run
             };
             if list {
-                println!("Actual position unchanged: {source_position}");
                 println!(
-                    "Act {} diagnostic battery (TheHeart is an explicit counterfactual):",
-                    run.act_num
+                    "{}",
+                    cli_presentation::message(
+                        locale,
+                        "control.actualPosition",
+                        &[("position", &source_position)]
+                    )
+                );
+                println!(
+                    "{}",
+                    cli_presentation::message(
+                        locale,
+                        "control.deckCatalog",
+                        &[("act", &run.act_num.to_string())]
+                    )
                 );
                 for spec in deck_lab::available(&run) {
                     println!("  {}", spec.encounter.stable_id());
@@ -2170,11 +2235,13 @@ fn run(cli: Cli) -> Result<(), String> {
                 return Ok(());
             }
             let encounters = deck_lab::select(&run, &encounter)?;
-            let output = output.ok_or("deck-lab requires --output PATH unless --list is used")?;
+            let output = output
+                .ok_or_else(|| cli_presentation::message(locale, "control.deckOutput", &[]))?;
             if output.exists() || !output.parent().is_some_and(|parent| parent.is_dir()) {
-                return Err(format!(
-                    "deck-lab needs a fresh file in an existing directory: {}",
-                    output.display()
+                return Err(cli_presentation::message(
+                    locale,
+                    "control.deckFile",
+                    &[("path", &(output.display().to_string()))],
                 ));
             }
             let report = deck_lab::evaluate(
@@ -2212,9 +2279,23 @@ fn run(cli: Cli) -> Result<(), String> {
                 .map_err(|error| format!("failed to create {}: {error}", output.display()))?;
             file.write_all(&bytes)
                 .map_err(|error| format!("failed to write {}: {error}", output.display()))?;
-            println!("Actual position unchanged: {source_position}");
+            println!(
+                "{}",
+                cli_presentation::message(
+                    locale,
+                    "control.actualPosition",
+                    &[("position", &source_position)]
+                )
+            );
             print!("{}{}", preparation_text, deck_lab::render(&report, details));
-            println!("Full cases: {}", output.display());
+            println!(
+                "{}",
+                cli_presentation::message(
+                    locale,
+                    "control.fullCases",
+                    &[("path", &output.display().to_string())]
+                )
+            );
         }
         Command::Info { session, query } => {
             let paths = RunPlayPathsV1::new(session);
@@ -3785,9 +3866,10 @@ fn run(cli: Cli) -> Result<(), String> {
         } => {
             if let Some(path) = artifact.as_ref() {
                 if path.exists() {
-                    return Err(format!(
-                        "exact prefix artifact already exists: {}",
-                        path.display()
+                    return Err(cli_presentation::message(
+                        locale,
+                        "control.artifactExists",
+                        &[("path", &(path.display().to_string()))],
                     ));
                 }
             }
@@ -3899,9 +3981,10 @@ fn run(cli: Cli) -> Result<(), String> {
         } => {
             if let Some(path) = artifact.as_ref() {
                 if path.exists() {
-                    return Err(format!(
-                        "exact prefix artifact already exists: {}",
-                        path.display()
+                    return Err(cli_presentation::message(
+                        locale,
+                        "control.artifactExists",
+                        &[("path", &(path.display().to_string()))],
                     ));
                 }
             }
@@ -3911,7 +3994,7 @@ fn run(cli: Cli) -> Result<(), String> {
                 locale,
             )?;
             if let Some(selector) = at.as_deref() {
-                require_exact_node_selector_v1(selector, "preview")?;
+                require_exact_node_selector_v1(selector, "preview", locale)?;
             }
             eprintln!(
                 "{}",
@@ -3971,15 +4054,19 @@ fn run(cli: Cli) -> Result<(), String> {
                 locale,
             )?;
             if auto_combat && selectors.len() != 1 {
-                return Err(
-                    "run-play act --auto-combat accepts exactly one action; explicit multi-action lines are already transactional"
-                        .to_string(),
-                );
+                return Err(cli_presentation::message(locale, "control.actAuto", &[]));
             }
             if let Some(selector) = at.as_deref() {
-                require_exact_node_selector_v1(selector, "act")?;
+                require_exact_node_selector_v1(selector, "act", locale)?;
             }
-            println!("Input: {}", compact_action_input_v1(&actions));
+            println!(
+                "{}",
+                cli_presentation::message(
+                    locale,
+                    "control.actionInput",
+                    &[("command", &compact_action_input_v1(&actions))]
+                )
+            );
             io::stdout()
                 .flush()
                 .map_err(|error| format!("failed to flush act start signal: {error}"))?;
@@ -3992,7 +4079,7 @@ fn run(cli: Cli) -> Result<(), String> {
                 .head()
                 .current_decision
                 .as_ref()
-                .ok_or_else(|| "run-play act requires a decision head".to_string())?
+                .ok_or_else(|| cli_presentation::message(locale, "control.actDecision", &[]))?
                 .public_decision_v1()?;
             if let [selector] = selectors.as_slice() {
                 controller.choose_action_v1(selector, !auto_combat)?;
@@ -4170,7 +4257,7 @@ fn run(cli: Cli) -> Result<(), String> {
         } => {
             let site = site
                 .as_deref()
-                .map(parse_construction_site_v1)
+                .map(|value| parse_construction_site_v1(value, locale))
                 .transpose()?;
             let candidate_card = candidate_card
                 .as_deref()
@@ -5188,6 +5275,42 @@ mod tests {
     use super::*;
 
     #[test]
+    fn cli_control_languages_keep_node_and_construction_site_acceptance_identical() {
+        for value in ["n0123456789ab", "n1", "h108", "n", ""] {
+            assert_eq!(
+                require_exact_node_selector_v1(value, "preview", Locale::En).is_ok(),
+                require_exact_node_selector_v1(value, "preview", Locale::ZhCn).is_ok()
+            );
+        }
+        for value in [
+            "card_reward",
+            "neow",
+            "event",
+            "shop",
+            "campfire",
+            "boss_relic",
+            "reward",
+            "run_choice",
+            "treasure",
+        ] {
+            assert_eq!(
+                parse_construction_site_v1(value, Locale::En),
+                parse_construction_site_v1(value, Locale::ZhCn)
+            );
+        }
+        for value in ["combat", "map", "unknown"] {
+            let english = parse_construction_site_v1(value, Locale::En).unwrap_err();
+            let chinese = parse_construction_site_v1(value, Locale::ZhCn).unwrap_err();
+            assert_ne!(english, chinese);
+            assert!(english.contains(value) && chinese.contains(value));
+        }
+        let chinese = require_exact_node_selector_v1("h108", "act", Locale::ZhCn).unwrap_err();
+        assert!(
+            chinese.contains("nNODE") && chinese.contains("h108") && chinese.contains("决策身份")
+        );
+    }
+
+    #[test]
     fn shell_action_language_preserves_actions_and_localizes_input_errors() {
         for words in [
             vec!["play", "Strike+0#0", "@0", "end"],
@@ -6088,8 +6211,8 @@ mod tests {
 
     #[test]
     fn exact_action_roots_reject_head_revision_metadata() {
-        assert!(require_exact_node_selector_v1("n0123456789ab", "preview").is_ok());
-        let error = require_exact_node_selector_v1("h108", "act")
+        assert!(require_exact_node_selector_v1("n0123456789ab", "preview", Locale::En).is_ok());
+        let error = require_exact_node_selector_v1("h108", "act", Locale::En)
             .expect_err("head revision must not identify an exact action root");
         assert!(error.contains("audit metadata"));
     }
@@ -6519,7 +6642,9 @@ mod tests {
             panic!("expected construction history command");
         };
         assert_eq!(
-            site.as_deref().map(parse_construction_site_v1).transpose(),
+            site.as_deref()
+                .map(|value| parse_construction_site_v1(value, Locale::En))
+                .transpose(),
             Ok(Some(TaskDecisionSiteV1::CardReward))
         );
         assert_eq!(
@@ -6533,8 +6658,8 @@ mod tests {
         assert!(json);
         assert!(all_boundaries);
         assert!(detail);
-        assert!(parse_construction_site_v1("combat").is_err());
-        assert!(parse_construction_site_v1("unknown").is_err());
+        assert!(parse_construction_site_v1("combat", Locale::En).is_err());
+        assert!(parse_construction_site_v1("unknown", Locale::En).is_err());
         assert!(parse_construction_card_v1("iron-wave").is_err());
     }
 

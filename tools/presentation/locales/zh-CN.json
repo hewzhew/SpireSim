@@ -5581,6 +5581,32 @@
       "selectionMember": "已显示决策中没有选牌成员 {{index}}",
       "option": "已显示决策中没有选项 {{index}}",
       "terminal": "此终局没有可执行动作。"
+    },
+    "control": {
+      "exactNode": "run-play {{command}} --at 需要精确的 nNODE 选择器；h108 等 head 修订号是审计元数据，不是决策身份",
+      "constructionExcluded": "构筑记录不包含 {{value}}；请使用 `history` 或 `history --combat-detail`",
+      "constructionSite": "构筑节点 {{value}} 无法识别；可选 card_reward、neow、event、shop、campfire、boss_relic、reward、run_choice 或 treasure",
+      "terminalExport": "终局没有可导出的公开决策",
+      "headDecision": "当前 head 没有公开决策",
+      "mapSession": "map 需要 --session（或通过 p.ps1 使用当前会话）",
+      "mapDecision": "map 需要当前公开决策",
+      "combatMap": "当前战斗没有公开地图",
+      "deckSession": "deck-lab 需要 --session（或通过 p.ps1 使用当前会话）",
+      "deckCombat": "deck-lab 需要战斗外的决策局面",
+      "deckDecision": "deck-lab 需要决策局面",
+      "deckPreparedDecision": "deck-lab 准备结果没有决策局面",
+      "deckOutput": "deck-lab 需要 --output PATH；仅列出目录时可使用 --list",
+      "actAuto": "run-play act --auto-combat 只接受一个动作；显式的多动作序列已按事务执行",
+      "actDecision": "run-play act 需要决策 head",
+      "deckFile": "deck-lab 需要已有目录中的新文件：{{path}}",
+      "artifactExists": "精确前缀 artifact 已存在：{{path}}",
+      "actionInput": "输入：{{command}}",
+      "actualPosition": "实际局面未改变：{{position}}",
+      "deckCatalog": "第 {{act}} 幕诊断遭遇（TheHeart 为显式反事实测试）：",
+      "fullCases": "完整案例：{{path}}",
+      "preparation": "准备（私下使用精确 scratch RNG）：{{actions}}\n生命 {{hpBefore}}/{{maxBefore}} -> {{hpAfter}}/{{maxAfter}} | 金币 {{goldBefore}} -> {{goldAfter}}\n",
+      "preparationResources": "每回合基础能量 {{energy}} | 药水：{{potions}}\n",
+      "preparationRng": "随机准备展示当前精确 RNG 下的一次结果；后续战斗测试使用声明的固定诊断 seed。\n"
     }
   },
   "compact": {

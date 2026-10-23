@@ -5581,6 +5581,32 @@
       "selectionMember": "Selection member {{index}} is not in the displayed decision",
       "option": "Option {{index}} is not in the displayed decision",
       "terminal": "No actions at this terminal."
+    },
+    "control": {
+      "exactNode": "run-play {{command}} --at requires an exact nNODE selector; head revisions such as h108 are audit metadata, not decision identity",
+      "constructionExcluded": "construction history excludes {{value}}; use `history` or `history --combat-detail`",
+      "constructionSite": "unknown construction site {{value}}; expected card_reward, neow, event, shop, campfire, boss_relic, reward, run_choice, or treasure",
+      "terminalExport": "a terminal has no public decision to export",
+      "headDecision": "head has no public decision",
+      "mapSession": "map requires --session (or a focused session via p.ps1)",
+      "mapDecision": "map requires a current public decision",
+      "combatMap": "the current combat has no public map",
+      "deckSession": "deck-lab requires --session (or a focused session via p.ps1)",
+      "deckCombat": "deck-lab requires an out-of-combat decision",
+      "deckDecision": "deck-lab requires a decision",
+      "deckPreparedDecision": "deck-lab preparation has no decision",
+      "deckOutput": "deck-lab requires --output PATH unless --list is used",
+      "actAuto": "run-play act --auto-combat accepts exactly one action; explicit multi-action lines are already transactional",
+      "actDecision": "run-play act requires a decision head",
+      "deckFile": "deck-lab needs a fresh file in an existing directory: {{path}}",
+      "artifactExists": "exact prefix artifact already exists: {{path}}",
+      "actionInput": "Input: {{command}}",
+      "actualPosition": "Actual position unchanged: {{position}}",
+      "deckCatalog": "Act {{act}} diagnostic battery (TheHeart is an explicit counterfactual):",
+      "fullCases": "Full cases: {{path}}",
+      "preparation": "Preparation (private exact scratch RNG): {{actions}}\nHP {{hpBefore}}/{{maxBefore}} -> {{hpAfter}}/{{maxAfter}} | Gold {{goldBefore}} -> {{goldAfter}}\n",
+      "preparationResources": "Base energy/turn {{energy}} | Potions: {{potions}}\n",
+      "preparationRng": "Random preparations show one exact sampled outcome; combat tests then use the declared fixed diagnostic seeds.\n"
     }
   },
   "compact": {
