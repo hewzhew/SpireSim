@@ -1353,7 +1353,11 @@ fn render_decision_v1(
             candidate.candidate_ordinal,
             evidence,
             semantic_action,
-            render_candidate_with_observation(&candidate.candidate, Some(&decision.observation)),
+            render_candidate_with_observation(
+                &candidate.candidate,
+                Some(&decision.observation),
+                Locale::En
+            ),
             effect
         )
         .expect("string write");
@@ -2420,16 +2424,17 @@ pub fn render_terminals_v1(
 }
 
 fn render_candidate(candidate: &TaskPublicCandidateV1) -> String {
-    render_candidate_with_observation(candidate, None)
+    render_candidate_with_observation(candidate, None, Locale::En)
 }
 
 pub(crate) fn render_candidate_with_observation(
     candidate: &TaskPublicCandidateV1,
     observation: Option<&TaskPublicObservationV1>,
+    locale: Locale,
 ) -> String {
     match candidate {
         TaskPublicCandidateV1::Strategic { action } => {
-            render_strategic_action(action, observation, Locale::En)
+            render_strategic_action(action, observation, locale)
         }
         TaskPublicCandidateV1::CombatAtomic {
             action:
@@ -2449,7 +2454,7 @@ pub(crate) fn render_candidate_with_observation(
                 |card| {
                     format!(
                         "play {} hand[{hand_index}] target={target_monster_index:?} cost={} untargeted_card_damage={} block={}",
-                        format_card(card.card_id, card.upgrades),
+                        locale.card_name(card.card_id.stable_id(), card.upgrades),
                         card.effective_cost,
                         card.current_damage,
                         card.current_block
@@ -2477,8 +2482,12 @@ pub(crate) fn render_candidate_with_observation(
                         eligible,
                     } => {
                         let card = match (card_id, upgrades) {
-                            (Some(card), Some(upgrades)) => format_card(*card, *upgrades),
-                            (Some(card), None) => format_identity(*card),
+                            (Some(card), Some(upgrades)) => {
+                                locale.card_name(card.stable_id(), *upgrades)
+                            }
+                            (Some(card), None) => {
+                                locale.entity("card", card.stable_id()).to_owned()
+                            }
                             (None, _) => "unknown-card".to_string(),
                         };
                         let token = combat_selection_token_v1(&family.domain, selection_ordinal)
@@ -2494,7 +2503,10 @@ pub(crate) fn render_candidate_with_observation(
                         currently_present,
                     } => format!(
                         "{selection_ordinal}:{}@scry[{index}]{}{}",
-                        card_id.map_or_else(|| "unknown-card".to_string(), format_identity),
+                        card_id.map_or_else(
+                            || "unknown-card".to_string(),
+                            |card| locale.entity("card", card.stable_id()).to_owned()
+                        ),
                         combat_selection_token_v1(&family.domain, selection_ordinal)
                             .map_or_else(String::new, |token| format!(" token={token}")),
                         if *currently_present { "" } else { "(absent)" }
@@ -2684,7 +2696,7 @@ pub(crate) fn render_strategic_action(
                     public_semantics
                         .specific_cards_gained
                         .iter()
-                        .map(|card| format_card(card.card, card.upgrades))
+                        .map(|card| locale.card_name(card.card.stable_id(), card.upgrades))
                         .collect::<Vec<_>>()
                         .join(",")
                 ));
@@ -2695,7 +2707,7 @@ pub(crate) fn render_strategic_action(
                     public_semantics
                         .specific_cards_removed
                         .iter()
-                        .map(|card| format_card(card.card, card.upgrades))
+                        .map(|card| locale.card_name(card.card.stable_id(), card.upgrades))
                         .collect::<Vec<_>>()
                         .join(",")
                 ));
@@ -2914,7 +2926,7 @@ pub(crate) fn render_strategic_action(
                                     |card| {
                                         format!(
                                             "{selection_ordinal}:{}@deck[{card_ordinal}]{}",
-                                            format_card(card.card, card.upgrades),
+                                            locale.card_name(card.card.stable_id(), card.upgrades),
                                             run_selection_reward_label_v1(
                                                 observation,
                                                 card.card,
@@ -2966,7 +2978,7 @@ pub(crate) fn render_strategic_action(
                                     |card| {
                                         format!(
                                             "{}@deck[{card_ordinal}]{}",
-                                            format_card(card.card, card.upgrades),
+                                            locale.card_name(card.card.stable_id(), card.upgrades),
                                             run_selection_reward_label_v1(
                                                 observation,
                                                 card.card,
@@ -3984,6 +3996,7 @@ mod tests {
                     render_candidate_with_observation(
                         &claim_reward_candidate(index, index, reward).candidate,
                         Some(&observation),
+                        Locale::En,
                     )
                 })
                 .collect();

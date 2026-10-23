@@ -4122,7 +4122,7 @@ fn run(cli: Cli) -> Result<(), String> {
                     RunPlayJourneyWindowV1::Last { count: 8 }
                 };
                 let history = journey_history_v1(&paths, window)?;
-                print!("{}", render_journey_history_v1(&history, detail));
+                print!("{}", render_journey_history_v1(&history, detail, locale));
             } else if combat_detail {
                 let workspace = paths.load()?;
                 let from_node_id = at

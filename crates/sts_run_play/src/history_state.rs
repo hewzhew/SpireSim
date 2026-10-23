@@ -1,26 +1,31 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
 
 use sts_oracle_learning::agent::information::state::{CombatLearningPowerV1, PublicCombatStateV1};
 use sts_oracle_learning::agent::task::TaskStrategicObservationV1;
-use sts_oracle_learning::content::identity::gameplay_display_label_v1;
-
+use sts_oracle_learning::content::powers::uses_sentinel_amount;
 use sts_presentation::Locale;
 
-pub(crate) fn render_deck_v1(observation: &TaskStrategicObservationV1) -> String {
+pub(crate) fn message(locale: Locale, key: &str, parameters: &[(&str, &str)]) -> String {
+    locale
+        .text("history", key, parameters)
+        .expect("history message")
+}
+
+pub(crate) fn render_deck_v1(observation: &TaskStrategicObservationV1, locale: Locale) -> String {
     let groups = crate::compact::inventory_card_groups_v1(&observation.cards);
-    let mut identities = BTreeMap::<_, std::collections::BTreeSet<_>>::new();
+    let mut identities = BTreeMap::<_, BTreeSet<_>>::new();
     for (_, card) in &groups {
         identities
-            .entry(Locale::En.entity("card", card.card.stable_id()))
+            .entry(locale.entity("card", card.card.stable_id()))
             .or_default()
             .insert(card.card.stable_id());
     }
     groups
         .into_iter()
         .map(|(count, card)| {
-            let mut label = crate::compact::permanent_card_label_v1(&card, Locale::En);
-            if identities[Locale::En.entity("card", card.card.stable_id())].len() > 1 {
+            let mut label = crate::compact::permanent_card_label_v1(&card, locale);
+            if identities[locale.entity("card", card.card.stable_id())].len() > 1 {
                 write!(label, " [{}]", card.card.stable_id()).expect("string write");
             }
             if count == 1 {
@@ -33,25 +38,23 @@ pub(crate) fn render_deck_v1(observation: &TaskStrategicObservationV1) -> String
         .join(", ")
 }
 
-pub(crate) fn render_relics_v1(observation: &TaskStrategicObservationV1) -> String {
+pub(crate) fn render_relics_v1(observation: &TaskStrategicObservationV1, locale: Locale) -> String {
     observation
         .relics
         .iter()
         .map(|relic| {
-            let mut label = gameplay_display_label_v1(relic.relic).to_string();
+            let mut label = locale.entity("relic", relic.relic.stable_id()).to_owned();
             if relic.counter != -1 {
                 write!(label, "{{counter={}}}", relic.counter).expect("string write");
             }
             if relic.amount != 0 {
                 write!(label, "{{amount={}}}", relic.amount).expect("string write");
             }
-            if let Some(status) =
-                sts_oracle_learning::content::relics::mechanics::trigger_state_description(
-                    relic.relic,
-                    relic.used_up,
-                )
-            {
-                write!(label, "{{{status}}}").expect("string write");
+            if let Some(status) = sts_oracle_learning::content::relics::mechanics::trigger_state_v1(
+                relic.relic,
+                relic.used_up,
+            ) {
+                write!(label, "{{{}}}", status.description(locale)).expect("string write");
             }
             label
         })
@@ -59,14 +62,23 @@ pub(crate) fn render_relics_v1(observation: &TaskStrategicObservationV1) -> Stri
         .join(", ")
 }
 
-pub(crate) fn render_potions_v1(observation: &TaskStrategicObservationV1) -> String {
+pub(crate) fn render_potions_v1(
+    observation: &TaskStrategicObservationV1,
+    locale: Locale,
+) -> String {
     observation
         .potions
         .iter()
         .map(|slot| {
             slot.potion.as_ref().map_or_else(
-                || format!("{}:empty", slot.slot),
-                |potion| format!("{}:{}", slot.slot, gameplay_display_label_v1(potion.potion)),
+                || format!("{}:{}", slot.slot, message(locale, "empty", &[])),
+                |potion| {
+                    format!(
+                        "{}:{}",
+                        slot.slot,
+                        locale.entity("potion", potion.potion.stable_id())
+                    )
+                },
             )
         })
         .collect::<Vec<_>>()
@@ -79,54 +91,107 @@ pub(crate) fn push_scalar_delta_v1(deltas: &mut Vec<String>, label: &str, before
     }
 }
 
-/// Differences at recorded public boundaries, not a reconstruction of effect triggers.
+/// Compare typed recorded values before rendering them in either language.
+/// Slots do not establish persistent monster identity across a summon.
 pub(crate) fn combat_boundary_deltas_v1(
     before: &PublicCombatStateV1,
     after: &PublicCombatStateV1,
+    locale: Locale,
 ) -> Vec<String> {
     let mut changes = Vec::new();
-    push_scalar_delta_v1(&mut changes, "Player HP", before.player.hp, after.player.hp);
     push_scalar_delta_v1(
         &mut changes,
-        "Player Block",
+        &message(locale, "state.playerHp", &[]),
+        before.player.hp,
+        after.player.hp,
+    );
+    push_scalar_delta_v1(
+        &mut changes,
+        &message(locale, "state.playerBlock", &[]),
         before.player.block,
         after.player.block,
     );
     power_deltas(
         &mut changes,
-        "Player",
+        &message(locale, "state.player", &[]),
         &before.player.powers,
         &after.player.powers,
+        locale,
     );
-    // Archived public snapshots carry slots, not persistent monster identities.
-    // Show the two observed rosters instead of attributing changes across slots.
-    let old_roster = render_monster_roster_v1(before);
-    let new_roster = render_monster_roster_v1(after);
-    if old_roster != new_roster {
-        changes.push(format!("Enemies before: {old_roster}"));
-        changes.push(format!("Enemies after: {new_roster}"));
+    let roster = |state: &PublicCombatStateV1| {
+        state
+            .monsters
+            .iter()
+            .map(|monster| {
+                (
+                    monster.slot,
+                    monster.enemy.clone(),
+                    monster.hp,
+                    monster.block,
+                    monster.alive,
+                    monster.half_dead,
+                    monster.escaped,
+                    power_values(&monster.powers),
+                )
+            })
+            .collect::<Vec<_>>()
+    };
+    if roster(before) != roster(after) {
+        changes.push(message(
+            locale,
+            "state.enemiesBefore",
+            &[("roster", &render_monster_roster_v1(before, locale))],
+        ));
+        changes.push(message(
+            locale,
+            "state.enemiesAfter",
+            &[("roster", &render_monster_roster_v1(after, locale))],
+        ));
     }
     changes
 }
 
-fn render_monster_roster_v1(state: &PublicCombatStateV1) -> String {
+fn render_monster_roster_v1(state: &PublicCombatStateV1, locale: Locale) -> String {
     state.monsters.iter().map(|monster| {
         let sts_oracle_learning::agent::information::state::CombatLearningEnemyIdentityV1::Known { enemy_id } = monster.enemy;
-        let mut label = format!("M{} {} HP {} Block {}", monster.slot,
-            gameplay_display_label_v1(enemy_id), monster.hp, monster.block);
-        if !monster.alive { write!(label, " alive=false").expect("string write"); }
-        if monster.half_dead { label.push_str(" reviving"); }
-        if monster.escaped { label.push_str(" escaped"); }
+        let mut label = message(locale, "state.monster", &[
+            ("slot", &monster.slot.to_string()),
+            ("enemy", locale.entity("enemy", enemy_id.stable_id())),
+            ("hp", &monster.hp.to_string()),
+            ("block", &monster.block.to_string()),
+        ]);
+        for (flag, key) in [
+            (!monster.alive, "state.dead"),
+            (monster.half_dead, "state.reviving"),
+            (monster.escaped, "state.escaped"),
+        ] {
+            if flag {
+                label.push_str(&message(locale, key, &[]));
+            }
+        }
         for power in &monster.powers {
-            let amount = if sts_oracle_learning::content::powers::uses_sentinel_amount(power.power) {
-                "present".to_string()
+            let amount = if uses_sentinel_amount(power.power) {
+                message(locale, "present", &[])
             } else {
                 power.amount.to_string()
             };
-            write!(label, " {}({})", gameplay_display_label_v1(power.power), amount).expect("string write");
+            write!(label, " {}({amount})", locale.entity("power", power.power.stable_id())).expect("string write");
         }
         label
     }).collect::<Vec<_>>().join("; ")
+}
+
+fn power_values(powers: &[CombatLearningPowerV1]) -> BTreeMap<&'static str, Vec<Option<i32>>> {
+    let mut map = BTreeMap::<_, Vec<_>>::new();
+    for power in powers {
+        map.entry(power.power.stable_id())
+            .or_default()
+            .push((!uses_sentinel_amount(power.power)).then_some(power.amount));
+    }
+    for entries in map.values_mut() {
+        entries.sort();
+    }
+    map
 }
 
 fn power_deltas(
@@ -134,35 +199,33 @@ fn power_deltas(
     owner: &str,
     before: &[CombatLearningPowerV1],
     after: &[CombatLearningPowerV1],
+    locale: Locale,
 ) {
-    let values = |powers: &[CombatLearningPowerV1]| {
-        let mut map = BTreeMap::<&'static str, Vec<String>>::new();
-        for power in powers {
-            map.entry(gameplay_display_label_v1(power.power))
-                .or_default()
-                .push(
-                    if sts_oracle_learning::content::powers::uses_sentinel_amount(power.power) {
-                        "present".to_string()
-                    } else {
-                        power.amount.to_string()
-                    },
-                );
-        }
-        for entries in map.values_mut() {
-            entries.sort();
-        }
-        map
-    };
-    let old = values(before);
-    let new = values(after);
-    let keys: std::collections::BTreeSet<_> = old.keys().chain(new.keys()).copied().collect();
+    let old = power_values(before);
+    let new = power_values(after);
+    let keys: BTreeSet<_> = old.keys().chain(new.keys()).copied().collect();
     for key in keys {
         if old.get(key) != new.get(key) {
-            let describe = |value: Option<&Vec<String>>| {
-                value.map_or_else(|| "absent".into(), |values| values.join(","))
+            let describe = |value: Option<&Vec<Option<i32>>>| {
+                value.map_or_else(
+                    || message(locale, "absent", &[]),
+                    |values| {
+                        values
+                            .iter()
+                            .map(|amount| {
+                                amount.map_or_else(
+                                    || message(locale, "present", &[]),
+                                    |amount| amount.to_string(),
+                                )
+                            })
+                            .collect::<Vec<_>>()
+                            .join(",")
+                    },
+                )
             };
             changes.push(format!(
-                "{owner} {key}: {} -> {}",
+                "{owner} {}: {} -> {}",
+                locale.entity("power", key),
                 describe(old.get(key)),
                 describe(new.get(key))
             ));
@@ -211,7 +274,7 @@ mod tests {
         green.card = CardId::StrikeG;
         green.ordinal += 1;
         observation.cards = vec![red, green];
-        let rendered = render_deck_v1(&observation);
+        let rendered = render_deck_v1(&observation, Locale::En);
         assert!(
             rendered.contains("[Strike]") && rendered.contains("[StrikeG]"),
             "{rendered}"
@@ -264,7 +327,8 @@ mod tests {
         torch.slot = 0;
         torch.current_hp = 43;
         state.entities.monsters = vec![torch, boss];
-        let changes = combat_boundary_deltas_v1(&before, &public_combat_state_v1(&state));
+        let changes =
+            combat_boundary_deltas_v1(&before, &public_combat_state_v1(&state), Locale::En);
         assert_eq!(changes.len(), 2);
         assert!(changes[0].starts_with("Enemies before: M0 The Collector HP 300"));
         assert!(changes[1].starts_with("Enemies after: M0 Torch Head HP 43"));
@@ -283,8 +347,53 @@ mod tests {
             source_creature: None,
         };
         let mut changes = Vec::new();
-        power_deltas(&mut changes, "M0", &[artifact.clone()], &[]);
-        power_deltas(&mut changes, "M2", &[artifact.clone()], &[artifact]);
+        power_deltas(&mut changes, "M0", &[artifact.clone()], &[], Locale::En);
+        power_deltas(
+            &mut changes,
+            "M2",
+            &[artifact.clone()],
+            &[artifact],
+            Locale::En,
+        );
         assert_eq!(changes, ["M0 Artifact: 1 -> absent"]);
+    }
+
+    #[test]
+    fn tracked_power_changes_ignore_sentinel_amount_and_order_but_keep_removal() {
+        use sts_oracle_learning::agent::information::state::public_combat_state_v1;
+        use sts_oracle_learning::content::{monsters::EnemyId, powers::PowerId};
+        use sts_oracle_learning::test_support::{blank_test_combat, test_monster};
+        let mut state = blank_test_combat();
+        state.entities.monsters = vec![test_monster(EnemyId::TheCollector)];
+        let mut before = public_combat_state_v1(&state);
+        let sentinel = CombatLearningPowerV1 {
+            power: PowerId::Barricade,
+            amount: -1,
+            extra_data: 0,
+            just_applied: false,
+            payload_card: None,
+            source_creature: None,
+        };
+        let mut strength = sentinel.clone();
+        strength.power = PowerId::Strength;
+        strength.amount = 3;
+        before.player.powers = vec![sentinel.clone(), strength.clone()];
+        before.monsters[0].powers = vec![sentinel, strength];
+        let mut after = before.clone();
+        after.player.powers[0].amount = -99;
+        after.monsters[0].powers[0].amount = -99;
+        after.monsters[0].powers.reverse();
+        for locale in [Locale::En, Locale::ZhCn] {
+            assert!(combat_boundary_deltas_v1(&before, &after, locale).is_empty());
+        }
+        after
+            .player
+            .powers
+            .retain(|power| power.power != PowerId::Barricade);
+        let english = combat_boundary_deltas_v1(&before, &after, Locale::En);
+        let chinese = combat_boundary_deltas_v1(&before, &after, Locale::ZhCn);
+        assert_eq!(english, ["Player Barricade: present -> absent"]);
+        assert_eq!(chinese.len(), 1);
+        assert!(chinese[0].contains("壁垒") && !chinese[0].contains("-99"));
     }
 }

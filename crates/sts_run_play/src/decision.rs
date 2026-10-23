@@ -1502,7 +1502,7 @@ pub(crate) fn option_label(
         TaskPublicCandidateV1::Strategic { action } => {
             crate::render::render_strategic_action(action, Some(public), locale)
         }
-        _ => render_candidate_with_observation(candidate, Some(public)),
+        _ => render_candidate_with_observation(candidate, Some(public), locale),
     })
 }
 

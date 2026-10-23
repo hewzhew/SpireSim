@@ -1,44 +1,62 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
+use sts_presentation::Locale;
 
 use sts_oracle_learning::agent::information::action::PublicCombatAtomicActionV1;
 use sts_oracle_learning::agent::information::run::PublicCombatRunContextV1;
 use sts_oracle_learning::agent::task::{
-    TaskEpisodeOutcomeV1, TaskObservedBoundaryV1, TaskPublicCandidateV1, TaskPublicChoiceV1,
-    TaskPublicDecisionV1, TaskPublicObservationV1, TaskStrategicObservationV1,
+    TaskObservedBoundaryV1, TaskPublicCandidateV1, TaskPublicChoiceV1, TaskPublicDecisionV1,
+    TaskPublicObservationV1, TaskStrategicObservationV1,
 };
 use sts_oracle_learning::ai::planner_core::PlannerDecisionContext;
-use sts_oracle_learning::content::identity::gameplay_display_label_v1;
 
 use crate::history::{
     RunPlayJourneyEpisodeFamilyV1, RunPlayJourneyEpisodeV1, RunPlayJourneyHistoryV1,
     RunPlayJourneyTerminalV1, RunPlayJourneyWindowV1,
 };
 use crate::history_state::{
-    combat_boundary_deltas_v1, push_scalar_delta_v1, render_deck_v1, render_potions_v1,
+    combat_boundary_deltas_v1, message, push_scalar_delta_v1, render_deck_v1, render_potions_v1,
     render_relics_v1,
 };
-use crate::render::{render_candidate_with_observation, short_id};
+use crate::render::short_id;
 use crate::selector::semantic_action_for_choice_v1;
 
-pub fn render_journey_history_v1(history: &RunPlayJourneyHistoryV1, detail: bool) -> String {
+pub fn render_journey_history_v1(
+    history: &RunPlayJourneyHistoryV1,
+    detail: bool,
+    locale: Locale,
+) -> String {
     let mut output = String::new();
     writeln!(
         output,
-        "journey episodes={} boundaries={} showing={} window={} current=n{}",
-        history.total_episodes,
-        history.total_path_boundaries,
-        history.episodes.len(),
-        render_window_v1(history.window),
-        short_id(&history.current_archive_node_id),
+        "{}",
+        message(
+            locale,
+            "heading",
+            &[
+                ("episodes", &(history.total_episodes.to_string())),
+                ("boundaries", &(history.total_path_boundaries.to_string())),
+                ("showing", &(history.episodes.len().to_string())),
+                ("window", &(render_window_v1(history.window, locale))),
+                (
+                    "current",
+                    &(short_id(&history.current_archive_node_id).to_string())
+                )
+            ]
+        )
     )
     .expect("string write");
     if let Some(depth) = history.next_after_depth {
-        writeln!(output, "next=--after-depth {depth} --count <n>").expect("string write");
+        writeln!(
+            output,
+            "{}",
+            message(locale, "next", &[("depth", &(depth.to_string()))])
+        )
+        .expect("string write");
     }
 
     for (offset, episode) in history.episodes.iter().enumerate() {
-        let title = episode_title_v1(episode);
+        let title = episode_title_v1(episode, locale);
         let act = episode
             .act
             .map_or_else(|| "?".to_string(), |act| act.to_string());
@@ -49,16 +67,25 @@ pub fn render_journey_history_v1(history: &RunPlayJourneyHistoryV1, detail: bool
         let last = episode.steps.last().expect("episode is non-empty");
         writeln!(
             output,
-            "E{} A{}F{} {} depths=d{}..d{} boundaries={} edge=n{}->n{}",
-            history.first_episode_ordinal + offset,
-            act,
-            floor,
-            title,
-            first.depth,
-            last.depth,
-            episode.steps.len(),
-            short_id(&first.from_archive_node_id),
-            short_id(&last.to_archive_node_id),
+            "{}",
+            message(
+                locale,
+                "episode",
+                &[
+                    (
+                        "episode",
+                        &((history.first_episode_ordinal + offset).to_string())
+                    ),
+                    ("act", &(act)),
+                    ("floor", &(floor)),
+                    ("title", &(title)),
+                    ("first", &(first.depth.to_string())),
+                    ("last", &(last.depth.to_string())),
+                    ("count", &(episode.steps.len().to_string())),
+                    ("from", &(short_id(&first.from_archive_node_id).to_string())),
+                    ("to", &(short_id(&last.to_archive_node_id).to_string()))
+                ]
+            )
         )
         .expect("string write");
 
@@ -67,9 +94,9 @@ pub fn render_journey_history_v1(history: &RunPlayJourneyHistoryV1, detail: bool
                 let terminal = (last.to_archive_node_id == history.current_archive_node_id)
                     .then_some(history.terminal.as_ref())
                     .flatten();
-                render_combat_episode_v1(&mut output, episode, detail, terminal)
+                render_combat_episode_v1(&mut output, episode, detail, terminal, locale)
             }
-            _ => render_strategic_episode_v1(&mut output, episode, detail),
+            _ => render_strategic_episode_v1(&mut output, episode, detail, locale),
         }
     }
     output
@@ -79,28 +106,44 @@ fn render_strategic_episode_v1(
     output: &mut String,
     episode: &RunPlayJourneyEpisodeV1,
     detail: bool,
+    locale: Locale,
 ) {
     let Some(TaskPublicObservationV1::Strategic {
         observation: before,
     }) = episode.steps.first().map(|step| &step.source.observation)
     else {
-        writeln!(output, "  <strategic source unavailable>").expect("string write");
+        writeln!(output, "{}", message(locale, "noStrategicSource", &[])).expect("string write");
         return;
     };
     writeln!(
         output,
-        "  before hp={}/{} gold={} deck={} relics=[{}] potions=[{}] keys={:?}",
-        before.run.current_hp,
-        before.run.max_hp,
-        before.run.gold,
-        before.cards.len(),
-        render_relics_v1(before),
-        render_potions_v1(before),
-        before.run.keys,
+        "{}",
+        message(
+            locale,
+            "before",
+            &[
+                ("hp", &(before.run.current_hp.to_string())),
+                ("maxHp", &(before.run.max_hp.to_string())),
+                ("gold", &(before.run.gold.to_string())),
+                ("deck", &(before.cards.len().to_string())),
+                ("relics", &(render_relics_v1(before, locale))),
+                ("potions", &(render_potions_v1(before, locale))),
+                ("keys", &(format!("{:?}", before.run.keys)))
+            ]
+        )
     )
     .expect("string write");
     if detail {
-        writeln!(output, "  deck [{}]", render_deck_v1(before)).expect("string write");
+        writeln!(
+            output,
+            "{}",
+            message(
+                locale,
+                "deck",
+                &[("cards", &(render_deck_v1(before, locale)))]
+            )
+        )
+        .expect("string write");
     }
 
     for step in &episode.steps {
@@ -109,25 +152,35 @@ fn render_strategic_episode_v1(
             .unwrap_or_else(|error| format!("<semantic-error:{error}>"));
         let selected_human = selected_ordinal
             .and_then(|ordinal| step.source.candidates.get(ordinal))
-            .map(|candidate| {
-                render_candidate_with_observation(candidate, Some(&step.source.observation))
-            })
-            .unwrap_or_else(|| "<selected candidate unavailable>".to_string());
+            .map(|candidate| candidate_label(candidate, &step.source.observation, locale))
+            .unwrap_or_else(|| message(locale, "noCandidate", &[]));
         writeln!(
             output,
-            "  d{} {:?} candidates={}{} choose={:?} {} selector={} -> {}",
-            step.depth,
-            step.source.site,
-            step.source.candidates.len(),
-            if step.source.candidates.len() == 1 {
-                " forced"
-            } else {
-                ""
-            },
-            step.choice.ordinal_path,
-            selected_human,
-            selected_action,
-            observed_boundary_label_v1(&step.observed_boundary),
+            "{}",
+            message(
+                locale,
+                "step",
+                &[
+                    ("depth", &(step.depth.to_string())),
+                    ("site", &(site_label(step.source.site, locale))),
+                    ("count", &(step.source.candidates.len().to_string())),
+                    (
+                        "forced",
+                        &(if step.source.candidates.len() == 1 {
+                            message(locale, "forced", &[])
+                        } else {
+                            String::new()
+                        })
+                    ),
+                    ("choice", &(format!("{:?}", step.choice.ordinal_path))),
+                    ("label", &(selected_human)),
+                    ("selector", &(selected_action.clone())),
+                    (
+                        "boundary",
+                        &(observed_boundary_label_v1(&step.observed_boundary, locale))
+                    )
+                ]
+            )
         )
         .expect("string write");
         if detail {
@@ -144,7 +197,7 @@ fn render_strategic_episode_v1(
                         " "
                     },
                     ordinal,
-                    render_candidate_with_observation(candidate, Some(&step.source.observation)),
+                    candidate_label(candidate, &step.source.observation, locale),
                     selector,
                 )
                 .expect("string write");
@@ -164,43 +217,57 @@ fn render_strategic_episode_v1(
                             .ok()
                             .as_deref()
                             == Some(selector.as_str()))
-                        .then(|| {
-                            render_candidate_with_observation(
-                                candidate,
-                                Some(&step.source.observation),
-                            )
-                        })
+                        .then(|| candidate_label(candidate, &step.source.observation, locale))
                     })
-                    .unwrap_or_else(|| "<candidate unavailable>".to_string());
+                    .unwrap_or_else(|| message(locale, "noCandidate", &[]));
                 writeln!(
                     output,
-                    "    recorded-owner-suggestion producer={} revision={} access={:?} relation={} {} selector={}",
-                    provenance.producer_name,
-                    provenance.producer_revision,
-                    provenance.access,
-                    if selector == &selected_action {
-                        "accepted"
-                    } else {
-                        "overridden"
-                    },
-                    human,
-                    selector,
+                    "{}",
+                    message(
+                        locale,
+                        "suggestion",
+                        &[
+                            ("producer", &(provenance.producer_name.clone())),
+                            ("revision", &provenance.producer_revision.to_string()),
+                            ("access", &(format!("{:?}", provenance.access))),
+                            (
+                                "relation",
+                                &(message(
+                                    locale,
+                                    if selector == &selected_action {
+                                        "accepted"
+                                    } else {
+                                        "overridden"
+                                    },
+                                    &[]
+                                ))
+                            ),
+                            ("label", &(human)),
+                            ("selector", &(selector.clone()))
+                        ]
+                    )
                 )
                 .expect("string write");
             } else {
                 writeln!(
                     output,
-                    "    recorded-owner-suggestion producer={} revision={} access={:?} relation=unavailable selector=<unavailable>",
-                    provenance.producer_name,
-                    provenance.producer_revision,
-                    provenance.access,
+                    "{}",
+                    message(
+                        locale,
+                        "noSuggestion",
+                        &[
+                            ("producer", &(provenance.producer_name.clone())),
+                            ("revision", &provenance.producer_revision.to_string()),
+                            ("access", &(format!("{:?}", provenance.access)))
+                        ]
+                    )
                 )
                 .expect("string write");
             }
         }
     }
 
-    render_episode_result_v1(output, before, episode);
+    render_episode_result_v1(output, before, episode, locale);
 }
 
 fn render_combat_episode_v1(
@@ -208,55 +275,89 @@ fn render_combat_episode_v1(
     episode: &RunPlayJourneyEpisodeV1,
     detail: bool,
     terminal: Option<&RunPlayJourneyTerminalV1>,
+    locale: Locale,
 ) {
     let terminal_resources = terminal.and_then(|terminal| terminal.research_outcome.as_ref());
     let Some(health) = combat_health_summary_v1(
         episode,
         terminal_resources.map(|outcome| (outcome.final_hp, outcome.persistent.max_hp)),
     ) else {
-        writeln!(output, "  <combat source unavailable>").expect("string write");
+        writeln!(output, "{}", message(locale, "noCombatSource", &[])).expect("string write");
         return;
     };
     writeln!(
         output,
-        "  combat-health entry={}/{} min-observed={}/{} last-combat-observation={}/{} post-combat={} net={} observed-decrease={} observed-increase={} completion-boundary-delta={}",
-        health.entry_hp,
-        health.entry_max_hp,
-        health.min_observed_hp,
-        health.entry_max_hp,
-        health.last_combat_observation_hp,
-        health.last_combat_observation_max_hp,
-        health
-            .post_combat_hp
-            .zip(health.post_combat_max_hp)
-            .map_or_else(|| "unavailable".to_string(), |(hp, max_hp)| format!("{hp}/{max_hp}")),
-        render_optional_signed_v1(health.net_hp_change),
-        health.observed_hp_decrease,
-        health.observed_hp_increase,
-        render_optional_signed_v1(health.completion_boundary_delta),
+        "{}",
+        message(
+            locale,
+            "combatHealth",
+            &[
+                ("entry", &(health.entry_hp.to_string())),
+                ("max", &(health.entry_max_hp.to_string())),
+                ("min", &(health.min_observed_hp.to_string())),
+                ("last", &(health.last_combat_observation_hp.to_string())),
+                (
+                    "lastMax",
+                    &(health.last_combat_observation_max_hp.to_string())
+                ),
+                (
+                    "post",
+                    &(health
+                        .post_combat_hp
+                        .zip(health.post_combat_max_hp)
+                        .map_or_else(
+                            || message(locale, "unavailable", &[]),
+                            |(hp, max)| format!("{hp}/{max}")
+                        ))
+                ),
+                (
+                    "net",
+                    &(render_optional_signed_v1(health.net_hp_change, locale))
+                ),
+                ("decrease", &(health.observed_hp_decrease.to_string())),
+                ("increase", &(health.observed_hp_increase.to_string())),
+                (
+                    "completion",
+                    &(render_optional_signed_v1(health.completion_boundary_delta, locale))
+                )
+            ]
+        )
     )
     .expect("string write");
     writeln!(
         output,
-        "  combat-progress actions={} observed-player-turns={} internal-last-turn-index={}",
-        episode.steps.len(),
-        health.observed_player_turns,
-        health.last_internal_turn_index,
+        "{}",
+        message(
+            locale,
+            "combatProgress",
+            &[
+                ("actions", &(episode.steps.len().to_string())),
+                ("turns", &(health.observed_player_turns.to_string())),
+                ("last", &(health.last_internal_turn_index.to_string()))
+            ]
+        )
     )
     .expect("string write");
-    let card_counts = combat_episode_card_choices_v1(episode);
+    let card_counts = combat_episode_card_choices_v1(episode, locale);
     writeln!(
         output,
-        "  chosen-card-plays [{}] (automatic repeats not counted)",
-        card_counts
-            .iter()
-            .map(|(card, count)| format!("{card} x{count}"))
-            .collect::<Vec<_>>()
-            .join(", ")
+        "{}",
+        message(
+            locale,
+            "cardPlays",
+            &[(
+                "cards",
+                &(card_counts
+                    .iter()
+                    .map(|(card, count)| format!("{card} x{count}"))
+                    .collect::<Vec<_>>()
+                    .join(", "))
+            )]
+        )
     )
     .expect("string write");
     if detail {
-        render_combat_boundary_changes_v1(output, episode);
+        render_combat_boundary_changes_v1(output, episode, locale);
     }
     let last = episode.steps.last().expect("combat episode is non-empty");
     let potions_used = combat_episode_potions_used_v1(episode);
@@ -264,20 +365,38 @@ fn render_combat_episode_v1(
         if let Some(resources) = terminal_resources {
             writeln!(
                 output,
-                "  result terminal={} hp={}/{} gold={} potions-used={}",
-                render_terminal_outcome_v1(&terminal.outcome),
-                resources.final_hp,
-                resources.persistent.max_hp,
-                resources.final_gold,
-                potions_used,
+                "{}",
+                message(
+                    locale,
+                    "terminalResult",
+                    &[
+                        (
+                            "outcome",
+                            &(crate::compact::render_outcome_compact(&terminal.outcome, locale))
+                        ),
+                        ("hp", &(resources.final_hp.to_string())),
+                        ("maxHp", &(resources.persistent.max_hp.to_string())),
+                        ("gold", &(resources.final_gold.to_string())),
+                        ("potions", &(potions_used.to_string()))
+                    ]
+                )
             )
             .expect("string write");
         } else {
             writeln!(
                 output,
-                "  result terminal={} hp=unavailable gold=unavailable potions-used={}",
-                render_terminal_outcome_v1(&terminal.outcome),
-                potions_used,
+                "{}",
+                message(
+                    locale,
+                    "terminalNoResources",
+                    &[
+                        (
+                            "outcome",
+                            &(crate::compact::render_outcome_compact(&terminal.outcome, locale))
+                        ),
+                        ("potions", &(potions_used.to_string()))
+                    ]
+                )
             )
             .expect("string write");
         }
@@ -286,20 +405,33 @@ fn render_combat_episode_v1(
             TaskPublicObservationV1::Strategic { observation } => {
                 writeln!(
                     output,
-                    "  result next={:?} hp={}/{} gold={} potions-used={}",
-                    after.site,
-                    observation.run.current_hp,
-                    observation.run.max_hp,
-                    observation.run.gold,
-                    potions_used,
+                    "{}",
+                    message(
+                        locale,
+                        "combatResult",
+                        &[
+                            ("site", &(site_label(after.site, locale))),
+                            ("hp", &(observation.run.current_hp.to_string())),
+                            ("maxHp", &(observation.run.max_hp.to_string())),
+                            ("gold", &(observation.run.gold.to_string())),
+                            ("potions", &(potions_used.to_string()))
+                        ]
+                    )
                 )
                 .expect("string write");
             }
             TaskPublicObservationV1::Combat { observation, .. } => {
                 writeln!(
                     output,
-                    "  result next=Combat hp={}/{}",
-                    observation.player.hp, observation.player.max_hp
+                    "{}",
+                    message(
+                        locale,
+                        "continuingCombat",
+                        &[
+                            ("hp", &(observation.player.hp.to_string())),
+                            ("maxHp", &(observation.player.max_hp.to_string()))
+                        ]
+                    )
                 )
                 .expect("string write");
             }
@@ -307,14 +439,24 @@ fn render_combat_episode_v1(
     } else {
         writeln!(
             output,
-            "  result {}",
-            observed_boundary_label_v1(&last.observed_boundary)
+            "{}",
+            message(
+                locale,
+                "boundaryResult",
+                &[(
+                    "boundary",
+                    &(observed_boundary_label_v1(&last.observed_boundary, locale))
+                )]
+            )
         )
         .expect("string write");
     }
 }
 
-fn combat_episode_card_choices_v1(episode: &RunPlayJourneyEpisodeV1) -> BTreeMap<String, usize> {
+fn combat_episode_card_choices_v1(
+    episode: &RunPlayJourneyEpisodeV1,
+    locale: Locale,
+) -> Vec<(String, usize)> {
     let mut counts = BTreeMap::new();
     for step in &episode.steps {
         let Some(ordinal) = step.choice.ordinal_path.first() else {
@@ -329,21 +471,46 @@ fn combat_episode_card_choices_v1(episode: &RunPlayJourneyEpisodeV1) -> BTreeMap
         let TaskPublicObservationV1::Combat { observation, .. } = &step.source.observation else {
             continue;
         };
-        let name = observation.cards.hand.cards.get(*hand_index).map_or_else(
-            || "<unavailable card>".to_string(),
-            |card| crate::render::format_card(card.card_id, card.upgrades),
-        );
-        *counts.entry(name).or_default() += 1;
+        let identity = observation
+            .cards
+            .hand
+            .cards
+            .get(*hand_index)
+            .map(|card| (card.card_id.stable_id(), card.upgrades));
+        *counts.entry(identity).or_insert(0) += 1;
+    }
+    let mut identities = BTreeMap::<_, BTreeSet<_>>::new();
+    for (id, upgrades) in counts.keys().flatten() {
+        identities
+            .entry(locale.card_name(id, *upgrades))
+            .or_default()
+            .insert(*id);
     }
     counts
+        .into_iter()
+        .map(|(identity, count)| {
+            let label = identity.map_or_else(
+                || message(locale, "noCard", &[]),
+                |(id, upgrades)| {
+                    // Keep same-name cards distinct in both languages.
+                    let mut name = locale.card_name(id, upgrades);
+                    if identities[&name].len() > 1 {
+                        write!(name, " [{id}]").expect("string write");
+                    }
+                    name
+                },
+            );
+            (label, count)
+        })
+        .collect()
 }
 
-fn render_combat_boundary_changes_v1(output: &mut String, episode: &RunPlayJourneyEpisodeV1) {
-    writeln!(
-        output,
-        "  Recorded boundary changes (net changes, not an effect event log):"
-    )
-    .expect("string write");
+fn render_combat_boundary_changes_v1(
+    output: &mut String,
+    episode: &RunPlayJourneyEpisodeV1,
+    locale: Locale,
+) {
+    writeln!(output, "{}", message(locale, "boundaryChanges", &[])).expect("string write");
     for step in &episode.steps {
         let TaskPublicObservationV1::Combat {
             observation: before,
@@ -357,14 +524,22 @@ fn render_combat_boundary_changes_v1(output: &mut String, episode: &RunPlayJourn
         let changes = match observed_decision_v1(&step.observed_boundary).map(|d| &d.observation) {
             Some(TaskPublicObservationV1::Combat {
                 observation: after, ..
-            }) => combat_boundary_deltas_v1(before, after),
-            Some(TaskPublicObservationV1::Strategic { observation: after }) => vec![format!(
-                "Player HP {} -> {} at combat completion; post-combat powers unavailable",
-                before.player.hp, after.run.current_hp
+            }) => combat_boundary_deltas_v1(before, after, locale),
+            Some(TaskPublicObservationV1::Strategic { observation: after }) => vec![message(
+                locale,
+                "completionHp",
+                &[
+                    ("before", &before.player.hp.to_string()),
+                    ("after", &after.run.current_hp.to_string()),
+                ],
             )],
-            None => vec![format!(
-                "{}; successor public state unavailable",
-                observed_boundary_label_v1(&step.observed_boundary)
+            None => vec![message(
+                locale,
+                "noSuccessor",
+                &[(
+                    "boundary",
+                    &observed_boundary_label_v1(&step.observed_boundary, locale),
+                )],
             )],
         };
         writeln!(
@@ -374,7 +549,7 @@ fn render_combat_boundary_changes_v1(output: &mut String, episode: &RunPlayJourn
             before.turn.turn_count.saturating_add(1),
             action,
             if changes.is_empty() {
-                "no tracked HP, Block or power-amount changes".into()
+                message(locale, "noChanges", &[])
             } else {
                 changes.join("; ")
             }
@@ -488,13 +663,21 @@ fn render_episode_result_v1(
     output: &mut String,
     before: &TaskStrategicObservationV1,
     episode: &RunPlayJourneyEpisodeV1,
+    locale: Locale,
 ) {
     let last = episode.steps.last().expect("episode is non-empty");
     let Some(after) = observed_decision_v1(&last.observed_boundary) else {
         writeln!(
             output,
-            "  result {}",
-            observed_boundary_label_v1(&last.observed_boundary)
+            "{}",
+            message(
+                locale,
+                "boundaryResult",
+                &[(
+                    "boundary",
+                    &(observed_boundary_label_v1(&last.observed_boundary, locale))
+                )]
+            )
         )
         .expect("string write");
         return;
@@ -511,11 +694,9 @@ fn render_episode_result_v1(
             push_scalar_delta_v1(&mut deltas, "max_hp", before.run.max_hp, after.run.max_hp);
             push_scalar_delta_v1(&mut deltas, "gold", before.run.gold, after.run.gold);
             let (mut added, mut removed) = (Vec::new(), Vec::new());
-            for (label, delta) in crate::compact::permanent_card_changes_v1(
-                &before.cards,
-                &after.cards,
-                sts_presentation::Locale::En,
-            ) {
+            for (label, delta) in
+                crate::compact::permanent_card_changes_v1(&before.cards, &after.cards, locale)
+            {
                 let count = delta.unsigned_abs();
                 let label = if count == 1 {
                     label
@@ -534,14 +715,24 @@ fn render_episode_result_v1(
             if !removed.is_empty() {
                 deltas.push(format!("cards-=[{}]", removed.join(", ")));
             }
-            let before_relics = render_relics_v1(before);
-            let after_relics = render_relics_v1(after);
-            if before_relics != after_relics {
+            let before_relics = render_relics_v1(before, locale);
+            let after_relics = render_relics_v1(after, locale);
+            if before.relics != after.relics {
                 deltas.push(format!("relics=[{}]->[{}]", before_relics, after_relics));
             }
-            let before_potions = render_potions_v1(before);
-            let after_potions = render_potions_v1(after);
-            if before_potions != after_potions {
+            let before_potions = render_potions_v1(before, locale);
+            let after_potions = render_potions_v1(after, locale);
+            if before
+                .potions
+                .iter()
+                .map(|slot| (slot.slot, slot.potion.as_ref().map(|p| p.potion)))
+                .collect::<Vec<_>>()
+                != after
+                    .potions
+                    .iter()
+                    .map(|slot| (slot.slot, slot.potion.as_ref().map(|p| p.potion)))
+                    .collect::<Vec<_>>()
+            {
                 deltas.push(format!("potions=[{}]->[{}]", before_potions, after_potions));
             }
             if before.run.keys != after.run.keys {
@@ -549,16 +740,25 @@ fn render_episode_result_v1(
             }
             writeln!(
                 output,
-                "  result next={:?} hp={}/{} gold={} changes=[{}]",
-                after.decision_site,
-                after.run.current_hp,
-                after.run.max_hp,
-                after.run.gold,
-                if deltas.is_empty() {
-                    "none".to_string()
-                } else {
-                    deltas.join(" | ")
-                },
+                "{}",
+                message(
+                    locale,
+                    "strategicResult",
+                    &[
+                        ("site", &(site_label(after.decision_site.into(), locale))),
+                        ("hp", &(after.run.current_hp.to_string())),
+                        ("maxHp", &(after.run.max_hp.to_string())),
+                        ("gold", &(after.run.gold.to_string())),
+                        (
+                            "changes",
+                            &(if deltas.is_empty() {
+                                message(locale, "none", &[])
+                            } else {
+                                deltas.join(" | ")
+                            })
+                        )
+                    ]
+                )
             )
             .expect("string write");
         }
@@ -566,53 +766,76 @@ fn render_episode_result_v1(
             run_context,
             observation,
         } => {
-            let encounter =
-                combat_encounter_label_v1(run_context).unwrap_or_else(|| "unavailable".to_string());
+            let encounter = combat_encounter_label_v1(run_context, locale)
+                .unwrap_or_else(|| message(locale, "unavailable", &[]));
             writeln!(
                 output,
-                "  result next=Combat encounter={} hp={}/{} gold={}",
-                encounter,
-                observation.player.hp,
-                observation.player.max_hp,
-                observation.player.gold
+                "{}",
+                message(
+                    locale,
+                    "encounterResult",
+                    &[
+                        ("encounter", &(encounter)),
+                        ("hp", &(observation.player.hp.to_string())),
+                        ("maxHp", &(observation.player.max_hp.to_string())),
+                        ("gold", &(observation.player.gold.to_string()))
+                    ]
+                )
             )
             .expect("string write");
         }
     }
 }
 
-fn episode_title_v1(episode: &RunPlayJourneyEpisodeV1) -> String {
+fn episode_title_v1(episode: &RunPlayJourneyEpisodeV1, locale: Locale) -> String {
     let first = episode.steps.first().expect("episode is non-empty");
     match episode.family {
         RunPlayJourneyEpisodeFamilyV1::Combat => match &first.source.observation {
             TaskPublicObservationV1::Combat { run_context, .. } => {
-                combat_encounter_label_v1(run_context)
-                    .map(|encounter| format!("Combat({encounter})"))
-                    .unwrap_or_else(|| "Combat".to_string())
+                combat_encounter_label_v1(run_context, locale)
+                    .map(|encounter| message(locale, "namedCombat", &[("encounter", &encounter)]))
+                    .unwrap_or_else(|| message(locale, "site.Combat", &[]))
             }
-            TaskPublicObservationV1::Strategic { .. } => "Combat".to_string(),
+            TaskPublicObservationV1::Strategic { .. } => message(locale, "site.Combat", &[]),
         },
         RunPlayJourneyEpisodeFamilyV1::Event => match &first.source.observation {
             TaskPublicObservationV1::Strategic { observation } => match &observation.context {
-                PlannerDecisionContext::Event { event, .. } => {
-                    format!("Event({})", gameplay_display_label_v1(*event))
-                }
-                _ => "Event".to_string(),
+                PlannerDecisionContext::Event { event, .. } => message(
+                    locale,
+                    "namedEvent",
+                    &[("event", locale.entity("event", event.stable_id()))],
+                ),
+                _ => message(locale, "site.Event", &[]),
             },
-            TaskPublicObservationV1::Combat { .. } => "Event".to_string(),
+            TaskPublicObservationV1::Combat { .. } => message(locale, "site.Event", &[]),
         },
-        family => format!("{family:?}").trim_end_matches("V1").to_string(),
+        family => message(locale, &format!("site.{family:?}"), &[]),
     }
 }
 
-fn combat_encounter_label_v1(run_context: &PublicCombatRunContextV1) -> Option<String> {
+fn combat_encounter_label_v1(
+    run_context: &PublicCombatRunContextV1,
+    locale: Locale,
+) -> Option<String> {
     match run_context {
         PublicCombatRunContextV1::Available {
             encounter_id: Some(encounter),
             ..
-        } => Some(gameplay_display_label_v1(*encounter).to_string()),
+        } => Some(locale.entity("encounter", encounter.stable_id()).to_owned()),
         _ => None,
     }
+}
+
+fn candidate_label(
+    candidate: &TaskPublicCandidateV1,
+    public: &TaskPublicObservationV1,
+    locale: Locale,
+) -> String {
+    if let TaskPublicObservationV1::Strategic { observation } = public {
+        return crate::decision::option_label(candidate, observation, public, false, locale)
+            .unwrap_or_else(|error| format!("<display-error:{error}>"));
+    }
+    crate::render::render_candidate_with_observation(candidate, Some(public), locale)
 }
 
 fn observed_decision_v1(boundary: &TaskObservedBoundaryV1) -> Option<&TaskPublicDecisionV1> {
@@ -625,42 +848,45 @@ fn observed_decision_v1(boundary: &TaskObservedBoundaryV1) -> Option<&TaskPublic
     }
 }
 
-fn observed_boundary_label_v1(boundary: &TaskObservedBoundaryV1) -> &'static str {
-    match boundary {
+fn observed_boundary_label_v1(boundary: &TaskObservedBoundaryV1, locale: Locale) -> String {
+    let key = match boundary {
         TaskObservedBoundaryV1::Decision { .. } => "decision",
-        TaskObservedBoundaryV1::CommitReady => "commit-ready",
-        TaskObservedBoundaryV1::ExploredScopeExit { .. } => "scope-exit",
-        TaskObservedBoundaryV1::CommittedNextScope { .. } => "next-scope",
+        TaskObservedBoundaryV1::CommitReady => "commitReady",
+        TaskObservedBoundaryV1::ExploredScopeExit { .. } => "scopeExit",
+        TaskObservedBoundaryV1::CommittedNextScope { .. } => "nextScope",
         TaskObservedBoundaryV1::CommittedGameTerminal { .. } => "terminal",
-    }
+    };
+    message(locale, &format!("boundary.{key}"), &[])
 }
 
-fn render_window_v1(window: RunPlayJourneyWindowV1) -> String {
+fn site_label(
+    site: sts_oracle_learning::agent::task::TaskDecisionSiteV1,
+    locale: Locale,
+) -> String {
+    message(locale, &format!("site.{site:?}"), &[])
+}
+
+fn render_window_v1(window: RunPlayJourneyWindowV1, locale: Locale) -> String {
     match window {
-        RunPlayJourneyWindowV1::First { count } => format!("first:{count}"),
-        RunPlayJourneyWindowV1::Last { count } => format!("last:{count}"),
-        RunPlayJourneyWindowV1::AfterDepth { depth, count } => {
-            format!("after-depth:{depth},count:{count}")
+        RunPlayJourneyWindowV1::First { count } => {
+            message(locale, "windowFirst", &[("count", &count.to_string())])
         }
-    }
-}
-
-fn render_optional_signed_v1(value: Option<i32>) -> String {
-    value.map_or_else(|| "unavailable".to_string(), |value| format!("{value:+}"))
-}
-
-fn render_terminal_outcome_v1(outcome: &TaskEpisodeOutcomeV1) -> String {
-    match outcome {
-        TaskEpisodeOutcomeV1::Success { game_outcome } => format!("success:{game_outcome:?}"),
-        TaskEpisodeOutcomeV1::Paused { reason } => format!("paused:{reason:?}"),
-        TaskEpisodeOutcomeV1::Failure {
-            reason,
-            game_outcome,
-        } => game_outcome.as_ref().map_or_else(
-            || format!("failure:{reason:?}"),
-            |game_outcome| format!("failure:{reason:?}:{game_outcome:?}"),
+        RunPlayJourneyWindowV1::Last { count } => {
+            message(locale, "windowLast", &[("count", &count.to_string())])
+        }
+        RunPlayJourneyWindowV1::AfterDepth { depth, count } => message(
+            locale,
+            "windowAfter",
+            &[("depth", &depth.to_string()), ("count", &count.to_string())],
         ),
     }
+}
+
+fn render_optional_signed_v1(value: Option<i32>, locale: Locale) -> String {
+    value.map_or_else(
+        || message(locale, "unavailable", &[]),
+        |value| format!("{value:+}"),
+    )
 }
 
 #[cfg(test)]
@@ -686,13 +912,90 @@ mod tests {
             crate::history::journey_history_v1(&paths, RunPlayJourneyWindowV1::Last { count: 2 })
                 .unwrap();
         assert!(history.total_episodes > 0);
-        let text = render_journey_history_v1(&history, true);
+        let text = render_journey_history_v1(&history, true, Locale::En);
         assert!(text.contains("cards+=[Shrug It Off]"), "{text}");
         assert!(!text.contains("cards-=["), "{text}");
+        let original = history.clone();
+        let chinese = render_journey_history_v1(&history, true, Locale::ZhCn);
+        assert!(chinese.starts_with("行程："), "{chinese}");
+        assert!(chinese.contains("cards+=[耸肩无视]"), "{chinese}");
+        for step in history.episodes.iter().flat_map(|episode| &episode.steps) {
+            let selector = semantic_action_for_choice_v1(&step.source, &step.choice).unwrap();
+            assert!(text.contains(&format!("selector={selector}")), "{text}");
+            assert!(
+                chinese.contains(&format!("selector={selector}")),
+                "{chinese}"
+            );
+        }
+        assert_eq!(render_journey_history_v1(&history, true, Locale::En), text);
+        assert_eq!(history, original);
         let after = paths.load().unwrap();
         assert_eq!(after.head, before.head);
         assert_eq!(after.state, before.state);
         assert_eq!(game.current_state_fingerprints_v1().unwrap(), fingerprint);
+    }
+
+    #[test]
+    fn retained_combat_history_localizes_observed_results_without_replaying_actions() {
+        let directory = crate::decision_tests::TestDirectory::new();
+        let mut game = crate::decision_tests::controller_with_session(
+            &directory.0,
+            "history-combat",
+            &crate::decision_tests::fixture("combat_finish"),
+        );
+        game.choose_action_v1(
+            &crate::selector::parse_action_selector_v1("play:Strike@0", "history test").unwrap(),
+            true,
+        )
+        .unwrap();
+        let paths = crate::storage::RunPlayPathsV1::new(directory.0.join("history-combat"));
+        let before = paths.load().unwrap();
+        let fingerprint = game.current_state_fingerprints_v1().unwrap();
+        let history =
+            crate::history::journey_history_v1(&paths, RunPlayJourneyWindowV1::Last { count: 2 })
+                .unwrap();
+        let original = history.clone();
+        let english = render_journey_history_v1(&history, true, Locale::En);
+        let chinese = render_journey_history_v1(&history, true, Locale::ZhCn);
+        assert!(
+            english.contains("Chosen card plays [Strike x1]"),
+            "{english}"
+        );
+        assert!(chinese.contains("主动出牌 [打击 x1]"), "{chinese}");
+        assert!(
+            english.contains("Combat(Jaw Worm)") && chinese.contains("战斗（大颚虫）"),
+            "{english}\n{chinese}"
+        );
+        assert!(chinese.contains("play:Strike") && english.contains("play:Strike"));
+        assert!(chinese.contains("战斗结算生命") && english.contains("at combat completion"));
+        assert_eq!(history, original);
+        let after = paths.load().unwrap();
+        assert_eq!(after.head, before.head);
+        assert_eq!(after.state, before.state);
+        assert_eq!(game.current_state_fingerprints_v1().unwrap(), fingerprint);
+
+        // A constructed same-name pair checks counting identity independently of translation.
+        let mut episode = history
+            .episodes
+            .iter()
+            .find(|episode| episode.family == RunPlayJourneyEpisodeFamilyV1::Combat)
+            .unwrap()
+            .clone();
+        let mut green = episode.steps[0].clone();
+        let TaskPublicObservationV1::Combat { observation, .. } = &mut green.source.observation
+        else {
+            panic!()
+        };
+        observation.cards.hand.cards[0].card_id =
+            sts_oracle_learning::content::cards::CardId::StrikeG;
+        episode.steps.push(green);
+        for locale in [Locale::En, Locale::ZhCn] {
+            let counts = combat_episode_card_choices_v1(&episode, locale);
+            assert_eq!(counts.len(), 2);
+            assert!(counts.iter().all(|(_, count)| *count == 1));
+            assert!(counts.iter().any(|(label, _)| label.contains("[Strike]")));
+            assert!(counts.iter().any(|(label, _)| label.contains("[StrikeG]")));
+        }
     }
 
     #[test]
