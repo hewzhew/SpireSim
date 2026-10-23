@@ -21,16 +21,24 @@ async function main() {
     selected = model >= 0 ? model : Math.min(1, scenes.length - 1);
   }
   let rawTab = 'calls';
+  let rawRecordKey;
   let turnRecordOpen = true;
   let actionCursor = 0;
   let sequenceDetailsOpen = false;
   let historyObserver;
   let scrollMapToCurrent = () => {};
-  let mapOpen = false;
+  let mapPinned = false;
+  let mapPeek = false;
+  let mapMode = 'hidden';
+  let mapSignature;
+  let mapFocusKey;
+  let mapPositionFrame;
   let mapAvailable = false;
+  const mapMotions = new Set();
   const activeMotion = new Set();
   const openPiles = new Set();
   const byId = id => document.getElementById(id);
+  const mapPanel = byId('journey-map');
   const node = (tag, text, className) => {
     const el = document.createElement(tag);
     if (text !== undefined) el.textContent = text;
@@ -195,7 +203,11 @@ async function main() {
   function postCombatBoard(state, playback, completed) {
     const board = node('section', undefined, 'combat-board sequence-board');
     const hud = node('div', undefined, 'combat-hud'); hud.append(resources(state));
-    if (state.kind === 'map') { board.append(hud, playback); return board; }
+    if (state.kind === 'map') {
+      board.classList.add('map-board');
+      const slot = node('div', undefined, 'map-stage'); slot.id = 'map-stage';
+      board.append(hud, slot, playback); return board;
+    }
     const result = node('div', undefined, 'battle-outcome');
     result.append(node('h2', t(state.kind === 'card_reward' ? 'sequence.chooseCard' : activeJourney().visit.event_id ? 'scene.initialReward' : 'sequence.victory'), 'outcome-title'));
     if (state.kind === 'card_reward') {
@@ -332,8 +344,8 @@ async function main() {
         motion.healthWidths = [...byId('stage').querySelectorAll('.fighter-health-fill')].map(fill => fill.getBoundingClientRect().width);
       }
     }
+    if (index !== actionCursor) mapPeek = false;
     actionCursor = index; render(motion);
-    if (scenes[selected].snapshots[index].kind === 'map') setMapOpen(true);
     const target = focus ? byId('stage').querySelector(focus) : null;
     (target?.disabled ? byId('sequence-progress') : target)?.focus({ preventScroll: true });
   }
@@ -494,10 +506,18 @@ async function main() {
   }
   function renderMap(scene) {
     const map = scene.kind === 'sequence' ? replayMap(scene, actionCursor) : null;
-    mapAvailable = Boolean(map); byId('map-toggle').hidden = !mapAvailable;
-    byId('journey-map').hidden = !map || !mapOpen; byId('map-toggle').setAttribute('aria-expanded', String(mapAvailable && mapOpen));
+    mapAvailable = Boolean(map);
+    if (!map) {
+      byId('map-content').replaceChildren(); mapSignature = undefined; mapFocusKey = undefined;
+      scrollMapToCurrent = () => {}; return;
+    }
+    const focusKey = JSON.stringify([scene.id, scene.snapshots[actionCursor].location.map_id, map.current]);
+    const moved = focusKey !== mapFocusKey; mapFocusKey = focusKey;
+    const signature = JSON.stringify([display.locale, map]);
+    if (signature === mapSignature) return moved;
+    mapSignature = signature;
+    const scrollTop = mapPanel.querySelector('.map-viewport')?.scrollTop ?? 0;
     byId('map-content').replaceChildren();
-    if (!map) return;
     const svgNode = (tag, attributes = {}) => {
       const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
       for (const [key, value] of Object.entries(attributes)) el.setAttribute(key, value);
@@ -531,21 +551,87 @@ async function main() {
       if (room.room === 'boss' && map.boss) { const boss = svgNode('text', { x: 0, y: -33, class: 'map-boss-name' }); boss.textContent = name('encounter', map.boss); group.append(boss); }
       svg.append(group);
     }
-    const viewport = node('div', undefined, 'map-viewport'); viewport.append(svg);
+    const viewport = node('div', undefined, 'map-viewport'); viewport.tabIndex = 0;
+    viewport.setAttribute('aria-label', t('nav.map')); viewport.append(svg);
     const legend = node('div', undefined, 'map-legend');
     for (const [kind, glyph] of Object.entries(glyphs)) legend.append(iconText(glyph, name('room', kind)));
     byId('map-content').append(viewport, legend);
-    const current = map.nodes.find(node => node.current);
+    // Before the first room there is no current node. Show the public entrances
+    // at the bottom rather than falling back to the boss at scroll position 0.
+    const current = map.nodes.find(node => node.current) ?? map.nodes.reduce((first, node) => node.y < first.y ? node : first);
     scrollMapToCurrent = () => {
-      if (current) viewport.scrollTop = Math.max(0, point(current)[1] * (Math.min(viewport.clientWidth, 492) / 492) - viewport.clientHeight * .7);
+      const width = svg.getBoundingClientRect().width || Math.min(viewport.clientWidth, 492);
+      const top = point(current)[1] * width / 492 - viewport.clientHeight * .72;
+      viewport.scrollTop = Math.max(0, Math.min(viewport.scrollHeight - viewport.clientHeight, top));
     };
-    if (mapOpen) scrollMapToCurrent();
+    viewport.scrollTop = scrollTop;
+    return moved;
   }
-  function setMapOpen(value) {
-    mapOpen = value;
-    byId('journey-map').hidden = !mapAvailable || !mapOpen;
-    byId('map-toggle').setAttribute('aria-expanded', String(mapAvailable && mapOpen));
-    if (mapAvailable && mapOpen) scrollMapToCurrent();
+  function desiredMapMode() {
+    const scene = scenes[selected], state = scene.kind === 'sequence' ? scene.snapshots[actionCursor] : null;
+    if (!state?.location?.map_id) return 'hidden';
+    return state.kind === 'map' ? 'primary' : mapPinned ? 'docked' : mapPeek ? 'peek' : 'hidden';
+  }
+  function mapBeforeLayout(closing = false) {
+    const next = desiredMapMode(), visible = mapMode !== 'hidden';
+    return { mode: mapMode, rect: visible ? mapPanel.getBoundingClientRect() : null,
+      focus: mapPanel.contains(document.activeElement) ? document.activeElement : null,
+      ghost: visible && (closing || next === 'hidden') ? mapPanel.cloneNode(true) : null };
+  }
+  function positionMap() {
+    cancelAnimationFrame(mapPositionFrame);
+    mapPositionFrame = requestAnimationFrame(() => { if (mapMode !== 'hidden') scrollMapToCurrent(); });
+  }
+  function animateMap(before) {
+    if (before.mode === mapMode || ['peek', 'docked'].includes(before.mode) && ['peek', 'docked'].includes(mapMode)) return;
+    for (const item of mapMotions) { item.animation.cancel(); item.ghost?.remove(); }
+    mapMotions.clear();
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || typeof mapPanel.animate !== 'function') return;
+    let element = mapPanel, ghost;
+    let frames = [{ opacity: .4, transform: mapMode === 'primary' ? 'translateY(8px)' : 'translateX(12px)' }, { opacity: 1, transform: 'none' }];
+    if (mapMode === 'hidden') {
+      if (!before.ghost || !before.rect?.width) return;
+      ghost = before.ghost; ghost.removeAttribute('id'); ghost.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
+      ghost.inert = true; ghost.setAttribute('aria-hidden', 'true'); ghost.classList.add('map-transition-ghost');
+      Object.assign(ghost.style, { left: before.rect.left + 'px', top: before.rect.top + 'px', width: before.rect.width + 'px', height: before.rect.height + 'px' });
+      document.body.append(ghost); element = ghost;
+      frames = [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateX(12px)' }];
+    } else if (before.rect) {
+      const rect = mapPanel.getBoundingClientRect();
+      const x = Math.max(-18, Math.min(18, before.rect.left - rect.left)), y = Math.max(-12, Math.min(12, before.rect.top - rect.top));
+      frames[0].transform = `translate(${x}px, ${y}px)`;
+    }
+    const animation = element.animate(frames, { duration: 200, easing: 'cubic-bezier(.2,.7,.2,1)' });
+    const item = { animation, ghost }; mapMotions.add(item);
+    const settled = () => { ghost?.remove(); mapMotions.delete(item); };
+    animation.finished.then(settled, settled);
+  }
+  function updateMapLayout(before = mapBeforeLayout(), moved = false) {
+    mapMode = mapAvailable ? desiredMapMode() : 'hidden';
+    const primary = mapMode === 'primary', visible = mapMode !== 'hidden';
+    const host = primary ? byId('map-stage') : byId('map-dock');
+    if (mapPanel.parentElement !== host) host.append(mapPanel);
+    byId('replay-layout').dataset.mapMode = mapMode; mapPanel.dataset.mode = mapMode;
+    document.body.classList.toggle('has-map-dock', visible && !primary);
+    mapPanel.hidden = !visible;
+    byId('map-toggle').hidden = !mapAvailable || primary;
+    byId('map-toggle').setAttribute('aria-expanded', String(visible));
+    byId('map-close').hidden = primary;
+    byId('map-pin').setAttribute('aria-pressed', String(mapPinned));
+    byId('map-pin-label').textContent = t(mapPinned ? 'nav.pinned' : 'nav.pin');
+    const pinLabel = t(mapPinned ? 'nav.unpinMap' : 'nav.pinMap');
+    byId('map-pin').setAttribute('aria-label', pinLabel); byId('map-pin').title = pinLabel;
+    if (before.focus) {
+      const target = visible && before.focus.isConnected ? before.focus
+        : !byId('map-toggle').hidden ? byId('map-toggle') : byId('sequence-progress');
+      target?.focus({ preventScroll: true });
+    }
+    if (visible && (moved || before.mode !== mapMode)) positionMap();
+    animateMap(before);
+  }
+  function closeMap() {
+    const before = mapBeforeLayout(true);
+    mapPinned = false; mapPeek = false; updateMapLayout(before);
   }
   function renderChrome() {
     document.documentElement.lang = display.locale;
@@ -558,34 +644,56 @@ async function main() {
   }
   function render(motion = null) {
     const scene = scenes[selected]; byId('heading').textContent = title(scene); byId('turn-label').textContent = label(scene);
+    const beforeMap = mapBeforeLayout();
     const scrollLeft = byId('stage').dataset.scene === scene.id ? byId('stage').querySelector('.hand')?.scrollLeft ?? 0 : 0;
     clearMotion(); historyObserver?.disconnect(); document.body.classList.toggle('has-sequence', scene.kind === 'sequence');
-    updateNavigation(); renderMap(scene);
+    updateNavigation();
+    // Keep the one map panel alive while replacing a route board around it.
+    if (byId('stage').contains(mapPanel)) byId('map-dock').append(mapPanel);
     byId('stage').replaceChildren();
     if (scene.kind === 'sequence') renderSequence(scene, motion, scrollLeft); else if (scene.kind === 'combat') renderCombat(scene); else if (scene.kind === 'event') renderEvent(scene); else renderRewards(scene);
     byId('stage').dataset.scene = scene.id;
+    const moved = renderMap(scene); updateMapLayout(beforeMap, moved);
     const manual = scene.kind === 'sequence' && scene.provenance.operator === 'developer';
     byId('raw-record').hidden = manual; byId('record-model').hidden = manual;
-    if (!manual) renderRaw(scene);
+    const recordKey = JSON.stringify([scene.id, display.locale]);
+    if (!manual && rawRecordKey !== recordKey) { renderRaw(scene); rawRecordKey = recordKey; }
   }
   function select(index, updateHash = true, cursor = 0) {
     if (index < 0 || index >= scenes.length) return;
-    selected = index; actionCursor = cursor; sequenceDetailsOpen = false; openPiles.clear(); turnRecordOpen = true; byId('raw-record').open = false; render();
-    if (scenes[selected].kind === 'sequence' && scenes[selected].snapshots[cursor].kind === 'map') setMapOpen(true);
+    const previousRecording = activeJourney().recording.id;
+    if (selected !== index || actionCursor !== cursor) mapPeek = false;
+    selected = index; actionCursor = cursor; sequenceDetailsOpen = false; openPiles.clear(); turnRecordOpen = true; byId('raw-record').open = false;
+    if (activeJourney().recording.id !== previousRecording) { mapPinned = false; mapPeek = false; }
+    render();
     if (updateHash) history.replaceState(null, '', '#' + scenes[selected].id);
   }
   byId('brand-mark').append(icon('cards')); byId('run-icon').append(icon('swords')); byId('crumb-arrow').append(icon('chevron-right'));
   byId('map-toggle-icon').append(icon('map'));
-  byId('map-toggle').addEventListener('click', () => setMapOpen(!mapOpen));
+  byId('map-pin-icon').append(icon('pin')); byId('map-close-icon').append(icon('x'));
+  byId('map-toggle').addEventListener('click', () => {
+    if (mapMode !== 'hidden') closeMap();
+    else {
+      const before = mapBeforeLayout(); mapPeek = true; updateMapLayout(before);
+      mapPanel.querySelector('.map-viewport')?.focus({ preventScroll: true });
+    }
+  });
+  byId('map-close').addEventListener('click', closeMap);
+  byId('map-pin').addEventListener('click', () => {
+    const before = mapBeforeLayout(); mapPinned = !mapPinned;
+    mapPeek = !mapPinned && mapMode !== 'primary'; updateMapLayout(before);
+  });
   byId('recording').addEventListener('change', event => {
     const recording = journeys.find(recording => recording.id === event.currentTarget.value);
-    setMapOpen(false); select(scenes.findIndex(scene => scene.id === recording.scene_ids[0]));
+    mapPinned = false; mapPeek = false; select(scenes.findIndex(scene => scene.id === recording.scene_ids[0]));
   });
+  window.addEventListener('resize', () => { if (mapMode !== 'hidden') positionMap(); });
   window.addEventListener('keydown', event => {
     if (scenes[selected].kind !== 'sequence' || event.defaultPrevented || event.isComposing || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey
         || event.target.closest?.('input, select, textarea, [contenteditable]:not([contenteditable="false"]), [role="slider"], [role="listbox"], [role="combobox"], [role="tablist"]')
         || [...document.querySelectorAll('dialog[open], [role="dialog"][aria-modal="true"], [role="menu"], [role="listbox"]')].some(element => element.getClientRects().length > 0)
         || window.getSelection()?.isCollapsed === false) return;
+    if (event.key === 'Escape' && ['peek', 'docked'].includes(mapMode)) { event.preventDefault(); closeMap(); return; }
     const offset = event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : 0;
     if (!offset) return;
     event.preventDefault();
