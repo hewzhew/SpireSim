@@ -16,7 +16,7 @@ test('local formatters are ready synchronously and remain independent across awa
 
 test('shipped dictionaries have identical keys and named parameters', () => {
   assert.equal(validateCatalogs(), true);
-  const missing = structuredClone(catalogs); delete missing['zh-CN'].replay.nav.previous;
+  const missing = structuredClone(catalogs); delete missing['zh-CN'].replay.nav.timeline;
   assert.throws(() => validateCatalogs(missing), /Translation keys differ/);
   const wrong = structuredClone(catalogs); wrong['zh-CN'].game.effect.damage = '伤害 {{amount}}';
   assert.throws(() => validateCatalogs(wrong), /Translation parameters differ/);
@@ -33,9 +33,9 @@ test('locale selection maps the host zh and browser tags without claiming Tradit
 
 test('definition text resolves exact entity references without interpreting substituted names', async () => {
   const resources = structuredClone(catalogs);
-  resources.en.game.card.HeavyBlade = '{{literal}} $t(replay:nav.previous)';
+  resources.en.game.card.HeavyBlade = '{{literal}} $t(replay:nav.timeline)';
   const display = await createPresentation({locale:'en',resources});
-  assert.ok(display.definitionText('game:powerRule.Strength.effect').includes('{{literal}} $t(replay:nav.previous)'));
+  assert.ok(display.definitionText('game:powerRule.Strength.effect').includes('{{literal}} $t(replay:nav.timeline)'));
   await display.setLocale('zh-CN');
   assert.ok(display.definitionText('game:powerRule.Strength.effect').includes('重刃'));
   assert.throws(() => display.definitionText('powerRule.Strength.effect'), /namespaced key/);

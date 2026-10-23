@@ -18,6 +18,7 @@ async function main() {
   let rawTab = 'calls';
   let turnRecordOpen = true;
   let actionCursor = 0;
+  let sequenceDetailsOpen = false;
   const openPiles = new Set();
   const byId = id => document.getElementById(id);
   const node = (tag, text, className) => {
@@ -159,42 +160,72 @@ async function main() {
     }
     return row;
   }
-  function renderSequence(scene) {
+  function renderSequence(scene, emphasizeArrival) {
     const view = sequenceView(scene, actionCursor), state = view.state;
     const record = node('section', undefined, 'sequence-record');
-    const header = node('div', undefined, 'sequence-header');
+    const header = node('div', undefined, 'sequence-toolbar');
     header.append(node('h2', t('scene.turn', { turn: state.turn })));
-    const controls = node('div', undefined, 'nav-buttons');
+    const controls = node('div', undefined, 'sequence-controls');
+    const progress = node('span', number(actionCursor) + ' / ' + number(scene.actions.length), 'sequence-progress');
+    progress.id = 'sequence-progress'; progress.tabIndex = -1;
+    progress.setAttribute('role', 'status'); progress.setAttribute('aria-atomic', 'true');
+    progress.setAttribute('aria-label', t('sequence.progress', { current: actionCursor, total: scene.actions.length }));
     for (const [offset, label, glyph] of [[-1, 'previous', 'chevron-left'], [1, 'next', 'chevron-right']]) {
-      const button = node('button', undefined, 'btn btn-icon'); button.type = 'button'; button.setAttribute('aria-label', t('sequence.' + label));
-      button.append(icon(glyph)); button.disabled = actionCursor + offset < 0 || actionCursor + offset >= scene.snapshots.length;
-      button.addEventListener('click', () => selectAction(actionCursor + offset)); controls.append(button);
+      const button = node('button', undefined, 'btn sequence-control' + (offset > 0 ? ' btn-primary' : ''));
+      button.id = 'sequence-' + label; button.type = 'button';
+      button.append(...(offset < 0 ? [icon(glyph), t('sequence.' + label)] : [t('sequence.' + label), icon(glyph)]));
+      button.disabled = actionCursor + offset < 0 || actionCursor + offset >= scene.snapshots.length;
+      button.addEventListener('click', () => selectAction(actionCursor + offset, '#' + button.id));
+      controls.append(button); if (offset < 0) controls.append(progress);
     }
-    header.append(controls); record.append(header);
-    const actions = node('div', undefined, 'sequence-steps'); actions.setAttribute('role', 'group'); actions.setAttribute('aria-label', t('combat.plays'));
-    for (let index = 0; index < scene.snapshots.length; index++) {
-      const known = index > 0 && index <= actionCursor;
-      const button = node('button', index === 0 ? t('sequence.start') : known ? display.cardName(scene.actions[index - 1].card.card_id, scene.actions[index - 1].card.upgrades) : t('sequence.step', { step: index }), 'sequence-step');
+    header.append(controls);
+    record.append(node('h2', t('sequence.history')));
+    const actions = node('div', undefined, 'sequence-history'); actions.setAttribute('role', 'group'); actions.setAttribute('aria-label', t('sequence.history'));
+    for (let index = 0; index <= actionCursor; index++) {
+      const button = node('button', index === 0 ? t('sequence.start') : display.cardName(scene.actions[index - 1].card.card_id, scene.actions[index - 1].card.upgrades), 'sequence-step');
       button.type = 'button'; button.dataset.cursor = index;
-      if (known) button.prepend(icon(cardIcon(scene.actions[index - 1].card.type)));
+      if (index > 0) button.prepend(icon(cardIcon(scene.actions[index - 1].card.type)));
       if (index === actionCursor) button.setAttribute('aria-current', 'step');
       button.addEventListener('click', () => selectAction(index)); actions.append(button);
     }
     record.append(actions);
     if (actionCursor) {
+      const details = node('details', undefined, 'sequence-details'); details.open = sequenceDetailsOpen;
+      details.addEventListener('toggle', () => { if (details.isConnected) sequenceDetailsOpen = details.open; });
+      details.append(node('summary', t('sequence.details')));
       const previous = scene.snapshots[actionCursor - 1], changes = node('div', undefined, 'sequence-changes');
       for (const [field, label] of [['energy', t('combat.energyLabel')], ['block', t('sequence.block')], ['hp', name('character', story.character_id)]]) {
         if (view.deltas[field]) changes.append(node('span', t('sequence.change', { label, before: previous[field], after: state[field] })));
       }
       if (view.deltas.enemy_hp) changes.append(node('span', t('sequence.change', { label: name('enemy', state.enemy.enemy_id), before: previous.enemy.hp, after: state.enemy.hp })));
       if (view.added.length) changes.append(node('span', t('sequence.addedHand', { cards: view.added.map(cardGroupLabel).join(display.locale === 'zh-CN' ? '、' : ', ') }), 'sequence-new-cards'));
-      record.append(changes);
+      details.append(changes); record.append(details);
     }
-    byId('stage').append(combatBoard(state, title(scene)), record);
+    const board = combatBoard(state, title(scene));
+    if (emphasizeArrival) {
+      const previousHand = scene.snapshots[actionCursor - 1].hand;
+      const sameKind = (a, b) => a.card_id === b.card_id && a.upgrades === b.upgrades;
+      state.hand.forEach((card, index) => {
+        // Collection evidence identifies a newly present kind, not a new copy
+        // among otherwise identical cards already in the hand.
+        if (view.added.some(group => sameKind(group, card)) && !previousHand.some(before => sameKind(before, card))) {
+          board.querySelector('.hand').children[index].classList.add('is-arriving');
+        }
+      });
+    }
+    byId('stage').append(header, board, record);
+    const arriving = board.querySelector('.is-arriving');
+    if (arriving) {
+      const hand = board.querySelector('.hand');
+      hand.scrollLeft += Math.max(0, arriving.getBoundingClientRect().right - hand.getBoundingClientRect().right + 6);
+    }
   }
-  function selectAction(index) {
-    actionCursor = index; render();
-    byId('stage').querySelector(`[data-cursor="${index}"]`)?.focus({ preventScroll: true });
+  function selectAction(index, focus = `[data-cursor="${index}"]`) {
+    if (index < 0 || index >= scenes[selected].snapshots.length) return;
+    const emphasizeArrival = index === actionCursor + 1;
+    actionCursor = index; render(emphasizeArrival);
+    const target = byId('stage').querySelector(focus);
+    (target?.disabled ? byId('sequence-progress') : target)?.focus({ preventScroll: true });
   }
   function resources(state) {
     const row = node('div', undefined, 'resource-line');
@@ -267,23 +298,27 @@ async function main() {
     for (const el of document.querySelectorAll('[data-act]')) el.textContent = t('scene.act', { act: story.act });
     byId('raw-summary').replaceChildren(icon('chevron-right'), t('raw.summary'));
   }
-  function render() {
+  function render(emphasizeArrival = false) {
     const scene = scenes[selected]; byId('heading').textContent = title(scene); byId('turn-label').textContent = label(scene);
-    byId('previous').disabled = selected === 0; byId('next').disabled = selected === scenes.length - 1;
     for (const [index, button] of [...byId('timeline').children].entries()) { if (index === selected) button.setAttribute('aria-current', 'step'); else button.removeAttribute('aria-current'); }
     byId('stage').replaceChildren();
-    if (scene.kind === 'sequence') renderSequence(scene); else if (scene.kind === 'combat') renderCombat(scene); else if (scene.kind === 'event') renderEvent(scene); else renderRewards(scene);
+    if (scene.kind === 'sequence') renderSequence(scene, emphasizeArrival); else if (scene.kind === 'combat') renderCombat(scene); else if (scene.kind === 'event') renderEvent(scene); else renderRewards(scene);
     byId('raw-record').hidden = scene.kind === 'sequence'; byId('record-model').hidden = scene.kind === 'sequence';
     if (scene.kind !== 'sequence') renderRaw(scene);
   }
   function select(index, updateHash = true) {
     if (index < 0 || index >= scenes.length) return;
-    selected = index; actionCursor = 0; openPiles.clear(); turnRecordOpen = true; byId('raw-record').open = false; render();
+    selected = index; actionCursor = 0; sequenceDetailsOpen = false; openPiles.clear(); turnRecordOpen = true; byId('raw-record').open = false; render();
     if (updateHash) history.replaceState(null, '', '#' + scenes[selected].id);
   }
   byId('brand-mark').append(icon('cards')); byId('run-icon').append(icon('swords')); byId('crumb-arrow').append(icon('chevron-right'));
-  byId('previous').append(icon('chevron-left')); byId('next').append(icon('chevron-right'));
-  byId('previous').addEventListener('click', () => select(selected - 1)); byId('next').addEventListener('click', () => select(selected + 1));
+  byId('stage').addEventListener('keydown', event => {
+    if (scenes[selected].kind !== 'sequence' || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey
+        || event.target.closest('input, select, textarea, [contenteditable]')) return;
+    const offset = event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : 0;
+    if (!offset) return;
+    event.preventDefault(); selectAction(actionCursor + offset, '#sequence-progress');
+  });
   byId('language').addEventListener('change', async event => {
     const selector = event.currentTarget; selector.disabled = true;
     try {

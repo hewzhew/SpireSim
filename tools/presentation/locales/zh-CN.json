@@ -2495,8 +2495,6 @@
     "nav": {
       "label": "对局导航",
       "timeline": "对局过程",
-      "previous": "上一个场景",
-      "next": "下一个场景",
       "language": "显示语言"
     },
     "scene": {
@@ -2521,7 +2519,9 @@
       "title": "抽牌过程",
       "manual": "手动示例",
       "start": "起手",
-      "step": "第 {{step}} 步",
+      "history": "已出牌",
+      "details": "变化详情",
+      "progress": "已完成 {{current}} 步，共 {{total}} 步",
       "previous": "上一步",
       "next": "下一步",
       "draw": "抽牌堆",

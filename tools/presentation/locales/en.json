@@ -2495,8 +2495,6 @@
     "nav": {
       "label": "Run navigation",
       "timeline": "Run timeline",
-      "previous": "Previous scene",
-      "next": "Next scene",
       "language": "Display language"
     },
     "scene": {
@@ -2521,9 +2519,11 @@
       "title": "Card draw sequence",
       "manual": "Manual example",
       "start": "Starting hand",
-      "step": "Step {{step}}",
-      "previous": "Previous action",
-      "next": "Next action",
+      "history": "Cards played",
+      "details": "State changes",
+      "progress": "{{current}} of {{total}} actions completed",
+      "previous": "Previous",
+      "next": "Next",
       "draw": "Draw pile",
       "discard": "Discard pile",
       "exhaust": "Exhaust pile",
