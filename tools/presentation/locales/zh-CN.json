@@ -2510,6 +2510,7 @@
     "combat": {
       "hand": "手牌",
       "energy": "能量 {{energy}}",
+      "energyLabel": "能量",
       "plays": "本回合",
       "attack": "攻击 {{damage}}",
       "attackDefend": "攻击 {{damage}}，获得格挡",

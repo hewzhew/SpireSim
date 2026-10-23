@@ -14,6 +14,7 @@ async function main() {
   let selected = Math.max(0, scenes.findIndex(scene => scene.id === location.hash.slice(1)));
   if (!location.hash) selected = 1;
   let rawTab = 'calls';
+  let turnRecordOpen = false;
   const byId = id => document.getElementById(id);
   const node = (tag, text, className) => {
     const el = document.createElement(tag);
@@ -35,7 +36,7 @@ async function main() {
     const top = node('div', undefined, 'card-topline');
     const cost = node('span', card.cost === null ? undefined : number(card.cost), 'card-cost');
     if (card.cost === null) cost.append(icon('lock'));
-    top.append(node('span', name('cardType', card.type)), cost);
+    top.append(cost, node('h3', name('card', card.card_id), 'card-name'));
     const art = node('div', undefined, 'card-symbol'); art.append(icon(cardIcon(card.type)));
     const rules = node('div', undefined, 'card-rule');
     for (const effect of card.effects) {
@@ -43,19 +44,23 @@ async function main() {
       if (effect.power_id) params.power = name('power', effect.power_id);
       rules.append(node('div', display.text('game:effect.' + effectKeys[effect.kind], params)));
     }
-    el.append(top, art, node('h3', name('card', card.card_id), 'card-name'), rules);
+    el.append(top, art, node('div', name('cardType', card.type), 'card-type'), rules);
     if (chosen) { const mark = node('div', t('reward.chosen'), 'chosen-mark'); mark.prepend(icon('check')); el.append(mark); }
     return el;
   }
-  function healthCard(label, hp, max, enemy, details) {
-    const el = node('div', undefined, 'card combatant' + (enemy ? ' enemy' : ''));
-    const top = node('div', undefined, 'combatant-top');
-    const portrait = node('div', undefined, 'portrait' + (enemy ? ' enemy' : '')); portrait.append(icon(enemy ? 'bug' : 'swords'));
-    const value = node('div', undefined, 'hp-value'); value.append(icon('heart'), number(hp), node('small', ' / ' + number(max)));
-    top.append(portrait, node('div', label, 'combatant-name'), value);
-    const track = node('div', undefined, 'hp-track'), fill = node('span', undefined, 'hp-fill'); fill.style.width = (100 * hp / max) + '%'; track.append(fill);
-    const bottom = node('div', undefined, 'combatant-bottom'); bottom.append(...details);
-    el.append(top, track, bottom); return el;
+  function fighter(label, hp, max, enemy, details, intent) {
+    const el = node('article', undefined, 'fighter ' + (enemy ? 'fighter-enemy' : 'fighter-player'));
+    el.setAttribute('aria-label', label);
+    const intentRow = node('div', undefined, 'fighter-intent');
+    if (intent) intentRow.append(iconText(intent.kind === 'defend_buff' ? 'shield' : 'swords', intentLabel(intent), 'intent'));
+    else intentRow.setAttribute('aria-hidden', 'true');
+    const figure = node('div', undefined, 'fighter-figure'); figure.setAttribute('aria-hidden', 'true'); figure.append(icon(enemy ? 'bug' : 'swords'));
+    const health = node('div', undefined, 'fighter-health');
+    const fill = node('span', undefined, 'fighter-health-fill'); fill.style.width = (100 * hp / max) + '%';
+    health.append(fill, node('span', number(hp) + ' / ' + number(max), 'fighter-health-value'));
+    const statuses = node('div', undefined, 'fighter-statuses'); statuses.append(...details);
+    el.append(intentRow, figure, node('div', label, 'fighter-name'), health, statuses);
+    return el;
   }
   function iconText(iconName, text, className) { const el = node('span', text, className); el.prepend(icon(iconName)); return el; }
   function intentLabel(intent) {
@@ -64,14 +69,23 @@ async function main() {
   }
   function renderCombat(scene) {
     const { before, after } = scene;
-    const field = node('div', undefined, 'combatants');
-    const enemyDetails = [iconText('swords', intentLabel(before.enemy.intent), 'intent')];
+    const board = node('section', undefined, 'combat-board'); board.setAttribute('aria-label', title(scene));
+    const hud = node('div', undefined, 'combat-hud'); hud.append(resources(before));
+    const field = node('div', undefined, 'battlefield');
+    const enemyDetails = [];
     if (before.enemy.block) enemyDetails.push(iconText('shield', t('combat.block', { block: before.enemy.block })));
     for (const power of before.enemy.powers) enemyDetails.push(node('span', t('combat.power', { power: name('power', power.power_id), amount: power.amount }), 'status'));
-    field.append(healthCard(name('character', story.character_id), before.hp, before.max_hp, false, story.relic_ids.map(id => iconText('flame', name('relic', id)))), healthCard(name('enemy', before.enemy.enemy_id), before.enemy.hp, before.enemy.max_hp, true, enemyDetails));
-    const handHeading = node('div', undefined, 'section-heading'); handHeading.append(node('h2', t('combat.hand')), iconText('bolt', t('combat.energy', { energy: before.energy }), 'energy'));
+    field.append(fighter(name('character', story.character_id), before.hp, before.max_hp, false, []), fighter(name('enemy', before.enemy.enemy_id), before.enemy.hp, before.enemy.max_hp, true, enemyDetails, before.enemy.intent));
+    const dock = node('div', undefined, 'combat-dock');
+    const energy = node('div', undefined, 'energy-reserve'); energy.setAttribute('aria-label', t('combat.energy', { energy: before.energy }));
+    energy.append(node('strong', number(before.energy), 'energy-orb'), node('span', t('combat.energyLabel'), 'energy-label'));
     const hand = node('div', undefined, 'hand'); for (const card of before.hand) hand.append(gameCard(card));
-    const resolution = node('div', undefined, 'card resolution'); resolution.append(node('h2', t('combat.plays'), 'section-title'));
+    hand.setAttribute('role', 'group'); hand.setAttribute('aria-label', t('combat.hand'));
+    dock.append(energy, hand); board.append(hud, field, dock);
+    const record = node('details', undefined, 'turn-record'); record.open = turnRecordOpen;
+    record.addEventListener('toggle', () => { turnRecordOpen = record.open; });
+    const recordTitle = node('summary', t('combat.plays')); recordTitle.prepend(icon('chevron-right')); record.append(recordTitle);
+    const resolution = node('div', undefined, 'resolution');
     const actions = node('div', undefined, 'action-sequence');
     scene.plays.forEach((id, index) => {
       if (index) actions.append(icon('chevron-right'));
@@ -85,7 +99,7 @@ async function main() {
     } else {
       result.append(node('span', t('combat.defeated', { enemy: name('enemy', before.enemy.enemy_id) })), iconText('flame', t('combat.heal', { amount: after.hp - before.hp })));
     }
-    resolution.append(actions, result); byId('stage').append(field, handHeading, hand, resolution);
+    resolution.append(actions, result); record.append(resolution); byId('stage').append(board, record);
   }
   function resources(state) {
     const row = node('div', undefined, 'resource-line');
@@ -168,7 +182,7 @@ async function main() {
   }
   function select(index, updateHash = true) {
     if (index < 0 || index >= scenes.length) return;
-    selected = index; byId('raw-record').open = false; render();
+    selected = index; turnRecordOpen = false; byId('raw-record').open = false; render();
     if (updateHash) history.replaceState(null, '', '#' + scenes[selected].id);
   }
   byId('brand-mark').append(icon('cards')); byId('run-icon').append(icon('swords')); byId('crumb-arrow').append(icon('chevron-right'));

@@ -2510,6 +2510,7 @@
     "combat": {
       "hand": "Hand",
       "energy": "Energy {{energy}}",
+      "energyLabel": "Energy",
       "plays": "This turn",
       "attack": "Attack {{damage}}",
       "attackDefend": "Attack {{damage}}, gain Block",
