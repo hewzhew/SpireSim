@@ -131,6 +131,7 @@ pub enum AgentGameFactEntityV1 {
 pub enum AgentGameFactV1 {
     Card {
         definition: CardAcquisitionMechanicsFactsV1,
+        face_templates: Vec<AgentCardFaceTemplateV1>,
     },
     Relic {
         definition: RelicAcquisitionMechanicsFactsV1,
@@ -140,12 +141,45 @@ pub enum AgentGameFactV1 {
     },
 }
 
+#[derive(Clone, Debug, PartialEq, Serialize)]
+pub struct AgentCardFaceTemplateV1 {
+    pub upgrades: u8,
+    pub field: &'static str,
+    pub damage: i32,
+    pub block: i32,
+    pub magic: i32,
+}
+
+fn agent_card_face_templates(card: CardId) -> Vec<AgentCardFaceTemplateV1> {
+    (0..=1)
+        .map(|upgrades| {
+            let mut blueprint = sts_oracle_learning::runtime::combat::CardBlueprint::fresh(card);
+            blueprint.upgrades = upgrades;
+            let (field, values) =
+                sts_oracle_learning::content::cards::mechanics::original_card_blueprint_text_spec(
+                    &blueprint,
+                );
+            AgentCardFaceTemplateV1 {
+                upgrades,
+                field: match field {
+                    sts_presentation::CardTextField::Description => "DESCRIPTION",
+                    sts_presentation::CardTextField::UpgradeDescription => "UPGRADE_DESCRIPTION",
+                },
+                damage: values.damage,
+                block: values.block,
+                magic: values.magic,
+            }
+        })
+        .collect()
+}
+
 pub fn agent_game_facts_v1(entities: &[AgentGameFactEntityV1]) -> Vec<AgentGameFactV1> {
     entities
         .iter()
         .map(|entity| match entity {
             AgentGameFactEntityV1::Card { card } => AgentGameFactV1::Card {
                 definition: card_acquisition_mechanics_facts_v1(&RewardCard::new(*card, 0)),
+                face_templates: agent_card_face_templates(*card),
             },
             AgentGameFactEntityV1::Relic { relic } => AgentGameFactV1::Relic {
                 definition: relic_acquisition_mechanics_facts_v1(*relic),
@@ -8367,11 +8401,51 @@ mod tests {
     }
 
     #[test]
+    fn game_facts_bind_original_faces_to_the_native_upgrade_and_number_owner() {
+        for card in [
+            CardId::Warcry,
+            CardId::BodySlam,
+            CardId::ShrugItOff,
+            CardId::Carnage,
+        ] {
+            for face in agent_card_face_templates(card) {
+                for locale in [Locale::En, Locale::ZhCn] {
+                    let field = if face.field == "UPGRADE_DESCRIPTION" {
+                        sts_presentation::CardTextField::UpgradeDescription
+                    } else {
+                        sts_presentation::CardTextField::Description
+                    };
+                    let text = locale
+                        .original_card_text(
+                            card.stable_id(),
+                            field,
+                            sts_presentation::CardTextValues {
+                                damage: face.damage,
+                                block: face.block,
+                                magic: face.magic,
+                            },
+                        )
+                        .unwrap();
+                    assert_eq!(
+                        text,
+                        sts_oracle_learning::content::cards::mechanics::original_printed_card_text(
+                            card,
+                            face.upgrades,
+                            locale
+                        )
+                        .unwrap()
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
     fn game_facts_describe_copy_choices_without_blanket_support_labels() {
         let facts = agent_game_facts_v1(&[AgentGameFactEntityV1::Card {
             card: CardId::DualWield,
         }]);
-        let AgentGameFactV1::Card { definition } = &facts[0] else {
+        let AgentGameFactV1::Card { definition, .. } = &facts[0] else {
             panic!("expected card facts")
         };
 

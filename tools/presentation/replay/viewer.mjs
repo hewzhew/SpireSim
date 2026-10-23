@@ -1,5 +1,5 @@
 import { createPresentation, preferredLocale } from '../index.mjs';
-import { neowOptionRuns } from './neow-option.mjs';
+import { neowOptionRuns, neowStructuredRuns } from './neow-option.mjs';
 import { intentView } from './intent-view.mjs';
 import { handTransition, sequenceView } from './sequence.mjs';
 import { recordedJourney, replayMap } from './journey.mjs';
@@ -43,18 +43,20 @@ async function main() {
     const use = document.createElementNS('http://www.w3.org/2000/svg', 'use'); use.setAttribute('href', '#i-' + name); svg.append(use);
     return svg;
   }
-  const cardIcon = type => ({ attack: 'swords', skill: 'shield', curse: 'lock' })[type];
+  const cardIcon = type => ({ attack: 'swords', skill: 'shield', curse: 'lock', status: 'lock', power: 'bolt' })[type];
   const cardFrame = {
     attack: 'M4 4H96V73L50 96L4 73Z',
     skill: 'M4 4H96V72Q96 96 50 96Q4 96 4 72Z',
     curse: 'M14 4H86L96 16V84L86 96H14L4 84V16Z',
+    status: 'M14 4H86L96 16V84L86 96H14L4 84V16Z',
+    power: 'M4 35Q4 4 50 4Q96 4 96 35V96H4Z',
   };
   const effectKeys = { damage: 'damage', block: 'block', apply: 'apply', draw: 'draw', unplayable: 'unplayable', ethereal: 'ethereal', double_block: 'doubleBlock', random_damage: 'randomDamage' };
   function gameCard(card, chosen = false) {
     const el = node('article', undefined, 'playing-card ' + card.type + (chosen ? ' chosen' : ''));
     el.dataset.card = card.card_id;
     const top = node('div', undefined, 'card-topline');
-    const cost = node('span', card.cost === null ? undefined : number(card.cost), 'card-cost');
+    const cost = node('span', card.cost === null ? undefined : card.cost === 'X' ? 'X' : number(card.cost), 'card-cost');
     if (card.cost === null) cost.append(icon('lock'));
     top.append(cost, node('h3', display.cardName(card.card_id, card.upgrades ?? 0), 'card-name'));
     const portrait = node('div', undefined, 'card-portrait');
@@ -114,13 +116,17 @@ async function main() {
     if (playback) board.classList.add('sequence-board');
     const hud = node('div', undefined, 'combat-hud'); hud.append(resources(before));
     const field = node('div', undefined, 'battlefield');
-    const enemyDetails = [];
-    for (const power of before.enemy.powers) enemyDetails.push(node('span', t('combat.power', { power: name('power', power.power_id), amount: power.amount }), 'status'));
+    const enemies = before.enemies ?? [before.enemy];
+    if (enemies.length > 1) field.classList.add('multi-enemy');
+    const lineup = node('div', undefined, 'enemy-lineup');
+    for (const enemy of enemies) lineup.append(fighter(name('enemy', enemy.enemy_id), enemy.hp, enemy.max_hp, {
+      enemy: true, block: enemy.block, intent: enemy.intent, details: enemy.powers.map(power => node('span', t('combat.power', { power: name('power', power.power_id), amount: power.amount }), 'status')),
+      figureIcon: enemy.enemy_id === 'Cultist' ? 'flame' : 'bug',
+    }));
     field.append(
       fighter(name('character', story.character_id), before.hp, before.max_hp, { block: before.block,
         details: (before.powers ?? []).map(power => node('span', t('combat.power', { power: name('power', power.power_id), amount: power.amount }), 'status')) }),
-      fighter(name('enemy', before.enemy.enemy_id), before.enemy.hp, before.enemy.max_hp, { enemy: true, block: before.enemy.block, details: enemyDetails, intent: before.enemy.intent,
-        figureIcon: before.enemy.enemy_id === 'Cultist' ? 'flame' : 'bug' }),
+      lineup,
     );
     const dock = node('div', undefined, 'combat-dock');
     const energy = node('div', undefined, 'energy-reserve'); energy.setAttribute('aria-label', t('combat.energy', { energy: before.energy }));
@@ -174,6 +180,9 @@ async function main() {
   }
   function sequenceActionLabel(action, current) {
     if (action.kind === 'end_turn') return t('sequence.endTurn');
+    if (action.kind === 'choose_route_node') return t('sequence.enterRoom');
+    if (action.kind === 'choose_event_option') return t('sequence.chooseEvent', { option: action.option_index + 1 });
+    if (action.kind === 'claim_reward' && action.reward_id) return t('sequence.claimItem', { item: name(action.reward_kind, action.reward_id) });
     if (action.kind === 'claim_reward') return t('sequence.claimGold', { amount: action.amount });
     if (action.kind === 'open_card_reward') return t('sequence.openCards');
     if (action.kind === 'skip_card_reward') return t('sequence.skipCards');
@@ -188,7 +197,7 @@ async function main() {
     const hud = node('div', undefined, 'combat-hud'); hud.append(resources(state));
     if (state.kind === 'map') { board.append(hud, playback); return board; }
     const result = node('div', undefined, 'battle-outcome');
-    result.append(node('h2', t(state.kind === 'card_reward' ? 'sequence.chooseCard' : 'sequence.victory'), 'outcome-title'));
+    result.append(node('h2', t(state.kind === 'card_reward' ? 'sequence.chooseCard' : activeJourney().visit.event_id ? 'scene.initialReward' : 'sequence.victory'), 'outcome-title'));
     if (state.kind === 'card_reward') {
       result.classList.add('card-reward-outcome');
       const cards = node('div', undefined, 'reward-cards');
@@ -205,7 +214,7 @@ async function main() {
       result.append(alternatives);
     } else {
       const panel = node('section', undefined, 'combat-reward-panel');
-      if (state.kind === 'reward') panel.append(node('h3', t('scene.rewards')));
+      if (state.kind === 'reward') panel.append(node('h3', t(activeJourney().visit.event_id ? 'scene.initialReward' : 'scene.rewards')));
       const rewards = node('ul', undefined, 'combat-rewards');
       const rewardRow = (glyph, label, claimed) => {
         const row = node('li', undefined, 'combat-reward' + (claimed ? ' is-claimed' : ''));
@@ -214,9 +223,10 @@ async function main() {
         if (claimed) { const mark = icon('check'); mark.classList.add('reward-claimed'); mark.setAttribute('role', 'img'); mark.setAttribute('aria-hidden', 'false'); mark.setAttribute('aria-label', t('sequence.claimed')); row.append(mark); }
         rewards.append(row);
       };
-      const claimedGold = completed.filter(action => action.kind === 'claim_reward').reduce((total, action) => total + action.amount, 0);
+      const claimedGold = completed.filter(action => action.kind === 'claim_reward' && Number.isFinite(action.amount)).reduce((total, action) => total + action.amount, 0);
       if (state.reward_gold || claimedGold) rewardRow('coin', t('sequence.goldReward', { amount: state.reward_gold || claimedGold }), !state.reward_gold);
       if (state.has_card_reward) rewardRow('cards', t('sequence.addCard'), false);
+      for (const item of state.reward_items) rewardRow(item.kind === 'potion' ? 'flame' : 'bolt', name(item.kind, item.id), false);
       for (const action of completed.filter(action => action.kind === 'take_card')) rewardRow('cards', t('sequence.takeCard', { card: display.cardName(action.card.card_id, action.card.upgrades) }), true);
       for (const action of completed.filter(action => action.kind === 'skip_card_reward' || action.kind === 'singing_bowl')) rewardRow(action.kind === 'singing_bowl' ? 'heart' : 'chevron-right', sequenceActionLabel(action), true);
       panel.append(rewards); result.append(panel);
@@ -243,7 +253,7 @@ async function main() {
     header.append(controls);
     const history = node('div', undefined, 'sequence-record');
     history.append(node('span', state.kind === 'combat' ? t('scene.turn', { turn: state.turn })
-      : t(state.kind === 'map' ? 'sequence.mapReached' : 'scene.rewards'), 'sequence-turn'));
+      : state.kind === 'event' ? name('event', state.event_id) : t(state.kind === 'map' ? 'sequence.mapReached' : 'scene.rewards'), 'sequence-turn'));
     const actions = node('div', undefined, 'sequence-history'); actions.setAttribute('role', 'group'); actions.setAttribute('aria-label', t('sequence.history'));
     for (let index = 0; index <= actionCursor; index++) {
       const action = scene.actions[index - 1];
@@ -282,11 +292,14 @@ async function main() {
       for (const [field, label] of [['energy', t('combat.energyLabel')], ['block', t('sequence.block')], ['hp', name('character', story.character_id)]]) {
         if (view.deltas[field]) changes.append(node('span', t('sequence.change', { label, before: previous[field], after: state[field] })));
       }
-      if (view.deltas.enemy_hp) changes.append(node('span', t('sequence.change', { label: name('enemy', state.enemy.enemy_id), before: previous.enemy.hp, after: state.enemy.hp })));
+      if (view.deltas.enemy_hp) changes.append(node('span', t('sequence.change', { label: t('combat.enemies'), before: previous.enemies.reduce((sum, enemy) => sum + enemy.hp, 0), after: state.enemies.reduce((sum, enemy) => sum + enemy.hp, 0) })));
       if (view.added.length) changes.append(node('span', t('sequence.addedHand', { cards: view.added.map(cardGroupLabel).join(display.locale === 'zh-CN' ? '、' : ', ') }), 'sequence-new-cards'));
       details.append(changes); record.append(details);
     }
-    const board = state.kind === 'combat' ? combatBoard(state, title(scene), header) : postCombatBoard(state, header, view.completed);
+    const visitKey = snapshot => JSON.stringify([snapshot.location.act, snapshot.location.floor, snapshot.location.node]);
+    const completedHere = view.completed.filter((_action, index) => visitKey(scene.snapshots[index + 1]) === visitKey(state));
+    const board = state.kind === 'combat' ? combatBoard(state, title(scene), header)
+      : state.kind === 'event' ? sequenceEventBoard(state, header) : postCombatBoard(state, header, completedHere);
     for (const index of motion?.hand?.added ?? []) board.querySelector('.hand').children[index].classList.add('is-arriving');
     byId('stage').append(board, record);
     const hand = board.querySelector('.hand'); if (hand) hand.scrollLeft = scrollLeft;
@@ -407,8 +420,22 @@ async function main() {
     }
     if (!byId('raw-output').children.length) byId('raw-output').append(node('p', t('raw.noText'), 'text-secondary small'));
   }
-  function title(scene) { return scene.kind === 'sequence' ? t(scene.provenance.operator === 'model' ? 'sequence.modelTitle' : 'sequence.title') : scene.kind === 'event' ? name('event', scene.event_id) : scene.kind === 'combat' ? name('encounter', scene.encounter_id) : t('scene.rewards'); }
-  function label(scene) { return scene.kind === 'sequence' ? scene.provenance.operator === 'model'
+  function sequenceEventBoard(state, playback) {
+    const board = node('section', undefined, 'combat-board sequence-board');
+    const hud = node('div', undefined, 'combat-hud'); hud.append(resources(state));
+    const layout = node('div', undefined, 'sequence-event'); layout.append(node('h2', name('event', state.event_id), 'outcome-title'));
+    const options = node('ul', undefined, 'event-options');
+    for (const option of state.event_options) {
+      const entry = node('li', undefined, 'event-option');
+      const label = node('span', undefined, 'option-label');
+      for (const run of neowStructuredRuns(option.effects, display.locale)) label.append(node('span', run.text, 'option-text-' + run.tone));
+      entry.append(label); options.append(entry);
+    }
+    layout.append(options); board.append(hud, layout, playback); return board;
+  }
+  function title(scene) { return scene.kind === 'sequence' ? t(scene.provenance.scope === 'continuous' ? 'sequence.modelRunTitle' : scene.provenance.operator === 'model' ? 'sequence.modelTitle' : 'sequence.title') : scene.kind === 'event' ? name('event', scene.event_id) : scene.kind === 'combat' ? name('encounter', scene.encounter_id) : t('scene.rewards'); }
+  function label(scene) { return scene.kind === 'sequence' && scene.provenance.scope === 'continuous'
+    ? t('scene.floor', { floor: scene.snapshots[actionCursor].location.floor }) : scene.kind === 'sequence' ? scene.provenance.preparation === 'developer-natural'
     ? t('sequence.preparedBattle', { encounter: name('encounter', scene.encounter_id) }) : t('sequence.manual')
     : scene.kind === 'event' ? t('scene.start') : scene.kind === 'combat' ? t('scene.turn', { turn: scene.turn }) : t('scene.floor', { floor: scene.floor }); }
   function renderNavigation() {
@@ -432,7 +459,7 @@ async function main() {
       const phases = node('div', undefined, 'visit-phases'); phases.dataset.visit = visitIndex;
       visit.phases.forEach((phase, phaseIndex) => {
         const target = scenes.find(scene => scene.id === phase.scene_id);
-        const caption = target.kind === 'combat' ? t('scene.turn', { turn: target.turn }) : t('nav.phase.' + phase.kind);
+        const caption = visit.event_id && phase.kind === 'reward' ? t('scene.initialReward') : target.kind === 'combat' ? t('scene.turn', { turn: target.turn }) : t('nav.phase.' + phase.kind);
         const entry = node('button', caption, 'scene-link'); entry.type = 'button'; entry.dataset.scene = phase.scene_id;
         entry.dataset.phase = visitIndex + ':' + phaseIndex;
         entry.addEventListener('click', () => select(scenes.findIndex(scene => scene.id === phase.scene_id), true, phase.cursor)); phases.append(entry);

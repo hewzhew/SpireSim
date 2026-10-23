@@ -1,0 +1,21 @@
+Tabler 1.4.0
+https://github.com/tabler/tabler
+CSS: https://cdn.jsdelivr.net/npm/@tabler/core@1.4.0/dist/css/tabler.min.css
+Layout reference: https://preview.tabler.io/layout-vertical.html
+Copyright 2018-2025 The Tabler Authors
+Copyright 2018-2025 codecalm.net Paweł Kuna
+MIT License. Full license: vendor/tabler-LICENSE.txt
+The local page adapts Tabler's vertical layout and uses its distributed stylesheet without modification.
+
+Tabler Icons 3.35.0
+https://github.com/tabler/tabler-icons
+Sources: https://cdn.jsdelivr.net/npm/@tabler/icons@3.35.0/icons/outline/
+Copyright (c) 2020-2025 Paweł Kuna
+MIT License. Full license: vendor/icons-LICENSE.txt
+Selected SVGs are bundled locally and embedded as inline symbols.
+
+i18next 26.5.4
+https://github.com/i18next/i18next
+Copyright (c) 2011-present i18next
+MIT License. Full license: vendor/i18next-LICENSE.txt
+Bundled in demo.js for local message formatting, language fallback and plural rules.

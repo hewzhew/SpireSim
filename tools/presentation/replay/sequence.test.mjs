@@ -1,19 +1,19 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { cardGroups, handTransition, recordedSequence, sequenceView } from './sequence.mjs';
-import { rewardCardView } from './reward-card.mjs';
+import { cardFaceView } from './card-face.mjs';
 
 const card = id => ({ card_id: id, upgrades: 0, effective_cost: 1, current_block: id === 'ShrugItOff' ? 8 : id === 'Defend' ? 5 : 0,
-  current_damage: id === 'Strike' ? 6 : 0, damage_by_monster_order: id === 'Strike' ? [9] : [] });
+  current_magic_number: id === 'ShrugItOff' ? 1 : 0, current_damage: id === 'Strike' ? 6 : 0, damage_by_monster_order: id === 'Strike' ? [9] : [] });
 const definitions = ['Strike', 'Defend', 'ShrugItOff'].map(id => ({ kind: 'card', definition: {
   current: { card: id, card_type: id === 'Strike' ? 'Attack' : 'Skill', damage: { damage_per_hit: id === 'Strike' ? 6 : 0, hit_count: id === 'Strike' ? 1 : 0 },
     block: id === 'Strike' ? 0 : id === 'ShrugItOff' ? 8 : 5, draw_cards: id === 'ShrugItOff' ? 1 : 0, vulnerable: 0, ethereal: false },
-} }));
+}, face_templates: [{ upgrades: 0, field: 'DESCRIPTION', damage: id === 'Strike' ? 6 : 0, block: id === 'Defend' ? 5 : id === 'ShrugItOff' ? 8 : 0, magic: id === 'ShrugItOff' ? 1 : 0 }] }));
 const rewardDefinitions = [
   { card: 'ThunderClap', card_type: 'Attack', cost: 1, damage: { damage_per_hit: 4 }, vulnerable: 1 },
   { card: 'Carnage', card_type: 'Attack', cost: 2, damage: { damage_per_hit: 20 }, ethereal: true },
   { card: 'Warcry', card_type: 'Skill', cost: 0, draw_cards: 1 },
-].map(current => ({ kind: 'card', definition: { current } }));
+].map(current => ({ kind: 'card', definition: { current }, face_templates: [{ upgrades: 0, field: 'DESCRIPTION', damage: current.damage?.damage_per_hit ?? 0, block: 0, magic: current.draw_cards ?? current.vulnerable ?? 0 }] }));
 function frame(revision, hand, draw, command, handIndex = 0) {
   const zone = cards => ({ evidence: 'public_unordered_collection', cards: cards.map(card) });
   return { session_id: 'recording', head_revision: revision, position: { kind: 'decision', public_snapshot_id: 'snapshot-' + revision,
@@ -42,8 +42,8 @@ test('an action can use a card that entered the hand at an earlier recorded boun
   assert.equal(scene.snapshots[0].hand.some(c => c.card_id === 'Defend'), false);
   assert.deepEqual(sequenceView(scene, 1).added, [{ card_id: 'Defend', upgrades: 0, count: 1 }]);
   assert.deepEqual(sequenceView(scene, 1).deltas, { energy: -1, block: 8, hp: 0, enemy_hp: 0 });
-  assert.equal(scene.snapshots[0].hand[1].effects[0].damage, 9);
-  assert.deepEqual(scene.snapshots[0].hand[0].effects, [{ kind: 'block', block: 8 }, { kind: 'draw', count: 1 }]);
+  assert.equal(scene.snapshots[0].hand[1].printed_lines.en[0], 'Deal 9 damage.');
+  assert.deepEqual(scene.snapshots[0].hand[0].printed_lines.en, ['Gain 8 Block.', 'Draw 1 card.']);
   assert.equal(scene.snapshots[0].turn, 4);
 });
 
@@ -146,7 +146,7 @@ test('a recorded model battle crosses end-turn and reward boundaries without inv
 });
 
 test('fresh reward faces retain official target, lifecycle and selection text in both languages', () => {
-  const faces = rewardDefinitions.map(({ definition: { current } }) => rewardCardView({ card_id: current.card, upgrades: 0 }, rewardDefinitions));
+  const faces = rewardDefinitions.map(({ definition: { current } }) => cardFaceView({ card_id: current.card, upgrades: 0 }, rewardDefinitions));
   assert.deepEqual(faces.map(card => card.cost), [1, 2, 0]);
   assert.deepEqual(faces.map(card => card.type), ['attack', 'attack', 'skill']);
   assert.equal(faces[0].printed_lines.en[0], 'Deal 4 damage and apply 1 Vulnerable to ALL enemies.');
@@ -154,8 +154,8 @@ test('fresh reward faces retain official target, lifecycle and selection text in
   assert.deepEqual(faces[1].printed_lines.en, ['Ethereal.', 'Deal 20 damage.']);
   assert.deepEqual(faces[2].printed_lines.en, ['Draw 1 card.', 'Put a card from your hand onto the top of your draw pile.', 'Exhaust.']);
   assert.ok(faces[2].printed_lines['zh-CN'][1].includes('抽牌堆顶部'));
-  assert.throws(() => rewardCardView({ card_id: 'Carnage', upgrades: 0 }, []), /Missing captured/);
-  assert.throws(() => rewardCardView({ card_id: 'Warcry', upgrades: 1 }, rewardDefinitions), /Unbound reward/);
+  assert.throws(() => cardFaceView({ card_id: 'Carnage', upgrades: 0 }, []), /Missing captured/);
+  assert.throws(() => cardFaceView({ card_id: 'Warcry', upgrades: 1 }, rewardDefinitions), /Missing captured/);
 });
 
 test('reward offers become full faces only at their recorded selection boundary', () => {

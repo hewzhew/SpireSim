@@ -20,6 +20,15 @@ pub fn original_card_blueprint_text(
     blueprint: &CardBlueprint,
     locale: Locale,
 ) -> Result<Option<String>, String> {
+    let (field, values) = original_card_blueprint_text_spec(blueprint);
+    locale.original_card_text(blueprint.id.stable_id(), field, values)
+}
+
+/// The same original field and permanent numbers used by the native text
+/// renderer, for consumers that render an original face themselves.
+pub fn original_card_blueprint_text_spec(
+    blueprint: &CardBlueprint,
+) -> (CardTextField, CardTextValues) {
     let card = blueprint.id;
     let upgrades = blueprint.upgrades;
     let numbers = card_blueprint_persistent_base_numbers_v1(blueprint);
@@ -29,8 +38,7 @@ pub fn original_card_blueprint_text(
     } else {
         CardTextField::Description
     };
-    locale.original_card_text(
-        card.stable_id(),
+    (
         field,
         CardTextValues {
             damage: numbers.damage,

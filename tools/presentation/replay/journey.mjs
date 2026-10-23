@@ -34,9 +34,11 @@ export function recordedJourney(story) {
         let visit = visits.at(-1);
         if (!visit || visit.identity !== identity) {
           visit = { identity, act: location.act, floor: location.floor, node: location.node,
-            encounter_id: scene.encounter_id, event_id: scene.event_id, phases: [] };
+            encounter_id: state.encounter_id ?? scene.encounter_id, event_id: state.event_id ?? scene.event_id, phases: [] };
           visits.push(visit);
         }
+        if (state.encounter_id) visit.encounter_id = state.encounter_id;
+        if (state.event_id) visit.event_id = state.event_id;
         const kind = phaseKind(state.kind);
         if (!kind) throw new Error('Unbound journey phase');
         const previous = visit.phases.at(-1);

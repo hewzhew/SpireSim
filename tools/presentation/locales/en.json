@@ -2515,6 +2515,7 @@
     },
     "combat": {
       "hand": "Hand",
+      "enemies": "Enemies",
       "energy": "Energy {{energy}}",
       "energyLabel": "Energy",
       "plays": "This turn",
@@ -2524,6 +2525,10 @@
       "heal": "Heal {{amount}} HP"
     },
     "sequence": {
+        "modelRunTitle": "Flash run",
+        "enterRoom": "Enter room",
+        "chooseEvent": "Choose option {{option}}",
+        "claimItem": "Claim {{item}}",
       "modelTitle": "Flash battle",
       "preparedBattle": "{{encounter}} (prepared start)",
       "endTurn": "End turn",

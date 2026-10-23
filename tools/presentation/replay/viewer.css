@@ -87,6 +87,15 @@ button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); 
 .combat-hud { padding: 13px 24px; border-bottom: 1px solid #e5e7dd; background: rgba(255,255,255,.58); }
 .combat-hud .resource-line { margin: 0; }
 .battlefield { display: grid; grid-template-columns: 1fr 1fr; align-items: end; gap: 40px; min-height: 248px; padding: 14px 9% 20px; background: linear-gradient(180deg, #f8f8f3, #eff1e8); }
+.enemy-lineup { display: flex; justify-content: space-around; align-items: end; gap: 14px; min-width: 0; }
+.battlefield.multi-enemy { grid-template-columns: 1fr 2fr; gap: 22px; padding-inline: 5%; }
+.multi-enemy .fighter-vitals { width: clamp(95px, 12vw, 150px); }
+.multi-enemy .fighter-figure { width: 80px; height: 76px; }
+.multi-enemy .fighter-figure .icon { width: 56px; height: 56px; }
+.sequence-event { padding: 28px; }
+.sequence-event h2 { margin-bottom: 24px; text-align: center; }
+.playing-card.power { --card-accent: #b59852; --card-tint: #f5efdf; }
+.playing-card.status { --card-accent: #9b9b8f; --card-tint: #eeeee7; }
 .fighter { display: flex; flex-direction: column; align-items: center; min-width: 0; }
 .fighter-intent { display: flex; align-items: center; justify-content: center; min-height: 76px; margin-bottom: 8px; text-align: center; }
 .intent { display: flex; flex-direction: column; align-items: center; gap: 5px; }

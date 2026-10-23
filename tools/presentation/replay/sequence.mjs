@@ -1,8 +1,7 @@
 // Project recorded public observations. No game execution or private state.
-import { rewardCardView } from './reward-card.mjs';
+import { cardFaceView } from './card-face.mjs';
 import { publicMapView } from './journey.mjs';
 
-const supportedCards = new Set(['Strike', 'Defend', 'Bash', 'ShrugItOff', 'AscendersBane']);
 const snake = value => value.replace(/[A-Z]/g, (letter, index) => (index ? '_' : '') + letter.toLowerCase());
 const key = card => JSON.stringify([card.card_id, card.upgrades ?? 0]);
 
@@ -29,19 +28,7 @@ function boundary(frame) {
 }
 
 function cardView(card, definitions) {
-  if (!supportedCards.has(card.card_id)) throw new Error(`Unbound sequence card: ${card.card_id}`);
-  const definition = definitions.find(fact => fact.kind === 'card' && fact.definition.current.card === card.card_id)?.definition;
-  const facts = card.upgrades === 0 ? definition?.current : card.upgrades === 1 ? definition?.upgraded : null;
-  if (!facts) throw new Error(`Missing captured card definition: ${card.card_id}`);
-  const effects = [];
-  if (card.effective_cost === -2) effects.push({ kind: 'unplayable' });
-  if (facts.ethereal) effects.push({ kind: 'ethereal' });
-  if (facts.damage?.hit_count > 0) effects.push({ kind: 'damage', damage: card.damage_by_monster_order[0] ?? '?' });
-  if (facts.block > 0) effects.push({ kind: 'block', block: card.current_block });
-  if (facts.vulnerable > 0) effects.push({ kind: 'apply', power_id: 'Vulnerable', amount: facts.vulnerable });
-  if (facts.draw_cards > 0) effects.push({ kind: 'draw', count: facts.draw_cards });
-  return { card_id: card.card_id, upgrades: card.upgrades, type: facts.card_type.toLowerCase(),
-    cost: card.effective_cost < 0 ? null : card.effective_cost, effects };
+  return cardFaceView(card, definitions, true);
 }
 
 function snapshot(frame, definitions, maps) {
@@ -58,9 +45,9 @@ function snapshot(frame, definitions, maps) {
   }
   const source = { session_id: frame.session_id, head_revision: frame.head_revision, public_snapshot_id: frame.position.public_snapshot_id };
   if (frame.position.observation.domain === 'strategic') {
-    if (!['reward', 'card_reward', 'map'].includes(state.context.kind)) throw new Error('Unbound post-combat scene');
+    if (!['reward', 'card_reward', 'map', 'event'].includes(state.context.kind)) throw new Error('Unbound strategic scene');
     const rewards = state.context.pending_rewards ?? [];
-    if (rewards.some(reward => !['gold', 'card_reward'].includes(reward.kind))) throw new Error('Unbound recorded reward');
+    if (rewards.some(reward => !['gold', 'card_reward', 'potion', 'relic'].includes(reward.kind))) throw new Error('Unbound recorded reward');
     const reward_alternatives = state.context.kind === 'card_reward' ? frame.position.actions.flatMap(candidate => {
       if (candidate.candidate.domain !== 'strategic') return [];
       const kind = candidate.candidate.action.kind;
@@ -71,14 +58,20 @@ function snapshot(frame, definitions, maps) {
       return [{ kind, command: candidate.semantic_action, max_hp_gain: evidence.max_hp_gain }];
     }) : [];
     return { source, location, kind: state.context.kind, hp: state.run.current_hp, max_hp: state.run.max_hp, gold: state.run.gold,
+      event_id: state.context.event,
+      event_options: state.context.kind === 'event' ? frame.position.actions.filter(item => item.candidate.action.kind === 'choose_event_option').map(item => ({
+        command: item.semantic_action, event_id: item.candidate.action.event, option_index: item.candidate.action.option_index,
+        effects: item.candidate.action.public_semantics.structured_semantics?.effects,
+      })) : [],
       reward_alternatives,
+      reward_items: rewards.filter(reward => ['potion', 'relic'].includes(reward.kind)).map(reward => ({ kind: reward.kind, id: reward[reward.kind] })),
       relic_ids: state.relics.map(relic => relic.relic), deck_count: state.cards.reduce((count, card) => count + card.count, 0),
       reward_gold: rewards.filter(reward => reward.kind === 'gold').reduce((total, reward) => total + reward.amount, 0),
       has_card_reward: rewards.some(reward => reward.kind === 'card_reward'),
-      reward_cards: state.context.kind === 'card_reward' ? rewards.filter(reward => reward.kind === 'card_reward').flatMap(reward => reward.cards.map(card => rewardCardView({ card_id: card.card, upgrades: card.upgrades }, definitions))) : [] };
+      reward_cards: state.context.kind === 'card_reward' ? rewards.filter(reward => reward.kind === 'card_reward').flatMap(reward => reward.cards.map(card => cardFaceView({ card_id: card.card, upgrades: card.upgrades }, definitions))) : [] };
   }
-  if (state.monsters.length !== 1 || state.monsters[0].enemy.status !== 'known') throw new Error('This sequence view requires one publicly identified enemy');
-  const monster = state.monsters[0];
+  const enemies = state.monsters.map(monster => {
+  if (monster.enemy.status !== 'known') throw new Error('Unidentified public enemy');
   let intent = { kind: 'unknown' };
   if (monster.intent.intent) {
     const token = monster.intent.intent;
@@ -88,6 +81,9 @@ function snapshot(frame, definitions, maps) {
     if (intent.kind.startsWith('attack')) Object.assign(intent, { damage: monster.intent.preview_damage_per_hit, hits: payload.hits });
     if (intent.kind === 'heal' && payload.amount !== null) intent.amount = payload.amount;
   }
+  return { enemy_id: monster.enemy.enemy_id, hp: monster.hp, max_hp: monster.max_hp, block: monster.block, intent,
+    powers: monster.powers.map(power => ({ power_id: power.power, amount: power.amount })) };
+  });
   const piles = {};
   for (const zone of ['draw', 'discard', 'exhaust']) {
     const pile = state.cards[zone];
@@ -97,14 +93,13 @@ function snapshot(frame, definitions, maps) {
       cards: ordered ? pile.cards.map(card => ({ card_id: card.card_id, upgrades: card.upgrades, count: 1 })) : cardGroups(pile.cards) };
   }
   return {
-    source, location, kind: 'combat',
+    source, location, kind: 'combat', encounter_id: context.encounter_id,
     hp: state.player.hp, max_hp: state.player.max_hp, gold: state.player.gold, block: state.player.block,
     relic_ids: state.player.relics.map(relic => relic.id),
     turn: state.turn.turn_count + 1, energy: state.turn.energy,
     hand: state.cards.hand.cards.map(card => cardView(card, definitions)), piles,
     powers: state.player.powers.map(power => ({ power_id: power.power, amount: power.amount })),
-    enemy: { enemy_id: monster.enemy.enemy_id, hp: monster.hp, max_hp: monster.max_hp, block: monster.block, intent,
-      powers: monster.powers.map(power => ({ power_id: power.power, amount: power.amount })) },
+    enemies,
   };
 }
 
@@ -128,10 +123,12 @@ export function recordedSequence(entries, definitions, id) {
       const card = state.cards.hand.cards[chosen.hand_index];
       if (!card) throw new Error('Recorded action has no corresponding hand card');
       projected = { card: cardView(card, definitions), hand_index: chosen.hand_index, target: chosen.target_monster_index,
-        ...(chosen.target_monster_index === 0 ? { target_enemy_id: state.monsters[0].enemy.enemy_id } : {}) };
+        ...(Number.isInteger(chosen.target_monster_index) ? { target_enemy_id: state.monsters[chosen.target_monster_index].enemy.enemy_id } : {}) };
     } else if (action.candidate.domain === 'combat_atomic' && chosen.kind === 'end_turn') projected = {};
-    else if (action.candidate.domain === 'strategic' && chosen.kind === 'claim_reward' && chosen.reward.kind === 'gold') projected = { amount: chosen.reward.amount };
-    else if (action.candidate.domain === 'strategic' && chosen.kind === 'take_card') projected = { card: rewardCardView({ card_id: chosen.card, upgrades: chosen.upgrades }, definitions) };
+    else if (action.candidate.domain === 'strategic' && chosen.kind === 'claim_reward') projected = { reward_kind: chosen.reward.kind, amount: chosen.reward.amount, reward_id: chosen.reward[chosen.reward.kind] };
+    else if (action.candidate.domain === 'strategic' && chosen.kind === 'choose_route_node') projected = { node: [chosen.x, chosen.y] };
+    else if (action.candidate.domain === 'strategic' && chosen.kind === 'choose_event_option') projected = { event_id: chosen.event, option_index: chosen.option_index };
+    else if (action.candidate.domain === 'strategic' && chosen.kind === 'take_card') projected = { card: cardFaceView({ card_id: chosen.card, upgrades: chosen.upgrades }, definitions) };
     else if (action.candidate.domain === 'strategic' && ['open_card_reward', 'skip_card_reward'].includes(chosen.kind)) projected = {};
     else if (action.candidate.domain === 'strategic' && chosen.kind === 'singing_bowl') projected = { max_hp_gain: boundary(entry.after).run.max_hp - state.run.max_hp };
     else if (action.candidate.domain === 'strategic' && chosen.kind === 'proceed' && chosen.site === 'reward') projected = {};
@@ -156,7 +153,7 @@ export function sequenceView(scene, cursor) {
   return { state, action: cursor ? scene.actions[cursor - 1] : null, completed: scene.actions.slice(0, cursor), added,
     deltas: before ? { energy: Number.isFinite(state.energy) && Number.isFinite(before.energy) ? state.energy - before.energy : 0,
       block: Number.isFinite(state.block) && Number.isFinite(before.block) ? state.block - before.block : 0,
-      hp: state.hp - before.hp, enemy_hp: state.enemy && before.enemy ? state.enemy.hp - before.enemy.hp : 0 } : {} };
+      hp: state.hp - before.hp, enemy_hp: state.enemies && before.enemies ? state.enemies.reduce((sum, enemy) => sum + enemy.hp, 0) - before.enemies.reduce((sum, enemy) => sum + enemy.hp, 0) : 0 } : {} };
 }
 
 // Slot continuity for the supported card plays: remove the recorded source
