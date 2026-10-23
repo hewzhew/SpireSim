@@ -14,7 +14,10 @@ async function main() {
   const name = (kind, id) => display.entity(kind, id);
   const number = value => display.number(value);
   let selected = Math.max(0, scenes.findIndex(scene => scene.id === location.hash.slice(1)));
-  if (!location.hash) selected = 1;
+  if (!location.hash) {
+    const model = scenes.findIndex(scene => scene.kind === 'sequence' && scene.provenance.operator === 'model');
+    selected = model >= 0 ? model : Math.min(1, scenes.length - 1);
+  }
   let rawTab = 'calls';
   let turnRecordOpen = true;
   let actionCursor = 0;
@@ -162,6 +165,29 @@ async function main() {
     }
     return row;
   }
+  function sequenceActionLabel(action, current) {
+    if (action.kind === 'end_turn') return t('sequence.endTurn');
+    if (action.kind === 'claim_reward') return t('sequence.claimGold', { amount: action.amount });
+    if (action.kind === 'open_card_reward') return t('sequence.openCards');
+    if (action.kind === 'skip_card_reward') return t('sequence.skipCards');
+    if (action.kind === 'proceed') return t('sequence.returnToMap');
+    const card = display.cardName(action.card.card_id, action.card.upgrades);
+    if (action.kind === 'take_card') return t('sequence.takeCard', { card });
+    return current && action.target_enemy_id ? t('sequence.targetedCard', { card, target: name('enemy', action.target_enemy_id) }) : card;
+  }
+  function postCombatBoard(state, playback, completed) {
+    const board = node('section', undefined, 'combat-board sequence-board');
+    const hud = node('div', undefined, 'combat-hud'); hud.append(resources(state));
+    const result = node('div', undefined, 'battle-outcome');
+    result.append(icon('check'), node('h2', t(state.kind === 'map' ? 'sequence.mapReached' : state.kind === 'card_reward' ? 'sequence.openCards' : 'sequence.victory')));
+    const rewards = node('ul', undefined, 'recorded-rewards');
+    if (state.reward_gold) rewards.append(node('li', t('sequence.goldReward', { amount: state.reward_gold })));
+    if (state.kind !== 'card_reward' && state.has_card_reward) rewards.append(node('li', t('scene.rewards')));
+    for (const card of state.reward_cards) rewards.append(node('li', display.cardName(card.card_id, card.upgrades)));
+    const chosen = completed.filter(action => action.kind === 'take_card');
+    for (const action of chosen) rewards.append(node('li', t('sequence.takeCard', { card: display.cardName(action.card.card_id, action.card.upgrades) }), 'recorded-reward-chosen'));
+    result.append(rewards); board.append(hud, result, playback); return board;
+  }
   function renderSequence(scene, motion, scrollLeft) {
     const view = sequenceView(scene, actionCursor), state = view.state;
     const record = node('section', undefined, 'sequence-detail-panel');
@@ -181,15 +207,14 @@ async function main() {
     }
     header.append(controls);
     const history = node('div', undefined, 'sequence-record');
-    history.append(node('span', t('scene.turn', { turn: state.turn }), 'sequence-turn'));
+    history.append(node('span', state.kind === 'combat' ? t('scene.turn', { turn: state.turn })
+      : t(state.kind === 'map' ? 'sequence.mapReached' : 'scene.rewards'), 'sequence-turn'));
     const actions = node('div', undefined, 'sequence-history'); actions.setAttribute('role', 'group'); actions.setAttribute('aria-label', t('sequence.history'));
     for (let index = 0; index <= actionCursor; index++) {
       const action = scene.actions[index - 1];
-      const cardName = index ? display.cardName(action.card.card_id, action.card.upgrades) : null;
-      const button = node('button', index === 0 ? t('sequence.start') : index === actionCursor && action.target === 0
-        ? t('sequence.targetedCard', { card: cardName, target: name('enemy', state.enemy.enemy_id) }) : cardName, 'sequence-step');
+      const button = node('button', index === 0 ? t('sequence.start') : sequenceActionLabel(action, index === actionCursor), 'sequence-step');
       button.type = 'button'; button.dataset.cursor = index;
-      if (index > 0) button.prepend(icon(cardIcon(scene.actions[index - 1].card.type)));
+      if (index > 0) button.prepend(icon(action.kind === 'play_card' ? cardIcon(action.card.type) : action.kind === 'claim_reward' ? 'coin' : 'chevron-right'));
       if (index === actionCursor) button.setAttribute('aria-current', 'step');
       button.addEventListener('click', () => selectAction(index)); actions.append(button);
     }
@@ -206,10 +231,10 @@ async function main() {
       if (view.added.length) changes.append(node('span', t('sequence.addedHand', { cards: view.added.map(cardGroupLabel).join(display.locale === 'zh-CN' ? '、' : ', ') }), 'sequence-new-cards'));
       details.append(changes); record.append(details);
     }
-    const board = combatBoard(state, title(scene), header);
+    const board = state.kind === 'combat' ? combatBoard(state, title(scene), header) : postCombatBoard(state, header, view.completed);
     for (const index of motion?.hand?.added ?? []) board.querySelector('.hand').children[index].classList.add('is-arriving');
     byId('stage').append(board, record);
-    const hand = board.querySelector('.hand'); hand.scrollLeft = scrollLeft;
+    const hand = board.querySelector('.hand'); if (hand) hand.scrollLeft = scrollLeft;
     const arriving = board.querySelector('.is-arriving');
     if (arriving) {
       hand.scrollLeft += Math.max(0, arriving.getBoundingClientRect().right - hand.getBoundingClientRect().right + 6);
@@ -221,13 +246,15 @@ async function main() {
   function selectAction(index, focus = `[data-cursor="${index}"]`) {
     if (index < 0 || index >= scenes[selected].snapshots.length) return;
     let motion = null;
-    if (index === actionCursor + 1) {
+    if (index === actionCursor + 1 && scenes[selected].snapshots[actionCursor].kind === 'combat' && scenes[selected].snapshots[index].kind === 'combat') {
       const scene = scenes[selected], hand = byId('stage').querySelector('.hand');
-      motion = { hand: handTransition(scene.snapshots[actionCursor].hand, scene.snapshots[index].hand, scene.actions[actionCursor].hand_index),
+      const action = scene.actions[actionCursor];
+      motion = { hand: action.kind === 'end_turn' ? { played: null, retained: [], added: scene.snapshots[index].hand.map((_card, index) => index) }
+        : handTransition(scene.snapshots[actionCursor].hand, scene.snapshots[index].hand, action.hand_index),
         enabled: !window.matchMedia('(prefers-reduced-motion: reduce)').matches && typeof hand.animate === 'function' };
       if (motion.enabled) {
         motion.rects = [...hand.children].map(card => card.getBoundingClientRect());
-        motion.played = motion.hand ? hand.children[motion.hand.played].cloneNode(true) : null;
+        motion.played = motion.hand?.played != null ? hand.children[motion.hand.played].cloneNode(true) : null;
         motion.healthWidths = [...byId('stage').querySelectorAll('.fighter-health-fill')].map(fill => fill.getBoundingClientRect().width);
       }
     }
@@ -250,7 +277,7 @@ async function main() {
     if (motion.hand) {
       const { played, retained, added } = motion.hand;
       const rect = motion.rects[played], ghost = motion.played;
-      if (rect.width > 0 && rect.height > 0) {
+      if (rect?.width > 0 && rect.height > 0 && ghost) {
         ghost.classList.remove('is-arriving'); ghost.classList.add('played-card-ghost'); ghost.setAttribute('aria-hidden', 'true');
         Object.assign(ghost.style, { left: rect.left + 'px', top: rect.top + 'px', width: rect.width + 'px', height: rect.height + 'px' });
         document.body.append(ghost);
@@ -318,8 +345,10 @@ async function main() {
     }
     if (!byId('raw-output').children.length) byId('raw-output').append(node('p', t('raw.noText'), 'text-secondary small'));
   }
-  function title(scene) { return scene.kind === 'sequence' ? t('sequence.title') : scene.kind === 'event' ? name('event', scene.event_id) : scene.kind === 'combat' ? name('encounter', scene.encounter_id) : t('scene.rewards'); }
-  function label(scene) { return scene.kind === 'sequence' ? t('sequence.manual') : scene.kind === 'event' ? t('scene.start') : scene.kind === 'combat' ? t('scene.turn', { turn: scene.turn }) : t('scene.floor', { floor: scene.floor }); }
+  function title(scene) { return scene.kind === 'sequence' ? t(scene.provenance.operator === 'model' ? 'sequence.modelTitle' : 'sequence.title') : scene.kind === 'event' ? name('event', scene.event_id) : scene.kind === 'combat' ? name('encounter', scene.encounter_id) : t('scene.rewards'); }
+  function label(scene) { return scene.kind === 'sequence' ? scene.provenance.operator === 'model'
+    ? t('sequence.preparedBattle', { encounter: name('encounter', scene.encounter_id) }) : t('sequence.manual')
+    : scene.kind === 'event' ? t('scene.start') : scene.kind === 'combat' ? t('scene.turn', { turn: scene.turn }) : t('scene.floor', { floor: scene.floor }); }
   function renderNavigation() {
     byId('timeline').replaceChildren();
     scenes.forEach((scene, index) => {
@@ -345,8 +374,9 @@ async function main() {
     byId('stage').replaceChildren();
     if (scene.kind === 'sequence') renderSequence(scene, motion, scrollLeft); else if (scene.kind === 'combat') renderCombat(scene); else if (scene.kind === 'event') renderEvent(scene); else renderRewards(scene);
     byId('stage').dataset.scene = scene.id;
-    byId('raw-record').hidden = scene.kind === 'sequence'; byId('record-model').hidden = scene.kind === 'sequence';
-    if (scene.kind !== 'sequence') renderRaw(scene);
+    const manual = scene.kind === 'sequence' && scene.provenance.operator === 'developer';
+    byId('raw-record').hidden = manual; byId('record-model').hidden = manual;
+    if (!manual) renderRaw(scene);
   }
   function select(index, updateHash = true) {
     if (index < 0 || index >= scenes.length) return;

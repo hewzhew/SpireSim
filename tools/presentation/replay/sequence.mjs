@@ -13,12 +13,15 @@ export function cardGroups(cards) {
   return [...groups.values()].sort((a, b) => key(a).localeCompare(key(b), 'en'));
 }
 
-function combat(frame) {
+function boundary(frame) {
   const view = frame.position?.observation;
   if (typeof frame.session_id !== 'string' || !frame.session_id || !Number.isSafeInteger(frame.head_revision)
       || typeof frame.position?.public_snapshot_id !== 'string' || !frame.position.public_snapshot_id) throw new Error('Missing recorded boundary identity');
-  if (frame.position?.kind !== 'decision' || view?.domain !== 'combat') throw new Error('A sequence boundary must be a recorded public combat decision');
-  if (view.observation.information_access !== 'public') throw new Error('A sequence requires public information');
+  if (frame.position?.kind !== 'decision' || !['combat', 'strategic'].includes(view?.domain)) throw new Error('A sequence boundary must be a recorded public decision');
+  if (frame.capabilities?.permission_envelope?.information_ceiling !== undefined
+      && frame.capabilities.permission_envelope.information_ceiling !== 'public_only') throw new Error('A sequence requires public information');
+  if (view.domain === 'strategic' && frame.capabilities?.permission_envelope?.information_ceiling !== 'public_only') throw new Error('A sequence requires public strategic evidence');
+  if (view.domain === 'combat' && view.observation.information_access !== 'public') throw new Error('A sequence requires public information');
   return view.observation;
 }
 
@@ -39,7 +42,18 @@ function cardView(card, definitions) {
 }
 
 function snapshot(frame, definitions) {
-  const state = combat(frame);
+  const state = boundary(frame);
+  const source = { session_id: frame.session_id, head_revision: frame.head_revision, public_snapshot_id: frame.position.public_snapshot_id };
+  if (frame.position.observation.domain === 'strategic') {
+    if (!['reward', 'card_reward', 'map'].includes(state.context.kind)) throw new Error('Unbound post-combat scene');
+    const rewards = state.context.pending_rewards ?? [];
+    if (rewards.some(reward => !['gold', 'card_reward'].includes(reward.kind))) throw new Error('Unbound recorded reward');
+    return { source, kind: state.context.kind, hp: state.run.current_hp, max_hp: state.run.max_hp, gold: state.run.gold,
+      relic_ids: state.relics.map(relic => relic.relic), deck_count: state.cards.reduce((count, card) => count + card.count, 0),
+      reward_gold: rewards.filter(reward => reward.kind === 'gold').reduce((total, reward) => total + reward.amount, 0),
+      has_card_reward: rewards.some(reward => reward.kind === 'card_reward'),
+      reward_cards: state.context.kind === 'card_reward' ? rewards.filter(reward => reward.kind === 'card_reward').flatMap(reward => reward.cards.map(card => ({ card_id: card.card, upgrades: card.upgrades }))) : [] };
+  }
   if (state.monsters.length !== 1 || state.monsters[0].enemy.status !== 'known') throw new Error('This sequence view requires one publicly identified enemy');
   const monster = state.monsters[0];
   let intent = { kind: 'unknown' };
@@ -60,7 +74,7 @@ function snapshot(frame, definitions) {
       cards: ordered ? pile.cards.map(card => ({ card_id: card.card_id, upgrades: card.upgrades, count: 1 })) : cardGroups(pile.cards) };
   }
   return {
-    source: { session_id: frame.session_id, head_revision: frame.head_revision, public_snapshot_id: frame.position.public_snapshot_id },
+    source, kind: 'combat',
     hp: state.player.hp, max_hp: state.player.max_hp, gold: state.player.gold, block: state.player.block,
     relic_ids: state.player.relics.map(relic => relic.id),
     turn: state.turn.turn_count + 1, energy: state.turn.energy,
@@ -75,6 +89,8 @@ export function recordedSequence(entries, definitions, id) {
   if (!entries.length) throw new Error('A sequence requires actual recorded actions');
   if (typeof entries[0].source_revision !== 'string' || !entries[0].source_revision) throw new Error('Missing producer source revision');
   const first = entries[0].before;
+  const operator = entries[0].operator;
+  if (!['developer', 'model'].includes(operator) || entries.some(entry => entry.operator !== operator)) throw new Error('Missing or mixed sequence operators');
   const snapshots = [snapshot(first, definitions)], actions = [];
   for (const entry of entries) {
     const previous = snapshots.at(-1).source;
@@ -82,16 +98,26 @@ export function recordedSequence(entries, definitions, id) {
         || entry.before.position.public_snapshot_id !== previous.public_snapshot_id
         || entry.before.head_revision !== previous.head_revision) throw new Error('Disconnected sequence boundaries');
     const action = entry.before.position.actions.find(action => action.semantic_action === entry.action);
-    if (action?.candidate.domain !== 'combat_atomic' || action.candidate.action.kind !== 'play_card') throw new Error('This sequence requires recorded card-play choices');
-    const state = combat(entry.before);
-    const card = state.cards.hand.cards[action.candidate.action.hand_index];
-    if (!card) throw new Error('Recorded action has no corresponding hand card');
-    actions.push({ card: cardView(card, definitions), command: entry.action, hand_index: action.candidate.action.hand_index, target: action.candidate.action.target_monster_index,
+    if (!action) throw new Error('Recorded action has no corresponding public candidate');
+    const chosen = action.candidate.action, state = boundary(entry.before);
+    let projected;
+    if (action.candidate.domain === 'combat_atomic' && chosen.kind === 'play_card') {
+      const card = state.cards.hand.cards[chosen.hand_index];
+      if (!card) throw new Error('Recorded action has no corresponding hand card');
+      projected = { card: cardView(card, definitions), hand_index: chosen.hand_index, target: chosen.target_monster_index,
+        ...(chosen.target_monster_index === 0 ? { target_enemy_id: state.monsters[0].enemy.enemy_id } : {}) };
+    } else if (action.candidate.domain === 'combat_atomic' && chosen.kind === 'end_turn') projected = {};
+    else if (action.candidate.domain === 'strategic' && chosen.kind === 'claim_reward' && chosen.reward.kind === 'gold') projected = { amount: chosen.reward.amount };
+    else if (action.candidate.domain === 'strategic' && chosen.kind === 'take_card') projected = { card: { card_id: chosen.card, upgrades: chosen.upgrades } };
+    else if (action.candidate.domain === 'strategic' && ['open_card_reward', 'skip_card_reward'].includes(chosen.kind)) projected = {};
+    else if (action.candidate.domain === 'strategic' && chosen.kind === 'proceed' && chosen.site === 'reward') projected = {};
+    else throw new Error('Unbound recorded action');
+    actions.push({ kind: chosen.kind, ...projected, command: entry.action,
       source_snapshot_id: previous.public_snapshot_id, result_snapshot_id: entry.after.position.public_snapshot_id });
     snapshots.push(snapshot(entry.after, definitions));
   }
   const context = first.position.observation.run_context;
-  return { id, kind: 'sequence', provenance: { operator: 'developer', source_revision: entries[0].source_revision, session_id: first.session_id },
+  return { id, kind: 'sequence', provenance: { operator, source_revision: entries[0].source_revision, session_id: first.session_id },
     encounter_id: context.encounter_id, turn: snapshots[0].turn, floor: context.floor,
     actions, snapshots, indices: [] };
 }
@@ -99,13 +125,14 @@ export function recordedSequence(entries, definitions, id) {
 export function sequenceView(scene, cursor) {
   if (!Number.isInteger(cursor) || cursor < 0 || cursor >= scene.snapshots.length) throw new Error('Invalid action cursor');
   const state = scene.snapshots[cursor], before = cursor ? scene.snapshots[cursor - 1] : null;
-  const added = before ? cardGroups(state.hand).flatMap(group => {
-    const previous = cardGroups(before.hand).find(card => key(card) === key(group))?.count ?? 0;
+  const added = before ? cardGroups(state.hand ?? []).flatMap(group => {
+    const previous = cardGroups(before.hand ?? []).find(card => key(card) === key(group))?.count ?? 0;
     return group.count > previous ? [{ ...group, count: group.count - previous }] : [];
   }) : [];
   return { state, action: cursor ? scene.actions[cursor - 1] : null, completed: scene.actions.slice(0, cursor), added,
-    deltas: before ? { energy: state.energy - before.energy, block: state.block - before.block,
-      hp: state.hp - before.hp, enemy_hp: state.enemy.hp - before.enemy.hp } : {} };
+    deltas: before ? { energy: Number.isFinite(state.energy) && Number.isFinite(before.energy) ? state.energy - before.energy : 0,
+      block: Number.isFinite(state.block) && Number.isFinite(before.block) ? state.block - before.block : 0,
+      hp: state.hp - before.hp, enemy_hp: state.enemy && before.enemy ? state.enemy.hp - before.enemy.hp : 0 } : {} };
 }
 
 // Slot continuity for the supported card plays: remove the recorded source

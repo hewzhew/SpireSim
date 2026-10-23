@@ -2516,6 +2516,17 @@
       "heal": "Heal {{amount}} HP"
     },
     "sequence": {
+      "modelTitle": "Flash battle",
+      "preparedBattle": "{{encounter}} (prepared start)",
+      "endTurn": "End turn",
+      "claimGold": "Claim {{amount}} Gold",
+      "goldReward": "{{amount}} Gold",
+      "openCards": "Card reward",
+      "skipCards": "Skip card reward",
+      "takeCard": "Take {{card}}",
+      "returnToMap": "Return to map",
+      "mapReached": "Back on the map",
+      "victory": "Victory",
       "title": "Card draw sequence",
       "manual": "Manual example",
       "start": "Starting hand",

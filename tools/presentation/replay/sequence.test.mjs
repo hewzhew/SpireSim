@@ -25,8 +25,8 @@ function recording() {
   const before = frame(0, ['ShrugItOff', 'Strike'], ['Defend', 'Strike'], 'play:ShrugItOff+0#0');
   const middle = frame(1, ['Strike', 'Defend'], ['Strike'], 'play:Defend+0#0', 1);
   const after = frame(2, ['Strike'], ['Strike']);
-  return [{ action: 'play:ShrugItOff+0#0', before, after: middle, source_revision: 'source' },
-    { action: 'play:Defend+0#0', before: middle, after, source_revision: 'source' }];
+  return [{ action: 'play:ShrugItOff+0#0', before, after: middle, source_revision: 'source', operator: 'developer' },
+    { action: 'play:Defend+0#0', before: middle, after, source_revision: 'source', operator: 'developer' }];
 }
 
 test('an action can use a card that entered the hand at an earlier recorded boundary', () => {
@@ -111,4 +111,30 @@ test('the presentation copies public fields instead of spreading the source obse
   assert.ok(!JSON.stringify(recordedSequence(entries, definitions, 'draw')).includes('private_rng'));
   entries[0].before.position.observation.observation.information_access = 'privileged_exact';
   assert.throws(() => recordedSequence(entries, definitions, 'draw'), /public information/);
+});
+
+test('a recorded model battle crosses end-turn and reward boundaries without inventing a final enemy state', () => {
+  const first = frame(0, ['Strike'], ['Defend'], 'end');
+  first.position.actions[0].candidate.action = { kind: 'end_turn' };
+  const next = frame(1, ['Strike'], ['Defend'], 'play:Strike+0#0@0');
+  const reward = { session_id: 'recording', head_revision: 2, capabilities: { permission_envelope: { information_ceiling: 'public_only' } },
+    position: { kind: 'decision', public_snapshot_id: 'snapshot-2', actions: [{ semantic_action: 'claim:Gold#0', candidate: {
+      domain: 'strategic', action: { kind: 'claim_reward', reward: { kind: 'gold', amount: 10 } } } }],
+      observation: { domain: 'strategic', observation: { run: { current_hp: 60, max_hp: 80, gold: 100 }, cards: [{ card: 'Strike', count: 1 }], relics: [],
+        context: { kind: 'reward', pending_rewards: [{ kind: 'gold', amount: 10 }] } } } } };
+  const map = structuredClone(reward); map.head_revision = 3; map.position.public_snapshot_id = 'snapshot-3';
+  map.position.observation.observation.run.gold = 110; map.position.observation.observation.context = { kind: 'map' };
+  const rows = [{ before: first, after: next, action: 'end' }, { before: next, after: reward, action: 'play:Strike+0#0@0' },
+    { before: reward, after: map, action: 'claim:Gold#0' }].map(row => ({ ...row, operator: 'model', source_revision: 'source' }));
+  const scene = recordedSequence(rows, definitions, 'model');
+  assert.equal(scene.provenance.operator, 'model');
+  assert.equal(scene.actions[0].kind, 'end_turn');
+  assert.equal(scene.snapshots[2].kind, 'reward');
+  assert.equal(scene.snapshots[2].reward_gold, 10);
+  assert.ok(!('enemy' in scene.snapshots[2]));
+  assert.ok(!('hand' in scene.snapshots[2]));
+  assert.equal(scene.snapshots[3].gold, 110);
+  assert.ok(Object.values(sequenceView(scene, 2).deltas).every(Number.isFinite));
+  rows[1].operator = 'developer';
+  assert.throws(() => recordedSequence(rows, definitions, 'mixed'), /operators/);
 });

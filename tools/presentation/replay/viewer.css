@@ -147,6 +147,12 @@ button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); 
 .sequence-new-cards { font-weight: 600; }
 .hand .is-arriving { animation: card-arrival .7s ease-out; }
 .played-card-ghost { position: fixed; z-index: 1000; pointer-events: none; margin: 0; }
+.battle-outcome { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 300px; padding: 28px; text-align: center; }
+.battle-outcome > .icon { width: 36px; height: 36px; color: #5e7d42; }
+.battle-outcome h2 { margin: 16px 0 20px; font-size: 20px; font-weight: 600; color: #425739; }
+.recorded-rewards { display: grid; gap: 10px; min-width: 200px; margin: 0; padding: 0; list-style: none; }
+.recorded-rewards li { padding: 10px 18px; border: 1px solid #dfe2d6; border-radius: 6px; background: #fffefa; color: #536745; font-size: 14px; }
+.recorded-rewards .recorded-reward-chosen { border-color: #9cac85; background: #f0f5e8; }
 @keyframes card-arrival {
   0%, 35% { outline: 2px solid #78924f; outline-offset: 3px; background: #f3f8e8; }
   100% { outline: 2px solid transparent; outline-offset: 6px; background: var(--card-paper); }

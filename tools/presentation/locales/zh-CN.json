@@ -2516,6 +2516,17 @@
       "heal": "恢复 {{amount}} 点生命"
     },
     "sequence": {
+      "modelTitle": "Flash 战斗",
+      "preparedBattle": "{{encounter}}（准备局面）",
+      "endTurn": "结束回合",
+      "claimGold": "领取 {{amount}} 金币",
+      "goldReward": "{{amount}} 金币",
+      "openCards": "战后选牌",
+      "skipCards": "跳过选牌",
+      "takeCard": "获得{{card}}",
+      "returnToMap": "返回地图",
+      "mapReached": "已返回地图",
+      "victory": "战斗胜利",
       "title": "抽牌过程",
       "manual": "手动示例",
       "start": "起手",
