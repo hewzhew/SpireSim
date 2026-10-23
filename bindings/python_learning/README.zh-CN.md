@@ -2,7 +2,7 @@
 
 [English](README.md) | 简体中文
 
-通过 Python 批量运行《杀戮尖塔》对局，支持四名角色、进阶系统与终幕碎心。Rust 执行游戏规则，策略读取公开观察并选择合法候选。
+通过 Python 批量运行《杀戮尖塔》对局，支持四名角色、进阶系统与终局碎心。Rust 执行游戏规则，策略读取公开观察并选择合法候选。
 
 ## 安装
 
@@ -12,7 +12,7 @@
 python -m pip install PATH_TO_WHEEL
 ```
 
-安装包名为 `sts-learning-bridge`，导入名为 `sts_learning_bridge`，依赖 NumPy。训练运行不需要 Java 或原游戏安装。
+安装包名为 `sts-learning-bridge`，导入名为 `sts_learning_bridge`，依赖 NumPy。训练运行无需 Java 或原游戏安装。
 
 预编译版本和完整轨迹复验命令见[安装指南](../../docs/getting-started.md)，其他平台可按[构建说明](docs/building.md)生成 wheel。
 
