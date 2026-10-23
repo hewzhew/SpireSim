@@ -1,4 +1,4 @@
-# Rust 对象式交互
+# SpireSim 游戏工作台
 
 `client.mjs` 通过 stdin/stdout 直连 `run_play.exe agent-shell`，没有 PTY 标题序列和命令回显。
 Rust 拥有状态、来源检查、真实执行和提交；客户端只保存返回对象和传输记录。

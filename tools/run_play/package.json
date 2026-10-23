@@ -8,7 +8,7 @@
     "prepack": "node ../release/pack_node.mjs --check",
     "pack:distribution": "node ../release/pack_node.mjs"
   },
-  "description": "Shared command and pipe client for the Rust run-play controller",
+  "description": "SpireSim command and pipe client for the Rust run-play controller",
   "type": "module",
   "exports": {
     ".": "./workbench.mjs",

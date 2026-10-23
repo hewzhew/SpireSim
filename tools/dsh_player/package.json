@@ -2,7 +2,7 @@
   "name": "@sts-simulator/dsh-player",
   "version": "0.1.0",
   "private": true,
-  "description": "Slay the Spire A20 Heart gameplay in native DeepSeek Harness sessions",
+  "description": "SpireSim game tools, maps and run records for DeepSeek Harness",
   "type": "module",
   "exports": {
     ".": "./map-view.mjs",

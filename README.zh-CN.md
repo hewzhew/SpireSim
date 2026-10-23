@@ -1,10 +1,10 @@
-# sts_simulator
+# SpireSim
 
 [English](README.md) | 简体中文
 
-一个非官方的 Rust《杀戮尖塔》模拟器和训练环境，提供原游戏比较工具，以及可选的规划与搜索能力。
+一个使用 Rust 实现的非官方《杀戮尖塔》模拟器和训练环境，提供原版对齐工具，以及可选的规划与搜索能力。
 
-模拟器支持铁甲战士、静默猎手、故障机器人与观者，包括进阶 20 和心脏目标。Python 包提供批量对局、公开观察、合法决策候选、checkpoint、奖励和终局结果。Rust 负责游戏状态与执行，Python 调用方负责选择动作。训练运行不依赖 Java、Steam 或原游戏安装。
+支持铁甲战士、静默猎手、故障机器人与观者，以及进阶系统和终幕碎心。Python 接口提供批量对局、公开观察、合法候选、状态恢复、奖励与终局结果，训练运行不依赖 Java、Steam 或原游戏安装。
 
 ## 从这里开始
 
@@ -12,7 +12,7 @@
 
 | 任务 | 入口 |
 | --- | --- |
-| 安装和使用 Python 环境 | [Python bridge](bindings/python_learning/README.md) |
+| 安装环境并接入 Python 策略 | [Python 接口](bindings/python_learning/README.zh-CN.md) |
 | 在 Rust 中跑局、观察和规划 | [Run-play 客户端](tools/run_play/README.md) |
 | 观察模型公开信息手打、暂停与返回 | [短段演示](docs/model-play.md) |
 | 与原游戏比较执行结果 | [架构](docs/ARCHITECTURE.md)、[运行手册](docs/RUNBOOK.md) |

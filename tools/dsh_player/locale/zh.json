@@ -38,7 +38,7 @@
     "updates.published": "新版工具已就绪。请新建聊天试跑，现有聊天保留原预设。"
   },
   "meta": {
-    "title": "杀戮尖塔",
+    "title": "SpireSim",
     "description": "在原生会话中进行 A20H 跑局，查看模型操作和游戏返回。"
   },
   "workbench": {

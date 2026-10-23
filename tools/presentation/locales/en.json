@@ -3499,7 +3499,7 @@
     },
     "message": {
       "feedbackRecorded": "Feedback recorded; the game was not advanced.",
-      "selectWorkspace": "Select the sts_simulator repository as this chat workspace.",
+      "selectWorkspace": "Select the SpireSim repository as this chat workspace.",
       "invalidBinding": "This chat game binding is invalid; the existing game was not changed.",
       "unsupportedLocale": "Unsupported agentLocale; use en or zh-CN",
       "differentMode": "This chat has a different play mode. Create a new chat for the requested mode.",

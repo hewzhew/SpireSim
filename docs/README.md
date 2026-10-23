@@ -11,7 +11,7 @@
 | 开发脚本与本地短命令 | [scripts](../scripts/README.md) |
 | Java ↔ Rust 职责与对齐设计 | [ARCHITECTURE](ARCHITECTURE.md)、[TESTING](TESTING.md) |
 | 完整任务验收与覆盖组织 | [环境验收](architecture/environment-acceptance.md) |
-| Python 训练环境、安装包与批量接口 | [Python bridge](../bindings/python_learning/README.md) |
+| Python 训练环境、安装包与批量接口 | [Python 接口](../bindings/python_learning/README.zh-CN.md) |
 | Rust 跑局与对象交互 | [管道客户端](../tools/run_play/README.md) |
 | dsh 原生游戏插件与脚本复核 | [dsh 游戏插件](../tools/dsh_player/README.md) |
 | 展示语言、共用名称与离线词典 | [展示本地化](../tools/presentation/README.md) |

@@ -1,10 +1,10 @@
-# sts_simulator
+# SpireSim
 
 [简体中文](README.zh-CN.md) | English
 
-An unofficial Rust *Slay the Spire* simulator and training environment, with original-game comparison tools and optional planning and search.
+An unofficial *Slay the Spire* simulator and training environment implemented in Rust, with original-game comparison tools and optional planning and search.
 
-The simulator supports Ironclad, Silent, Defect, and Watcher, including Ascension 20 and the Heart objective. The Python package provides batched episodes, public observations, legal decision candidates, checkpoints, rewards, and terminal results. Rust owns game state and execution; Python callers choose actions. Training runs without Java, Steam, or an original-game installation.
+SpireSim supports all four characters, the Ascension system, and Act 4. Its Python interface provides batched episodes, public observations, legal decision candidates, checkpoints, rewards, and terminal results. Training runs without Java, Steam, or an original-game installation.
 
 ## Start here
 
@@ -12,7 +12,7 @@ Start with the [installation and full-run verification guide](docs/getting-start
 
 | Task | Entry point |
 | --- | --- |
-| Install and use the Python environment | [Python bridge](bindings/python_learning/README.md) |
+| Install and connect a Python policy | [Python interface](bindings/python_learning/README.md) |
 | Play, inspect, or plan in Rust | [Run-play client](tools/run_play/README.md) |
 | Watch a model play from public information | [Model-play walkthrough](docs/model-play.md) |
 | Compare execution with the original game | [Architecture](docs/ARCHITECTURE.md), [runbook](docs/RUNBOOK.md) |

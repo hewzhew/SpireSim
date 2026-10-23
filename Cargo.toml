@@ -4,9 +4,9 @@ version = "0.1.0"
 edition = "2021"
 autotests = false
 autobins = false
-description = "Unofficial Rust Slay the Spire simulator and AI-search workspace"
+description = "SpireSim: a Slay the Spire simulator and training environment implemented in Rust"
 readme = "README.md"
-repository = "https://github.com/hewzhew/sts-sim"
+repository = "https://github.com/hewzhew/SpireSim"
 license = "MIT"
 
 [workspace]

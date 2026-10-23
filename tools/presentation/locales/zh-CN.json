@@ -3499,7 +3499,7 @@
     },
     "message": {
       "feedbackRecorded": "反馈已记录；游戏未推进。",
-      "selectWorkspace": "请将 sts_simulator 仓库选作当前聊天的工作区。",
+      "selectWorkspace": "请将 SpireSim 仓库选作当前聊天的工作区。",
       "invalidBinding": "当前聊天的游戏绑定无效；已有游戏未被修改。",
       "unsupportedLocale": "agentLocale 不受支持；请使用 en 或 zh-CN",
       "differentMode": "当前聊天已绑定另一种玩法。请新建聊天以使用所选玩法。",

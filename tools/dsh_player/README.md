@@ -1,4 +1,4 @@
-# dsh 游戏插件
+# SpireSim dsh 插件
 
 在 DeepSeek Harness 的原生会话中操作 Rust 模拟器。官方界面负责模型运行、会话历史、
 工具展示、取消和继续；插件通过共享游戏工作台提供 `sts` 和 `sts_feedback`。
@@ -17,7 +17,7 @@
 
 首次从源码使用时，依次在 `tools/presentation`、`tools/run_play`、`tools/dsh_player` 执行 `npm ci`，再在 `tools/dsh_player` 执行 `npm run build:client`。客户端由 [client/index.mjs](client/index.mjs) 与本地化资源构建为 `client.js`；[分发构建](../../docs/runbooks/release.md)会重新构建客户端，并在隔离目录装入真实依赖后打包；安装包包含客户端和语言资源，不读取仓库相邻目录。
 
-安装后应出现“杀戮尖塔”。新建会话时把本仓库选作工作区，并选择玩法预设：
+安装后应出现“SpireSim”。新建会话时把本仓库选作工作区，并选择玩法预设：
 
 | 预设 | 玩法 |
 | --- | --- |

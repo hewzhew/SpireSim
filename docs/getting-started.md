@@ -1,4 +1,4 @@
-# Try the training environment
+# SpireSim training environment
 
 The environment runs complete game episodes in Rust. Python supplies decisions
 through public observations and legal candidates. Java and the original game
@@ -8,7 +8,7 @@ dependencies of the training wheel.
 ## Install and run the full verification
 
 Download the matching wheel and `sts-verification-0.1.0.zip` from the
-[release page](https://github.com/hewzhew/sts-sim/releases) into one directory.
+[release page](https://github.com/hewzhew/SpireSim/releases) into one directory.
 Prebuilt wheels target these interpreter and platform combinations:
 
 | Platform | Python | Wheel tag |
@@ -36,7 +36,7 @@ py -3.14 -m venv .venv
 
 NumPy is installed as a declared dependency. No repository checkout is needed
 for these commands. Other interpreter/platform combinations can build a wheel
-using the [source build instructions](../bindings/python_learning/README.md#build-a-linux-wheel).
+using the [source build instructions](../bindings/python_learning/docs/building.md#build-a-linux-wheel).
 
 The verifier prints one result per character and saves detailed reports below
 the requested new output directory. It checks all four complete A20 Heart
@@ -95,7 +95,7 @@ From the source checkout the script is at
 `bindings/python_learning/examples/policy_loop.py`. The callback receives no
 environment object, checkpoint, search result or hidden future state. The
 semantic schema names the fields and categorical values in the public NumPy
-tables; the [bridge contract](../bindings/python_learning/README.md#natural-episodes-and-trajectory-acceptance)
+tables; the [batch API contract](../bindings/python_learning/docs/api.md)
 describes the row layout.
 
 The loop calls `choose` until every active slot is ready, then calls `step`
@@ -110,7 +110,7 @@ To observe a language model playing through native chat tools, including actual 
 
 ## Report a problem
 
-Open an [issue](https://github.com/hewzhew/sts-sim/issues) with the package
+Open an [issue](https://github.com/hewzhew/SpireSim/issues) with the package
 version, wheel filename, platform, command and first failing report. A
 verification failure records the first differing boundary. For a new gameplay
 case, include the seed, character and actual action sequence when available.

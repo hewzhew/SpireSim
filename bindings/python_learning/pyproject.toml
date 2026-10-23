@@ -5,14 +5,14 @@ build-backend = "maturin"
 [project]
 name = "sts-learning-bridge"
 version = "0.1.0"
-description = "Batched Slay the Spire simulator environments with public observations and original-game replay verification"
+description = "SpireSim Python environments with public observations and original-game replay verification"
 license = "MIT"
 requires-python = ">=3.12"
 dependencies = ["numpy>=2.0"]
 
 [project.urls]
-Repository = "https://github.com/hewzhew/sts-sim"
-Issues = "https://github.com/hewzhew/sts-sim/issues"
+Repository = "https://github.com/hewzhew/SpireSim"
+Issues = "https://github.com/hewzhew/SpireSim/issues"
 
 [tool.maturin]
 manifest-path = "Cargo.toml"

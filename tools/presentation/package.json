@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "license": "MIT",
-  "description": "Shared display names and localized messages, independent of game state",
+  "description": "SpireSim display names, localized messages and recorded-game viewer",
   "exports": {
     ".": "./index.mjs",
     "./catalogs": "./catalogs.mjs",

@@ -119,8 +119,8 @@ def main() -> int:
             if archive.read(license_name) != (repo / "LICENSE").read_bytes():
                 raise ValueError(f"wheel license differs from the project license: {wheel}")
         shutil.copy2(wheel, output / wheel.name)
-    subprocess.run(["git", "archive", "--format=zip", "--prefix=sts-sim/", "-o",
-                    str(output / "sts-sim-0.1.0-source.zip"), revision], cwd=repo, check=True)
+    subprocess.run(["git", "archive", "--format=zip", "--prefix=SpireSim/", "-o",
+                    str(output / "spiresim-0.1.0-source.zip"), revision], cwd=repo, check=True)
     assets = {p.name: sha256(p) for p in sorted(output.iterdir()) if p.is_file()}
     (output / "SHA256SUMS").write_text("".join(f"{digest}  {name}\n" for name, digest in assets.items()), encoding="utf-8")
     release = {"source_revision": revision, "assets": assets, "characters": len(records),

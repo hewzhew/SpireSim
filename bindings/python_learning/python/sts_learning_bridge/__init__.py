@@ -1,4 +1,4 @@
-"""Batched typed control bridge for sts_simulator learning experiments."""
+"""SpireSim's batched Python environments and research interfaces."""
 
 from ._native import (
     COMBAT_TERMINAL_LOSS,

@@ -5,7 +5,7 @@ async function main() {
   const story = JSON.parse(document.getElementById('story').textContent);
   const { frames } = data, { scenes } = story;
   let savedLocale;
-  try { savedLocale = localStorage.getItem('sts-sim.demo.locale'); } catch {}
+  try { savedLocale = localStorage.getItem('spiresim.demo.locale'); } catch {}
   const display = await createPresentation({ locale: savedLocale || preferredLocale(navigator.languages), onMissing: gap => console.warn('Missing display name', gap) });
   const t = (key, params) => display.text('replay:' + key, params);
   const name = (kind, id) => display.entity(kind, id);
@@ -177,7 +177,7 @@ async function main() {
     const selector = event.currentTarget; selector.disabled = true;
     try {
       await display.setLocale(selector.value); renderChrome(); renderNavigation(); render();
-      try { localStorage.setItem('sts-sim.demo.locale', display.locale); } catch {}
+      try { localStorage.setItem('spiresim.demo.locale', display.locale); } catch {}
     } finally { selector.disabled = false; }
   });
   for (const button of document.querySelectorAll('[data-tab]')) {
