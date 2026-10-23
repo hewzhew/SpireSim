@@ -50,6 +50,7 @@ async function main() {
   const mapMotions = new Set();
   const phaseMotions = new Set();
   const activeMotion = new Set();
+  let victoryTransition = null;
   const openPiles = new Set();
   const byId = id => document.getElementById(id);
   const mapPanel = byId('journey-map');
@@ -356,14 +357,18 @@ async function main() {
   function selectAction(index, focus = `[data-cursor="${index}"]`) {
     if (index < 0 || index >= scenes[selected].snapshots.length) return;
     let motion = null;
-    if (index === actionCursor + 1 && scenes[selected].snapshots[actionCursor].kind === 'combat' && scenes[selected].snapshots[index].kind === 'combat') {
-      const scene = scenes[selected], hand = byId('stage').querySelector('.hand');
-      const action = scene.actions[actionCursor];
-      motion = { hand: action.kind === 'end_turn' ? { played: null, retained: [], added: scene.snapshots[index].hand.map((_card, index) => index) }
+    const scene = scenes[selected], action = scene.actions[actionCursor];
+    const victory = scene.snapshots[index].kind === 'reward' && action?.kind === 'play_card';
+    if (index === actionCursor + 1 && scene.snapshots[actionCursor].kind === 'combat' && (scene.snapshots[index].kind === 'combat' || victory)) {
+      const hand = byId('stage').querySelector('.hand');
+      motion = { hand: victory ? null : action.kind === 'end_turn' ? { played: null, retained: [], added: scene.snapshots[index].hand.map((_card, index) => index) }
         : handTransition(scene.snapshots[actionCursor].hand, scene.snapshots[index].hand, action.hand_index),
+        victory: victory ? { phase: hand.closest('.sequence-scene'), card: hand.children[action.hand_index],
+          scrollTop: hand.closest('.sequence-scene').scrollTop, scrollLeft: hand.scrollLeft } : null,
         enabled: !window.matchMedia('(prefers-reduced-motion: reduce)').matches && typeof hand.animate === 'function'
           && !hand.closest('[hidden]') && hand.getBoundingClientRect().width > 0 };
-      if (motion.enabled) {
+      if (victory) motion.enabled &&= Boolean(motion.victory.card);
+      if (motion.enabled && !victory) {
         motion.rects = [...hand.children].map(card => card.getBoundingClientRect());
         motion.played = motion.hand?.played != null ? hand.children[motion.hand.played].cloneNode(true) : null;
         motion.healthWidths = [...byId('stage').querySelectorAll('.fighter-health-fill')].map(fill => fill.getBoundingClientRect().width);
@@ -377,22 +382,24 @@ async function main() {
   function clearMotion() {
     for (const item of activeMotion) item.settled();
   }
+  function playBoundaryMotion(element, frames, { duration = 200, delay = 0, cleanup } = {}) {
+    // Pin the source pose synchronously, including while the animation is
+    // pending. Restore the renderer's target styles when finishing or cancelling.
+    const styles = Object.keys(frames[0]).filter(property => property !== 'offset')
+      .map(property => [property, element.style.getPropertyValue(property), element.style.getPropertyPriority(property)]);
+    for (const [property, value] of Object.entries(frames[0])) if (property !== 'offset') element.style.setProperty(property, String(value));
+    const animation = element.animate(frames, { duration, delay, easing: 'cubic-bezier(.2,.7,.2,1)', fill: 'both' });
+    const item = { settled() {
+      if (!activeMotion.delete(item)) return;
+      for (const [property, value, priority] of styles) {
+        if (value) element.style.setProperty(property, value, priority); else element.style.removeProperty(property);
+      }
+      cleanup?.(); animation.cancel();
+    } }; activeMotion.add(item);
+    animation.finished.then(item.settled, item.settled);
+  }
   function animateBoundary(board, motion) {
-    const play = (element, frames, ghost) => {
-      // Pin the source pose synchronously, including while the animation is
-      // pending. Restore the renderer's target styles when finishing or cancelling.
-      const styles = Object.keys(frames[0]).map(property => [property, element.style.getPropertyValue(property), element.style.getPropertyPriority(property)]);
-      for (const [property, value] of Object.entries(frames[0])) element.style.setProperty(property, String(value));
-      const animation = element.animate(frames, { duration: 200, easing: 'cubic-bezier(.2,.7,.2,1)', fill: 'both' });
-      const item = { settled() {
-        if (!activeMotion.delete(item)) return;
-        for (const [property, value, priority] of styles) {
-          if (value) element.style.setProperty(property, value, priority); else element.style.removeProperty(property);
-        }
-        ghost?.remove(); animation.cancel();
-      } }; activeMotion.add(item);
-      animation.finished.then(item.settled, item.settled);
-    };
+    const play = (element, frames, ghost) => playBoundaryMotion(element, frames, { cleanup: () => ghost?.remove() });
     const hand = board.querySelector('.hand');
     if (motion.hand) {
       const { played, retained, added } = motion.hand;
@@ -411,6 +418,36 @@ async function main() {
     }
     board.querySelectorAll('.fighter-health-fill').forEach((fill, index) => {
       if (motion.healthWidths[index] > 0) play(fill, [{ width: motion.healthWidths[index] + 'px' }, { width: fill.style.width }]);
+    });
+  }
+  function animateVictory(board, { phase, card, scrollTop, scrollLeft }) {
+    const content = board.querySelector('.sequence-content'), target = content.querySelector('.sequence-scene');
+    const bounds = content.getBoundingClientRect(), rect = target.getBoundingClientRect();
+    // Move the actual source scene inside the same board context. Never clone
+    // a battle into body or manufacture a post-lethal combat observation.
+    phase.classList.add('combat-exit-scene'); phase.inert = true; phase.setAttribute('aria-hidden', 'true');
+    phase.querySelectorAll('[id]').forEach(element => element.removeAttribute('id'));
+    phase.style.width = rect.width + 'px'; content.append(phase);
+    phase.scrollTop = scrollTop; card.parentElement.scrollLeft = scrollLeft;
+    const from = card.getBoundingClientRect(), slot = node('div', undefined, 'playing-card finisher-card-slot');
+    slot.setAttribute('aria-hidden', 'true'); card.replaceWith(slot);
+    card.classList.remove('is-arriving'); card.classList.add('finisher-card'); card.inert = true; card.setAttribute('aria-hidden', 'true');
+    Object.assign(card.style, { left: from.left - bounds.left + 'px', top: from.top - bounds.top + 'px', width: from.width + 'px', height: from.height + 'px' });
+    content.append(card);
+    const transition = { target, phase, card }; victoryTransition = transition;
+    target.inert = true; target.setAttribute('aria-hidden', 'true');
+    playBoundaryMotion(phase, [{ opacity: 1 }, { opacity: 0 }], { duration: 180, delay: 240, cleanup: () => phase.remove() });
+    playBoundaryMotion(card, [
+      { opacity: 1, transform: 'translateY(0) scale(1)', offset: 0 },
+      { opacity: 1, transform: 'translateY(-64px) scale(1.04)', offset: .35 },
+      { opacity: 1, transform: 'translateY(-64px) scale(1.04)', offset: .75 },
+      { opacity: 0, transform: 'translateY(-84px) scale(1.04)', offset: 1 }
+    ], { duration: 360, cleanup: () => card.remove() });
+    playBoundaryMotion(target, [{ opacity: 0, transform: 'translateY(24px)' }, { opacity: 1, transform: 'translateY(0)' }], {
+      duration: 240, delay: 320, cleanup() {
+        target.inert = false; target.removeAttribute('aria-hidden'); phase.remove(); card.remove();
+        if (victoryTransition === transition) victoryTransition = null;
+      }
     });
   }
   function resources(state) {
@@ -714,6 +751,7 @@ async function main() {
     if (!phase.hidden) playLayoutMotion(phaseMotions, phase, [{ opacity: 0, transform: 'translateX(-12px)' }, { opacity: 1, transform: 'none' }]);
   }
   function updateMapLayout(before = mapBeforeLayout(), moved = false) {
+    if (victoryTransition) clearMotion();
     mapMode = mapAvailable ? desiredMapMode() : 'hidden';
     stopLayoutMotion();
     const primary = mapMode === 'primary', main = mainMap(mapMode), visible = visibleMap(mapMode);
@@ -761,6 +799,7 @@ async function main() {
   function render(motion = null) {
     const scene = scenes[selected]; byId('heading').textContent = title(scene); byId('turn-label').textContent = label(scene);
     const beforeMap = mapBeforeLayout();
+    if (motion?.victory && motion.enabled) beforeMap.phase = false;
     stopLayoutMotion();
     const scrollLeft = byId('stage').dataset.scene === scene.id ? byId('stage').querySelector('.hand')?.scrollLeft ?? 0 : 0;
     clearMotion(); historyObserver?.disconnect(); refreshHistory = () => {}; document.body.classList.toggle('has-sequence', scene.kind === 'sequence');
@@ -784,7 +823,9 @@ async function main() {
         const arriving = hand.querySelector('.is-arriving');
         if (arriving) hand.scrollLeft += Math.max(0, arriving.getBoundingClientRect().right - hand.getBoundingClientRect().right + 6);
       }
-      if (motion?.enabled) animateBoundary(board, motion);
+      if (motion?.enabled) {
+        if (motion.victory) animateVictory(board, motion.victory); else animateBoundary(board, motion);
+      }
     }
   }
   function writeLocation() {

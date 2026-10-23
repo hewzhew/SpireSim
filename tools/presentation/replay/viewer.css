@@ -200,6 +200,9 @@ button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); 
 .sequence-content { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; height: clamp(440px, calc(100dvh - 246px), 780px); min-width: 0; overflow: hidden; }
 .sequence-scene { display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow-y: auto; overscroll-behavior-y: contain; }
 .sequence-scene[hidden] { display: none; }
+.combat-exit-scene { position: absolute; inset-block: 0; left: 0; z-index: 2; background: #f5f6ef; pointer-events: none; }
+.finisher-card { position: absolute; z-index: 3; pointer-events: none; margin: 0; box-shadow: 0 8px 20px #43342220; }
+.finisher-card-slot { visibility: hidden; }
 .sequence-scene > .battlefield, .sequence-scene > .battle-outcome, .sequence-scene > .sequence-event { flex: 1; }
 .sequence-board .battlefield { min-height: clamp(216px, 30vh, 252px); padding: 8px 7% 12px; }
 .sequence-board .fighter-intent { min-height: 62px; margin-bottom: 3px; }
