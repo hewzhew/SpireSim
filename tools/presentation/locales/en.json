@@ -4308,6 +4308,7 @@
       "singleClassificationCall": "Submit classify with basis and choice in one call.",
       "reviewMissingFact": "Record the missing fact for {{preparationReviewCandidate}} through sts_feedback for maintainer review.",
       "cardChoiceRequired": "Current card choice: submit command choose with one supplied choice.",
+      "actionCompleted": "Completed: {{command}}\n{{progress}}",
       "classificationRequired": "Current stage: submit the requested classification rows and choice with command classify.",
       "classificationStopped": "{{receipt}}\nPreparation stopped after three submissions without an accepted row. Current saved position requires maintainer review.\n{{progress}}",
       "adoptionChanged": "Game position changed before adopting the recorded classification; recover the current reading.",

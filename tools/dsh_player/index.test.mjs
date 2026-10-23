@@ -1216,6 +1216,32 @@ test('checked card choice supplies a compact task and executes once without a cl
   assert.equal(adoptions[0].basisKind, 'host-checked-card-choice');
 });
 
+test('preparation receipts localize completion and partial failures while retaining commands and raw output', async t => {
+  for (const agentLocale of ['en', 'zh-CN']) {
+    const command = 'take:BurningPact#0';
+    const f = await fixture(t, 'Raw rules {{opaque}}', false, { actions: { [command]: scopedPosition('map', 2) } });
+    await f.setPosition(checkedCardPosition());
+    const handle = await f.create({ taskScope: 'preparation', agentLocale });
+    const result = await rawGameExec(f.ctx, handle.agent, 'choose', undefined, { choice: command });
+    assert.ok(!result.isError, resultText(result));
+    assert.ok(resultText(result).startsWith((agentLocale === 'en' ? 'Completed: ' : '已完成：') + command));
+    assert.equal((await f.calls()).filter(call => call === command).length, 1);
+    await handle.dispose();
+
+    const g = await fixture(t, 'Raw rules {{opaque}}', false, { actions: { 'buy:Flex#0': scopedPosition('shop', 2) } });
+    await g.setPosition(scopedPosition('shop', 1));
+    const batch = await g.create({ taskScope: 'preparation', agentLocale });
+    const failed = await gameExec(g.ctx, batch.agent, 'buy:Flex#0, buy:Evolve#0');
+    assert.ok(failed.isError, resultText(failed));
+    // This part is an opaque upstream receipt, not locally generated prose.
+    assert.match(resultText(failed), /Completed: buy:Flex#0/);
+    assert.match(resultText(failed), agentLocale === 'en' ? /\nError: / : /\n错误：/);
+    assert.equal((await g.calls()).filter(call => call === 'buy:Flex#0').length, 1);
+    assert.ok(!(await g.calls()).includes('buy:Evolve#0'));
+    await batch.dispose();
+  }
+});
+
 test('checked card choice rejects a batch or invented card before execution and recovers its compact reading', async t => {
   const f = await fixture(t, 'Enemy catalogue marker'); await f.setPosition(checkedCardPosition());
   const handle = await f.create({ taskScope: 'preparation' }); t.after(() => handle.dispose());
@@ -2139,7 +2165,7 @@ test('repeated command errors end the official preparation task before further g
       assert.equal(Boolean(result.isError), n < 2);
       assert.equal(result.concludesTurn, n === 2 ? true : undefined);
       if (n === 2) {
-        assert.match(resultText(result), /^Error: /);
+        assert.match(resultText(result), agentLocale === 'en' ? /^Error: / : /^错误：/);
         assert.match(resultText(result), agentLocale === 'en' ? /Preparation stopped after three command errors/ : /连续三次命令错误后准备已停止/);
       }
     }

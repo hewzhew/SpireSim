@@ -278,7 +278,7 @@ export async function apply(ctx, config) {
                 updateTaskProgress(successor, adopted.command, adopted.renderedBasis);
                 if (taskProgress === 'complete') exec.concludeTurn();
                 else requestBranchReset(exec.agent);
-                return { text: `Completed: ${adopted.command}\n${progressText()}` };
+                return { text: runtimeText('actionCompleted', { command: adopted.command, progress: progressText() }) };
               }
               if (taskProgress === 'pending' && (shopPotionReplacementScope(reading, strategicOptionCommand, presentation.locale) || shopSpendingScope(reading, strategicOptionCommand, presentation.locale))
                   && ['read', 'options'].includes(group[0])) {
@@ -389,7 +389,9 @@ export async function apply(ctx, config) {
               }
               if (comparison && taskProgress === 'selection') requestBranchReset(exec.agent);
             } catch (error) {
-              if (texts.length) error.message = `${texts.join('\n')}\n${progressText()}\nError: ${error.message}`;
+              if (texts.length) error.message = presentation.text('workbench:command.errorAfterOutput', {
+                output: `${texts.join('\n')}\n${progressText()}`, error: error.message,
+              });
               throw error;
             }
           }
