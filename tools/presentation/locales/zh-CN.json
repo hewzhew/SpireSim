@@ -2517,6 +2517,22 @@
       "defeated": "击败{{enemy}}",
       "heal": "恢复 {{amount}} 点生命"
     },
+    "sequence": {
+      "title": "抽牌过程",
+      "manual": "手动示例",
+      "start": "起手",
+      "step": "第 {{step}} 步",
+      "previous": "上一步",
+      "next": "下一步",
+      "draw": "抽牌堆",
+      "discard": "弃牌堆",
+      "exhaust": "消耗堆",
+      "ordered": "已公开牌序",
+      "empty": "空",
+      "block": "格挡",
+      "change": "{{label}} {{before}} → {{after}}",
+      "addedHand": "新增手牌：{{cards}}"
+    },
     "event": {
       "selected": "已选择"
     },

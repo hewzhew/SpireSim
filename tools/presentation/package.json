@@ -13,9 +13,9 @@
     "./original-event-text": "./original-event-text.json",
     "./locales/*.json": "./locales/*.json"
   },
-  "files": ["index.mjs", "catalogs.mjs", "original-names.json", "original-card-text.json", "original-event-text.json", "locales/*.json", "replay/*", "README.md"],
+  "files": ["index.mjs", "catalogs.mjs", "original-names.json", "original-card-text.json", "original-event-text.json", "locales/*.json", "replay/*", "!replay/*.test.mjs", "README.md"],
   "scripts": {
-    "test": "node --test localization.test.mjs"
+    "test": "node --test localization.test.mjs replay/sequence.test.mjs"
   },
   "engines": { "node": ">=22" },
   "dependencies": { "i18next": "26.5.4" },

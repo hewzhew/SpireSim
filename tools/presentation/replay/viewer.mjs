@@ -1,6 +1,7 @@
 import { createPresentation, preferredLocale } from '../index.mjs';
 import { neowOptionRuns } from './neow-option.mjs';
 import { intentView } from './intent-view.mjs';
+import { sequenceView } from './sequence.mjs';
 
 async function main() {
   const data = JSON.parse(document.getElementById('data').textContent);
@@ -16,6 +17,8 @@ async function main() {
   if (!location.hash) selected = 1;
   let rawTab = 'calls';
   let turnRecordOpen = true;
+  let actionCursor = 0;
+  const openPiles = new Set();
   const byId = id => document.getElementById(id);
   const node = (tag, text, className) => {
     const el = document.createElement(tag);
@@ -42,7 +45,7 @@ async function main() {
     const top = node('div', undefined, 'card-topline');
     const cost = node('span', card.cost === null ? undefined : number(card.cost), 'card-cost');
     if (card.cost === null) cost.append(icon('lock'));
-    top.append(cost, node('h3', name('card', card.card_id), 'card-name'));
+    top.append(cost, node('h3', display.cardName(card.card_id, card.upgrades ?? 0), 'card-name'));
     const portrait = node('div', undefined, 'card-portrait');
     const frame = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     for (const [key, value] of Object.entries({ viewBox: '0 0 100 100', preserveAspectRatio: 'none', 'aria-hidden': 'true', class: 'card-frame' })) frame.setAttribute(key, value);
@@ -59,13 +62,13 @@ async function main() {
     if (chosen) { const mark = node('div', t('reward.chosen'), 'chosen-mark'); mark.prepend(icon('check')); el.append(mark); }
     return el;
   }
-  function fighter(label, hp, max, { enemy = false, block, details = [], intent } = {}) {
+  function fighter(label, hp, max, { enemy = false, block, details = [], intent, figureIcon } = {}) {
     const el = node('article', undefined, 'fighter ' + (enemy ? 'fighter-enemy' : 'fighter-player'));
     el.setAttribute('aria-label', label);
     const intentRow = node('div', undefined, 'fighter-intent');
     if (enemy) intentRow.append(renderIntent(intent));
     else intentRow.setAttribute('aria-hidden', 'true');
-    const figure = node('div', undefined, 'fighter-figure'); figure.setAttribute('aria-hidden', 'true'); figure.append(icon(enemy ? 'bug' : 'swords'));
+    const figure = node('div', undefined, 'fighter-figure'); figure.setAttribute('aria-hidden', 'true'); figure.append(icon(figureIcon ?? (enemy ? 'bug' : 'swords')));
     const vitals = node('div', undefined, 'fighter-vitals' + (block > 0 ? ' is-blocked' : ''));
     const health = node('div', undefined, 'fighter-health');
     const fill = node('span', undefined, 'fighter-health-fill'); fill.style.width = (100 * hp / max) + '%';
@@ -94,16 +97,17 @@ async function main() {
     const caption = node('span', view.caption, 'intent-caption'); caption.setAttribute('aria-hidden', 'true');
     el.append(symbol, caption); return el;
   }
-  function renderCombat(scene) {
-    const { before, after } = scene;
-    const board = node('section', undefined, 'combat-board'); board.setAttribute('aria-label', title(scene));
+  function combatBoard(before, heading) {
+    const board = node('section', undefined, 'combat-board'); board.setAttribute('aria-label', heading);
     const hud = node('div', undefined, 'combat-hud'); hud.append(resources(before));
     const field = node('div', undefined, 'battlefield');
     const enemyDetails = [];
     for (const power of before.enemy.powers) enemyDetails.push(node('span', t('combat.power', { power: name('power', power.power_id), amount: power.amount }), 'status'));
     field.append(
-      fighter(name('character', story.character_id), before.hp, before.max_hp, { block: before.block }),
-      fighter(name('enemy', before.enemy.enemy_id), before.enemy.hp, before.enemy.max_hp, { enemy: true, block: before.enemy.block, details: enemyDetails, intent: before.enemy.intent }),
+      fighter(name('character', story.character_id), before.hp, before.max_hp, { block: before.block,
+        details: (before.powers ?? []).map(power => node('span', t('combat.power', { power: name('power', power.power_id), amount: power.amount }), 'status')) }),
+      fighter(name('enemy', before.enemy.enemy_id), before.enemy.hp, before.enemy.max_hp, { enemy: true, block: before.enemy.block, details: enemyDetails, intent: before.enemy.intent,
+        figureIcon: before.enemy.enemy_id === 'Cultist' ? 'flame' : 'bug' }),
     );
     const dock = node('div', undefined, 'combat-dock');
     const energy = node('div', undefined, 'energy-reserve'); energy.setAttribute('aria-label', t('combat.energy', { energy: before.energy }));
@@ -111,6 +115,12 @@ async function main() {
     const hand = node('div', undefined, 'hand'); for (const card of before.hand) hand.append(gameCard(card));
     hand.setAttribute('role', 'group'); hand.setAttribute('aria-label', t('combat.hand'));
     dock.append(energy, hand); board.append(hud, field, dock);
+    if (before.piles) board.append(pileViews(before.piles));
+    return board;
+  }
+  function renderCombat(scene) {
+    const { before, after } = scene;
+    const board = combatBoard(before, title(scene));
     const record = node('details', undefined, 'turn-record'); record.open = turnRecordOpen;
     record.addEventListener('toggle', () => { turnRecordOpen = record.open; });
     const recordTitle = node('summary', t('combat.plays')); recordTitle.prepend(icon('chevron-right')); record.append(recordTitle);
@@ -130,9 +140,65 @@ async function main() {
     }
     resolution.append(actions, result); record.append(resolution); byId('stage').append(board, record);
   }
+  function cardGroupLabel(card) {
+    const label = display.cardName(card.card_id, card.upgrades ?? 0);
+    return card.count > 1 ? label + ' ×' + number(card.count) : label;
+  }
+  function pileViews(piles) {
+    const row = node('div', undefined, 'combat-piles');
+    for (const zone of ['draw', 'exhaust', 'discard']) {
+      const pile = piles[zone], details = node('details', undefined, 'combat-pile'); details.open = openPiles.has(zone);
+      details.addEventListener('toggle', () => { if (details.isConnected) { if (details.open) openPiles.add(zone); else openPiles.delete(zone); } });
+      const summary = node('summary'); summary.append(icon('cards'), node('span', t('sequence.' + zone)), node('strong', number(pile.count)), icon('chevron-right'));
+      details.append(summary);
+      if (pile.ordered) details.append(node('div', t('sequence.ordered'), 'pile-order-label'));
+      const list = node(pile.ordered ? 'ol' : 'ul', undefined, 'pile-cards' + (pile.ordered ? ' pile-ordered' : ''));
+      for (const card of pile.cards) list.append(node('li', cardGroupLabel(card)));
+      if (!pile.cards.length) list.append(node('li', t('sequence.empty')));
+      details.append(list); row.append(details);
+    }
+    return row;
+  }
+  function renderSequence(scene) {
+    const view = sequenceView(scene, actionCursor), state = view.state;
+    const record = node('section', undefined, 'sequence-record');
+    const header = node('div', undefined, 'sequence-header');
+    header.append(node('h2', t('scene.turn', { turn: state.turn })));
+    const controls = node('div', undefined, 'nav-buttons');
+    for (const [offset, label, glyph] of [[-1, 'previous', 'chevron-left'], [1, 'next', 'chevron-right']]) {
+      const button = node('button', undefined, 'btn btn-icon'); button.type = 'button'; button.setAttribute('aria-label', t('sequence.' + label));
+      button.append(icon(glyph)); button.disabled = actionCursor + offset < 0 || actionCursor + offset >= scene.snapshots.length;
+      button.addEventListener('click', () => selectAction(actionCursor + offset)); controls.append(button);
+    }
+    header.append(controls); record.append(header);
+    const actions = node('div', undefined, 'sequence-steps'); actions.setAttribute('role', 'group'); actions.setAttribute('aria-label', t('combat.plays'));
+    for (let index = 0; index < scene.snapshots.length; index++) {
+      const known = index > 0 && index <= actionCursor;
+      const button = node('button', index === 0 ? t('sequence.start') : known ? display.cardName(scene.actions[index - 1].card.card_id, scene.actions[index - 1].card.upgrades) : t('sequence.step', { step: index }), 'sequence-step');
+      button.type = 'button'; button.dataset.cursor = index;
+      if (known) button.prepend(icon(cardIcon(scene.actions[index - 1].card.type)));
+      if (index === actionCursor) button.setAttribute('aria-current', 'step');
+      button.addEventListener('click', () => selectAction(index)); actions.append(button);
+    }
+    record.append(actions);
+    if (actionCursor) {
+      const previous = scene.snapshots[actionCursor - 1], changes = node('div', undefined, 'sequence-changes');
+      for (const [field, label] of [['energy', t('combat.energyLabel')], ['block', t('sequence.block')], ['hp', name('character', story.character_id)]]) {
+        if (view.deltas[field]) changes.append(node('span', t('sequence.change', { label, before: previous[field], after: state[field] })));
+      }
+      if (view.deltas.enemy_hp) changes.append(node('span', t('sequence.change', { label: name('enemy', state.enemy.enemy_id), before: previous.enemy.hp, after: state.enemy.hp })));
+      if (view.added.length) changes.append(node('span', t('sequence.addedHand', { cards: view.added.map(cardGroupLabel).join(display.locale === 'zh-CN' ? '、' : ', ') }), 'sequence-new-cards'));
+      record.append(changes);
+    }
+    byId('stage').append(combatBoard(state, title(scene)), record);
+  }
+  function selectAction(index) {
+    actionCursor = index; render();
+    byId('stage').querySelector(`[data-cursor="${index}"]`)?.focus({ preventScroll: true });
+  }
   function resources(state) {
     const row = node('div', undefined, 'resource-line');
-    row.append(iconText('heart', number(state.hp) + ' / ' + number(state.max_hp)), iconText('coin', number(state.gold)), ...story.relic_ids.map(id => iconText('flame', name('relic', id))));
+    row.append(iconText('heart', number(state.hp) + ' / ' + number(state.max_hp)), iconText('coin', number(state.gold)), ...(state.relic_ids ?? story.relic_ids).map(id => iconText('flame', name('relic', id))));
     return row;
   }
   function renderEvent(scene) {
@@ -182,13 +248,13 @@ async function main() {
     }
     if (!byId('raw-output').children.length) byId('raw-output').append(node('p', t('raw.noText'), 'text-secondary small'));
   }
-  function title(scene) { return scene.kind === 'event' ? name('event', scene.event_id) : scene.kind === 'combat' ? name('encounter', scene.encounter_id) : t('scene.rewards'); }
-  function label(scene) { return scene.kind === 'event' ? t('scene.start') : scene.kind === 'combat' ? t('scene.turn', { turn: scene.turn }) : t('scene.floor', { floor: scene.floor }); }
+  function title(scene) { return scene.kind === 'sequence' ? t('sequence.title') : scene.kind === 'event' ? name('event', scene.event_id) : scene.kind === 'combat' ? name('encounter', scene.encounter_id) : t('scene.rewards'); }
+  function label(scene) { return scene.kind === 'sequence' ? t('sequence.manual') : scene.kind === 'event' ? t('scene.start') : scene.kind === 'combat' ? t('scene.turn', { turn: scene.turn }) : t('scene.floor', { floor: scene.floor }); }
   function renderNavigation() {
     byId('timeline').replaceChildren();
     scenes.forEach((scene, index) => {
       const button = node('button', undefined, 'scene-link'); button.type = 'button'; button.dataset.scene = scene.id;
-      const text = node('span', undefined, 'scene-text'); text.append(node('strong', scene.kind === 'combat' ? label(scene) : title(scene)), node('small', scene.kind === 'event' ? t('scene.initialReward') : scene.kind === 'combat' ? title(scene) : name('card', scene.chosen_card_id)));
+      const text = node('span', undefined, 'scene-text'); text.append(node('strong', scene.kind === 'combat' ? label(scene) : title(scene)), node('small', scene.kind === 'sequence' ? label(scene) : scene.kind === 'event' ? t('scene.initialReward') : scene.kind === 'combat' ? title(scene) : name('card', scene.chosen_card_id)));
       button.append(node('span', String(index + 1).padStart(2, '0'), 'scene-index'), text); button.addEventListener('click', () => select(index)); byId('timeline').append(button);
     });
   }
@@ -206,12 +272,13 @@ async function main() {
     byId('previous').disabled = selected === 0; byId('next').disabled = selected === scenes.length - 1;
     for (const [index, button] of [...byId('timeline').children].entries()) { if (index === selected) button.setAttribute('aria-current', 'step'); else button.removeAttribute('aria-current'); }
     byId('stage').replaceChildren();
-    if (scene.kind === 'combat') renderCombat(scene); else if (scene.kind === 'event') renderEvent(scene); else renderRewards(scene);
-    renderRaw(scene);
+    if (scene.kind === 'sequence') renderSequence(scene); else if (scene.kind === 'combat') renderCombat(scene); else if (scene.kind === 'event') renderEvent(scene); else renderRewards(scene);
+    byId('raw-record').hidden = scene.kind === 'sequence'; byId('record-model').hidden = scene.kind === 'sequence';
+    if (scene.kind !== 'sequence') renderRaw(scene);
   }
   function select(index, updateHash = true) {
     if (index < 0 || index >= scenes.length) return;
-    selected = index; turnRecordOpen = true; byId('raw-record').open = false; render();
+    selected = index; actionCursor = 0; openPiles.clear(); turnRecordOpen = true; byId('raw-record').open = false; render();
     if (updateHash) history.replaceState(null, '', '#' + scenes[selected].id);
   }
   byId('brand-mark').append(icon('cards')); byId('run-icon').append(icon('swords')); byId('crumb-arrow').append(icon('chevron-right'));

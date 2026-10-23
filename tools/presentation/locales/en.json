@@ -2517,6 +2517,22 @@
       "defeated": "Defeated {{enemy}}",
       "heal": "Heal {{amount}} HP"
     },
+    "sequence": {
+      "title": "Card draw sequence",
+      "manual": "Manual example",
+      "start": "Starting hand",
+      "step": "Step {{step}}",
+      "previous": "Previous action",
+      "next": "Next action",
+      "draw": "Draw pile",
+      "discard": "Discard pile",
+      "exhaust": "Exhaust pile",
+      "ordered": "Revealed order",
+      "empty": "Empty",
+      "block": "Block",
+      "change": "{{label}} {{before}} → {{after}}",
+      "addedHand": "Added to hand: {{cards}}"
+    },
     "event": {
       "selected": "Selected"
     },
