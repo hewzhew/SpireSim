@@ -1,4 +1,4 @@
-import { readFile, writeFile, mkdir, readdir, copyFile } from 'node:fs/promises';
+import { readFile, writeFile, mkdir, readdir, copyFile, realpath } from 'node:fs/promises';
 import { resolve, join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
@@ -7,7 +7,7 @@ import { promisify } from 'node:util';
 import { recordedSequence } from './sequence.mjs';
 
 const owner = dirname(fileURLToPath(import.meta.url));
-export async function buildRecording({ input, output }) {
+export async function buildRecording({ input, output, preview = false }) {
   input = resolve(input); output = resolve(output);
   const manifest = JSON.parse(await readFile(join(input, 'manifest.json'), 'utf8'));
   if (manifest.schema !== 'spiresim-recording-v1' || manifest.status !== 'sealed') throw new Error('A replay requires a sealed recording');
@@ -40,8 +40,25 @@ export async function buildRecording({ input, output }) {
   const story = { schema: 'sts-recorded-demo-story-v1', character_id: character, act: run.act,
     scenes: [scene], recordings: [{ id: manifest.id, title_key: manifest.operator === 'model' ? 'sequence.modelRunTitle' : 'sequence.title', scene_ids: [scene.id] }] };
   const data = { frames: record.frames };
-  await mkdir(output); // Output must be new; existing review pages stay intact.
-  await mkdir(join(output, 'vendor'));
+  const previewFile = join(output, 'preview.json');
+  const binding = preview ? { schema: 'spiresim-replay-preview-v1', input: await realpath(input),
+    recording: manifest.id, manifest_sha256: createHash('sha256').update(await readFile(join(input, 'manifest.json'))).digest('hex') } : null;
+  try { await mkdir(output); }
+  catch (error) {
+    if (!preview || error.code !== 'EEXIST') throw error;
+    let saved;
+    try { saved = JSON.parse(await readFile(previewFile, 'utf8')); }
+    catch { throw new Error('Preview refresh requires a directory created by replay preview'); }
+    if (Object.entries(binding).some(([key, value]) => saved[key] !== value) || saved.directory !== await realpath(output)) {
+      throw new Error('Preview directory belongs to a different recording or location');
+    }
+  }
+  const markPreview = async status => {
+    if (preview) await writeFile(previewFile, JSON.stringify({ ...binding, directory: await realpath(output),
+      status, updated_at: new Date().toISOString() }, null, 2) + '\n');
+  };
+  await markPreview('building');
+  await mkdir(join(output, 'vendor'), { recursive: preview });
   const symbols = [];
   for (const name of await readdir(join(owner, 'vendor'))) {
     await copyFile(join(owner, 'vendor', name), join(output, 'vendor', name));
@@ -59,5 +76,6 @@ export async function buildRecording({ input, output }) {
   await copyFile(join(owner, 'THIRD_PARTY_NOTICES.txt'), join(output, 'THIRD_PARTY_NOTICES.txt'));
   await copyFile(join(owner, '../../../LICENSE'), join(output, 'LICENSE'));
   await promisify(execFile)(process.execPath, [join(owner, '../bundle.mjs'), '--entry', join(owner, 'viewer.mjs'), '--output', join(output, 'demo.js')], { windowsHide: true });
+  await markPreview('ready');
   return { entry: join(output, 'demo.html'), recording: manifest.id, actions: entries.length, snapshots: scene.snapshots.length };
 }

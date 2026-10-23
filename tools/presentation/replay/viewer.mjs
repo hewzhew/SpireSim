@@ -23,9 +23,16 @@ async function main() {
   let rawTab = 'calls';
   let rawRecordKey;
   let turnRecordOpen = true;
-  let actionCursor = 0;
+  function locationCursor(index) {
+    const raw = new URLSearchParams(location.search).get('step');
+    const step = raw && /^\d+$/.test(raw) ? Number(raw) : 0;
+    return scenes[index]?.kind === 'sequence' && Number.isSafeInteger(step)
+      ? Math.min(step, scenes[index].snapshots.length - 1) : 0;
+  }
+  let actionCursor = locationCursor(selected);
   let sequenceDetailsOpen = false;
   let historyObserver;
+  let refreshHistory = () => {};
   let scrollMapToCurrent = () => {};
   let mapPinned = false;
   let mapPeek = false;
@@ -276,7 +283,7 @@ async function main() {
     }
     const historyWindow = node('div', undefined, 'sequence-history-window');
     const scrollButtons = [-1, 1].map(direction => {
-      const button = node('button', undefined, 'history-scroll'); button.type = 'button'; button.hidden = true;
+      const button = node('button', undefined, 'history-scroll'); button.type = 'button'; button.disabled = true;
       button.setAttribute('aria-label', t(direction < 0 ? 'sequence.earlierActions' : 'sequence.laterActions'));
       button.append(icon(direction < 0 ? 'chevron-left' : 'chevron-right'));
       button.addEventListener('click', () => {
@@ -286,8 +293,8 @@ async function main() {
       return button;
     });
     const updateHistory = () => {
-      const overflow = actions.scrollWidth > historyWindow.clientWidth + 1;
-      for (const button of scrollButtons) button.hidden = !overflow;
+      const overflow = actions.scrollWidth > actions.clientWidth + 1;
+      for (const button of scrollButtons) button.classList.toggle('is-needed', overflow);
       const max = Math.max(0, actions.scrollWidth - actions.clientWidth);
       scrollButtons[0].disabled = actions.scrollLeft <= 1;
       scrollButtons[1].disabled = actions.scrollLeft >= max - 1;
@@ -326,12 +333,16 @@ async function main() {
       hand.scrollLeft += Math.max(0, arriving.getBoundingClientRect().right - hand.getBoundingClientRect().right + 6);
     }
     const current = actions.querySelector('[aria-current]');
-    updateHistory();
-    actions.scrollLeft = Math.min(Math.max(0, actions.scrollWidth - actions.clientWidth),
-      actions.scrollLeft + Math.max(0, current.getBoundingClientRect().right - actions.getBoundingClientRect().right + 4));
-    updateHistory();
+    refreshHistory = () => {
+      const viewport = actions.getBoundingClientRect(), item = current.getBoundingClientRect();
+      const delta = item.right > viewport.right ? item.right - viewport.right + 4
+        : item.left < viewport.left ? item.left - viewport.left - 4 : 0;
+      actions.scrollLeft = Math.max(0, Math.min(actions.scrollWidth - actions.clientWidth, actions.scrollLeft + delta));
+      updateHistory();
+    };
+    refreshHistory();
     if (typeof ResizeObserver === 'function') {
-      historyObserver = new ResizeObserver(updateHistory); historyObserver.observe(actions);
+      historyObserver = new ResizeObserver(refreshHistory); historyObserver.observe(actions);
     }
     if (motion?.enabled) animateBoundary(board, motion);
   }
@@ -351,7 +362,7 @@ async function main() {
       }
     }
     if (index !== actionCursor) { mapPeek = false; mapExpanded = false; }
-    actionCursor = index; render(motion);
+    actionCursor = index; render(motion); writeLocation();
     const target = focus ? byId('stage').querySelector(focus) : null;
     (target?.disabled ? byId('sequence-progress') : target)?.focus({ preventScroll: true });
   }
@@ -651,9 +662,10 @@ async function main() {
       byId('map-stage').hidden = !main;
     }
     byId('replay-layout').dataset.mapMode = mapMode; mapPanel.dataset.mode = mapMode;
-    // A pinned rail keeps its space through route stages; a temporary peek
-    // overlays the side without resizing the scene or moving its controls.
-    document.body.classList.toggle('has-map-dock', mapAvailable && mapPinned);
+    // Remembering the preference does not reserve an empty rail when the map
+    // is already in the main area. Only an actual docked panel owns a column.
+    document.body.classList.toggle('has-map-dock', mapMode === 'docked');
+    refreshHistory();
     mapPanel.hidden = !visible;
     byId('map-toggle').hidden = !mapAvailable || primary;
     byId('map-toggle').setAttribute('aria-expanded', String(visible));
@@ -693,7 +705,7 @@ async function main() {
     for (const item of phaseMotions) { item.animation.cancel(); item.ghost?.remove(); }
     phaseMotions.clear();
     const scrollLeft = byId('stage').dataset.scene === scene.id ? byId('stage').querySelector('.hand')?.scrollLeft ?? 0 : 0;
-    clearMotion(); historyObserver?.disconnect(); document.body.classList.toggle('has-sequence', scene.kind === 'sequence');
+    clearMotion(); historyObserver?.disconnect(); refreshHistory = () => {}; document.body.classList.toggle('has-sequence', scene.kind === 'sequence');
     updateNavigation();
     // Keep the one map panel alive while replacing a route board around it.
     if (byId('stage').contains(mapPanel)) byId('map-dock').append(mapPanel);
@@ -707,6 +719,12 @@ async function main() {
     const recordKey = JSON.stringify([scene.id, display.locale]);
     if (!manual && rawRecordKey !== recordKey) { renderRaw(scene); rawRecordKey = recordKey; }
   }
+  function writeLocation() {
+    const url = new URL(location.href);
+    if (actionCursor) url.searchParams.set('step', actionCursor); else url.searchParams.delete('step');
+    url.hash = scenes[selected].id;
+    history.replaceState(null, '', url);
+  }
   function select(index, updateHash = true, cursor = 0) {
     if (index < 0 || index >= scenes.length) return;
     const previousRecording = activeJourney().recording.id;
@@ -714,7 +732,7 @@ async function main() {
     selected = index; actionCursor = cursor; sequenceDetailsOpen = false; openPiles.clear(); turnRecordOpen = true; byId('raw-record').open = false;
     if (activeJourney().recording.id !== previousRecording) { mapPinned = false; mapPeek = false; mapExpanded = false; }
     render();
-    if (updateHash) history.replaceState(null, '', '#' + scenes[selected].id);
+    if (updateHash) writeLocation();
   }
   byId('brand-mark').append(icon('cards')); byId('run-icon').append(icon('swords')); byId('crumb-arrow').append(icon('chevron-right'));
   byId('map-toggle-icon').append(icon('map'));
@@ -740,7 +758,7 @@ async function main() {
     const recording = journeys.find(recording => recording.id === event.currentTarget.value);
     mapPinned = false; mapPeek = false; mapExpanded = false; select(scenes.findIndex(scene => scene.id === recording.scene_ids[0]));
   });
-  window.addEventListener('resize', () => { if (mapMode !== 'hidden') positionMap(); });
+  window.addEventListener('resize', () => { if (mapMode !== 'hidden') positionMap(); refreshHistory(); });
   window.addEventListener('keydown', event => {
     if (scenes[selected].kind !== 'sequence' || event.defaultPrevented || event.isComposing || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey
         || event.target.closest?.('input, select, textarea, [contenteditable]:not([contenteditable="false"]), [role="slider"], [role="listbox"], [role="combobox"], [role="tablist"]')
@@ -767,7 +785,7 @@ async function main() {
       if (!offset) return; event.preventDefault(); rawTab = names[(names.indexOf(rawTab) + offset + names.length) % names.length]; renderRaw(scenes[selected]); byId('tab-' + rawTab).focus();
     });
   }
-  window.addEventListener('hashchange', () => { const index = scenes.findIndex(scene => scene.id === location.hash.slice(1)); if (index >= 0) select(index, false); });
+  window.addEventListener('hashchange', () => { const index = scenes.findIndex(scene => scene.id === location.hash.slice(1)); if (index >= 0) select(index, false, locationCursor(index)); });
   renderChrome(); renderNavigation(); render();
 }
 main().catch(error => console.error(error));

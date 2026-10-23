@@ -9,6 +9,7 @@ Run PowerShell scripts with PowerShell 7 from the repository root. The entry poi
 | Rust play and inspection | `./scripts/run-play.ps1`, `./scripts/p.ps1` | [Run-play](../tools/run_play/README.md) |
 | Node workbench and dsh player inspection | `node scripts/p.mjs` | [Run-play](../tools/run_play/README.md), [dsh plugin](../tools/dsh_player/README.md) |
 | Build a sealed public recording as an offline replay | `node scripts/replay.mjs build --input RECORDING --output NEW_DIRECTORY` | [Recording and replay](../tools/presentation/README.md#录制与构建回放) |
+| Refresh the same local replay preview | `node scripts/replay.mjs preview --input RECORDING --output .oracle-lab/replay-preview` | [Daily preview](../tools/presentation/README.md#日常预览) |
 | Local dsh server | `./scripts/dsh.ps1` | [dsh plugin](../tools/dsh_player/README.md); local launch configuration required |
 | Original-game control and diagnostics | `./scripts/java-play.ps1` | [Runbook](../docs/RUNBOOK.md); includes local Windows game and mod paths |
 | Exact combat research | `./scripts/ol.ps1`, `./scripts/ol-live.ps1`, `./scripts/ol-contract.ps1`, `./scripts/cs.ps1` | [Combat evidence](../docs/runbooks/combat-evidence.md) |

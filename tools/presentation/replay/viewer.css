@@ -216,8 +216,8 @@ button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); 
 .sequence-history-window { display: flex; align-items: center; gap: 3px; min-width: 0; flex: 1; }
 .sequence-history { display: flex; flex: 1; align-items: center; gap: 6px; min-width: 0; padding: 3px; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; }
 .sequence-history::-webkit-scrollbar { display: none; }
-.history-scroll { display: grid; flex: 0 0 24px; place-items: center; width: 24px; height: 30px; padding: 0; border: 0; border-radius: 4px; background: transparent; color: #536745; }
-.history-scroll[hidden] { display: none; }
+.history-scroll { display: grid; flex: 0 0 24px; place-items: center; width: 24px; height: 30px; padding: 0; border: 0; border-radius: 4px; background: transparent; color: #536745; visibility: hidden; }
+.history-scroll.is-needed { visibility: visible; }
 .history-scroll .icon { width: 16px; height: 16px; }
 .history-scroll:disabled { opacity: .25; }
 .history-scroll:hover:not(:disabled) { background: #edf0e5; }
