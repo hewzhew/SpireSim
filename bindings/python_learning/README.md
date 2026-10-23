@@ -45,4 +45,4 @@ See the [policy walkthrough](../../docs/getting-started.md#connect-a-policy) for
 | Build wheels and check a local installation | [Building](docs/building.md) |
 | Use exact-combat, constructed-case or guided-search experiments | [Research interfaces](docs/research.md) |
 
-The package contains `src/` for the native binding, `python/` for Python exports, `examples/` for policy integration, and `tests/` for binding and trajectory checks. Policy optimization and training callers live in [learning/](../../learning/README.md).
+The package contains `src/` for the native binding, `python/` for Python exports, `examples/` for policy integration, and `tests/` for binding and trajectory checks. The [native owner map](docs/building.md#native-code-owners) locates control, observations, checkpoints and research adapters. Policy optimization and training callers live in [learning/](../../learning/README.md).

@@ -47,4 +47,4 @@ python bindings/python_learning/examples/policy_loop.py --policy my_policy:choos
 | 构建 wheel 并检查安装结果 | [构建](docs/building.md) |
 | 使用固定战斗、构造局面或引导搜索 | [研究接口](docs/research.md) |
 
-目录中的 `src/` 是原生绑定，`python/` 是 Python 导出，`examples/` 提供策略接入方式，`tests/` 检查绑定和轨迹。优化器与训练调用方在 [learning/](../../learning/README.md)。
+目录中的 `src/` 是原生绑定，`python/` 是 Python 导出，`examples/` 提供策略接入方式，`tests/` 检查绑定和轨迹。[原生模块职责](docs/building.md#native-code-owners)列出控制、观察、状态恢复与研究接口的实现位置。优化器与训练调用方在 [learning/](../../learning/README.md)。

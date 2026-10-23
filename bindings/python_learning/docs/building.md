@@ -36,3 +36,18 @@ The binding is a standalone Cargo workspace with its own release profiles. It ba
 The bridge `cdylib` has no Rust lib-test harness. Typed contracts are tested in their workspace owners, and the built-wheel checks cover PyO3/NumPy arrays, semantic schemas, checkpoints, combat-root artifacts and typed ordinal execution. The caller check exercises the installed Node-SL adapter. Each wheel and installation check uses a fresh isolated environment.
 
 Complete original-game replay and installed-package acceptance use [trajectory verification](verification.md).
+
+## Native code owners
+
+The binding keeps game rules in the Rust workspace crates. Its modules adapt those owners to Python:
+
+| Module | Responsibility |
+| --- | --- |
+| [`src/lib.rs`](../src/lib.rs) | Python module registration and run-level batch control |
+| [`src/checkpoint.rs`](../src/checkpoint.rs) | Opaque slot checkpoints, checkpoint banks and bounded canonical serialization |
+| [`src/bridge_decision.rs`](../src/bridge_decision.rs) | Decision tokens, selection prefixes and ordinal execution |
+| [`src/semantic.rs`](../src/semantic.rs), [`src/semantic/`](../src/semantic/) | Public NumPy tables, vocabularies and mechanic projections |
+| [`src/combat_batch.rs`](../src/combat_batch.rs) | Combat-local batches, recovery roots and progress |
+| [`src/guided.rs`](../src/guided.rs), [`src/policy.rs`](../src/policy.rs), [`src/distance.rs`](../src/distance.rs), [`src/segment.rs`](../src/segment.rs) | Research search and constructed-task adapters |
+
+Checkpoint serialization and validation share one implementation for current batches and retained banks. Python exports and the byte format are independent of this internal module layout.

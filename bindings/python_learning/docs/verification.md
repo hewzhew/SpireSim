@@ -37,6 +37,8 @@ python bindings/python_learning/tests/trajectory.py \
 
 Replace the export path and digest with the exporting report's values, and use a new output directory for each run. This executes three slots at different progress points, including one starting at Neow. A complete Heart trajectory checks every slot through the formal terminal, with an atomic bad-input rejection followed by valid continuation.
 
+A frozen export records the exporting implementation's public observations and candidate semantics. When those projections change, derive a new export from the original evidence with the current replay executable, then verify the rebuilt wheel against it. Keep the old export and its digest with the package it verified; package version alone does not identify a matching export.
+
 When validating an installed release wheel with `tests/trajectory.py`, pass `--require-build-profile release`; the runner checks the imported native build before replay and records its actual module path and SHA-256 in the report.
 
 ## Staggered slots and rejected input
