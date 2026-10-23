@@ -140,7 +140,7 @@ fn render_strategic_episode_v1(
             message(
                 locale,
                 "deck",
-                &[("cards", &(render_deck_v1(before, locale)))]
+                &[("cards", &(render_deck_v1(&before.cards, locale)))]
             )
         )
         .expect("string write");

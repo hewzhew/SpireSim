@@ -1884,108 +1884,87 @@ fn render_candidate_effect(effect: &TaskPublicCombatCandidateEffectV1) -> String
     }
 }
 
-pub fn render_history_v1(head: &RunPlayHeadV1, limit: usize) -> String {
-    render_filtered_history_v1(head, limit, false)
+pub fn render_history_v1(head: &RunPlayHeadV1, limit: usize, locale: Locale) -> String {
+    render_filtered_history_v1(head, limit, false, locale)
 }
 
-pub fn render_combat_history_v1(history: &RunPlayCombatHistoryV1) -> String {
+pub fn render_combat_history_v1(history: &RunPlayCombatHistoryV1, locale: Locale) -> String {
     let mut output = String::new();
     writeln!(
         output,
-        "combat path decisions={} showing={} current={}",
-        history.total_combat_steps,
-        history.steps.len(),
-        short_id(&history.current_archive_node_id)
+        "{}",
+        crate::history_state::message(
+            locale,
+            "combatPath",
+            &[
+                ("total", &history.total_combat_steps.to_string()),
+                ("showing", &history.steps.len().to_string()),
+                ("current", short_id(&history.current_archive_node_id)),
+            ]
+        )
     )
     .expect("string write");
-    let mut previous_fight = None;
     for step in &history.steps {
-        let fight = (
-            step.path.before.act,
-            step.path.before.floor,
-            step.encounter.as_deref(),
-        );
-        if previous_fight != Some(fight) {
-            writeln!(
-                output,
-                "combat act={} floor={} encounter={}",
-                step.path
-                    .before
-                    .act
-                    .map_or_else(|| "?".to_string(), |act| act.to_string()),
-                step.path
-                    .before
-                    .floor
-                    .map_or_else(|| "?".to_string(), |floor| floor.to_string()),
-                step.encounter.as_deref().unwrap_or("unavailable")
+        let action = step.path.semantic_action.clone().unwrap_or_else(|| {
+            render_candidate_with_observation(
+                &step.path.selected_candidate,
+                Some(&step.source),
+                locale,
             )
-            .expect("string write");
-            previous_fight = Some(fight);
-        }
-        let action = step
-            .path
-            .semantic_action
-            .clone()
-            .unwrap_or_else(|| render_candidate(&step.path.selected_candidate));
-        let monsters = step
-            .monsters
-            .iter()
-            .map(|monster| {
-                format!(
-                    "{}:{} {}/{} b{} intent={} powers=[{}]",
-                    monster.slot,
-                    monster.enemy,
-                    monster.hp,
-                    monster.max_hp,
-                    monster.block,
-                    monster.intent,
-                    monster.powers.join(",")
-                )
-            })
-            .collect::<Vec<_>>()
-            .join(" | ");
+        });
         writeln!(
             output,
-            "  d{} from=n{} to=n{} t{} {} hp={}/{} b{} e{} hand=[{}] potions=[{}] player_powers=[{}] enemies=[{}] action={} -> {}",
+            "  d{} from=n{} to=n{} action={} -> {}",
             step.path.depth,
             short_id(&step.from_archive_node_id),
             short_id(&step.path.archive_node_id),
-            step.turn,
-            step.phase,
-            step.path.before.current_hp,
-            step.path.before.max_hp,
-            step.player_block,
-            step.energy,
-            step.hand.join(","),
-            step.potions.join(","),
-            step.player_powers.join(","),
-            monsters,
             action,
             render_boundary(step.path.observed_boundary)
         )
         .expect("string write");
+        if let TaskPublicObservationV1::Combat {
+            run_context,
+            observation,
+        } = &step.source
+        {
+            let reading =
+                crate::decision::combat::reading(run_context, observation, true, locale, true);
+            for line in reading.lines() {
+                writeln!(output, "    {line}").expect("string write");
+            }
+        }
     }
     output
 }
 
-pub fn render_strategic_history_v1(head: &RunPlayHeadV1, limit: usize) -> String {
-    render_filtered_history_v1(head, limit, true)
+pub fn render_strategic_history_v1(head: &RunPlayHeadV1, limit: usize, locale: Locale) -> String {
+    render_filtered_history_v1(head, limit, true, locale)
 }
 
-pub fn render_construction_history_v1(history: &RunPlayConstructionHistoryV1) -> String {
+pub fn render_construction_history_v1(
+    history: &RunPlayConstructionHistoryV1,
+    locale: Locale,
+) -> String {
     let mut output = String::new();
     writeln!(
         output,
-        "construction ledger={} current={} owner_ranking_retained={}",
-        history.steps.len(),
-        short_id(&history.current_archive_node_id),
-        history.owner_ranking_retained,
+        "{}",
+        crate::history_state::message(
+            locale,
+            "construction",
+            &[
+                ("count", &history.steps.len().to_string()),
+                ("current", short_id(&history.current_archive_node_id)),
+                ("retained", &history.owner_ranking_retained.to_string()),
+            ]
+        ),
     )
     .expect("string write");
     if !history.owner_ranking_retained {
         writeln!(
             output,
-            "evidence=public-observation+complete-candidate-surface+committed-choice owner_rationale=unavailable"
+            "{}",
+            crate::history_state::message(locale, "constructionEvidence", &[])
         )
         .expect("string write");
     }
@@ -2032,31 +2011,34 @@ pub fn render_construction_history_v1(history: &RunPlayConstructionHistoryV1) ->
     output
 }
 
-pub fn render_construction_history_detail_v1(history: &RunPlayConstructionHistoryV1) -> String {
+pub fn render_construction_history_detail_v1(
+    history: &RunPlayConstructionHistoryV1,
+    locale: Locale,
+) -> String {
     let mut output = String::new();
     writeln!(
         output,
-        "construction decisions={} current={} owner_ranking_retained={}",
-        history.steps.len(),
-        short_id(&history.current_archive_node_id),
-        history.owner_ranking_retained,
+        "{}",
+        crate::history_state::message(
+            locale,
+            "construction",
+            &[
+                ("count", &history.steps.len().to_string()),
+                ("current", short_id(&history.current_archive_node_id)),
+                ("retained", &history.owner_ranking_retained.to_string()),
+            ]
+        ),
     )
     .expect("string write");
     if !history.owner_ranking_retained {
         writeln!(
             output,
-            "evidence=public-observation+complete-candidate-surface+committed-choice owner_rationale=unavailable"
+            "{}",
+            crate::history_state::message(locale, "constructionEvidence", &[])
         )
         .expect("string write");
     }
     for step in &history.steps {
-        let mut deck = BTreeMap::<String, usize>::new();
-        for card in &step.deck {
-            // Render groups for humans while the JSON projection retains the
-            // full ordinal, misc value, base overrides, and cost modifier.
-            let label = format_card(card.card, card.upgrades);
-            *deck.entry(label).or_default() += 1;
-        }
         writeln!(
             output,
             "d{} act={} floor={} site={:?} hp={}/{} gold={} edge={}->{}",
@@ -2073,19 +2055,40 @@ pub fn render_construction_history_detail_v1(history: &RunPlayConstructionHistor
         .expect("string write");
         writeln!(
             output,
-            "  deck [{}]",
-            deck.into_iter()
-                .map(|(card, count)| if count == 1 {
-                    card
-                } else {
-                    format!("{card}x{count}")
-                })
-                .collect::<Vec<_>>()
-                .join(", ")
+            "{}",
+            crate::history_state::message(
+                locale,
+                "deck",
+                &[(
+                    "cards",
+                    &crate::history_state::render_deck_v1(&step.deck, locale)
+                )]
+            )
         )
         .expect("string write");
-        writeln!(output, "  relics [{}]", step.relics.join(", ")).expect("string write");
-        writeln!(output, "  potions [{}]", step.potions.join(", ")).expect("string write");
+        // These report fields carry explicit stable IDs, never rendered names.
+        let relics = step
+            .relics
+            .iter()
+            .map(|id| locale.entity("relic", id))
+            .collect::<Vec<_>>()
+            .join(", ");
+        writeln!(
+            output,
+            "{}",
+            crate::history_state::message(locale, "constructionRelics", &[("relics", &relics)])
+        )
+        .expect("string write");
+        writeln!(
+            output,
+            "{}",
+            crate::history_state::message(
+                locale,
+                "constructionPotions",
+                &[("potions", &step.potions.join(", "))]
+            )
+        )
+        .expect("string write");
         for candidate in &step.candidates {
             writeln!(
                 output,
@@ -2107,7 +2110,12 @@ pub fn render_construction_history_detail_v1(history: &RunPlayConstructionHistor
     output
 }
 
-fn render_filtered_history_v1(head: &RunPlayHeadV1, limit: usize, strategic_only: bool) -> String {
+fn render_filtered_history_v1(
+    head: &RunPlayHeadV1,
+    limit: usize,
+    strategic_only: bool,
+    locale: Locale,
+) -> String {
     let matching = head
         .current_path
         .iter()
@@ -2117,19 +2125,35 @@ fn render_filtered_history_v1(head: &RunPlayHeadV1, limit: usize, strategic_only
     let mut output = String::new();
     writeln!(
         output,
-        "path decisions={} matched={} showing={} filter={} current={}",
-        head.current_path.len(),
-        matching.len(),
-        matching.len().saturating_sub(skip),
-        if strategic_only { "strategic" } else { "all" },
-        short_id(head.position.archive_node_id())
+        "{}",
+        crate::history_state::message(
+            locale,
+            "path",
+            &[
+                ("total", &head.current_path.len().to_string()),
+                ("matched", &matching.len().to_string()),
+                ("showing", &matching.len().saturating_sub(skip).to_string()),
+                (
+                    "filter",
+                    &crate::history_state::message(
+                        locale,
+                        if strategic_only {
+                            "strategicFilter"
+                        } else {
+                            "allFilter"
+                        },
+                        &[]
+                    )
+                ),
+                ("current", short_id(head.position.archive_node_id())),
+            ]
+        )
     )
     .expect("string write");
     for step in matching.into_iter().skip(skip) {
-        let action = step
-            .semantic_action
-            .clone()
-            .unwrap_or_else(|| render_candidate(&step.selected_candidate));
+        let action = step.semantic_action.clone().unwrap_or_else(|| {
+            render_candidate_with_observation(&step.selected_candidate, None, locale)
+        });
         writeln!(
             output,
             "  d{:>3} {:<12?} hp={} {} -> {}",
@@ -2144,7 +2168,8 @@ fn render_filtered_history_v1(head: &RunPlayHeadV1, limit: usize, strategic_only
     if !head.events.is_empty() {
         writeln!(
             output,
-            "controller events (committed=executed action, advice=owner recommendation)"
+            "{}",
+            crate::history_state::message(locale, "controllerEvents", &[])
         )
         .expect("string write");
         for event in head.events.iter().rev().take(limit).rev() {
@@ -2346,6 +2371,7 @@ pub fn render_terminals_v1(
     head: &RunPlayHeadV1,
     archive: &TaskRunSolutionArchiveV1,
     limit: usize,
+    locale: Locale,
 ) -> String {
     let terminals = head
         .events
@@ -2405,26 +2431,29 @@ pub fn render_terminals_v1(
     let mut output = String::new();
     writeln!(
         output,
-        "terminals={} showing={} (resume with the exact source nNODE printed below)",
-        terminals.len(),
-        terminals.len().saturating_sub(skip)
+        "{}",
+        crate::history_state::message(
+            locale,
+            "terminals",
+            &[
+                ("total", &terminals.len().to_string()),
+                ("showing", &terminals.len().saturating_sub(skip).to_string()),
+            ]
+        )
     )
     .expect("string write");
     for (revision, node_id, site, choice, outcome) in terminals.into_iter().skip(skip) {
         writeln!(
             output,
-            "  h{revision} source=n{} command=\"jump n{}\" site={site:?} choice={:?} outcome={outcome:?}",
+            "  h{revision} source=n{} command=\"jump n{}\" site={site:?} choice={:?} result={}",
             short_id(&node_id),
             short_id(&node_id),
-            choice.ordinal_path
+            choice.ordinal_path,
+            crate::compact::render_outcome_compact(&outcome, locale)
         )
         .expect("string write");
     }
     output
-}
-
-fn render_candidate(candidate: &TaskPublicCandidateV1) -> String {
-    render_candidate_with_observation(candidate, None, Locale::En)
 }
 
 pub(crate) fn render_candidate_with_observation(
@@ -3634,20 +3663,149 @@ mod tests {
                     semantic_action: Some("end".to_string()),
                     observed_boundary: RunPlayBoundaryKindV1::Decision,
                 },
-                encounter: Some("TwoOrbWalkers".to_string()),
-                turn: 0,
-                phase: "PlayerTurn".to_string(),
-                energy: 3,
-                player_block: 10,
-                hand: Vec::new(),
-                potions: Vec::new(),
-                player_powers: Vec::new(),
-                monsters: Vec::new(),
+                source: {
+                    let directory = crate::decision_tests::TestDirectory::new();
+                    let game = crate::decision_tests::controller_with_session(
+                        &directory.0,
+                        "combat-history-view",
+                        &crate::decision_tests::fixture("combat_multiturn"),
+                    );
+                    game.head()
+                        .current_decision
+                        .as_ref()
+                        .unwrap()
+                        .public_decision_v1()
+                        .unwrap()
+                        .observation
+                },
             }],
         };
 
-        let rendered = render_combat_history_v1(&history);
+        let rendered = render_combat_history_v1(&history, Locale::En);
         assert!(rendered.contains("from=naaaaaaaaaaaa to=nbbbbbbbbbbbb"));
+        let original = history.clone();
+        let chinese = render_combat_history_v1(&history, Locale::ZhCn);
+        assert!(chinese.contains("from=naaaaaaaaaaaa to=nbbbbbbbbbbbb action=end"));
+        assert!(chinese.starts_with("战斗路径："));
+        assert!(chinese.contains("打击") && rendered.contains("Strike"));
+        assert_eq!(history, original);
+    }
+
+    #[test]
+    fn combat_history_rereads_actual_public_source_in_both_languages_without_state_changes() {
+        let directory = crate::decision_tests::TestDirectory::new();
+        let mut game = crate::decision_tests::controller_with_session(
+            &directory.0,
+            "history-source",
+            &crate::decision_tests::fixture("combat_multiturn"),
+        );
+        let source = game
+            .head()
+            .current_decision
+            .as_ref()
+            .unwrap()
+            .public_decision_v1()
+            .unwrap()
+            .observation;
+        game.choose_action_v1(
+            &crate::selector::parse_action_selector_v1("play:Strike@0", "history test").unwrap(),
+            true,
+        )
+        .unwrap();
+        let head = game.head().clone();
+        let archive = game.archive().clone();
+        let fingerprints = game.current_state_fingerprints_v1().unwrap();
+        let history = crate::driver::combat_history_v1(
+            game.archive(),
+            game.head().position.archive_node_id(),
+            40,
+            None,
+        )
+        .unwrap();
+        assert_eq!(history.steps.len(), 1);
+        assert_eq!(history.steps[0].source, source);
+        let english = render_combat_history_v1(&history, Locale::En);
+        let chinese = render_combat_history_v1(&history, Locale::ZhCn);
+        assert!(english.contains("Strike") && chinese.contains("打击"));
+        assert!(english.contains("play:Strike") && chinese.contains("play:Strike"));
+        assert_eq!(game.head(), &head);
+        assert_eq!(game.archive(), &archive);
+        assert_eq!(game.current_state_fingerprints_v1().unwrap(), fingerprints);
+    }
+
+    #[test]
+    fn terminal_history_keeps_actual_jump_source_and_localizes_committed_defeat() {
+        let directory = crate::decision_tests::TestDirectory::new();
+        let mut game = crate::decision_tests::controller_with_session(
+            &directory.0,
+            "terminal-language",
+            &crate::decision_tests::fixture("combat_defeat"),
+        );
+        game.choose_action_v1(
+            &crate::selector::parse_action_selector_v1("end", "terminal test").unwrap(),
+            true,
+        )
+        .unwrap();
+        let head = game.head().clone();
+        let archive = game.archive().clone();
+        let english = render_terminals_v1(&head, &archive, 8, Locale::En);
+        let chinese = render_terminals_v1(&head, &archive, 8, Locale::ZhCn);
+        assert!(english.starts_with("Terminal outcomes: 1"), "{english}");
+        assert!(chinese.starts_with("终局记录：1"), "{chinese}");
+        assert!(english.contains("result=Defeat") && chinese.contains("result=失败"));
+        let english_source = english
+            .lines()
+            .find(|line| line.contains("command=\"jump n"))
+            .unwrap()
+            .split(" result=")
+            .next()
+            .unwrap();
+        assert!(chinese.lines().any(|line| line.starts_with(english_source)));
+        assert_eq!(game.head(), &head);
+        assert_eq!(game.archive(), &archive);
+    }
+
+    #[test]
+    fn construction_history_uses_permanent_card_identity_and_preserves_json() {
+        let directory = crate::decision_tests::TestDirectory::new();
+        let mut game = crate::decision_tests::controller_with_session(
+            &directory.0,
+            "construction-language",
+            &crate::decision_tests::fixture("reward"),
+        );
+        game.choose_action_v1(
+            &crate::selector::parse_action_selector_v1("take:ShrugItOff", "construction test")
+                .unwrap(),
+            true,
+        )
+        .unwrap();
+        let paths = crate::storage::RunPlayPathsV1::new(directory.0.join("construction-language"));
+        let mut history =
+            crate::driver::construction_history_v1(&paths, None, None, None, false).unwrap();
+        assert!(!history.steps.is_empty());
+        // Construct a collision and a different permanent cost on that same retained public report.
+        let mut red = history.steps[0].deck[0];
+        red.card = sts_oracle_learning::content::cards::CardId::Strike;
+        let mut green = red;
+        green.card = sts_oracle_learning::content::cards::CardId::StrikeG;
+        green.ordinal += 1;
+        let mut modified = red;
+        modified.cost_modifier += 2;
+        modified.ordinal += 2;
+        history.steps[0].deck = vec![red, green, modified];
+        let original = serde_json::to_value(&history).unwrap();
+        let fingerprint = game.current_state_fingerprints_v1().unwrap();
+        for locale in [Locale::En, Locale::ZhCn] {
+            let text = render_construction_history_detail_v1(&history, locale);
+            assert!(
+                text.contains("[Strike]") && text.contains("[StrikeG]"),
+                "{text}"
+            );
+            assert!(text.contains("+2"), "{text}");
+            assert!(text.contains("take:ShrugItOff"), "{text}");
+            assert_eq!(serde_json::to_value(&history).unwrap(), original);
+        }
+        assert_eq!(game.current_state_fingerprints_v1().unwrap(), fingerprint);
     }
 
     #[test]

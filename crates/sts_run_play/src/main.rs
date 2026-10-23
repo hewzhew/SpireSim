@@ -4141,16 +4141,16 @@ fn run(cli: Cli) -> Result<(), String> {
                     limit.unwrap_or(40),
                     from_node_id.as_deref(),
                 )?;
-                print!("{}", render_combat_history_v1(&history));
+                print!("{}", render_combat_history_v1(&history, locale));
             } else if strategic_only {
                 let head = paths.load_head()?;
                 print!(
                     "{}",
-                    render_strategic_history_v1(&head, limit.unwrap_or(40))
+                    render_strategic_history_v1(&head, limit.unwrap_or(40), locale)
                 );
             } else {
                 let head = paths.load_head()?;
-                print!("{}", render_history_v1(&head, limit.unwrap_or(40)));
+                print!("{}", render_history_v1(&head, limit.unwrap_or(40), locale));
             }
         }
         Command::ConstructionHistory {
@@ -4189,9 +4189,12 @@ fn run(cli: Cli) -> Result<(), String> {
                     })?
                 );
             } else if detail {
-                print!("{}", render_construction_history_detail_v1(&history));
+                print!(
+                    "{}",
+                    render_construction_history_detail_v1(&history, locale)
+                );
             } else {
-                print!("{}", render_construction_history_v1(&history));
+                print!("{}", render_construction_history_v1(&history, locale));
             }
         }
         Command::VictoryDossier {
@@ -4225,7 +4228,7 @@ fn run(cli: Cli) -> Result<(), String> {
             let workspace = RunPlayPathsV1::new(session).load()?;
             print!(
                 "{}",
-                render_terminals_v1(&workspace.head, &workspace.state.archive, limit)
+                render_terminals_v1(&workspace.head, &workspace.state.archive, limit, locale)
             );
         }
         Command::Jump { session, selector } => {
@@ -4829,7 +4832,7 @@ fn run_shell_v1(session: PathBuf, locale: Locale) -> Result<(), String> {
                         })
                         .transpose()?
                         .unwrap_or(40);
-                    print!("{}", render_history_v1(controller.head(), limit));
+                    print!("{}", render_history_v1(controller.head(), limit, locale));
                 }
                 "terminals" => {
                     let limit = words
@@ -4847,7 +4850,7 @@ fn run_shell_v1(session: PathBuf, locale: Locale) -> Result<(), String> {
                         .unwrap_or(40);
                     print!(
                         "{}",
-                        render_terminals_v1(controller.head(), controller.archive(), limit)
+                        render_terminals_v1(controller.head(), controller.archive(), limit, locale)
                     );
                 }
                 "act" => {

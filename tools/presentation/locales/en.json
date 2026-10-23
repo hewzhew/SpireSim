@@ -6097,6 +6097,16 @@
       "RunChoice": "RunChoice",
       "RunTransition": "RunTransition",
       "CardReward": "CardReward"
-    }
+    },
+    "combatPath": "Combat path: {{total}} decisions, showing {{showing}}, current n{{current}}",
+    "path": "Path: {{total}} decisions, {{matched}} matched, showing {{showing}}; {{filter}}, current n{{current}}",
+    "strategicFilter": "strategic decisions",
+    "allFilter": "all decisions",
+    "controllerEvents": "Controller events (committed: executed action; advice: saved recommendation)",
+    "terminals": "Terminal outcomes: {{total}} (showing {{showing}})",
+    "construction": "Construction: {{count}} decisions, current n{{current}}, owner_ranking_retained={{retained}}",
+    "constructionEvidence": "Recorded public observations, complete candidates and committed choices; owner rationale unavailable.",
+    "constructionRelics": "  Relics [{{relics}}]",
+    "constructionPotions": "  Potion slots (stable IDs) [{{potions}}]"
   }
 }

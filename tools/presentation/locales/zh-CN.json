@@ -6097,6 +6097,16 @@
       "RunChoice": "选牌",
       "RunTransition": "过渡",
       "CardReward": "卡牌奖励"
-    }
+    },
+    "combatPath": "战斗路径：{{total}} 次决策，显示 {{showing}} 次，当前位置 n{{current}}",
+    "path": "路径：{{total}} 次决策，符合条件 {{matched}} 次，显示 {{showing}} 次；{{filter}}，当前位置 n{{current}}",
+    "strategicFilter": "战略决策",
+    "allFilter": "全部决策",
+    "controllerEvents": "控制器记录（committed：已执行动作；advice：已保存建议）",
+    "terminals": "终局记录：{{total}} 条（显示 {{showing}} 条）",
+    "construction": "构筑记录：{{count}} 次决策，当前位置 n{{current}}，owner_ranking_retained={{retained}}",
+    "constructionEvidence": "已记录公开观察、完整候选和已采用选择；未保存决策依据。",
+    "constructionRelics": "  遗物 [{{relics}}]",
+    "constructionPotions": "  药水栏位（稳定 ID）[{{potions}}]"
   }
 }

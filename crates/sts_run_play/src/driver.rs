@@ -266,26 +266,8 @@ pub struct RunPlayCombatHistoryStepV1 {
     /// an operator can pass to `jump` to reopen the exact combat boundary.
     pub from_archive_node_id: String,
     pub path: RunPlayPathStepV1,
-    pub encounter: Option<String>,
-    pub turn: u32,
-    pub phase: String,
-    pub energy: u8,
-    pub player_block: i32,
-    pub hand: Vec<String>,
-    pub potions: Vec<String>,
-    pub player_powers: Vec<String>,
-    pub monsters: Vec<RunPlayCombatMonsterHistoryV1>,
-}
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct RunPlayCombatMonsterHistoryV1 {
-    pub slot: u8,
-    pub enemy: String,
-    pub hp: i32,
-    pub max_hp: i32,
-    pub block: i32,
-    pub intent: String,
-    pub powers: Vec<String>,
+    /// Original public facts, before any display language is selected.
+    pub source: TaskPublicObservationV1,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize)]
@@ -6016,88 +5998,15 @@ pub fn combat_history_v1(
                 path.archive_node_id
             )
         })?;
-        let TaskPublicObservationV1::Combat {
-            run_context,
-            observation,
-        } = &incoming.step.source.observation
-        else {
+        if !matches!(
+            incoming.step.source.observation,
+            TaskPublicObservationV1::Combat { .. }
+        ) {
             return Err(format!(
                 "combat history node {} has a non-combat observation",
                 path.archive_node_id
             ));
-        };
-        let encounter = match run_context {
-            sts_oracle_learning::agent::information::run::PublicCombatRunContextV1::Available {
-                encounter_id,
-                ..
-            } => encounter_id.map(|encounter| encounter.stable_id().to_string()),
-            sts_oracle_learning::agent::information::run::PublicCombatRunContextV1::Unavailable {
-                ..
-            } => None,
-        };
-        let hand = observation
-            .cards
-            .hand
-            .cards
-            .iter()
-            .map(|card| {
-                format!(
-                    "{:?}{}@{}",
-                    card.card_id,
-                    if card.upgrades > 0 { "+" } else { "" },
-                    card.effective_cost
-                )
-            })
-            .collect();
-        let potions = observation
-            .potions
-            .iter()
-            .enumerate()
-            .filter_map(|(slot, potion)| {
-                potion
-                    .as_ref()
-                    .map(|potion| format!("{slot}:{}", potion.potion_id.stable_id()))
-            })
-            .collect();
-        let player_powers = observation
-            .player
-            .powers
-            .iter()
-            .map(|power| format!("{}:{}", power.power.stable_id(), power.amount))
-            .collect();
-        let monsters = observation
-            .monsters
-            .iter()
-            .filter(|monster| monster.alive && !monster.escaped && !monster.dying)
-            .map(|monster| {
-                let enemy = match monster.enemy {
-                    CombatLearningEnemyIdentityV1::Known { enemy_id } => {
-                        enemy_id.stable_id().to_string()
-                    }
-                };
-                let intent = match (
-                    &monster.intent.intent,
-                    monster.intent.preview_damage_per_hit,
-                ) {
-                    (Some(intent), Some(damage)) => format!("{intent:?}@{damage}"),
-                    (Some(intent), None) => format!("{intent:?}"),
-                    (None, _) => "hidden".to_string(),
-                };
-                RunPlayCombatMonsterHistoryV1 {
-                    slot: monster.slot,
-                    enemy,
-                    hp: monster.hp,
-                    max_hp: monster.max_hp,
-                    block: monster.block,
-                    intent,
-                    powers: monster
-                        .powers
-                        .iter()
-                        .map(|power| format!("{}:{}", power.power.stable_id(), power.amount))
-                        .collect(),
-                }
-            })
-            .collect();
+        }
         let from_archive_node_id = node.parent_node_id.clone().ok_or_else(|| {
             format!(
                 "combat history node {} has no parent decision",
@@ -6107,15 +6016,7 @@ pub fn combat_history_v1(
         steps.push(RunPlayCombatHistoryStepV1 {
             from_archive_node_id,
             path,
-            encounter,
-            turn: observation.turn.turn_count,
-            phase: format!("{:?}", observation.turn.phase),
-            energy: observation.turn.energy,
-            player_block: observation.player.block,
-            hand,
-            potions,
-            player_powers,
-            monsters,
+            source: incoming.step.source.observation.clone(),
         });
     }
 

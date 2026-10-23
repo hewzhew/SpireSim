@@ -2,7 +2,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
 
 use sts_oracle_learning::agent::information::state::{CombatLearningPowerV1, PublicCombatStateV1};
-use sts_oracle_learning::agent::task::TaskStrategicObservationV1;
+use sts_oracle_learning::agent::task::{TaskStrategicCardV1, TaskStrategicObservationV1};
 use sts_oracle_learning::content::powers::uses_sentinel_amount;
 use sts_presentation::Locale;
 
@@ -12,8 +12,8 @@ pub(crate) fn message(locale: Locale, key: &str, parameters: &[(&str, &str)]) ->
         .expect("history message")
 }
 
-pub(crate) fn render_deck_v1(observation: &TaskStrategicObservationV1, locale: Locale) -> String {
-    let groups = crate::compact::inventory_card_groups_v1(&observation.cards);
+pub(crate) fn render_deck_v1(cards: &[TaskStrategicCardV1], locale: Locale) -> String {
+    let groups = crate::compact::inventory_card_groups_v1(cards);
     let mut identities = BTreeMap::<_, BTreeSet<_>>::new();
     for (_, card) in &groups {
         identities
@@ -274,7 +274,7 @@ mod tests {
         green.card = CardId::StrikeG;
         green.ordinal += 1;
         observation.cards = vec![red, green];
-        let rendered = render_deck_v1(&observation, Locale::En);
+        let rendered = render_deck_v1(&observation.cards, Locale::En);
         assert!(
             rendered.contains("[Strike]") && rendered.contains("[StrikeG]"),
             "{rendered}"
