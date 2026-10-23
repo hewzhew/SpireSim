@@ -8,13 +8,15 @@
 
 ## 从这里开始
 
-先看[安装与完整轨迹复验指南](docs/getting-started.md)，其中说明了预编译 wheel、可下载的比较记录，以及如何把自己的策略接到公开批量接口。
+想先看看界面，可以在[发布页](https://github.com/hewzhew/SpireSim/releases)下载 `SpireSim-trial.zip`，解压后打开 `SpireSim/index.html`。包内包含 Flash 开局回放、安装说明与配套源码。
+
+接入训练请看[安装与完整轨迹复验指南](docs/getting-started.md)，其中说明了 v0.1.0 Python 安装包、四角色完整比较轨迹，以及如何把自己的策略接到公开批量接口。
 
 | 任务 | 入口 |
 | --- | --- |
 | 安装环境并接入 Python 策略 | [Python 接口](bindings/python_learning/README.zh-CN.md) |
 | 在 Rust 中跑局、观察和规划 | [Run-play 客户端](tools/run_play/README.md) |
-| 观察模型公开信息手打、暂停与返回 | [短段演示](docs/model-play.md) |
+| 回放模型决策或接入语言模型 | [模型对局与回放](docs/model-play.md) |
 | 与原游戏比较执行结果 | [架构](docs/ARCHITECTURE.md)、[运行手册](docs/RUNBOOK.md) |
 | 复验完整轨迹和已安装包 | [环境验收](docs/architecture/environment-acceptance.md) |
 | 使用源码开发命令与本地快捷方式 | [开发脚本](scripts/README.md) |

@@ -1,5 +1,7 @@
 # SpireSim training environment
 
+To explore the replay first, use the [offline trial bundle](model-play.md#open-the-offline-replay). The Python instructions below install the published v0.1.0 training environment. To connect a language model through chat tools, follow [model setup](model-play.md#connect-a-language-model).
+
 The environment runs complete game episodes in Rust. Python supplies decisions
 through public observations and legal candidates. Java and the original game
 are used when collecting new comparison evidence; they are not runtime

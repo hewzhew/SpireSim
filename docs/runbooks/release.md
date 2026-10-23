@@ -28,6 +28,20 @@
 
 ## 验收与发布
 
+### 试用入口与离线回放
+
+面向首次使用者的试用包沿用 `tools/presentation/site` 的中英文静态页面，回放仍由已有录制构建器生成：
+
+```powershell
+./scripts/py.ps1 tools/release/build_trial.py --recording <sealed-recording-directory> --output <new-output-directory>
+```
+
+构建要求工作树干净，输出 `site/index.html` 与 `SpireSim-trial.zip`。包内附有当前固定提交的源码 ZIP，页面中的详细文档链接固定到同一提交。`manifest.json` 分别记录界面源码、原始录制生产者与 Python 发布版，`SHA256SUMS` 保存包内文件摘要。录制校验、动作与模型调用的关联和回放投影由 `scripts/replay.mjs` 的原有 owner 处理。
+
+试用页面明确使用已发布的 v0.1.0 Python wheel，不把它标成当前源码的新构建。验收从新目录解压回放、检查本地资源与链接，并按页面安装说明下载准确版本、安装到独立解释器、执行四角色完整复验。需要更新 Python 运行时版本时，按本页的完整候选流程重新构建与验收。
+
+### 工作台与插件
+
 Node 工作台与 dsh 插件通过同一入口打包：
 
 ```powershell

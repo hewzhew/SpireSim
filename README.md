@@ -8,13 +8,15 @@ SpireSim supports all four characters, the Ascension system, and Act 4. Its Pyth
 
 ## Start here
 
-Start with the [installation and full-run verification guide](docs/getting-started.md). It covers the prebuilt wheels, downloadable comparison records, and connecting your own policy to the public batch interface.
+To explore the interface, download `SpireSim-trial.zip` from the [release page](https://github.com/hewzhew/SpireSim/releases), extract it, and open `SpireSim/index.en.html`. It includes a recorded Flash opening, installation instructions, and a matching source snapshot.
+
+For training, use the [installation and full-run verification guide](docs/getting-started.md). It covers the v0.1.0 Python wheels, four complete comparison trajectories, and connecting your own policy to the public batch interface.
 
 | Task | Entry point |
 | --- | --- |
 | Install and connect a Python policy | [Python interface](bindings/python_learning/README.md) |
 | Play, inspect, or plan in Rust | [Run-play client](tools/run_play/README.md) |
-| Watch a model play from public information | [Model-play walkthrough](docs/model-play.md) |
+| Replay recorded decisions or connect a language model | [Model play and replay](docs/model-play.md) |
 | Compare execution with the original game | [Architecture](docs/ARCHITECTURE.md), [runbook](docs/RUNBOOK.md) |
 | Verify complete trajectories and the installed package | [Environment acceptance](docs/architecture/environment-acceptance.md) |
 | Use source-checkout commands and local shortcuts | [Developer scripts](scripts/README.md) |

@@ -256,6 +256,8 @@ view.text('game:effect.draw', { count: 2 }); // Draw 2 cards.
 
 ## 离线分发
 
+`site/` 保存试用入口的中英文静态页面与样式，使用同一套已随回放分发的 Tabler 资源。页面没有独立运行时或游戏逻辑；固定源码快照、回放构建与 ZIP 组装由[发布工具](../../docs/runbooks/release.md#试用入口与离线回放)负责。
+
 ```powershell
 node tools/presentation/bundle.mjs --entry <viewer.mjs> --output <demo.js>
 ```

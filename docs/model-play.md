@@ -1,4 +1,12 @@
-# Watch a model play
+# Model play and replay
+
+## Open the offline replay
+
+Download `SpireSim-trial.zip` from the [release page](https://github.com/hewzhew/SpireSim/releases), extract it, and open `SpireSim/index.en.html` (English) or `SpireSim/index.html` (简体中文). Follow **Game demo** to replay the recorded opening from Neow through two fights and their rewards. Use the replay controls or Left/Right arrows to move through decisions, and the act/floor navigation or map to revisit a room.
+
+The bundle's **Install and use** page links the published v0.1.0 Python wheels and four-character verification records. It also includes a source ZIP matching the replay interface and dsh plugin. The recording retains its original game producer; the bundle manifest identifies the presentation source separately.
+
+## Connect a language model
 
 Use the native DeepSeek Harness plugin to watch a model read a public game state, choose actions, and react to their actual results. This walkthrough starts a fresh Ironclad A20 Heart run and stops after its first ordinary fight and rewards.
 

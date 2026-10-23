@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; img-src 'self' data:; font-src 'self'; base-uri 'none'; form-action 'none'">
+  <title>安装与使用 — SpireSim</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="replay/vendor/tabler.min.css">
+  <link rel="stylesheet" href="release.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">跳到正文</a>
+  <header class="masthead wrap">
+    <a class="wordmark" href="index.html">SpireSim</a>
+    <nav aria-label="SpireSim">
+      <a href="start.html">使用说明</a>
+      <a href="https://github.com/hewzhew/SpireSim">GitHub</a>
+      <span class="languages" aria-label="切换语言"><a href="start.html" lang="zh-CN" aria-current="page">中文</a><a href="start.en.html" lang="en" >English</a></span>
+    </nav>
+  </header>
+  <main class="wrap" id="main">
+    <section class="intro compact"><a class="text-link" href="index.html">← 返回首页</a><h1>安装与使用</h1></section>
+    <section class="guide-section" id="python"><h2>Python 训练环境</h2><p>安装 v0.1.0 预编译包，运行四角色完整轨迹复验，再接入自己的策略。选择与你的 Python 版本匹配的 wheel。</p>
+      <div class="table-wrap"><table class="table"><thead><tr><th>平台</th><th>Python</th></tr></thead><tbody><tr><td>Windows x86_64</td><td>CPython 3.14</td></tr><tr><td>Linux x86_64 (glibc ≥ 2.35)</td><td>CPython 3.12</td></tr></tbody></table></div>
+      <a class="btn btn-primary" href="https://github.com/hewzhew/SpireSim/releases/tag/v0.1.0">打开 v0.1.0 下载页</a>
+      <details class="install-commands" id="verification"><summary>安装与完整复验</summary><p>将 wheel 和 sts-verification-0.1.0.zip 下载到同一新目录，在该目录运行：</p><h3>Windows / PowerShell</h3><pre><code>py -3.14 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install .\sts_learning_bridge-0.1.0-cp314-cp314-win_amd64.whl
+.\.venv\Scripts\python.exe -m zipfile -e sts-verification-0.1.0.zip .
+.\.venv\Scripts\python.exe sts-verification/verify.py --output verification-results</code></pre>
+      <h3>Linux</h3><pre><code>python3.12 -m venv .venv
+.venv/bin/python -m pip install ./sts_learning_bridge-0.1.0-cp312-cp312-manylinux_2_35_x86_64.whl
+.venv/bin/python -m zipfile -e sts-verification-0.1.0.zip .
+.venv/bin/python sts-verification/verify.py --output verification-results</code></pre><p>复验逐步执行四名角色从涅奥到碎心胜利的记录轨迹，结果保存在 verification-results。过程检查实际 choose/step、公开状态、奖励、状态恢复和终局，不需要启动原游戏。</p></details>
+      <h3>接入策略</h3><p>实现 choose(batch, schema)，为每个当前决策返回一个合法候选序号，然后用复验包中的循环运行策略：</p><pre><code>python sts-verification/policy_loop.py --policy my_policy:choose --seeds 42 43 --character silent</code></pre><p>使用上面创建的虚拟环境解释器运行。将模型加载和候选评分写入 my_policy.py，放在 policy_loop.py 所在目录或可导入的模块中。</p><a class="text-link" href="https://github.com/hewzhew/SpireSim/blob/__SOURCE_REVISION__/docs/getting-started.md#connect-a-policy">策略回调与批量接口 <span aria-hidden="true">→</span></a>
+    </section>
+    <section class="guide-section" id="model"><h2>让语言模型来玩</h2><p>离线包内附有本次界面与插件的配套源码。Windows 下准备 Rust、Node.js 22 或更新版本及 PowerShell 7，解压源码后进入 SpireSim 目录：</p><a class="text-link" href="source/SpireSim-source.zip" download>下载配套源码 <span aria-hidden="true">→</span></a><pre><code>./scripts/run-play.ps1 build
+npm --prefix tools/presentation ci
+npm --prefix tools/run_play ci
+npm --prefix tools/dsh_player ci
+npm --prefix tools/dsh_player run build:client</code></pre><p>在 DeepSeek Harness 0.2.1-rc.2 的“插件”页添加 tools/dsh_player，配置模型和 API 密钥。新对话选择源码目录作为工作区，使用“杀戮尖塔 A20H · 公开信息”预设。</p><a class="text-link" href="https://github.com/hewzhew/SpireSim/blob/__SOURCE_REVISION__/docs/model-play.md">模型接入、运行限额与暂停 <span aria-hidden="true">→</span></a></section>
+    <section class="guide-section"><h2>反馈问题</h2><p>请附上使用的平台、Python 版本或模型宿主版本、安装包文件名、执行命令和第一处报错。对局问题请保留 seed、角色与实际动作。</p><a class="text-link" href="https://github.com/hewzhew/SpireSim/issues">提交反馈 <span aria-hidden="true">→</span></a></section></main>
+  <footer class="wrap site-footer"><span class="footer-brand">SpireSim</span><nav aria-label="项目链接"><a href="LICENSE">MIT</a><a href="replay/THIRD_PARTY_NOTICES.txt">第三方许可</a><a href="https://github.com/hewzhew/SpireSim/issues">反馈问题</a></nav></footer>
+</body>
+</html>
