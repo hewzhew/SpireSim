@@ -643,12 +643,13 @@ async function main() {
     const scene = scenes[selected], state = scene.kind === 'sequence' ? scene.snapshots[actionCursor] : null;
     const phase = byId('stage').querySelector('.sequence-scene');
     const changed = phase && byId('stage').dataset.scene === scene.id
-      && (mapMode !== next || byId('stage').dataset.phase !== state?.kind);
+      && (mainMap(mapMode) !== mainMap(next) || byId('stage').dataset.phase !== state?.kind);
     return { mode: mapMode, rect: visible ? mapPanel.getBoundingClientRect() : mapMode === 'collapsed' ? byId('map-reopen')?.getBoundingClientRect() : null,
+      stageRect: byId('map-stage')?.getBoundingClientRect(),
       scrollTop: mapPanel.querySelector('.map-viewport')?.scrollTop ?? 0,
       focus: mapPanel.contains(document.activeElement) ? document.activeElement : null,
       ghost: visible && !visibleMap(next) ? mapPanel.cloneNode(true) : null,
-      phase: changed ? { rect: !phase.hidden ? phase.getBoundingClientRect() : null, ghost: !phase.hidden ? phase.cloneNode(true) : null, scrollTop: phase.scrollTop } : null };
+      phase: changed };
   }
   function positionMap() {
     cancelAnimationFrame(mapPositionFrame);
@@ -656,49 +657,56 @@ async function main() {
   }
   function stopLayoutMotion() {
     for (const items of [phaseMotions, mapMotions]) {
-      for (const item of items) { item.animation.cancel(); item.ghost?.remove(); }
-      items.clear();
+      for (const item of items) { item.settled(); item.animation.cancel(); }
     }
   }
-  function transitionGhost(source, rect, className) {
+  function mapTransitionGhost(source, rect) {
+    const content = byId('stage').querySelector('.sequence-content'), bounds = content.getBoundingClientRect();
     source.removeAttribute('id'); source.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
-    source.inert = true; source.setAttribute('aria-hidden', 'true'); source.classList.add(className);
-    Object.assign(source.style, { left: rect.left + 'px', top: rect.top + 'px', width: rect.width + 'px', height: rect.height + 'px' });
-    document.body.append(source); return source;
+    source.inert = true; source.setAttribute('aria-hidden', 'true'); source.classList.add('map-transition-ghost');
+    Object.assign(source.style, { left: rect.left - bounds.left + 'px', top: rect.top - bounds.top + 'px', width: rect.width + 'px', height: rect.height + 'px' });
+    content.append(source); return source;
   }
-  function playLayoutMotion(items, element, frames, ghost) {
+  function playLayoutMotion(items, element, frames, { ghost, cleanup } = {}) {
     const animation = element.animate(frames, { duration: 240, easing: 'cubic-bezier(.2,.7,.2,1)' });
-    const item = { animation, ghost }; items.add(item);
-    const settled = () => { ghost?.remove(); items.delete(item); };
-    animation.finished.then(settled, settled);
+    const item = { animation, settled() { if (items.delete(item)) { ghost?.remove(); cleanup?.(); } } }; items.add(item);
+    animation.finished.then(item.settled, item.settled);
   }
   function animateMap(before) {
     if (before.mode === mapMode) return;
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || typeof mapPanel.animate !== 'function') return;
+    const rail = mapMode === 'collapsed' ? byId('map-reopen')?.getBoundingClientRect() : null;
+    const drawer = [before.mode, mapMode].every(mode => ['side', 'collapsed'].includes(mode));
+    if (drawer && window.matchMedia('(min-width: 1280px)').matches) {
+      const stage = byId('map-stage'), rect = stage.getBoundingClientRect();
+      if (before.stageRect?.width && rect.width) {
+        // Resize the real layout. Keep map text at its full width while the slot clips it.
+        const mapWidth = mapMode === 'side' ? mapPanel.getBoundingClientRect().width : before.rect.width;
+        stage.classList.add('is-resizing'); stage.style.setProperty('--map-motion-width', mapWidth + 'px');
+        playLayoutMotion(mapMotions, stage, [{ width: before.stageRect.width + 'px' }, { width: rect.width + 'px' }], {
+          cleanup() { stage.classList.remove('is-resizing'); stage.style.removeProperty('--map-motion-width'); }
+        });
+      }
+      if (mapMode === 'side') return;
+    }
     let element = mapPanel, ghost;
     let frames = [{ opacity: 0, transform: 'translateX(12px)', transformOrigin: 'top left' }, { opacity: 1, transform: 'none', transformOrigin: 'top left' }];
     if (!visibleMap(mapMode)) {
       if (!before.ghost || !before.rect?.width) return;
-      ghost = transitionGhost(before.ghost, before.rect, 'map-transition-ghost'); element = ghost;
+      ghost = mapTransitionGhost(before.ghost, before.rect); element = ghost;
       ghost.querySelector('.map-viewport').scrollTop = before.scrollTop;
-      const rail = byId('map-reopen')?.getBoundingClientRect();
       frames = [{ opacity: 1, transform: 'none', transformOrigin: 'top left' }, { opacity: 0, transformOrigin: 'top left',
-        transform: rail?.width && mapMode === 'collapsed' ? `translate(${rail.left - before.rect.left}px, ${rail.top - before.rect.top}px) scale(${rail.width / before.rect.width}, 1)` : 'translateX(12px)' }];
-    } else if (before.rect?.width && before.rect.height) {
+        transform: rail?.width && mapMode === 'collapsed' ? `translate(${rail.left - before.rect.left}px, ${rail.top - before.rect.top}px)${drawer ? '' : ` scale(${rail.width / before.rect.width}, 1)`}` : 'translateX(12px)' }];
+    } else if (!drawer && before.rect?.width && before.rect.height) {
       const rect = mapPanel.getBoundingClientRect();
       if (visibleMap(before.mode)) frames[0].opacity = 1;
       if (rect.width && rect.height) frames[0].transform = `translate(${before.rect.left - rect.left}px, ${before.rect.top - rect.top}px) scale(${before.rect.width / rect.width}, ${before.rect.height / rect.height})`;
     }
-    playLayoutMotion(mapMotions, element, frames, ghost);
+    playLayoutMotion(mapMotions, element, frames, { ghost });
   }
-  function animatePhase(before) {
+  function animatePhase() {
     const phase = byId('stage').querySelector('.sequence-scene');
     if (!phase || window.matchMedia('(prefers-reduced-motion: reduce)').matches || typeof phase.animate !== 'function') return;
-    if (before.rect?.width && before.ghost) {
-      const ghost = transitionGhost(before.ghost, before.rect, 'phase-transition-ghost');
-      ghost.scrollTop = before.scrollTop;
-      playLayoutMotion(phaseMotions, ghost, [{ opacity: 1 }, { opacity: 0 }], ghost);
-    }
     if (!phase.hidden) playLayoutMotion(phaseMotions, phase, [{ opacity: 0, transform: 'translateX(-12px)' }, { opacity: 1, transform: 'none' }]);
   }
   function updateMapLayout(before = mapBeforeLayout(), moved = false) {
@@ -729,7 +737,7 @@ async function main() {
       target?.focus({ preventScroll: true });
     }
     if (visible && (moved || before.mode !== mapMode)) positionMap();
-    if (before.phase) animatePhase(before.phase);
+    if (before.phase) animatePhase();
     animateMap(before);
   }
   function closeMap() {

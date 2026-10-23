@@ -76,7 +76,8 @@ button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); 
 .map-viewport { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior-y: contain; border-top: 1px solid #e7e9df; background: radial-gradient(ellipse at center, #fffdf5, #f1f3e8); scrollbar-width: thin; scrollbar-color: #bfc7b0 transparent; }
 .map-graph { display: block; width: min(100%, 492px); height: auto; margin: 0 auto; }
 .map-viewport:focus-visible { outline: 2px solid var(--accent); outline-offset: -3px; }
-.map-stage { display: flex; min-width: 0; min-height: 0; height: 100%; background: #f6f7f0; }
+.map-stage { position: relative; display: flex; min-width: 0; min-height: 0; height: 100%; overflow: hidden; background: #f6f7f0; }
+.map-stage.is-resizing .journey-map { flex: 0 0 var(--map-motion-width); width: var(--map-motion-width); }
 .map-stage[hidden] { display: none; }
 .sequence-content:is([data-map-mode="primary"], [data-map-mode="expanded"]) .map-stage { grid-column: 1 / -1; }
 .journey-map:is([data-mode="primary"], [data-mode="expanded"]) .map-graph { width: min(100%, 760px); }
@@ -89,21 +90,20 @@ button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); 
 .map-selection { position: absolute; inset-inline: 10px; bottom: 10px; z-index: 3; display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 10px; border: 1px solid #9fb4bb; border-radius: 7px; background: #fffffff5; box-shadow: 0 4px 18px #2e452524; font-size: 12px; color: #405a60; }
 .map-selection[hidden] { display: none; }
 .map-follow { margin-left: auto; padding: 5px 8px; border: 1px solid #a9b7a0; border-radius: 4px; background: #f1f5ea; color: #486238; font: inherit; white-space: nowrap; }
-.map-transition-ghost { position: fixed; z-index: 21; margin: 0; pointer-events: none; }
-.phase-transition-ghost { position: fixed; z-index: 20; margin: 0; pointer-events: none; background: #f5f6ef; }
+.map-transition-ghost { position: absolute; z-index: 4; margin: 0; pointer-events: none; }
 .map-edges path { fill: none; stroke: #c8cebb; stroke-width: 1.6; stroke-dasharray: 4 5; }
 .map-edges path.is-travelled { stroke: #ae6048; stroke-width: 3; stroke-dasharray: none; }
-.map-node circle { fill: #fbfcf6; stroke: #aeb89e; stroke-width: 1.4; }
+.map-node > circle:not(.map-selection-ring) { fill: #fbfcf6; stroke: #aeb89e; stroke-width: 1.4; }
 .map-node .icon { width: 22px; height: 22px; color: #687b53; stroke-width: 1.8; }
-.map-node.has-key circle { stroke: #388555; stroke-width: 2.5; }
-.map-node.is-visited circle { fill: #f1e6d9; stroke: #b48b68; }
-.map-node.is-current circle { fill: #f9e8dc; stroke: #a34e3e; stroke-width: 3; }
+.map-node.has-key > circle:not(.map-selection-ring) { stroke: #388555; stroke-width: 2.5; }
+.map-node.is-visited > circle:not(.map-selection-ring) { fill: #f1e6d9; stroke: #b48b68; }
+.map-node.is-current > circle:not(.map-selection-ring) { fill: #f9e8dc; stroke: #a34e3e; stroke-width: 3; }
 .map-node.is-current .icon { color: #93422e; }
 .map-node[role="button"] { cursor: pointer; }
-.map-node[role="button"]:hover circle:not(.map-selection-ring), .map-node:focus-visible circle:not(.map-selection-ring) { stroke: #a34e3e; stroke-width: 3; }
-.map-node:focus-visible { outline: none; }
+.map-node[role="button"]:hover > circle:not(.map-selection-ring), .map-node:focus-visible > circle:not(.map-selection-ring) { stroke: #a34e3e; stroke-width: 3; }
+.map-node:focus { outline: none; }
 .map-node .map-selection-ring { fill: none; stroke: #537c91; stroke-width: 1.6; stroke-dasharray: 3 3; visibility: hidden; }
-.map-node.is-selected .map-selection-ring { visibility: visible; }
+.map-node.is-selected .map-selection-ring, .map-node:focus-visible .map-selection-ring { visibility: visible; }
 .map-boss-name { text-anchor: middle; fill: #5b694d; font-size: 13px; }
 .journey-map[data-mode="side"] .map-boss-name { font-size: 17px; }
 .journey-map[data-mode="side"] .map-node .icon { stroke-width: 2.2; }
@@ -115,6 +115,7 @@ button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); 
   .has-sequence .container-xl { max-width: 1450px; }
 }
 @media (max-width: 1279px) {
+  .sequence-content[data-map-mode="side"] { grid-template-columns: minmax(0, 1fr) 42px; }
   .sequence-content[data-map-mode="side"] .map-stage { position: absolute; z-index: 3; right: 0; top: 0; bottom: 0; width: min(320px, 100%); box-shadow: -8px 0 24px #303c2520; }
 }
 .combat-board { border: 1px solid #dfe2d6; border-radius: 11px; background: #f5f6ef; overflow: hidden; }
