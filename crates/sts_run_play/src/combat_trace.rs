@@ -638,7 +638,7 @@ pub fn trace_verified_combat_source_v1(
         proofs.push(proof);
         lines.push(line);
     }
-    let comparison = controller.compare_action_lines_v1(&lines)?;
+    let comparison = controller.compare_action_lines_v1(&lines, sts_presentation::Locale::En)?;
     if comparison.root_archive_node_id != source.root_archive_node_id {
         return Err("combat trace compare changed the artifact root".to_string());
     }

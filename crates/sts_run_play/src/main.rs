@@ -811,9 +811,9 @@ enum Command {
     CombatQuery {
         #[arg(long)]
         session: PathBuf,
-        #[arg(long, value_parser = parse_construction_card_v1, action = clap::ArgAction::Append)]
+        #[arg(long, value_parser = |value: &str| parse_construction_card_v1(value, Locale::En), action = clap::ArgAction::Append)]
         eventually_generated_card: Vec<CardId>,
-        #[arg(long, value_parser = parse_construction_card_v1, action = clap::ArgAction::Append)]
+        #[arg(long, value_parser = |value: &str| parse_construction_card_v1(value, Locale::En), action = clap::ArgAction::Append)]
         eventually_lethal_payoff: Vec<CardId>,
         #[arg(long, default_value_t = 500_000)]
         max_generation_work: usize,
@@ -1041,14 +1041,14 @@ enum Command {
             long,
             requires = "journey",
             conflicts_with_all = ["last", "after_depth", "count"],
-            value_parser = parse_positive_usize
+            value_parser = |value: &str| parse_positive_usize(value, Locale::En)
         )]
         first: Option<usize>,
         #[arg(
             long,
             requires = "journey",
             conflicts_with_all = ["first", "after_depth", "count"],
-            value_parser = parse_positive_usize
+            value_parser = |value: &str| parse_positive_usize(value, Locale::En)
         )]
         last: Option<usize>,
         #[arg(
@@ -1060,7 +1060,7 @@ enum Command {
         #[arg(
             long,
             requires = "after_depth",
-            value_parser = parse_positive_usize
+            value_parser = |value: &str| parse_positive_usize(value, Locale::En)
         )]
         count: Option<usize>,
         #[arg(long, requires = "journey")]
@@ -1118,21 +1118,21 @@ enum Command {
             long = "card",
             action = clap::ArgAction::Append,
             required_unless_present_any = ["relics", "potions"],
-            value_parser = parse_construction_card_v1
+            value_parser = |value: &str| parse_construction_card_v1(value, Locale::En)
         )]
         cards: Vec<CardId>,
         #[arg(
             long = "relic",
             action = clap::ArgAction::Append,
             required_unless_present_any = ["cards", "potions"],
-            value_parser = parse_game_fact_relic_v1
+            value_parser = |value: &str| parse_game_fact_relic_v1(value, Locale::En)
         )]
         relics: Vec<RelicId>,
         #[arg(
             long = "potion",
             action = clap::ArgAction::Append,
             required_unless_present_any = ["cards", "relics"],
-            value_parser = parse_game_fact_potion_v1
+            value_parser = |value: &str| parse_game_fact_potion_v1(value, Locale::En)
         )]
         potions: Vec<PotionId>,
     },
@@ -1238,12 +1238,20 @@ fn run_main() -> ExitCode {
     }
 }
 
-fn parse_positive_usize(value: &str) -> Result<usize, String> {
-    let parsed = value
-        .parse::<usize>()
-        .map_err(|_| format!("expected a positive integer, observed {value:?}"))?;
+fn parse_positive_usize(value: &str, locale: Locale) -> Result<usize, String> {
+    let parsed = value.parse::<usize>().map_err(|_| {
+        cli_presentation::message(
+            locale,
+            "parse.positive",
+            &[("value", &format!("{value:?}"))],
+        )
+    })?;
     if parsed == 0 {
-        return Err("expected a positive integer, observed 0".to_string());
+        return Err(cli_presentation::message(
+            locale,
+            "parse.positive",
+            &[("value", "0")],
+        ));
     }
     Ok(parsed)
 }
@@ -1287,27 +1295,21 @@ fn parse_construction_site_v1(value: &str, locale: Locale) -> Result<TaskDecisio
     }
 }
 
-fn parse_construction_card_v1(value: &str) -> Result<CardId, String> {
+fn parse_construction_card_v1(value: &str, locale: Locale) -> Result<CardId, String> {
     serde_json::from_value(serde_json::Value::String(value.to_string())).map_err(|_| {
-        format!(
-            "unknown canonical card id {value:?}; use the simulator identifier such as IronWave"
-        )
+        cli_presentation::message(locale, "parse.card", &[("value", &format!("{value:?}"))])
     })
 }
 
-fn parse_game_fact_relic_v1(value: &str) -> Result<RelicId, String> {
+fn parse_game_fact_relic_v1(value: &str, locale: Locale) -> Result<RelicId, String> {
     serde_json::from_value(serde_json::Value::String(value.to_string())).map_err(|_| {
-        format!(
-            "unknown canonical relic id {value:?}; use the simulator identifier such as OrangePellets"
-        )
+        cli_presentation::message(locale, "parse.relic", &[("value", &format!("{value:?}"))])
     })
 }
 
-fn parse_game_fact_potion_v1(value: &str) -> Result<PotionId, String> {
+fn parse_game_fact_potion_v1(value: &str, locale: Locale) -> Result<PotionId, String> {
     serde_json::from_value(serde_json::Value::String(value.to_string())).map_err(|_| {
-        format!(
-            "unknown canonical potion id {value:?}; use the simulator identifier such as EssenceOfSteel"
-        )
+        cli_presentation::message(locale, "parse.potion", &[("value", &format!("{value:?}"))])
     })
 }
 
@@ -3891,14 +3893,14 @@ fn run(cli: Cli) -> Result<(), String> {
                     println!("exact_prefix_artifact={}", path.display());
                     comparison
                 }
-                None => controller.compare_action_lines_v1(&parsed)?,
+                None => controller.compare_action_lines_v1(&parsed, locale)?,
             };
             print!("{}", render_comparison_v1(&comparison, detail, locale)?);
         }
         Command::AnchorLine { session, line } => {
             let choices = parse_action_line_v1(&line, "anchor-line", locale)?;
             let mut controller = RunPlayControllerV1::open(RunPlayPathsV1::new(session))?;
-            controller.anchor_action_line_v1(&choices)?;
+            controller.anchor_action_line_v1(&choices, locale)?;
             print!("{}", render_status_v1(controller.head(), locale)?);
         }
         Command::AnchorCombatPlan {
@@ -4028,7 +4030,7 @@ fn run(cli: Cli) -> Result<(), String> {
                     println!("exact_prefix_artifact={}", path.display());
                     comparison
                 }
-                None => controller.compare_action_lines_v1(&[selectors])?,
+                None => controller.compare_action_lines_v1(&[selectors], locale)?,
             };
             if detail {
                 eprintln!("{}", compact::compact_text(locale, "preview.complete", &[]));
@@ -4082,9 +4084,9 @@ fn run(cli: Cli) -> Result<(), String> {
                 .ok_or_else(|| cli_presentation::message(locale, "control.actDecision", &[]))?
                 .public_decision_v1()?;
             if let [selector] = selectors.as_slice() {
-                controller.choose_action_v1(selector, !auto_combat)?;
+                controller.choose_action_v1(selector, !auto_combat, locale)?;
             } else {
-                controller.anchor_action_line_v1(&selectors)?;
+                controller.anchor_action_line_v1(&selectors, locale)?;
             }
             println!("Completed: h{}", controller.head().head_revision);
             io::stdout()
@@ -4261,11 +4263,11 @@ fn run(cli: Cli) -> Result<(), String> {
                 .transpose()?;
             let candidate_card = candidate_card
                 .as_deref()
-                .map(parse_construction_card_v1)
+                .map(|value| parse_construction_card_v1(value, locale))
                 .transpose()?;
             let added_card = added_card
                 .as_deref()
-                .map(parse_construction_card_v1)
+                .map(|value| parse_construction_card_v1(value, locale))
                 .transpose()?;
             let history = construction_history_v1(
                 &RunPlayPathsV1::new(session),
@@ -4697,7 +4699,7 @@ fn parse_shell_actions_v1(
     locale: sts_presentation::Locale,
 ) -> Result<Vec<selector::RunPlayActionSelectorV1>, String> {
     if words.is_empty() {
-        return Err(selector::syntax_message(
+        return Err(selector::selector_message(
             locale,
             "shellActions",
             &[("command", &(command.to_owned()))],
@@ -4713,7 +4715,7 @@ fn parse_shell_actions_v1(
             while index < words.len() && !shell_action_start_v1(words[index]) {
                 let card = words[index];
                 if card.is_empty() || card.contains(',') || card.starts_with('@') {
-                    return Err(selector::syntax_message(
+                    return Err(selector::selector_message(
                         locale,
                         "shellSelectNames",
                         &[("command", &(command.to_owned()))],
@@ -4722,7 +4724,7 @@ fn parse_shell_actions_v1(
                 index += 1;
             }
             if index == start {
-                return Err(selector::syntax_message(
+                return Err(selector::selector_message(
                     locale,
                     "shellSelectEmpty",
                     &[("command", &(command.to_owned()))],
@@ -4745,10 +4747,10 @@ fn parse_shell_actions_v1(
         };
         let mut spec = if let Some(verb) = spaced_verb {
             let name = words.get(index + 1).ok_or_else(|| {
-                selector::syntax_message(locale, "shellName", &[("word", &(word.to_owned()))])
+                selector::selector_message(locale, "shellName", &[("word", &(word.to_owned()))])
             })?;
             if name.starts_with('@') || name.contains(':') {
-                return Err(selector::syntax_message(
+                return Err(selector::selector_message(
                     locale,
                     "shellPlainName",
                     &[("word", &(word.to_owned()))],
@@ -4765,7 +4767,7 @@ fn parse_shell_actions_v1(
                 .is_some_and(|next| next.starts_with('@'))
         {
             if spec.contains('@') {
-                return Err(selector::syntax_message(
+                return Err(selector::selector_message(
                     locale,
                     "shellTargetTwice",
                     &[
@@ -4825,7 +4827,7 @@ fn parse_shell_single_action_v1(
 ) -> Result<selector::RunPlayActionSelectorV1, String> {
     let selectors = parse_shell_actions_v1(words, "shell", locale)?;
     if selectors.len() != 1 {
-        return Err(selector::syntax_message(
+        return Err(selector::selector_message(
             locale,
             "shellSingle",
             &[("command", &(command.to_owned()))],
@@ -4919,7 +4921,7 @@ fn run_shell_v1(session: PathBuf, locale: Locale) -> Result<(), String> {
                 }
                 "compare" | "compare-detail" => {
                     let lines = parse_comparison_lines_v1(words, locale)?;
-                    let comparison = controller.compare_action_lines_v1(&lines)?;
+                    let comparison = controller.compare_action_lines_v1(&lines, locale)?;
                     print!(
                         "{}",
                         render_comparison_v1(&comparison, command == "compare-detail", locale)?
@@ -4933,7 +4935,7 @@ fn run_shell_v1(session: PathBuf, locale: Locale) -> Result<(), String> {
                         return Err(cli_presentation::message(locale, "shell.anchorSingle", &[]));
                     }
                     let choices = parse_action_line_v1(spec, "anchor", locale)?;
-                    controller.anchor_action_line_v1(&choices)?;
+                    controller.anchor_action_line_v1(&choices, locale)?;
                     println!("Completed: anchor {spec}");
                     print_shell_reading_v1(&mut controller, &mut known, &mut displayed, locale)?;
                 }
@@ -4976,9 +4978,9 @@ fn run_shell_v1(session: PathBuf, locale: Locale) -> Result<(), String> {
                     let actions = words.collect::<Vec<_>>();
                     let selectors = parse_shell_actions_v1(&actions, "act", locale)?;
                     if selectors.len() == 1 {
-                        controller.choose_action_v1(&selectors[0], true)?;
+                        controller.choose_action_v1(&selectors[0], true, locale)?;
                     } else {
-                        controller.anchor_action_line_v1(&selectors)?;
+                        controller.anchor_action_line_v1(&selectors, locale)?;
                     }
                     println!("Completed: act {}", compact_action_input_v1(&actions));
                     print_shell_reading_v1(&mut controller, &mut known, &mut displayed, locale)?;
@@ -4987,7 +4989,7 @@ fn run_shell_v1(session: PathBuf, locale: Locale) -> Result<(), String> {
                 | "choose" | "discard-potion" | "boss-relic" => {
                     let actions = std::iter::once(command).chain(words).collect::<Vec<_>>();
                     let selector = parse_shell_single_action_v1(&actions, command, locale)?;
-                    controller.choose_action_v1(&selector, true)?;
+                    controller.choose_action_v1(&selector, true, locale)?;
                     println!("Completed: {}", actions.join(" "));
                     print_shell_reading_v1(&mut controller, &mut known, &mut displayed, locale)?;
                 }
@@ -5007,7 +5009,7 @@ fn run_shell_v1(session: PathBuf, locale: Locale) -> Result<(), String> {
                         ));
                     }
                     let selector = parse_action_selector_v1(action, command, locale)?;
-                    controller.choose_action_v1(&selector, command == "manual")?;
+                    controller.choose_action_v1(&selector, command == "manual", locale)?;
                     println!("Completed: {command} {action}");
                     print_shell_reading_v1(&mut controller, &mut known, &mut displayed, locale)?;
                 }
@@ -5100,7 +5102,7 @@ fn run_shell_v1(session: PathBuf, locale: Locale) -> Result<(), String> {
                         println!("Completed: {index} ({label})");
                     } else {
                         let selector = parse_action_selector_v1(unknown, "shell", locale)?;
-                        controller.choose_action_v1(&selector, true)?;
+                        controller.choose_action_v1(&selector, true, locale)?;
                         println!("Completed: {unknown}");
                     }
                     print_shell_reading_v1(&mut controller, &mut known, &mut displayed, locale)?;
@@ -6650,7 +6652,7 @@ mod tests {
         assert_eq!(
             candidate_card
                 .as_deref()
-                .map(parse_construction_card_v1)
+                .map(|value| parse_construction_card_v1(value, Locale::En))
                 .transpose(),
             Ok(Some(CardId::IronWave))
         );
@@ -6660,7 +6662,7 @@ mod tests {
         assert!(detail);
         assert!(parse_construction_site_v1("combat", Locale::En).is_err());
         assert!(parse_construction_site_v1("unknown", Locale::En).is_err());
-        assert!(parse_construction_card_v1("iron-wave").is_err());
+        assert!(parse_construction_card_v1("iron-wave", Locale::En).is_err());
     }
 
     #[test]

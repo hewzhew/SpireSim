@@ -27,7 +27,10 @@ fn collector_summon_probe_keeps_the_boss_identity_when_slots_move() {
     let mut game = controller_with_session(&directory.0, "collector_summon", &session);
     let head = game.head().clone();
     let comparison = game
-        .compare_action_lines_v1(&[vec![crate::selector::RunPlayActionSelectorV1::EndTurn]])
+        .compare_action_lines_v1(
+            &[vec![crate::selector::RunPlayActionSelectorV1::EndTurn]],
+            sts_presentation::Locale::En,
+        )
         .unwrap();
     assert_eq!(game.head(), &head);
     let step = &comparison.lines[0].steps[0];

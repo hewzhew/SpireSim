@@ -5608,6 +5608,12 @@
       "preparation": "准备（私下使用精确 scratch RNG）：{{actions}}\n生命 {{hpBefore}}/{{maxBefore}} -> {{hpAfter}}/{{maxAfter}} | 金币 {{goldBefore}} -> {{goldAfter}}\n",
       "preparationResources": "每回合基础能量 {{energy}} | 药水：{{potions}}\n",
       "preparationRng": "随机准备展示当前精确 RNG 下的一次结果；后续战斗测试使用声明的固定诊断 seed。\n"
+    },
+    "parse": {
+      "positive": "需要正整数，实际输入为 {{value}}",
+      "card": "无法识别规范卡牌 ID {{value}}；请使用 IronWave 这样的模拟器稳定标识",
+      "relic": "无法识别规范遗物 ID {{value}}；请使用 OrangePellets 这样的模拟器稳定标识",
+      "potion": "无法识别规范药水 ID {{value}}；请使用 EssenceOfSteel 这样的模拟器稳定标识"
     }
   },
   "compact": {
@@ -6204,7 +6210,37 @@
     "shellName": "{{word}} 需要名称",
     "shellPlainName": "{{word}} 后需提供普通名称",
     "shellTargetTwice": "{{command}} 重复指定了目标：{{spec}}",
-    "shellSingle": "{{command}} 只接受一个动作；动作序列请使用 act"
+    "shellSingle": "{{command}} 只接受一个动作；动作序列请使用 act",
+    "resolve": {
+      "runSelection": "select:<card> 需要牌组选择局面",
+      "deckOccurrence": "select:{{name}} 的第 #{{occurrence}} 个同名副本不可用；牌组中匹配到 {{count}} 张牌",
+      "deckAbsent": "公开牌组中没有与 select:{{name}} 匹配的牌",
+      "deckAmbiguous": "select:{{name}} 匹配多个牌组位置 {{matches}}；请添加 #<occurrence>",
+      "deckRepeated": "select:<card> 重复选择了同一张公开牌组卡牌",
+      "runFamilies": "动作 {{selector}} 匹配到 {{count}} 个牌组选择族，无法唯一确定",
+      "combatFamilies": "动作 {{selector}} 匹配到 {{count}} 个战斗选择族，无法唯一确定",
+      "playCombat": "play:{{name}} 需要战斗决策局面",
+      "useCombat": "use-potion:{{name}} 需要战斗决策局面",
+      "discardCombat": "discard-potion:{{name}} 需要战斗决策局面",
+      "pendingChoice": "战斗选项尚未完成，不能执行 play:{{name}}；请在打开选择的动作后紧接 choose:<card> 或 select:<card>。act 和 preview 都支持在同一动作序列内完成选择。查看私下选择时，先 preview 到打开选择的位置，再插入选中的 token 并预演完整序列。若选择已实际提交，请使用 options 查看。",
+      "handUpgrade": "当前手牌中没有符合 play:{{name}} 所指定升级等级的牌",
+      "handAbsent": "当前手牌中没有 play:{{name}}。此前的抽牌、消耗或回合转换可能已改变手牌",
+      "handOccurrence": "当前可见手牌中没有 play:{{name}} 的第 #{{occurrence}} 个同名副本；匹配到 {{count}} 张牌。副本序号按每一步的新局面计算；若序列中的同名副本在公开状态上等价，可重复使用 {{alias}} 并省略 #<occurrence>，由每一步的新局面解析",
+      "untargeted": "play:{{name}} 可以合法打出，但不需要怪物目标；请去掉 @{{slot}}，并用 options 查看当前完整命令",
+      "handIllegal": "play:{{name}}#{{occurrence}} 选中 hand[{{hand}}] 的 {{card}}，费用 {{cost}}；当前能量 {{energy}} 下无法合法打出{{target}}。请检查当前候选，不要重新编号来选择另一张副本",
+      "targetSlot": "，目标怪物槽位 {{slot}}",
+      "handAmbiguous": "play:{{name}} 在 {{site}} 匹配多个动作；请使用一个完整的可见手牌命令：{{candidates}}",
+      "advanceExplicit": "advance 会跳过 {{site}} 的待选项：{{choices}}；请先明确完成这些选择，再继续常规推进",
+      "advanceAbsent": "在 {{site}} 没有可唯一确定的常规推进动作；选牌、奖励、事件、宝箱、营火和购买需要明确选择",
+      "advanceAmbiguous": "advance 在 {{site}} 匹配多个常规推进候选 {{matches}}；请选择一个明确动作",
+      "runPotionTarget": "战斗外使用药水不能指定战斗目标",
+      "upgradeAmbiguous": "{{verb}}:{{name}} 有多个升级等级且没有未升级版本；请指定 + 或 +<level>",
+      "occurrenceAbsent": "动作 {{action}} 的第 #{{occurrence}} 个同名副本在 {{site}} 不可用；匹配到 {{count}} 个候选",
+      "ambiguous": "动作 {{selector}} 在 {{site}} 匹配多个候选 {{matches}}；请添加 #<occurrence> 或目标",
+      "singleRoute": "；当前地图只有一条路线，可使用 advance 或 {{route}}",
+      "multipleRoutes": "；请从 [{{routes}}] 中明确选择一条路线",
+      "noMatch": "动作 {{selector}} 在 {{site}} 没有合法匹配（共 {{count}} 个候选）{{hint}}"
+    }
   },
   "draft": {
     "xCost": "X费",

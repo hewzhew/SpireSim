@@ -310,8 +310,12 @@ mod tests {
                     sts_presentation::Locale::En,
                 )
                 .unwrap();
-                let choice =
-                    crate::selector::resolve_action_selector_v1(&public, &selector).unwrap();
+                let choice = crate::selector::resolve_action_selector_v1(
+                    &public,
+                    &selector,
+                    sts_presentation::Locale::En,
+                )
+                .unwrap();
                 public.validate_choice(&choice).unwrap();
             }
             for offer in &projection.stock {

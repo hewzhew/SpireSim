@@ -3088,7 +3088,9 @@ mod private_preview_command_tests {
                 sts_presentation::Locale::En,
             )
             .unwrap();
-            let inspections = game.inspect_action_lines_v1(&[actions]).unwrap();
+            let inspections = game
+                .inspect_action_lines_v1(&[actions], sts_presentation::Locale::En)
+                .unwrap();
             let en = project_agent_inspection_v1(&inspections[0], Locale::En).unwrap();
             let zh = project_agent_inspection_v1(&inspections[0], Locale::ZhCn).unwrap();
             assert_eq!(en.steps, zh.steps);
@@ -3119,7 +3121,9 @@ mod private_preview_command_tests {
             sts_presentation::Locale::En,
         )
         .unwrap();
-        let comparison = game.compare_action_lines_v1(&[actions.clone()]).unwrap();
+        let comparison = game
+            .compare_action_lines_v1(&[actions.clone()], sts_presentation::Locale::En)
+            .unwrap();
         let projected = project_agent_probe_line_v1(&comparison.lines[0], Locale::En).unwrap();
         assert!(
             projected
@@ -3135,7 +3139,8 @@ mod private_preview_command_tests {
             "{chinese}"
         );
         assert_eq!(*game.head(), before);
-        game.anchor_action_line_v1(&actions).unwrap();
+        game.anchor_action_line_v1(&actions, sts_presentation::Locale::En)
+            .unwrap();
         let actual = game
             .head()
             .current_decision
@@ -3171,7 +3176,9 @@ mod private_preview_command_tests {
             sts_presentation::Locale::En,
         )
         .unwrap();
-        let expected = game.compare_action_lines_v1(&[prefix]).unwrap();
+        let expected = game
+            .compare_action_lines_v1(&[prefix], sts_presentation::Locale::En)
+            .unwrap();
         let expected = project_agent_probe_line_v1(&expected.lines[0], Locale::En).unwrap();
         let line = crate::selector::parse_action_line_v1(
             "event:CursedTome:0/play:Strike@0",
@@ -3179,7 +3186,9 @@ mod private_preview_command_tests {
             sts_presentation::Locale::En,
         )
         .unwrap();
-        let inspections = game.inspect_action_lines_v1(&[line.clone()]).unwrap();
+        let inspections = game
+            .inspect_action_lines_v1(&[line.clone()], sts_presentation::Locale::En)
+            .unwrap();
         let projected = project_agent_inspection_v1(&inspections[0], Locale::En).unwrap();
         assert_eq!(projected.endpoint, expected.endpoint);
         assert_eq!(projected.steps.len(), 1);
@@ -3198,7 +3207,9 @@ mod private_preview_command_tests {
             .view
             .contains("event:CursedTome:0  |  [Continue] Lose 1 HP."));
         assert!(capture_exact_prefix_artifact_v1(&mut game, &[line.clone()]).is_err());
-        assert!(game.anchor_action_line_v1(&line).is_err());
+        assert!(game
+            .anchor_action_line_v1(&line, sts_presentation::Locale::En)
+            .is_err());
         assert_eq!(*game.head(), before);
     }
 
@@ -3220,7 +3231,9 @@ mod private_preview_command_tests {
             sts_presentation::Locale::En,
         )
         .unwrap();
-        let inspections = game.inspect_action_lines_v1(&[line]).unwrap();
+        let inspections = game
+            .inspect_action_lines_v1(&[line], sts_presentation::Locale::En)
+            .unwrap();
         let projected = project_agent_inspection_v1(&inspections[0], Locale::En).unwrap();
         assert!(projected.steps.is_empty());
         assert!(projected
@@ -3243,7 +3256,9 @@ mod private_preview_command_tests {
         let line =
             crate::selector::parse_action_line_v1("end/end", "test", sts_presentation::Locale::En)
                 .unwrap();
-        let inspections = game.inspect_action_lines_v1(&[line.clone()]).unwrap();
+        let inspections = game
+            .inspect_action_lines_v1(&[line.clone()], sts_presentation::Locale::En)
+            .unwrap();
         let projected = project_agent_inspection_v1(&inspections[0], Locale::En).unwrap();
         assert!(matches!(
             projected.stop,
@@ -3262,7 +3277,9 @@ mod private_preview_command_tests {
         );
         assert_eq!(projected.steps.len(), 1);
         assert!(capture_exact_prefix_artifact_v1(&mut game, &[line.clone()]).is_err());
-        assert!(game.anchor_action_line_v1(&line).is_err());
+        assert!(game
+            .anchor_action_line_v1(&line, sts_presentation::Locale::En)
+            .is_err());
         assert_eq!(*game.head(), before);
     }
 
@@ -3277,7 +3294,9 @@ mod private_preview_command_tests {
             sts_presentation::Locale::En,
         )
         .unwrap();
-        let inspections = game.inspect_action_lines_v1(&[line]).unwrap();
+        let inspections = game
+            .inspect_action_lines_v1(&[line], sts_presentation::Locale::En)
+            .unwrap();
         let projected = project_agent_inspection_v1(&inspections[0], Locale::En).unwrap();
         assert!(matches!(
             projected.stop,
@@ -3300,7 +3319,9 @@ mod private_preview_command_tests {
         let prefix =
             crate::selector::parse_action_line_v1("end", "test", sts_presentation::Locale::En)
                 .unwrap();
-        let expected = game.compare_action_lines_v1(&[prefix]).unwrap();
+        let expected = game
+            .compare_action_lines_v1(&[prefix], sts_presentation::Locale::En)
+            .unwrap();
         let expected = project_agent_probe_line_v1(&expected.lines[0], Locale::En).unwrap();
         let line = crate::selector::parse_action_line_v1(
             "end/play:Corruption",
@@ -3308,7 +3329,9 @@ mod private_preview_command_tests {
             sts_presentation::Locale::En,
         )
         .unwrap();
-        let inspections = game.inspect_action_lines_v1(&[line]).unwrap();
+        let inspections = game
+            .inspect_action_lines_v1(&[line], sts_presentation::Locale::En)
+            .unwrap();
         let projected = project_agent_inspection_v1(&inspections[0], Locale::En).unwrap();
         assert_eq!(projected.endpoint, expected.endpoint);
         assert!(projected.view.contains("Turn 2 |"), "{}", projected.view);
@@ -3344,7 +3367,7 @@ mod private_preview_command_tests {
         )
         .unwrap();
         let inspections = game
-            .inspect_action_lines_v1(&[vec![line[0].clone()], line])
+            .inspect_action_lines_v1(&[vec![line[0].clone()], line], sts_presentation::Locale::En)
             .unwrap();
         let complete = project_agent_inspection_v1(&inspections[0], Locale::En).unwrap();
         assert!(matches!(complete.stop, AgentProbeStopV1::Complete));
@@ -3398,7 +3421,7 @@ pub fn capture_exact_prefix_artifact_v1(
         .public_decision_v1()?
         .information
         .snapshot_id;
-    let comparison = controller.compare_action_lines_v1(lines)?;
+    let comparison = controller.compare_action_lines_v1(lines, sts_presentation::Locale::En)?;
     let projected_lines = comparison
         .lines
         .iter()
@@ -3764,7 +3787,7 @@ fn project_agent_card_reward_resources_v1(
         .map(|semantic_action| {
             let selector =
                 parse_action_selector_v1(&semantic_action, "agent reward resources", locale)?;
-            let preview = controller.compare_action_lines_v1(&[vec![selector]])?;
+            let preview = controller.compare_action_lines_v1(&[vec![selector]], locale)?;
             let next = preview
                 .lines
                 .first()
@@ -5500,7 +5523,7 @@ fn handle_valid_request_v1(
                 .transpose()?;
             let reveals = before.as_ref().is_some_and(|decision| {
                 selectors.first().is_some_and(|selector| {
-                    crate::selector::resolve_action_selector_v1(decision, selector)
+                    crate::selector::resolve_action_selector_v1(decision, selector, locale)
                         .ok()
                         .and_then(|choice| choice.ordinal_path.first().copied())
                         .and_then(|ordinal| decision.candidates.get(ordinal))
@@ -5511,9 +5534,10 @@ fn handle_valid_request_v1(
                 controller.choose_action_v1(
                     &selectors[0],
                     matches!(advance, AgentAdvanceModeV1::OnePublicAction),
+                    locale,
                 )?;
             } else {
-                controller.anchor_action_line_v1(&selectors)?;
+                controller.anchor_action_line_v1(&selectors, locale)?;
             }
             let revealed_changes =
                 render_revealed_deck_result_v1(controller, before.as_ref(), reveals, locale)?;
@@ -5549,7 +5573,7 @@ fn handle_valid_request_v1(
                 })
                 .collect::<Result<Vec<_>, String>>()?;
             let root_head_revision = controller.head().head_revision;
-            let inspections = controller.inspect_action_lines_v1(&selectors)?;
+            let inspections = controller.inspect_action_lines_v1(&selectors, locale)?;
             let lines = inspections
                 .iter()
                 .map(|inspection| project_agent_inspection_v1(inspection, locale))

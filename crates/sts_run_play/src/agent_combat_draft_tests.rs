@@ -242,7 +242,7 @@ fn analyst_draft_victory_uses_the_existing_combat_plan_transaction() {
             parse_action_selector_v1(&semantic, "draft integration", sts_presentation::Locale::En)
                 .expect("semantic selector");
         controller
-            .choose_action_v1(&selector, true)
+            .choose_action_v1(&selector, true, sts_presentation::Locale::En)
             .expect("advance toward first combat");
     }
     assert_eq!(

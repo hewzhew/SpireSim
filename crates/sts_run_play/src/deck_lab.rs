@@ -1076,7 +1076,8 @@ mod tests {
                 "take" => assert_eq!(resources.gold, before.run_state.gold + 9),
                 _ => unreachable!(),
             }
-            game.anchor_action_line_v1(&selectors).unwrap();
+            game.anchor_action_line_v1(&selectors, sts_presentation::Locale::En)
+                .unwrap();
             let adopted = game
                 .current_external_exact_checkpoint_v1()
                 .unwrap()

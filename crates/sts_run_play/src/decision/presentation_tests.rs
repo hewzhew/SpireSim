@@ -1948,7 +1948,12 @@ fn live_choice_commands_round_trip_while_preview_choices_remain_hypothetical() {
                 sts_presentation::Locale::En,
             )
             .unwrap();
-            let choice = crate::selector::resolve_action_selector_v1(&decision, &selector).unwrap();
+            let choice = crate::selector::resolve_action_selector_v1(
+                &decision,
+                &selector,
+                sts_presentation::Locale::En,
+            )
+            .unwrap();
             decision.validate_choice(&choice).unwrap();
             assert!(
                 reading.options.iter().any(|option| option.choice == choice)
@@ -1986,7 +1991,12 @@ fn live_choice_commands_round_trip_while_preview_choices_remain_hypothetical() {
                 sts_presentation::Locale::En,
             )
             .unwrap();
-            let choice = crate::selector::resolve_action_selector_v1(&decision, &selector).unwrap();
+            let choice = crate::selector::resolve_action_selector_v1(
+                &decision,
+                &selector,
+                sts_presentation::Locale::En,
+            )
+            .unwrap();
             assert!(choice
                 .ordinal_path
                 .starts_with(&selection.choice.ordinal_path));
@@ -1999,7 +2009,12 @@ fn live_choice_commands_round_trip_while_preview_choices_remain_hypothetical() {
                     sts_presentation::Locale::En,
                 )
                 .unwrap();
-                assert!(crate::selector::resolve_action_selector_v1(&decision, &repeated).is_err());
+                assert!(crate::selector::resolve_action_selector_v1(
+                    &decision,
+                    &repeated,
+                    sts_presentation::Locale::En
+                )
+                .is_err());
             }
             shown += 1;
         }
@@ -2078,7 +2093,12 @@ fn localized_or_command_like_event_labels_do_not_change_choice_commands() {
                 )
                 .unwrap();
                 assert_eq!(
-                    crate::selector::resolve_action_selector_v1(&decision, &selector).unwrap(),
+                    crate::selector::resolve_action_selector_v1(
+                        &decision,
+                        &selector,
+                        sts_presentation::Locale::En
+                    )
+                    .unwrap(),
                     choice
                 );
             }

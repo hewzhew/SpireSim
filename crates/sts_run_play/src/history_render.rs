@@ -907,7 +907,8 @@ mod tests {
             sts_presentation::Locale::En,
         )
         .unwrap();
-        game.choose_action_v1(&selector, true).unwrap();
+        game.choose_action_v1(&selector, true, sts_presentation::Locale::En)
+            .unwrap();
         let paths = crate::storage::RunPlayPathsV1::new(directory.0.join("history-reward"));
         let before = paths.load().unwrap();
         let fingerprint = game.current_state_fingerprints_v1().unwrap();
@@ -954,6 +955,7 @@ mod tests {
             )
             .unwrap(),
             true,
+            sts_presentation::Locale::En,
         )
         .unwrap();
         let paths = crate::storage::RunPlayPathsV1::new(directory.0.join("history-combat"));

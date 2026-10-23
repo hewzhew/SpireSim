@@ -358,6 +358,7 @@ mod tests {
                 )
                 .unwrap(),
                 true,
+                sts_presentation::Locale::En,
             )
             .unwrap();
     }

@@ -626,7 +626,7 @@ mod tests {
         .expect("selector");
         let mut controller = RunPlayControllerV1::open(target_paths.clone()).expect("controller");
         controller
-            .choose_action_v1(&selector, true)
+            .choose_action_v1(&selector, true, sts_presentation::Locale::En)
             .expect("Neow's Lament branch");
         let leave = parse_action_selector_v1(
             "event:Neow:0",
@@ -635,7 +635,7 @@ mod tests {
         )
         .expect("leave");
         controller
-            .choose_action_v1(&leave, true)
+            .choose_action_v1(&leave, true, sts_presentation::Locale::En)
             .expect("explicit completed-Neow Leave");
         park_session_v1(&target_paths, "probe complete".to_string()).expect("park");
 
@@ -737,7 +737,7 @@ mod tests {
         )
         .expect("selector");
         source_controller
-            .choose_action_v1(&proceed, true)
+            .choose_action_v1(&proceed, true, sts_presentation::Locale::En)
             .expect("advance to replayable source root");
         drop(source_controller);
 

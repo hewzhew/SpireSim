@@ -585,7 +585,10 @@ fn preview_defeat_shows_observed_terminal_hp_without_moving_the_head() {
     let mut game = controller(&dir.0, "combat_defeat");
     let head = game.head().clone();
     let comparison = game
-        .compare_action_lines_v1(&[vec![crate::selector::RunPlayActionSelectorV1::EndTurn]])
+        .compare_action_lines_v1(
+            &[vec![crate::selector::RunPlayActionSelectorV1::EndTurn]],
+            sts_presentation::Locale::En,
+        )
         .unwrap();
     assert_eq!(game.head(), &head);
     let last = comparison.lines[0].steps.last().unwrap();
@@ -629,7 +632,10 @@ fn preview_cannot_reveal_question_mark_room() {
     let mut game = controller(&dir.0, "route_question");
     let head = game.head().clone();
     let error = game
-        .compare_action_lines_v1(&[vec![RunPlayActionSelectorV1::ChooseRoute { x: 0, y: 0 }]])
+        .compare_action_lines_v1(
+            &[vec![RunPlayActionSelectorV1::ChooseRoute { x: 0, y: 0 }]],
+            sts_presentation::Locale::En,
+        )
         .err()
         .expect("an unrevealed room must reject preview");
     assert!(error.contains("unrevealed ? room"), "{error}");
@@ -654,7 +660,10 @@ fn preview_cannot_reveal_question_mark_room() {
         })
         .unwrap();
     let ordinal_error = game
-        .compare_action_lines_v1(&[vec![RunPlayActionSelectorV1::OrdinalPath(vec![ordinal])]])
+        .compare_action_lines_v1(
+            &[vec![RunPlayActionSelectorV1::OrdinalPath(vec![ordinal])]],
+            sts_presentation::Locale::En,
+        )
         .err()
         .expect("an ordinal must not bypass the room guard");
     assert!(
@@ -663,8 +672,11 @@ fn preview_cannot_reveal_question_mark_room() {
     );
     assert_eq!(game.head(), &head);
 
-    game.compare_action_lines_v1(&[vec![RunPlayActionSelectorV1::ChooseRoute { x: 1, y: 0 }]])
-        .unwrap();
+    game.compare_action_lines_v1(
+        &[vec![RunPlayActionSelectorV1::ChooseRoute { x: 1, y: 0 }]],
+        sts_presentation::Locale::En,
+    )
+    .unwrap();
     assert_eq!(game.head(), &head);
 }
 
@@ -865,8 +877,12 @@ fn different_gold_amounts_have_distinct_claim_commands_and_remain_readable() {
         sts_presentation::Locale::En,
     )
     .unwrap();
-    let first_choice = crate::selector::resolve_action_selector_v1(&public, &first).unwrap();
-    let second_choice = crate::selector::resolve_action_selector_v1(&public, &second).unwrap();
+    let first_choice =
+        crate::selector::resolve_action_selector_v1(&public, &first, sts_presentation::Locale::En)
+            .unwrap();
+    let second_choice =
+        crate::selector::resolve_action_selector_v1(&public, &second, sts_presentation::Locale::En)
+            .unwrap();
     assert_ne!(first_choice, second_choice);
     assert_eq!(
         crate::selector::semantic_action_for_choice_v1(&public, &first_choice).unwrap(),
@@ -4152,7 +4168,12 @@ fn combat_selector_reports_an_extraneous_target_without_rewriting_the_action() {
         sts_presentation::Locale::En,
     )
     .unwrap();
-    let error = crate::selector::resolve_action_selector_v1(&decision, &targeted).unwrap_err();
+    let error = crate::selector::resolve_action_selector_v1(
+        &decision,
+        &targeted,
+        sts_presentation::Locale::En,
+    )
+    .unwrap_err();
     assert!(
         error.contains("legal play without a monster target"),
         "{error}"
@@ -4164,7 +4185,12 @@ fn combat_selector_reports_an_extraneous_target_without_rewriting_the_action() {
         sts_presentation::Locale::En,
     )
     .unwrap();
-    assert!(crate::selector::resolve_action_selector_v1(&decision, &untargeted).is_ok());
+    assert!(crate::selector::resolve_action_selector_v1(
+        &decision,
+        &untargeted,
+        sts_presentation::Locale::En
+    )
+    .is_ok());
 }
 
 #[test]
@@ -4186,7 +4212,12 @@ fn combat_selector_explains_absent_cards_instead_of_encouraging_retries() {
             sts_presentation::Locale::En,
         )
         .unwrap();
-        let error = crate::selector::resolve_action_selector_v1(&decision, &action).unwrap_err();
+        let error = crate::selector::resolve_action_selector_v1(
+            &decision,
+            &action,
+            sts_presentation::Locale::En,
+        )
+        .unwrap_err();
         assert!(
             error.contains("not in the hand at this boundary"),
             "{error}"
@@ -4313,7 +4344,12 @@ fn act_returns_the_successor_reading_and_selection_jump_renders_after_commit() {
         let selector =
             crate::selector::parse_action_selector_v1(&spec, "test", sts_presentation::Locale::En)
                 .unwrap();
-        let actual = crate::selector::resolve_action_selector_v1(&public, &selector).unwrap();
+        let actual = crate::selector::resolve_action_selector_v1(
+            &public,
+            &selector,
+            sts_presentation::Locale::En,
+        )
+        .unwrap();
         let mut expected = reading.selections[0].choice.clone();
         expected.ordinal_path.push(member.ordinal);
         assert_eq!(actual, expected, "displayed command: {command}");

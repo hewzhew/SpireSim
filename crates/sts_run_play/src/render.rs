@@ -3715,6 +3715,7 @@ mod tests {
             )
             .unwrap(),
             true,
+            sts_presentation::Locale::En,
         )
         .unwrap();
         let head = game.head().clone();
@@ -3754,6 +3755,7 @@ mod tests {
             )
             .unwrap(),
             true,
+            sts_presentation::Locale::En,
         )
         .unwrap();
         let head = game.head().clone();
@@ -3791,6 +3793,7 @@ mod tests {
             )
             .unwrap(),
             true,
+            sts_presentation::Locale::En,
         )
         .unwrap();
         let paths = crate::storage::RunPlayPathsV1::new(directory.0.join("construction-language"));

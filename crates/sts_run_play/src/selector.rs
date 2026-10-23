@@ -1,11 +1,11 @@
-pub(crate) fn syntax_message(
+pub(crate) fn selector_message(
     locale: sts_presentation::Locale,
     key: &str,
     parameters: &[(&str, &str)],
 ) -> String {
     locale
         .text("selector", key, parameters)
-        .expect("action syntax message")
+        .expect("action selector message")
 }
 
 use sts_oracle_learning::agent::information::action::{
@@ -87,7 +87,7 @@ pub fn parse_action_line_v1(
     locale: sts_presentation::Locale,
 ) -> Result<Vec<RunPlayActionSelectorV1>, String> {
     if spec.is_empty() {
-        return Err(syntax_message(
+        return Err(selector_message(
             locale,
             "emptyLine",
             &[("command", &(command.to_owned()))],
@@ -104,7 +104,7 @@ pub fn parse_action_selector_v1(
     locale: sts_presentation::Locale,
 ) -> Result<RunPlayActionSelectorV1, String> {
     if spec.is_empty() {
-        return Err(syntax_message(
+        return Err(selector_message(
             locale,
             "emptyAction",
             &[("command", &(command.to_owned()))],
@@ -148,7 +148,7 @@ pub fn parse_action_selector_v1(
         _ => {}
     }
     let (verb, payload) = spec.split_once(':').ok_or_else(|| {
-        syntax_message(
+        selector_message(
             locale,
             "unknownAction",
             &[
@@ -192,7 +192,7 @@ pub fn parse_action_selector_v1(
                 .filter(|part| !part.is_empty())
                 .collect::<Vec<_>>();
             let [x, y] = coordinates.as_slice() else {
-                return Err(syntax_message(
+                return Err(selector_message(
                     locale,
                     "route",
                     &[("command", &(command.to_owned()))],
@@ -234,10 +234,10 @@ pub fn parse_action_selector_v1(
         )),
         "event" => {
             let (event, option) = payload.rsplit_once(':').ok_or_else(|| {
-                syntax_message(locale, "event", &[("command", &(command.to_owned()))])
+                selector_message(locale, "event", &[("command", &(command.to_owned()))])
             })?;
             if event.is_empty() {
-                return Err(syntax_message(
+                return Err(selector_message(
                     locale,
                     "eventName",
                     &[("command", &(command.to_owned()))],
@@ -248,7 +248,7 @@ pub fn parse_action_selector_v1(
                 option_index: parse_number(option, "eventOption", command, locale)?,
             })
         }
-        _ => Err(syntax_message(
+        _ => Err(selector_message(
             locale,
             "verb",
             &[("verb", &(format!("{verb:?}")))],
@@ -259,6 +259,7 @@ pub fn parse_action_selector_v1(
 pub fn resolve_action_selector_v1(
     decision: &TaskPublicDecisionV1,
     selector: &RunPlayActionSelectorV1,
+    locale: sts_presentation::Locale,
 ) -> Result<TaskPublicChoiceV1, String> {
     if let RunPlayActionSelectorV1::OrdinalPath(ordinal_path) = selector {
         let choice = TaskPublicChoiceV1 {
@@ -269,7 +270,7 @@ pub fn resolve_action_selector_v1(
     }
 
     let matches = match selector {
-        RunPlayActionSelectorV1::Advance => return resolve_routine_advance_v1(decision),
+        RunPlayActionSelectorV1::Advance => return resolve_routine_advance_v1(decision, locale),
         RunPlayActionSelectorV1::EndTurn => atomic_matches(decision, |action| {
             matches!(action, PublicCombatAtomicActionV1::EndTurn)
         }),
@@ -304,13 +305,13 @@ pub fn resolve_action_selector_v1(
         RunPlayActionSelectorV1::PlayCard {
             card,
             target_monster_slot,
-        } => return resolve_play_card(decision, card, *target_monster_slot),
+        } => return resolve_play_card(decision, card, *target_monster_slot, locale),
         RunPlayActionSelectorV1::UsePotion {
             potion,
             target_monster_slot,
-        } => return resolve_use_potion(decision, potion, *target_monster_slot),
+        } => return resolve_use_potion(decision, potion, *target_monster_slot, locale),
         RunPlayActionSelectorV1::DiscardPotion(potion) => {
-            return resolve_discard_potion(decision, potion)
+            return resolve_discard_potion(decision, potion, locale)
         }
         RunPlayActionSelectorV1::ChooseIndexed(candidate) => {
             let matches = decision
@@ -340,7 +341,7 @@ pub fn resolve_action_selector_v1(
                     .then_some(ordinal)
                 })
                 .collect();
-            return select_named_match(decision, selector, candidate, matches);
+            return select_named_match(decision, selector, candidate, matches, locale);
         }
         RunPlayActionSelectorV1::ChooseRoute { x, y } => strategic_matches(decision, |action| {
             matches!(
@@ -356,89 +357,114 @@ pub fn resolve_action_selector_v1(
             let matches = strategic_matches(decision, |action| {
                 matches!(action, TaskStrategicActionV1::OpenCardReward { .. })
             });
-            return select_occurrence_match(decision, selector, *occurrence, matches);
+            return select_occurrence_match(decision, selector, *occurrence, matches, locale);
         }
         RunPlayActionSelectorV1::SingingBowl { occurrence } => {
             let matches = strategic_matches(decision, |action| {
                 matches!(action, TaskStrategicActionV1::SingingBowl { .. })
             });
-            return select_occurrence_match(decision, selector, *occurrence, matches);
+            return select_occurrence_match(decision, selector, *occurrence, matches, locale);
         }
         RunPlayActionSelectorV1::ClaimReward(reward) => {
-            let matches = named_strategic_matches(decision, reward, |action| match action {
-                TaskStrategicActionV1::ClaimReward {
-                    reward: candidate_reward,
-                    ..
-                } => Some((
-                    reward_matches_input_alias_v1(candidate_reward, &reward.name),
-                    None,
-                )),
-                _ => None,
-            })?;
-            return select_named_match(decision, selector, reward, matches);
+            let matches = named_strategic_matches(
+                decision,
+                reward,
+                |action| match action {
+                    TaskStrategicActionV1::ClaimReward {
+                        reward: candidate_reward,
+                        ..
+                    } => Some((
+                        reward_matches_input_alias_v1(candidate_reward, &reward.name),
+                        None,
+                    )),
+                    _ => None,
+                },
+                locale,
+            )?;
+            return select_named_match(decision, selector, reward, matches, locale);
         }
         RunPlayActionSelectorV1::TakeCard(card) => {
-            let matches = named_strategic_matches(decision, card, |action| match action {
-                TaskStrategicActionV1::TakeCard {
-                    card: candidate_card,
-                    upgrades,
-                    ..
-                } => Some((
-                    candidate_card.matches_input_alias_v1(&card.name),
-                    Some(*upgrades),
-                )),
-                _ => None,
-            })?;
-            return select_named_match(decision, selector, card, matches);
+            let matches = named_strategic_matches(
+                decision,
+                card,
+                |action| match action {
+                    TaskStrategicActionV1::TakeCard {
+                        card: candidate_card,
+                        upgrades,
+                        ..
+                    } => Some((
+                        candidate_card.matches_input_alias_v1(&card.name),
+                        Some(*upgrades),
+                    )),
+                    _ => None,
+                },
+                locale,
+            )?;
+            return select_named_match(decision, selector, card, matches, locale);
         }
         RunPlayActionSelectorV1::SkipCardReward { occurrence } => {
             let matches = strategic_matches(decision, |action| {
                 matches!(action, TaskStrategicActionV1::SkipCardReward { .. })
             });
-            return select_occurrence_match(decision, selector, *occurrence, matches);
+            return select_occurrence_match(decision, selector, *occurrence, matches, locale);
         }
         RunPlayActionSelectorV1::Buy(item) => {
-            let matches = named_strategic_matches(decision, item, |action| match action {
-                TaskStrategicActionV1::BuyCard { card, upgrades, .. } => {
-                    Some((card.matches_input_alias_v1(&item.name), Some(*upgrades)))
-                }
-                TaskStrategicActionV1::BuyRelic { relic, .. } => {
-                    Some((relic.matches_input_alias_v1(&item.name), None))
-                }
-                TaskStrategicActionV1::BuyPotion { potion, .. } => {
-                    Some((potion.matches_input_alias_v1(&item.name), None))
-                }
-                _ => None,
-            })?;
-            return select_named_match(decision, selector, item, matches);
+            let matches = named_strategic_matches(
+                decision,
+                item,
+                |action| match action {
+                    TaskStrategicActionV1::BuyCard { card, upgrades, .. } => {
+                        Some((card.matches_input_alias_v1(&item.name), Some(*upgrades)))
+                    }
+                    TaskStrategicActionV1::BuyRelic { relic, .. } => {
+                        Some((relic.matches_input_alias_v1(&item.name), None))
+                    }
+                    TaskStrategicActionV1::BuyPotion { potion, .. } => {
+                        Some((potion.matches_input_alias_v1(&item.name), None))
+                    }
+                    _ => None,
+                },
+                locale,
+            )?;
+            return select_named_match(decision, selector, item, matches, locale);
         }
         RunPlayActionSelectorV1::RemoveCard(card) => {
-            let matches = named_strategic_matches(decision, card, |action| match action {
-                TaskStrategicActionV1::RemoveCard {
-                    card: candidate_card,
-                    upgrades,
-                    ..
-                } => Some((
-                    candidate_card.matches_input_alias_v1(&card.name),
-                    Some(*upgrades),
-                )),
-                _ => None,
-            })?;
-            return select_named_match(decision, selector, card, matches);
+            let matches = named_strategic_matches(
+                decision,
+                card,
+                |action| match action {
+                    TaskStrategicActionV1::RemoveCard {
+                        card: candidate_card,
+                        upgrades,
+                        ..
+                    } => Some((
+                        candidate_card.matches_input_alias_v1(&card.name),
+                        Some(*upgrades),
+                    )),
+                    _ => None,
+                },
+                locale,
+            )?;
+            return select_named_match(decision, selector, card, matches, locale);
         }
         RunPlayActionSelectorV1::Smith(card) => {
-            let matches = named_strategic_matches(decision, card, |action| match action {
-                TaskStrategicActionV1::Smith {
-                    card: candidate_card,
-                    upgrades,
-                    ..
-                } => Some((
-                    candidate_card.matches_input_alias_v1(&card.name),
-                    Some(*upgrades),
-                )),
-                _ => None,
-            })?;
-            return select_named_match(decision, selector, card, matches);
+            let matches = named_strategic_matches(
+                decision,
+                card,
+                |action| match action {
+                    TaskStrategicActionV1::Smith {
+                        card: candidate_card,
+                        upgrades,
+                        ..
+                    } => Some((
+                        candidate_card.matches_input_alias_v1(&card.name),
+                        Some(*upgrades),
+                    )),
+                    _ => None,
+                },
+                locale,
+            )?;
+            return select_named_match(decision, selector, card, matches, locale);
         }
         RunPlayActionSelectorV1::Rest => strategic_matches(decision, |action| {
             matches!(action, TaskStrategicActionV1::Rest)
@@ -450,28 +476,33 @@ pub fn resolve_action_selector_v1(
             matches!(action, TaskStrategicActionV1::Lift)
         }),
         RunPlayActionSelectorV1::Toke(card) => {
-            let matches = named_strategic_matches(decision, card, |action| match action {
-                TaskStrategicActionV1::Toke {
-                    card: candidate_card,
-                    upgrades,
-                    ..
-                } => Some((
-                    candidate_card.matches_input_alias_v1(&card.name),
-                    Some(*upgrades),
-                )),
-                _ => None,
-            })?;
-            return select_named_match(decision, selector, card, matches);
+            let matches = named_strategic_matches(
+                decision,
+                card,
+                |action| match action {
+                    TaskStrategicActionV1::Toke {
+                        card: candidate_card,
+                        upgrades,
+                        ..
+                    } => Some((
+                        candidate_card.matches_input_alias_v1(&card.name),
+                        Some(*upgrades),
+                    )),
+                    _ => None,
+                },
+                locale,
+            )?;
+            return select_named_match(decision, selector, card, matches, locale);
         }
         RunPlayActionSelectorV1::Recall => strategic_matches(decision, |action| {
             matches!(action, TaskStrategicActionV1::Recall)
         }),
         RunPlayActionSelectorV1::SelectCards(cards) => match decision.observation {
             TaskPublicObservationV1::Strategic { .. } => {
-                return resolve_run_card_selection_v1(decision, selector, cards)
+                return resolve_run_card_selection_v1(decision, selector, cards, locale)
             }
             TaskPublicObservationV1::Combat { .. } => {
-                return resolve_combat_card_selection_v1(decision, selector, cards)
+                return resolve_combat_card_selection_v1(decision, selector, cards, locale)
             }
         },
         RunPlayActionSelectorV1::LeaveShop => strategic_matches(decision, |action| {
@@ -481,14 +512,19 @@ pub fn resolve_action_selector_v1(
             matches!(action, TaskStrategicActionV1::OpenPendingRewards)
         }),
         RunPlayActionSelectorV1::TakeBossRelic(relic) => {
-            let matches = named_strategic_matches(decision, relic, |action| match action {
-                TaskStrategicActionV1::TakeBossRelic {
-                    relic: candidate_relic,
-                    ..
-                } => Some((candidate_relic.matches_input_alias_v1(&relic.name), None)),
-                _ => None,
-            })?;
-            return select_named_match(decision, selector, relic, matches);
+            let matches = named_strategic_matches(
+                decision,
+                relic,
+                |action| match action {
+                    TaskStrategicActionV1::TakeBossRelic {
+                        relic: candidate_relic,
+                        ..
+                    } => Some((candidate_relic.matches_input_alias_v1(&relic.name), None)),
+                    _ => None,
+                },
+                locale,
+            )?;
+            return select_named_match(decision, selector, relic, matches, locale);
         }
         RunPlayActionSelectorV1::SkipBossRelic => strategic_matches(decision, |action| {
             matches!(action, TaskStrategicActionV1::SkipBossRelic)
@@ -512,7 +548,7 @@ pub fn resolve_action_selector_v1(
         }),
         RunPlayActionSelectorV1::OrdinalPath(_) => unreachable!(),
     };
-    select_unique_match(decision, selector, matches)
+    select_unique_match(decision, selector, matches, locale)
 }
 
 /// Converts one validated public choice back into an executable semantic
@@ -725,7 +761,7 @@ pub fn transactional_play_alias_for_choice_v1(
         card: card.clone(),
         target_monster_slot,
     };
-    if resolve_action_selector_v1(decision, &alias).is_err() {
+    if resolve_action_selector_v1(decision, &alias, sts_presentation::Locale::En).is_err() {
         return Ok(None);
     }
     Ok(Some(format!(
@@ -745,7 +781,7 @@ fn validate_generated_semantic_action_v1(
         "generated-semantic-action",
         sts_presentation::Locale::En,
     )?;
-    let resolved = resolve_action_selector_v1(decision, &parsed)?;
+    let resolved = resolve_action_selector_v1(decision, &parsed, sts_presentation::Locale::En)?;
     if resolved != *choice {
         return Err(format!(
             "generated semantic action {spec:?} resolved to {:?}, expected {:?}",
@@ -1189,9 +1225,10 @@ fn resolve_run_card_selection_v1(
     decision: &TaskPublicDecisionV1,
     selector: &RunPlayActionSelectorV1,
     requested_cards: &[NamedOccurrenceV1],
+    locale: sts_presentation::Locale,
 ) -> Result<TaskPublicChoiceV1, String> {
     let TaskPublicObservationV1::Strategic { observation } = &decision.observation else {
-        return Err("select:<card> requires a strategic run-card selection".to_string());
+        return Err(selector_message(locale, "resolve.runSelection", &[]));
     };
     let selected_card_ordinals = requested_cards
         .iter()
@@ -1204,6 +1241,7 @@ fn resolve_run_card_selection_v1(
                     .filter(|card| card.card.matches_input_alias_v1(&requested.name))
                     .map(|card| card.upgrades),
                 "select",
+                locale,
             )?;
             let matches = observation
                 .cards
@@ -1216,20 +1254,29 @@ fn resolve_run_card_selection_v1(
                 .collect::<Vec<_>>();
             match (requested.occurrence, matches.as_slice()) {
                 (Some(occurrence), _) => matches.get(occurrence).copied().ok_or_else(|| {
-                    format!(
-                        "select:{} occurrence #{occurrence} is unavailable; matched {} deck card(s)",
-                        requested.name,
-                        matches.len()
+                    selector_message(
+                        locale,
+                        "resolve.deckOccurrence",
+                        &[
+                            ("name", &(requested.name.clone())),
+                            ("occurrence", &(occurrence.to_string())),
+                            ("count", &(matches.len().to_string())),
+                        ],
                     )
                 }),
                 (None, [ordinal]) => Ok(*ordinal),
-                (None, []) => Err(format!(
-                    "select:{} has no matching public deck card",
-                    requested.name
+                (None, []) => Err(selector_message(
+                    locale,
+                    "resolve.deckAbsent",
+                    &[("name", &(requested.name.clone()))],
                 )),
-                (None, _) => Err(format!(
-                    "select:{} is ambiguous across deck ordinals {matches:?}; add #<occurrence>",
-                    requested.name
+                (None, _) => Err(selector_message(
+                    locale,
+                    "resolve.deckAmbiguous",
+                    &[
+                        ("name", &(requested.name.clone())),
+                        ("matches", &(format!("{matches:?}"))),
+                    ],
                 )),
             }
         })
@@ -1239,7 +1286,7 @@ fn resolve_run_card_selection_v1(
         .iter()
         .all(|ordinal| unique_card_ordinals.insert(*ordinal))
     {
-        return Err("select:<card> repeats the same public deck card".to_string());
+        return Err(selector_message(locale, "resolve.deckRepeated", &[]));
     }
 
     let submit_matches = decision
@@ -1258,7 +1305,7 @@ fn resolve_run_card_selection_v1(
         })
         .collect::<Vec<_>>();
     if !submit_matches.is_empty() {
-        return select_unique_match(decision, selector, submit_matches);
+        return select_unique_match(decision, selector, submit_matches, locale);
     }
 
     let parameterized_matches = decision
@@ -1295,10 +1342,14 @@ fn resolve_run_card_selection_v1(
         [ordinal_path] => Ok(TaskPublicChoiceV1 {
             ordinal_path: ordinal_path.clone(),
         }),
-        [] => Err(no_match_message(decision, &format!("{selector:?}"))),
-        _ => Err(format!(
-            "semantic action {selector:?} is ambiguous across {} run-card selection families",
-            parameterized_matches.len()
+        [] => Err(no_match_message(decision, &format!("{selector:?}"), locale)),
+        _ => Err(selector_message(
+            locale,
+            "resolve.runFamilies",
+            &[
+                ("selector", &(format!("{selector:?}"))),
+                ("count", &(parameterized_matches.len().to_string())),
+            ],
         )),
     }
 }
@@ -1307,6 +1358,7 @@ fn resolve_combat_card_selection_v1(
     decision: &TaskPublicDecisionV1,
     selector: &RunPlayActionSelectorV1,
     requested_cards: &[NamedOccurrenceV1],
+    locale: sts_presentation::Locale,
 ) -> Result<TaskPublicChoiceV1, String> {
     let mut matching_paths = Vec::new();
     for (root_ordinal, candidate) in decision.candidates.iter().enumerate() {
@@ -1330,6 +1382,7 @@ fn resolve_combat_card_selection_v1(
                         .flatten()
                 }),
                 "select",
+                locale,
             )?;
             let matches = family
                 .domain
@@ -1372,10 +1425,14 @@ fn resolve_combat_card_selection_v1(
     }
     match matching_paths.as_slice() {
         [choice] => Ok(choice.clone()),
-        [] => Err(no_match_message(decision, &format!("{selector:?}"))),
-        _ => Err(format!(
-            "semantic action {selector:?} is ambiguous across {} combat selection families",
-            matching_paths.len()
+        [] => Err(no_match_message(decision, &format!("{selector:?}"), locale)),
+        _ => Err(selector_message(
+            locale,
+            "resolve.combatFamilies",
+            &[
+                ("selector", &(format!("{selector:?}"))),
+                ("count", &(matching_paths.len().to_string())),
+            ],
         )),
     }
 }
@@ -1384,11 +1441,13 @@ fn resolve_play_card(
     decision: &TaskPublicDecisionV1,
     selector: &NamedOccurrenceV1,
     target_monster_slot: Option<u8>,
+    locale: sts_presentation::Locale,
 ) -> Result<TaskPublicChoiceV1, String> {
     let TaskPublicObservationV1::Combat { observation, .. } = &decision.observation else {
-        return Err(format!(
-            "play:{:?} requires a combat decision",
-            selector.name
+        return Err(selector_message(
+            locale,
+            "resolve.playCombat",
+            &[("name", &(format!("{:?}", selector.name)))],
         ));
     };
     let has_play = decision.candidates.iter().any(|candidate| {
@@ -1408,9 +1467,10 @@ fn resolve_play_card(
             )
         })
     {
-        return Err(format!(
-            "play:{} cannot run while a combat choice is pending; insert choose:<card> or select:<card> immediately after the action opening that choice. Both act and preview support choices within the same line. To inspect a private choice, preview only the prefix through the opening action, then preview the full line with the selected token inserted. For an already committed choice, use options",
-            selector.name
+        return Err(selector_message(
+            locale,
+            "resolve.pendingChoice",
+            &[("name", &(selector.name.clone()))],
         ));
     }
     let preferred = preferred_upgrade_v1(
@@ -1423,6 +1483,7 @@ fn resolve_play_card(
             .filter(|card| card.card_id.matches_input_alias_v1(&selector.name))
             .map(|card| card.upgrades),
         "play",
+        locale,
     )?;
     let matching_hand_indices = observation
         .cards
@@ -1444,12 +1505,17 @@ fn resolve_play_card(
             .iter()
             .any(|card| card.card_id.matches_input_alias_v1(&selector.name));
         return Err(if same_name_in_hand {
-            format!(
-                "play:{} has no card with the requested upgrade in the hand at this boundary",
-                selector.name
+            selector_message(
+                locale,
+                "resolve.handUpgrade",
+                &[("name", &(selector.name.clone()))],
             )
         } else {
-            format!("play:{} is not in the hand at this boundary. Earlier draws, exhausts or turn changes may have changed it", selector.name)
+            selector_message(
+                locale,
+                "resolve.handAbsent",
+                &[("name", &(selector.name.clone()))],
+            )
         });
     }
     let requested_hand_index = selector
@@ -1462,13 +1528,17 @@ fn resolve_play_card(
                     let transactional_alias = format!(
                         "play:{}{}",
                         canonical_upgraded_name_v1(&selector.name, preferred),
-                        target_monster_slot
-                            .map_or_else(String::new, |slot| format!("@{slot}"))
+                        target_monster_slot.map_or_else(String::new, |slot| format!("@{slot}"))
                     );
-                    format!(
-                        "play:{} occurrence #{occurrence} is absent from the visible hand; matched {} hand card(s). Occurrences are relative to each current successor; for a transactional line of publicly equivalent copies, repeat {transactional_alias} without #<occurrence> so every step resolves against its own successor",
-                        selector.name,
-                        matching_hand_indices.len()
+                    selector_message(
+                        locale,
+                        "resolve.handOccurrence",
+                        &[
+                            ("name", &(selector.name.clone())),
+                            ("occurrence", &(occurrence.to_string())),
+                            ("count", &(matching_hand_indices.len().to_string())),
+                            ("alias", &(transactional_alias)),
+                        ],
                     )
                 })
         })
@@ -1506,10 +1576,18 @@ fn resolve_play_card(
         matches.push((ordinal, *hand_index, card, candidate_slot));
     }
     if matches.is_empty() && untargeted_legal_match {
-        return Err(format!(
-            "play:{} has a legal play without a monster target; omit @{} and use options for its exact current command",
-            selector.name,
-            target_monster_slot.expect("mismatched target was supplied")
+        return Err(selector_message(
+            locale,
+            "resolve.untargeted",
+            &[
+                ("name", &(selector.name.clone())),
+                (
+                    "slot",
+                    &(target_monster_slot
+                        .expect("mismatched target was supplied")
+                        .to_string()),
+                ),
+            ],
         ));
     }
     if let Some(hand_index) = requested_hand_index {
@@ -1522,14 +1600,39 @@ fn resolve_play_card(
                     .cards
                     .get(hand_index)
                     .expect("requested visible hand index must remain present");
-                Err(format!(
-                    "play:{}#{} selects hand[{hand_index}] {} with cost {}, but it has no legal play{} at energy {}; inspect the current candidates instead of renumbering another copy",
-                    selector.name,
-                    selector.occurrence.expect("requested occurrence"),
-                    canonical_upgraded_name_v1(card.card_id.stable_id(), Some(card.upgrades)),
-                    card.effective_cost,
-                    target_monster_slot.map_or_else(String::new, |slot| format!(" at monster slot {slot}")),
-                    observation.turn.energy
+                Err(selector_message(
+                    locale,
+                    "resolve.handIllegal",
+                    &[
+                        ("name", &(selector.name.clone())),
+                        (
+                            "occurrence",
+                            &(selector
+                                .occurrence
+                                .expect("requested occurrence")
+                                .to_string()),
+                        ),
+                        ("hand", &(hand_index.to_string())),
+                        (
+                            "card",
+                            &(canonical_upgraded_name_v1(
+                                card.card_id.stable_id(),
+                                Some(card.upgrades),
+                            )),
+                        ),
+                        ("cost", &(card.effective_cost.to_string())),
+                        (
+                            "target",
+                            &(target_monster_slot.map_or_else(String::new, |slot| {
+                                selector_message(
+                                    locale,
+                                    "resolve.targetSlot",
+                                    &[("slot", &slot.to_string())],
+                                )
+                            })),
+                        ),
+                        ("energy", &(observation.turn.energy.to_string())),
+                    ],
                 ))
             }
             _ => Err(format_play_ambiguity_v1(
@@ -1537,6 +1640,7 @@ fn resolve_play_card(
                 observation,
                 selector,
                 &matches,
+                locale,
             )),
         };
     }
@@ -1544,6 +1648,7 @@ fn resolve_play_card(
         return Err(no_match_message(
             decision,
             &format!("play:{}", selector.name),
+            locale,
         ));
     };
     if matches
@@ -1556,6 +1661,7 @@ fn resolve_play_card(
             observation,
             selector,
             &matches,
+            locale,
         ));
     }
     ordinal_choice(*first_ordinal)
@@ -1571,6 +1677,7 @@ fn format_play_ambiguity_v1(
         &sts_oracle_learning::agent::information::state::CombatLearningCardV1,
         Option<u8>,
     )],
+    locale: sts_presentation::Locale,
 ) -> String {
     let candidates = matches
         .iter()
@@ -1594,14 +1701,20 @@ fn format_play_ambiguity_v1(
         })
         .collect::<Vec<_>>()
         .join(", ");
-    format!(
-        "play:{} is ambiguous at {:?}; use one exact visible-hand action: {candidates}",
-        selector.name, decision.site
+    selector_message(
+        locale,
+        "resolve.handAmbiguous",
+        &[
+            ("name", &(selector.name.clone())),
+            ("site", &(format!("{:?}", decision.site))),
+            ("candidates", &(candidates)),
+        ],
     )
 }
 
 fn resolve_routine_advance_v1(
     decision: &TaskPublicDecisionV1,
+    locale: sts_presentation::Locale,
 ) -> Result<TaskPublicChoiceV1, String> {
     let routine_matches = decision
         .candidates
@@ -1639,21 +1752,29 @@ fn resolve_routine_advance_v1(
         })
         .collect::<Vec<_>>();
     if !explicit_choices.is_empty() {
-        return Err(format!(
-            "advance would bypass explicit choice(s) at {:?}: {}; resolve them explicitly before routine progression",
-            decision.site,
-            explicit_choices.join(", ")
+        return Err(selector_message(
+            locale,
+            "resolve.advanceExplicit",
+            &[
+                ("site", &(format!("{:?}", decision.site))),
+                ("choices", &(explicit_choices.join(", "))),
+            ],
         ));
     }
     match routine_matches.as_slice() {
         [ordinal] => ordinal_choice(*ordinal),
-        [] => Err(format!(
-            "advance has no uniquely routine progression action at {:?}; card, reward, event, chest, campfire, and purchase choices must stay explicit",
-            decision.site
+        [] => Err(selector_message(
+            locale,
+            "resolve.advanceAbsent",
+            &[("site", &(format!("{:?}", decision.site)))],
         )),
-        _ => Err(format!(
-            "advance is ambiguous at {:?}; routine progression candidate ordinals are {:?}, so choose an explicit action",
-            decision.site, routine_matches
+        _ => Err(selector_message(
+            locale,
+            "resolve.advanceAmbiguous",
+            &[
+                ("site", &(format!("{:?}", decision.site))),
+                ("matches", &(format!("{routine_matches:?}"))),
+            ],
         )),
     }
 }
@@ -1673,20 +1794,26 @@ fn resolve_use_potion(
     decision: &TaskPublicDecisionV1,
     selector: &NamedOccurrenceV1,
     target_monster_slot: Option<u8>,
+    locale: sts_presentation::Locale,
 ) -> Result<TaskPublicChoiceV1, String> {
     if matches!(
         decision.observation,
         TaskPublicObservationV1::Strategic { .. }
     ) {
         if target_monster_slot.is_some() {
-            return Err("a strategic run potion cannot have a combat target".to_string());
+            return Err(selector_message(locale, "resolve.runPotionTarget", &[]));
         }
-        let matches = named_strategic_matches(decision, selector, |action| match action {
-            TaskStrategicActionV1::UseRunPotion { potion, .. } => {
-                Some((potion.matches_input_alias_v1(&selector.name), None))
-            }
-            _ => None,
-        })?;
+        let matches = named_strategic_matches(
+            decision,
+            selector,
+            |action| match action {
+                TaskStrategicActionV1::UseRunPotion { potion, .. } => {
+                    Some((potion.matches_input_alias_v1(&selector.name), None))
+                }
+                _ => None,
+            },
+            locale,
+        )?;
         return select_named_match(
             decision,
             &RunPlayActionSelectorV1::UsePotion {
@@ -1695,12 +1822,14 @@ fn resolve_use_potion(
             },
             selector,
             matches,
+            locale,
         );
     }
     let TaskPublicObservationV1::Combat { observation, .. } = &decision.observation else {
-        return Err(format!(
-            "use-potion:{:?} requires a combat decision",
-            selector.name
+        return Err(selector_message(
+            locale,
+            "resolve.useCombat",
+            &[("name", &(format!("{:?}", selector.name)))],
         ));
     };
     let mut matches = Vec::new();
@@ -1737,34 +1866,43 @@ fn resolve_use_potion(
         },
         selector,
         matches,
+        locale,
     )
 }
 
 fn resolve_discard_potion(
     decision: &TaskPublicDecisionV1,
     selector: &NamedOccurrenceV1,
+    locale: sts_presentation::Locale,
 ) -> Result<TaskPublicChoiceV1, String> {
     if matches!(
         decision.observation,
         TaskPublicObservationV1::Strategic { .. }
     ) {
-        let matches = named_strategic_matches(decision, selector, |action| match action {
-            TaskStrategicActionV1::DiscardRunPotion { potion, .. } => {
-                Some((potion.matches_input_alias_v1(&selector.name), None))
-            }
-            _ => None,
-        })?;
+        let matches = named_strategic_matches(
+            decision,
+            selector,
+            |action| match action {
+                TaskStrategicActionV1::DiscardRunPotion { potion, .. } => {
+                    Some((potion.matches_input_alias_v1(&selector.name), None))
+                }
+                _ => None,
+            },
+            locale,
+        )?;
         return select_named_match(
             decision,
             &RunPlayActionSelectorV1::DiscardPotion(selector.clone()),
             selector,
             matches,
+            locale,
         );
     }
     let TaskPublicObservationV1::Combat { observation, .. } = &decision.observation else {
-        return Err(format!(
-            "discard-potion:{:?} requires a combat decision",
-            selector.name
+        return Err(selector_message(
+            locale,
+            "resolve.discardCombat",
+            &[("name", &(format!("{:?}", selector.name)))],
         ));
     };
     let matches = decision
@@ -1790,6 +1928,7 @@ fn resolve_discard_potion(
         &RunPlayActionSelectorV1::DiscardPotion(selector.clone()),
         selector,
         matches,
+        locale,
     )
 }
 
@@ -1827,6 +1966,7 @@ fn named_strategic_matches(
     decision: &TaskPublicDecisionV1,
     selector: &NamedOccurrenceV1,
     describe: impl Fn(&TaskStrategicActionV1) -> Option<(bool, Option<u8>)>,
+    locale: sts_presentation::Locale,
 ) -> Result<Vec<usize>, String> {
     let candidates = decision
         .candidates
@@ -1844,6 +1984,7 @@ fn named_strategic_matches(
         selector,
         candidates.iter().filter_map(|(_, upgrades)| *upgrades),
         "named action",
+        locale,
     )?;
     Ok(candidates
         .into_iter()
@@ -1859,6 +2000,7 @@ fn preferred_upgrade_v1(
     selector: &NamedOccurrenceV1,
     upgrades: impl IntoIterator<Item = u8>,
     verb: &str,
+    locale: sts_presentation::Locale,
 ) -> Result<Option<u8>, String> {
     if selector.upgrades.is_some() {
         return Ok(selector.upgrades);
@@ -1872,9 +2014,13 @@ fn preferred_upgrade_v1(
     match versions.len() {
         0 => Ok(None),
         1 => Ok(versions.into_iter().next()),
-        _ => Err(format!(
-            "{verb}:{} has multiple upgraded levels but no unupgraded card; specify + or +<level>",
-            selector.name
+        _ => Err(selector_message(
+            locale,
+            "resolve.upgradeAmbiguous",
+            &[
+                ("verb", &(verb.to_owned())),
+                ("name", &(selector.name.clone())),
+            ],
         )),
     }
 }
@@ -1884,18 +2030,24 @@ fn select_named_match(
     action: &RunPlayActionSelectorV1,
     named: &NamedOccurrenceV1,
     matches: Vec<usize>,
+    locale: sts_presentation::Locale,
 ) -> Result<TaskPublicChoiceV1, String> {
     if let Some(occurrence) = named.occurrence {
         let Some(ordinal) = matches.get(occurrence) else {
-            return Err(format!(
-                "semantic action {action:?} occurrence #{occurrence} is unavailable at {:?}; matched {} candidate(s)",
-                decision.site,
-                matches.len()
+            return Err(selector_message(
+                locale,
+                "resolve.occurrenceAbsent",
+                &[
+                    ("action", &(format!("{action:?}"))),
+                    ("occurrence", &(occurrence.to_string())),
+                    ("site", &(format!("{:?}", decision.site))),
+                    ("count", &(matches.len().to_string())),
+                ],
             ));
         };
         return ordinal_choice(*ordinal);
     }
-    select_unique_match(decision, action, matches)
+    select_unique_match(decision, action, matches, locale)
 }
 
 fn select_occurrence_match(
@@ -1903,18 +2055,24 @@ fn select_occurrence_match(
     action: &RunPlayActionSelectorV1,
     occurrence: Option<usize>,
     matches: Vec<usize>,
+    locale: sts_presentation::Locale,
 ) -> Result<TaskPublicChoiceV1, String> {
     if let Some(occurrence) = occurrence {
         let Some(ordinal) = matches.get(occurrence) else {
-            return Err(format!(
-                "semantic action {action:?} occurrence #{occurrence} is unavailable at {:?}; matched {} candidate(s)",
-                decision.site,
-                matches.len()
+            return Err(selector_message(
+                locale,
+                "resolve.occurrenceAbsent",
+                &[
+                    ("action", &(format!("{action:?}"))),
+                    ("occurrence", &(occurrence.to_string())),
+                    ("site", &(format!("{:?}", decision.site))),
+                    ("count", &(matches.len().to_string())),
+                ],
             ));
         };
         return ordinal_choice(*ordinal);
     }
-    select_unique_match(decision, action, matches)
+    select_unique_match(decision, action, matches, locale)
 }
 
 fn reward_semantic_name_v1(reward: &PlannerRewardDescriptor) -> String {
@@ -1941,13 +2099,19 @@ fn select_unique_match(
     decision: &TaskPublicDecisionV1,
     selector: &RunPlayActionSelectorV1,
     matches: Vec<usize>,
+    locale: sts_presentation::Locale,
 ) -> Result<TaskPublicChoiceV1, String> {
     match matches.as_slice() {
         [ordinal] => ordinal_choice(*ordinal),
-        [] => Err(no_match_message(decision, &format!("{selector:?}"))),
-        _ => Err(format!(
-            "semantic action {selector:?} is ambiguous at {:?}; matching candidate ordinals are {:?}; add #<occurrence> or a target",
-            decision.site, matches
+        [] => Err(no_match_message(decision, &format!("{selector:?}"), locale)),
+        _ => Err(selector_message(
+            locale,
+            "resolve.ambiguous",
+            &[
+                ("selector", &(format!("{selector:?}"))),
+                ("site", &(format!("{:?}", decision.site))),
+                ("matches", &(format!("{matches:?}"))),
+            ],
         )),
     }
 }
@@ -1958,7 +2122,11 @@ fn ordinal_choice(ordinal: usize) -> Result<TaskPublicChoiceV1, String> {
     })
 }
 
-fn no_match_message(decision: &TaskPublicDecisionV1, selector: &str) -> String {
+fn no_match_message(
+    decision: &TaskPublicDecisionV1,
+    selector: &str,
+    locale: sts_presentation::Locale,
+) -> String {
     let routes = decision
         .candidates
         .iter()
@@ -1970,14 +2138,27 @@ fn no_match_message(decision: &TaskPublicDecisionV1, selector: &str) -> String {
         })
         .collect::<Vec<_>>();
     let hint = match routes.as_slice() {
-        [route] => format!("; this Map has one route, so use advance or {route}"),
+        [route] => selector_message(
+            locale,
+            "resolve.singleRoute",
+            &[("route", &(route.to_string()))],
+        ),
         [] => String::new(),
-        _ => format!("; choose one explicit route from [{}]", routes.join(", ")),
+        _ => selector_message(
+            locale,
+            "resolve.multipleRoutes",
+            &[("routes", &(routes.join(", ")))],
+        ),
     };
-    format!(
-        "semantic action {selector} has no legal match at {:?} ({} candidate(s)){hint}",
-        decision.site,
-        decision.candidates.len()
+    selector_message(
+        locale,
+        "resolve.noMatch",
+        &[
+            ("selector", &(selector.to_owned())),
+            ("site", &(format!("{:?}", decision.site))),
+            ("count", &(decision.candidates.len().to_string())),
+            ("hint", &(hint)),
+        ],
     )
 }
 
@@ -1991,7 +2172,7 @@ fn parse_ordinal_path(
         .map(|value| parse_number(value, "ordinal", command, locale))
         .collect::<Result<Vec<_>, _>>()?;
     if ordinals.is_empty() {
-        return Err(syntax_message(
+        return Err(selector_message(
             locale,
             "ordinalEmpty",
             &[("command", &(command.to_owned()))],
@@ -2040,7 +2221,7 @@ pub(crate) fn parse_card_upgrade<'a>(
     locale: sts_presentation::Locale,
 ) -> Result<(&'a str, Option<u8>), String> {
     if payload.contains('\u{ff0b}') {
-        return Err(syntax_message(
+        return Err(selector_message(
             locale,
             "fullwidthPlus",
             &[("command", &(command.to_owned()))],
@@ -2055,14 +2236,14 @@ pub(crate) fn parse_card_upgrade<'a>(
         (payload, None)
     };
     if name.is_empty() {
-        return Err(syntax_message(
+        return Err(selector_message(
             locale,
             "emptyName",
             &[("command", &(command.to_owned()))],
         ));
     }
     if name.contains('+') {
-        return Err(syntax_message(
+        return Err(selector_message(
             locale,
             "upgradeSuffix",
             &[("command", &(command.to_owned()))],
@@ -2082,13 +2263,13 @@ where
     T::Err: std::fmt::Display,
 {
     value.parse::<T>().map_err(|error| {
-        syntax_message(
+        selector_message(
             locale,
             "number",
             &[
                 (
                     "label",
-                    &(syntax_message(locale, &format!("field.{label}"), &[])),
+                    &(selector_message(locale, &format!("field.{label}"), &[])),
                 ),
                 ("value", &(format!("{value:?}"))),
                 ("command", &(command.to_owned())),
@@ -2270,6 +2451,120 @@ mod tests {
     }
 
     #[test]
+    fn resolution_languages_preserve_run_choices_and_reject_the_same_invalid_commands() {
+        use sts_presentation::Locale;
+        let decision = run_selection_decision(vec![TaskPublicCandidateV1::Strategic {
+            action: TaskStrategicActionV1::BeginRunCardSelection {
+                scope: SelectionScope::Deck,
+                reason: SelectionReason::TransformUpgraded,
+                min_choices: 1,
+                max_choices: 1,
+                selectable_card_ordinals: vec![0, 1, 7, 19],
+            },
+        }]);
+        let before = serde_json::to_value(&decision).unwrap();
+        for command in ["select:Strike#0", "select:Strike#1", "select:Defend#0"] {
+            let selector = parse_action_selector_v1(command, "test", Locale::En).unwrap();
+            assert_eq!(
+                resolve_action_selector_v1(&decision, &selector, Locale::En).unwrap(),
+                resolve_action_selector_v1(&decision, &selector, Locale::ZhCn).unwrap(),
+                "{command}"
+            );
+        }
+        for command in [
+            "play:Strike",
+            "use-potion:FirePotion@0",
+            "select:Clash",
+            "select:Strike#9",
+            "select:Strike",
+            "select:Strike#0,Strike#0",
+            "take:Shame",
+            "advance",
+        ] {
+            let selector = parse_action_selector_v1(command, "test", Locale::En).unwrap();
+            let english = resolve_action_selector_v1(&decision, &selector, Locale::En).unwrap_err();
+            let chinese =
+                resolve_action_selector_v1(&decision, &selector, Locale::ZhCn).unwrap_err();
+            assert_ne!(english, chinese, "{command}");
+            assert!(
+                chinese
+                    .chars()
+                    .any(|c| ('\u{4e00}'..='\u{9fff}').contains(&c)),
+                "{chinese}"
+            );
+        }
+        assert_eq!(serde_json::to_value(&decision).unwrap(), before);
+    }
+
+    #[test]
+    fn resolution_languages_preserve_combat_choices_and_describe_current_hand_failures() {
+        use sts_oracle_learning::agent::information::{
+            action::project_public_combat_actions_v1,
+            run::{PublicCombatRunContextGapV1, PublicCombatRunContextV1},
+            state::public_combat_state_v1,
+        };
+        use sts_oracle_learning::agent::task::task_public_combat_decision_v1;
+        use sts_oracle_learning::sim::combat::CombatPosition;
+        use sts_presentation::Locale;
+        let active = crate::decision_tests::fixture("combat_multiturn")
+            .active_combat
+            .unwrap();
+        let mut position = CombatPosition::new(active.engine_state, active.combat_state);
+        for energy in [3, 0] {
+            position.combat.turn.energy = energy;
+            let actions =
+                project_public_combat_actions_v1(&position.engine, &position.combat).unwrap();
+            let decision = task_public_combat_decision_v1(
+                PublicCombatRunContextV1::Unavailable {
+                    reason: PublicCombatRunContextGapV1::DetachedExactCombatPosition,
+                },
+                public_combat_state_v1(&position.combat),
+                &actions.public,
+            )
+            .unwrap();
+            let before = serde_json::to_value(&decision).unwrap();
+            for command in ["end", "play:Defend"] {
+                if energy == 0 && command != "end" {
+                    continue;
+                }
+                let selector = parse_action_selector_v1(command, "test", Locale::En).unwrap();
+                assert_eq!(
+                    resolve_action_selector_v1(&decision, &selector, Locale::En).unwrap(),
+                    resolve_action_selector_v1(&decision, &selector, Locale::ZhCn).unwrap()
+                );
+            }
+            let commands = if energy == 0 {
+                vec!["play:Defend#0"]
+            } else {
+                vec![
+                    "play:{{opaque}}",
+                    "play:Defend+99",
+                    "play:Defend#99",
+                    "play:Defend@0",
+                ]
+            };
+            for command in commands {
+                let selector = parse_action_selector_v1(command, "test", Locale::En).unwrap();
+                let english =
+                    resolve_action_selector_v1(&decision, &selector, Locale::En).unwrap_err();
+                let chinese =
+                    resolve_action_selector_v1(&decision, &selector, Locale::ZhCn).unwrap_err();
+                assert_ne!(english, chinese, "{command}");
+                assert!(
+                    chinese
+                        .chars()
+                        .any(|c| ('\u{4e00}'..='\u{9fff}').contains(&c)),
+                    "{chinese}"
+                );
+                if command.contains("{{opaque}}") {
+                    assert!(chinese.contains("{{opaque}}"));
+                }
+            }
+            assert_eq!(serde_json::to_value(&decision).unwrap(), before);
+        }
+    }
+
+    #[test]
     fn pending_potion_choices_explain_why_hand_cards_cannot_be_played() {
         use sts_oracle_learning::agent::information::{
             action::project_public_combat_actions_v1,
@@ -2310,7 +2605,13 @@ mod tests {
                 .unwrap();
             let mut position = CombatPosition::new(active.engine_state, active.combat_state);
             position.combat.entities.potions[0] = Some(Potion::new(potion, 0));
-            assert!(resolve_play_card(&decision(&position), &selector, None).is_ok());
+            assert!(resolve_play_card(
+                &decision(&position),
+                &selector,
+                None,
+                sts_presentation::Locale::En
+            )
+            .is_ok());
             let limits = CombatStepLimits {
                 max_engine_steps: 250,
                 deadline: None,
@@ -2324,8 +2625,13 @@ mod tests {
                 limits,
             );
             assert!(!pending.truncated);
-            let error =
-                resolve_play_card(&decision(&pending.position), &selector, None).unwrap_err();
+            let error = resolve_play_card(
+                &decision(&pending.position),
+                &selector,
+                None,
+                sts_presentation::Locale::En,
+            )
+            .unwrap_err();
             assert!(
                 error.contains("combat choice is pending"),
                 "{potion:?}: {error}"
@@ -2340,7 +2646,13 @@ mod tests {
             let choice = EngineCombatStepper.atomic_actions(&pending.position)[0].clone();
             let resolved = EngineCombatStepper.apply_to_stable(&pending.position, choice, limits);
             assert!(!resolved.truncated);
-            assert!(resolve_play_card(&decision(&resolved.position), &selector, None).is_ok());
+            assert!(resolve_play_card(
+                &decision(&resolved.position),
+                &selector,
+                None,
+                sts_presentation::Locale::En
+            )
+            .is_ok());
         }
     }
 
@@ -2522,7 +2834,7 @@ mod tests {
         )
         .unwrap();
         assert_eq!(
-            resolve_action_selector_v1(&decision, &manual).unwrap(),
+            resolve_action_selector_v1(&decision, &manual, sts_presentation::Locale::En).unwrap(),
             TaskPublicChoiceV1 {
                 ordinal_path: vec![0, 0, 1, 2],
             }
@@ -2552,7 +2864,8 @@ mod tests {
         )
         .unwrap();
         assert_eq!(
-            resolve_action_selector_v1(&decision, &bare_base).unwrap(),
+            resolve_action_selector_v1(&decision, &bare_base, sts_presentation::Locale::En)
+                .unwrap(),
             TaskPublicChoiceV1 {
                 ordinal_path: vec![0, 0, 1]
             }
@@ -2563,9 +2876,13 @@ mod tests {
             sts_presentation::Locale::En,
         )
         .unwrap();
-        assert!(resolve_action_selector_v1(&decision, &missing_base_copy)
-            .unwrap_err()
-            .contains("matched 1 deck card"));
+        assert!(resolve_action_selector_v1(
+            &decision,
+            &missing_base_copy,
+            sts_presentation::Locale::En
+        )
+        .unwrap_err()
+        .contains("matched 1 deck card"));
 
         let exact = parse_action_selector_v1(
             "select:Strike+0#0,Strike+#0",
@@ -2574,7 +2891,7 @@ mod tests {
         )
         .unwrap();
         assert_eq!(
-            resolve_action_selector_v1(&decision, &exact).unwrap(),
+            resolve_action_selector_v1(&decision, &exact, sts_presentation::Locale::En).unwrap(),
             TaskPublicChoiceV1 {
                 ordinal_path: vec![0, 0, 1]
             }
@@ -2591,7 +2908,8 @@ mod tests {
         )
         .unwrap();
         assert_eq!(
-            resolve_action_selector_v1(&decision, &only_upgraded).unwrap(),
+            resolve_action_selector_v1(&decision, &only_upgraded, sts_presentation::Locale::En)
+                .unwrap(),
             TaskPublicChoiceV1 {
                 ordinal_path: vec![0, 0, 1]
             }
@@ -2631,7 +2949,8 @@ mod tests {
             parse_action_selector_v1("remove:Strike#0", "test", sts_presentation::Locale::En)
                 .unwrap();
         assert_eq!(
-            resolve_action_selector_v1(&decision, &bare_base).unwrap(),
+            resolve_action_selector_v1(&decision, &bare_base, sts_presentation::Locale::En)
+                .unwrap(),
             TaskPublicChoiceV1 {
                 ordinal_path: vec![0]
             }
@@ -2639,14 +2958,18 @@ mod tests {
         let missing_base_copy =
             parse_action_selector_v1("remove:Strike#1", "test", sts_presentation::Locale::En)
                 .unwrap();
-        assert!(resolve_action_selector_v1(&decision, &missing_base_copy)
-            .unwrap_err()
-            .contains("matched 1 candidate"));
+        assert!(resolve_action_selector_v1(
+            &decision,
+            &missing_base_copy,
+            sts_presentation::Locale::En
+        )
+        .unwrap_err()
+        .contains("matched 1 candidate"));
         let exact =
             parse_action_selector_v1("remove:Strike+#0", "test", sts_presentation::Locale::En)
                 .unwrap();
         assert_eq!(
-            resolve_action_selector_v1(&decision, &exact).unwrap(),
+            resolve_action_selector_v1(&decision, &exact, sts_presentation::Locale::En).unwrap(),
             TaskPublicChoiceV1 {
                 ordinal_path: vec![1]
             }
@@ -2654,7 +2977,8 @@ mod tests {
 
         decision.candidates.remove(0);
         assert_eq!(
-            resolve_action_selector_v1(&decision, &bare_base).unwrap(),
+            resolve_action_selector_v1(&decision, &bare_base, sts_presentation::Locale::En)
+                .unwrap(),
             TaskPublicChoiceV1 {
                 ordinal_path: vec![0]
             }
@@ -2668,10 +2992,12 @@ mod tests {
             upgrades: None,
             occurrence: Some(0),
         };
-        let error = preferred_upgrade_v1(&selector, [1, 2], "select").unwrap_err();
+        let error = preferred_upgrade_v1(&selector, [1, 2], "select", sts_presentation::Locale::En)
+            .unwrap_err();
         assert!(error.contains("multiple upgraded levels"), "{error}");
         assert_eq!(
-            preferred_upgrade_v1(&selector, [0, 1, 2], "select").unwrap(),
+            preferred_upgrade_v1(&selector, [0, 1, 2], "select", sts_presentation::Locale::En)
+                .unwrap(),
             Some(0)
         );
     }
@@ -2700,7 +3026,7 @@ mod tests {
         .unwrap();
 
         assert_eq!(
-            resolve_action_selector_v1(&decision, &selector).unwrap(),
+            resolve_action_selector_v1(&decision, &selector, sts_presentation::Locale::En).unwrap(),
             TaskPublicChoiceV1 {
                 ordinal_path: vec![0],
             }
@@ -2782,7 +3108,12 @@ mod tests {
         };
         let routine_only = run_selection_decision(vec![proceed.clone()]);
         assert_eq!(
-            resolve_action_selector_v1(&routine_only, &RunPlayActionSelectorV1::Advance).unwrap(),
+            resolve_action_selector_v1(
+                &routine_only,
+                &RunPlayActionSelectorV1::Advance,
+                sts_presentation::Locale::En
+            )
+            .unwrap(),
             TaskPublicChoiceV1 {
                 ordinal_path: vec![0],
             }
@@ -2799,8 +3130,12 @@ mod tests {
                 },
             },
         ]);
-        let error = resolve_action_selector_v1(&with_card, &RunPlayActionSelectorV1::Advance)
-            .expect_err("advance must not skip a visible card choice");
+        let error = resolve_action_selector_v1(
+            &with_card,
+            &RunPlayActionSelectorV1::Advance,
+            sts_presentation::Locale::En,
+        )
+        .expect_err("advance must not skip a visible card choice");
         assert!(error.contains("advance would bypass explicit choice"));
         assert!(error.contains("take:PommelStrike+0#0"));
     }

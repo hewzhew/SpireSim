@@ -117,7 +117,7 @@ fn whole_combat_retained_replay_matches_independent_probe_through_settlement() {
                 })
                 .collect::<Vec<_>>();
             let independent = game
-                .compare_action_lines_v1(&[selectors])
+                .compare_action_lines_v1(&[selectors], sts_presentation::Locale::En)
                 .unwrap()
                 .lines
                 .remove(0);

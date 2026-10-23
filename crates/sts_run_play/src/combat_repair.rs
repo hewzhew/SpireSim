@@ -959,7 +959,8 @@ fn repair_turn_damage_cutpoint_from_verified_source_v1(
             )
         })
         .collect::<Result<Vec<_>, _>>()?;
-    let compared = controller.compare_action_lines_v1(&[selectors])?;
+    let compared =
+        controller.compare_action_lines_v1(&[selectors], sts_presentation::Locale::En)?;
     let compared = compared
         .lines
         .into_iter()
@@ -1248,7 +1249,8 @@ fn repair_feed_from_verified_source_internal_v1(
             )
         })
         .collect::<Result<Vec<_>, _>>()?;
-    let compared = controller.compare_action_lines_v1(&[selectors])?;
+    let compared =
+        controller.compare_action_lines_v1(&[selectors], sts_presentation::Locale::En)?;
     let compared = compared
         .lines
         .into_iter()

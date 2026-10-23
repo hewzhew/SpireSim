@@ -14,7 +14,9 @@ fn ordinary_preview_uses_shared_localized_actions_and_terminal_health() {
             sts_presentation::Locale::En,
         )
         .unwrap();
-        let comparison = game.compare_action_lines_v1(&[actions]).unwrap();
+        let comparison = game
+            .compare_action_lines_v1(&[actions], sts_presentation::Locale::En)
+            .unwrap();
         let en = render_preview_v1(&comparison, false, Locale::En).unwrap();
         let zh = render_preview_v1(&comparison, false, Locale::ZhCn).unwrap();
         assert!(en.contains("Preview only") && zh.contains("预演结果"));
@@ -51,7 +53,9 @@ fn detailed_comparisons_localize_steps_successors_draws_and_exhaust_without_muta
             sts_presentation::Locale::En,
         )
         .unwrap();
-        let comparison = game.compare_action_lines_v1(&[actions]).unwrap();
+        let comparison = game
+            .compare_action_lines_v1(&[actions], sts_presentation::Locale::En)
+            .unwrap();
         let facts = || {
             comparison
                 .lines

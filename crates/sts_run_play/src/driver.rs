@@ -2390,7 +2390,7 @@ impl RunPlayControllerV1 {
         let prepared = self.exact.prepare_line_resolving_v1(
             selectors.len(),
             &mut |index, decision| {
-                let choice = resolve_action_selector_v1(decision, &selectors[index])?;
+                let choice = resolve_action_selector_v1(decision, &selectors[index], sts_presentation::Locale::En)?;
                 match choice.ordinal_path.first().and_then(|ordinal| decision.candidates.get(*ordinal)) {
                     Some(TaskPublicCandidateV1::Strategic { action }) if !matches!(action,
                         TaskStrategicActionV1::ChooseRouteNode { .. } | TaskStrategicActionV1::Proceed { .. }
@@ -2562,11 +2562,15 @@ impl RunPlayControllerV1 {
         let mut lines = Vec::new();
         let mut truncated = false;
         while let Some(line) = queue.pop_front() {
-            let probe = self
-                .exact
-                .probe_line_resolving_v1(line.len(), &mut |index, decision| {
-                    resolve_action_selector_v1(decision, &line[index])
-                })?;
+            let probe =
+                self.exact
+                    .probe_line_resolving_v1(line.len(), &mut |index, decision| {
+                        resolve_action_selector_v1(
+                            decision,
+                            &line[index],
+                            sts_presentation::Locale::En,
+                        )
+                    })?;
             let next = probe
                 .steps
                 .last()
@@ -2983,11 +2987,15 @@ impl RunPlayControllerV1 {
             .current_archive_node_id()
             .ok_or_else(|| "combat prefix horizon audit requires a public root".to_string())?
             .to_string();
-        let prepared = self
-            .exact
-            .prepare_line_resolving_v1(selectors.len(), &mut |index, decision| {
-                resolve_action_selector_v1(decision, &selectors[index])
-            })?;
+        let prepared =
+            self.exact
+                .prepare_line_resolving_v1(selectors.len(), &mut |index, decision| {
+                    resolve_action_selector_v1(
+                        decision,
+                        &selectors[index],
+                        sts_presentation::Locale::En,
+                    )
+                })?;
         if prepared.terminal_outcome().is_some() {
             return Err(
                 "combat prefix horizon audit prefix reached a terminal run outcome".to_string(),
@@ -3281,11 +3289,15 @@ impl RunPlayControllerV1 {
             .current_archive_node_id()
             .ok_or_else(|| "combat-turn reservation requires a public root".to_string())?
             .to_string();
-        let probe = self
-            .exact
-            .probe_line_resolving_v1(selectors.len(), &mut |index, decision| {
-                resolve_action_selector_v1(decision, &selectors[index])
-            })?;
+        let probe =
+            self.exact
+                .probe_line_resolving_v1(selectors.len(), &mut |index, decision| {
+                    resolve_action_selector_v1(
+                        decision,
+                        &selectors[index],
+                        sts_presentation::Locale::En,
+                    )
+                })?;
         let choices = probe
             .steps
             .iter()
@@ -3777,11 +3789,15 @@ impl RunPlayControllerV1 {
             .current_archive_node_id()
             .ok_or_else(|| "run-play proposal audit requires a public root".to_string())?
             .to_string();
-        let probe = self
-            .exact
-            .probe_line_resolving_v1(selectors.len(), &mut |index, decision| {
-                resolve_action_selector_v1(decision, &selectors[index])
-            })?;
+        let probe =
+            self.exact
+                .probe_line_resolving_v1(selectors.len(), &mut |index, decision| {
+                    resolve_action_selector_v1(
+                        decision,
+                        &selectors[index],
+                        sts_presentation::Locale::En,
+                    )
+                })?;
         let choices = probe
             .steps
             .iter()
@@ -4081,6 +4097,7 @@ impl RunPlayControllerV1 {
     pub fn compare_action_lines_v1(
         &mut self,
         lines: &[Vec<RunPlayActionSelectorV1>],
+        locale: sts_presentation::Locale,
     ) -> Result<RunPlayComparisonV1, String> {
         validate_comparison_lines_v1(lines)?;
         self.restore_exact_at_published_head_v1()?;
@@ -4094,7 +4111,7 @@ impl RunPlayControllerV1 {
             results.push(self.exact.probe_line_resolving_v1(
                 line.len(),
                 &mut |index, decision| {
-                    let choice = resolve_action_selector_v1(decision, &line[index])?;
+                    let choice = resolve_action_selector_v1(decision, &line[index], locale)?;
                     reject_unrevealed_question_mark_probe_v1(decision, &choice)?;
                     Ok(choice)
                 },
@@ -4114,6 +4131,7 @@ impl RunPlayControllerV1 {
     pub(crate) fn inspect_action_lines_v1(
         &mut self,
         lines: &[Vec<RunPlayActionSelectorV1>],
+        locale: sts_presentation::Locale,
     ) -> Result<Vec<sts_oracle_learning::eval::run_control::ExactRunPlayInspectionV1>, String> {
         validate_comparison_lines_v1(lines)?;
         self.restore_exact_at_published_head_v1()?;
@@ -4127,7 +4145,7 @@ impl RunPlayControllerV1 {
             results.push(self.exact.inspect_line_resolving_v1(
                 line.len(),
                 &mut |index, decision| {
-                    let choice = resolve_action_selector_v1(decision, &line[index])?;
+                    let choice = resolve_action_selector_v1(decision, &line[index], locale)?;
                     reject_unrevealed_question_mark_probe_v1(decision, &choice)?;
                     Ok(choice)
                 },
@@ -4235,13 +4253,14 @@ impl RunPlayControllerV1 {
         &mut self,
         selector: &RunPlayActionSelectorV1,
         manual: bool,
+        locale: sts_presentation::Locale,
     ) -> Result<(), String> {
         self.restore_exact_at_published_head_v1()?;
         let decision = self
             .exact
             .current_public_decision()
             .ok_or_else(|| "run-play action requires a public decision".to_string())?;
-        let choice = resolve_action_selector_v1(decision, selector)?;
+        let choice = resolve_action_selector_v1(decision, selector, locale)?;
         self.choose(choice, None, manual)
     }
 
@@ -4251,6 +4270,7 @@ impl RunPlayControllerV1 {
     pub fn anchor_action_line_v1(
         &mut self,
         selectors: &[RunPlayActionSelectorV1],
+        locale: sts_presentation::Locale,
     ) -> Result<RunPlayActionLineProfileV1, String> {
         let total = Instant::now();
         validate_anchor_line_v1(selectors)?;
@@ -4260,7 +4280,7 @@ impl RunPlayControllerV1 {
         let prepared = self
             .exact
             .prepare_line_resolving_v1(selectors.len(), &mut |index, decision| {
-                resolve_action_selector_v1(decision, &selectors[index])
+                resolve_action_selector_v1(decision, &selectors[index], locale)
             })?;
         let prepared_line = prepared.profile();
         let phase = Instant::now();
@@ -4288,7 +4308,11 @@ impl RunPlayControllerV1 {
                 .prepare_line_resolving_v1(steps.len(), &mut |index, decision| {
                     let step = &steps[index];
                     validate_retained_semantic_prefix_source_v1(step, decision)?;
-                    resolve_action_selector_v1(decision, &step.selector)
+                    resolve_action_selector_v1(
+                        decision,
+                        &step.selector,
+                        sts_presentation::Locale::En,
+                    )
                 })?;
         self.publish_prepared_line_v1(prepared, None, None)
     }
@@ -4329,7 +4353,7 @@ impl RunPlayControllerV1 {
                 next_step.source_depth, next_step.expected_before, observed
             ));
         }
-        let choice = resolve_action_selector_v1(&decision, &RunPlayActionSelectorV1::Advance)
+        let choice = resolve_action_selector_v1(&decision, &RunPlayActionSelectorV1::Advance, sts_presentation::Locale::En)
             .map_err(|error| {
                 format!(
                     "retained semantic prefix depth {} cannot normalize Reward -> Map through one routine action: {error}",
@@ -4382,7 +4406,11 @@ impl RunPlayControllerV1 {
                             decision.information.snapshot_id
                         ));
                     }
-                    resolve_action_selector_v1(decision, &selectors[index])
+                    resolve_action_selector_v1(
+                        decision,
+                        &selectors[index],
+                        sts_presentation::Locale::En,
+                    )
                 })?;
         let prepared_line = prepared.profile();
         let phase = Instant::now();
@@ -6508,6 +6536,7 @@ mod tests {
                 )
                 .unwrap(),
                 true,
+                sts_presentation::Locale::En,
             )
             .unwrap();
         let advanced = paths.load().unwrap();
@@ -6565,6 +6594,7 @@ mod tests {
                 )
                 .unwrap(),
                 true,
+                sts_presentation::Locale::En,
             )
             .unwrap();
         assert!(paths.load_head().unwrap().scratch_floor_ends.is_empty());
@@ -6815,6 +6845,7 @@ mod tests {
                 )
                 .unwrap(),
                 true,
+                sts_presentation::Locale::En,
             )
             .unwrap();
         let restored = back_scratch_to_mark_v1(&paths, "start").unwrap();
@@ -6871,6 +6902,7 @@ mod tests {
                 )
                 .unwrap(),
                 true,
+                sts_presentation::Locale::En,
             )
             .unwrap();
         let before = paths.load_head().unwrap();
@@ -7128,6 +7160,7 @@ mod tests {
                 )
                 .unwrap(),
                 true,
+                sts_presentation::Locale::En,
             )
             .unwrap();
         let advanced = source.load().unwrap();
@@ -7205,6 +7238,7 @@ mod tests {
                 )
                 .unwrap(),
                 true,
+                sts_presentation::Locale::En,
             )
             .unwrap();
         assert!(controller.head().head_revision > workspace.head.head_revision);

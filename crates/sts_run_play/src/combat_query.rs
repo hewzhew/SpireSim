@@ -726,7 +726,10 @@ pub fn anchor_combat_trajectory_query_artifact_v2(
             )
         })
         .collect::<Result<Vec<RunPlayActionSelectorV1>, _>>()?;
-    let comparison = controller.compare_action_lines_v1(std::slice::from_ref(&selectors))?;
+    let comparison = controller.compare_action_lines_v1(
+        std::slice::from_ref(&selectors),
+        sts_presentation::Locale::En,
+    )?;
     let replayed = comparison
         .lines
         .into_iter()

@@ -73,8 +73,23 @@ fn bind_command(mut command: Command, locale: Locale, path: Vec<String>) -> Comm
         command = command.long_about(about);
     }
     command = command.mut_args(|mut arg| {
-        let id = arg.get_id().as_str();
+        let id = arg.get_id().as_str().to_owned();
         let prefix = format!("commands.{key}.args.{id}");
+        arg = match (key.as_str(), id.as_str()) {
+            ("history", "first" | "last" | "count") => {
+                arg.value_parser(move |value: &str| crate::parse_positive_usize(value, locale))
+            }
+            ("game-facts", "cards")
+            | ("combat-query", "eventually_generated_card" | "eventually_lethal_payoff") => arg
+                .value_parser(move |value: &str| crate::parse_construction_card_v1(value, locale)),
+            ("game-facts", "relics") => {
+                arg.value_parser(move |value: &str| crate::parse_game_fact_relic_v1(value, locale))
+            }
+            ("game-facts", "potions") => {
+                arg.value_parser(move |value: &str| crate::parse_game_fact_potion_v1(value, locale))
+            }
+            _ => arg,
+        };
         let help = if id == "locale" {
             Some(text(locale, "common.language"))
         } else {
@@ -196,6 +211,111 @@ mod tests {
 
     fn args(values: &[&str]) -> Vec<OsString> {
         values.iter().map(OsString::from).collect()
+    }
+
+    #[test]
+    fn cli_value_parser_languages_preserve_accepted_values_and_rejections() {
+        for locale in ["en", "zh-CN"] {
+            for tail in [
+                vec![
+                    "history",
+                    "--session",
+                    "fixture",
+                    "--journey",
+                    "--first",
+                    "0",
+                ],
+                vec![
+                    "history",
+                    "--session",
+                    "fixture",
+                    "--journey",
+                    "--last",
+                    "bad",
+                ],
+                vec![
+                    "history",
+                    "--session",
+                    "fixture",
+                    "--journey",
+                    "--after-depth",
+                    "0",
+                    "--count",
+                    "0",
+                ],
+                vec!["game-facts", "--card", "{{opaque}}"],
+                vec!["game-facts", "--relic", "unknown"],
+                vec!["game-facts", "--potion", "unknown"],
+                vec![
+                    "combat-query",
+                    "--session",
+                    "fixture",
+                    "--eventually-generated-card",
+                    "unknown",
+                ],
+                vec![
+                    "combat-query",
+                    "--session",
+                    "fixture",
+                    "--eventually-lethal-payoff",
+                    "unknown",
+                ],
+            ] {
+                let mut values = vec!["run_play", "--locale", locale];
+                values.extend(tail);
+                let error = try_parse_from(args(&values)).err().expect("invalid value");
+                assert_eq!(error.kind(), clap::error::ErrorKind::ValueValidation);
+                if locale == "zh-CN" {
+                    assert!(
+                        error
+                            .to_string()
+                            .chars()
+                            .any(|c| ('\u{4e00}'..='\u{9fff}').contains(&c)),
+                        "{error}"
+                    );
+                }
+            }
+            let parsed = try_parse_from(args(&[
+                "run_play",
+                "--locale",
+                locale,
+                "game-facts",
+                "--card",
+                "IronWave",
+                "--relic",
+                "OrangePellets",
+                "--potion",
+                "EssenceOfSteel",
+            ]))
+            .unwrap();
+            let Action::GameFacts {
+                cards,
+                relics,
+                potions,
+            } = parsed.command
+            else {
+                panic!("game facts");
+            };
+            assert_eq!(cards, vec![crate::CardId::IronWave]);
+            assert_eq!(relics, vec![crate::RelicId::OrangePellets]);
+            assert_eq!(potions, vec![crate::PotionId::EssenceOfSteel]);
+            let parsed = try_parse_from(args(&[
+                "run_play",
+                "--locale",
+                locale,
+                "history",
+                "--session",
+                "fixture",
+                "--journey",
+                "--first",
+                "1",
+            ]))
+            .unwrap();
+            let Action::History { first, .. } = parsed.command else {
+                panic!("history");
+            };
+            assert_eq!(first, Some(1));
+        }
     }
 
     fn metadata(command: &Command, path: Vec<String>, rows: &mut Vec<serde_json::Value>) {

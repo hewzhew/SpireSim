@@ -5608,6 +5608,12 @@
       "preparation": "Preparation (private exact scratch RNG): {{actions}}\nHP {{hpBefore}}/{{maxBefore}} -> {{hpAfter}}/{{maxAfter}} | Gold {{goldBefore}} -> {{goldAfter}}\n",
       "preparationResources": "Base energy/turn {{energy}} | Potions: {{potions}}\n",
       "preparationRng": "Random preparations show one exact sampled outcome; combat tests then use the declared fixed diagnostic seeds.\n"
+    },
+    "parse": {
+      "positive": "expected a positive integer, observed {{value}}",
+      "card": "unknown canonical card id {{value}}; use the simulator identifier such as IronWave",
+      "relic": "unknown canonical relic id {{value}}; use the simulator identifier such as OrangePellets",
+      "potion": "unknown canonical potion id {{value}}; use the simulator identifier such as EssenceOfSteel"
     }
   },
   "compact": {
@@ -6204,7 +6210,37 @@
     "shellName": "{{word}} requires a name",
     "shellPlainName": "{{word}} requires a plain name after the verb",
     "shellTargetTwice": "target specified twice in {{command}}: {{spec}}",
-    "shellSingle": "{{command}} accepts exactly one action; use act for a sequence"
+    "shellSingle": "{{command}} accepts exactly one action; use act for a sequence",
+    "resolve": {
+      "runSelection": "select:<card> requires a strategic run-card selection",
+      "deckOccurrence": "select:{{name}} occurrence #{{occurrence}} is unavailable; matched {{count}} deck card(s)",
+      "deckAbsent": "select:{{name}} has no matching public deck card",
+      "deckAmbiguous": "select:{{name}} is ambiguous across deck ordinals {{matches}}; add #<occurrence>",
+      "deckRepeated": "select:<card> repeats the same public deck card",
+      "runFamilies": "semantic action {{selector}} is ambiguous across {{count}} run-card selection families",
+      "combatFamilies": "semantic action {{selector}} is ambiguous across {{count}} combat selection families",
+      "playCombat": "play:{{name}} requires a combat decision",
+      "useCombat": "use-potion:{{name}} requires a combat decision",
+      "discardCombat": "discard-potion:{{name}} requires a combat decision",
+      "pendingChoice": "play:{{name}} cannot run while a combat choice is pending; insert choose:<card> or select:<card> immediately after the action opening that choice. Both act and preview support choices within the same line. To inspect a private choice, preview only the prefix through the opening action, then preview the full line with the selected token inserted. For an already committed choice, use options",
+      "handUpgrade": "play:{{name}} has no card with the requested upgrade in the hand at this boundary",
+      "handAbsent": "play:{{name}} is not in the hand at this boundary. Earlier draws, exhausts or turn changes may have changed it",
+      "handOccurrence": "play:{{name}} occurrence #{{occurrence}} is absent from the visible hand; matched {{count}} hand card(s). Occurrences are relative to each current successor; for a transactional line of publicly equivalent copies, repeat {{alias}} without #<occurrence> so every step resolves against its own successor",
+      "untargeted": "play:{{name}} has a legal play without a monster target; omit @{{slot}} and use options for its exact current command",
+      "handIllegal": "play:{{name}}#{{occurrence}} selects hand[{{hand}}] {{card}} with cost {{cost}}, but it has no legal play{{target}} at energy {{energy}}; inspect the current candidates instead of renumbering another copy",
+      "targetSlot": " at monster slot {{slot}}",
+      "handAmbiguous": "play:{{name}} is ambiguous at {{site}}; use one exact visible-hand action: {{candidates}}",
+      "advanceExplicit": "advance would bypass explicit choice(s) at {{site}}: {{choices}}; resolve them explicitly before routine progression",
+      "advanceAbsent": "advance has no uniquely routine progression action at {{site}}; card, reward, event, chest, campfire, and purchase choices must stay explicit",
+      "advanceAmbiguous": "advance is ambiguous at {{site}}; routine progression candidate ordinals are {{matches}}, so choose an explicit action",
+      "runPotionTarget": "a strategic run potion cannot have a combat target",
+      "upgradeAmbiguous": "{{verb}}:{{name}} has multiple upgraded levels but no unupgraded card; specify + or +<level>",
+      "occurrenceAbsent": "semantic action {{action}} occurrence #{{occurrence}} is unavailable at {{site}}; matched {{count}} candidate(s)",
+      "ambiguous": "semantic action {{selector}} is ambiguous at {{site}}; matching candidate ordinals are {{matches}}; add #<occurrence> or a target",
+      "singleRoute": "; this Map has one route, so use advance or {{route}}",
+      "multipleRoutes": "; choose one explicit route from [{{routes}}]",
+      "noMatch": "semantic action {{selector}} has no legal match at {{site}} ({{count}} candidate(s)){{hint}}"
+    }
   },
   "draft": {
     "xCost": "Xc",
