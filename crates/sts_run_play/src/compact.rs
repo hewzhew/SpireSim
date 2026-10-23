@@ -4,9 +4,6 @@ use std::fmt::Write as _;
 use sts_presentation::Locale;
 
 use sts_oracle_learning::agent::information::action::PublicCombatAtomicActionV1;
-use sts_oracle_learning::agent::information::state::{
-    CombatLearningEnemyIdentityV1, PublicCombatStateV1,
-};
 use sts_oracle_learning::agent::task::{
     GameOutcomeV1, TaskEpisodeFailureV1, TaskEpisodeOutcomeV1, TaskPublicCandidateV1,
     TaskPublicDecisionV1, TaskPublicObservationV1, TaskStrategicActionV1, TaskStrategicCardV1,
@@ -22,11 +19,7 @@ use crate::combat_explain::CombatLineExplanationStateV1;
 use crate::decision::RunPlayDecisionReadingV1;
 use crate::driver::{RunPlayComparisonV1, RunPlayControllerV1};
 use crate::model::{RunPlayEvidenceIdentityV1, RunPlayHeadV1, RunPlayPositionV1};
-use crate::render::{
-    format_card, render_candidate_with_observation, render_event_structured_semantics_v1,
-    render_monster_block_v1, render_player_block_v1, render_powers, render_route_options_v1,
-    render_shop_inventory_v1, render_single_route_v1, render_strategic_run_header_v1, short_id,
-};
+use crate::render::short_id;
 
 #[cfg(test)]
 #[path = "compact/inventory_tests.rs"]
@@ -1334,7 +1327,7 @@ pub fn render_preview_v1(
     locale: Locale,
 ) -> Result<String, String> {
     if detail {
-        return render_comparison_v1(comparison, true);
+        return render_comparison_v1(comparison, true, locale);
     }
     let mut output = compact_text(locale, "preview.heading", &[]);
     for (line_index, line) in comparison.lines.iter().enumerate() {
@@ -1391,10 +1384,15 @@ pub fn render_preview_v1(
             let before = crate::decision::read_preview_decision_v1(
                 &line.steps[0].source_decision,
                 None,
+                true,
                 locale,
             )?;
-            let after =
-                crate::decision::read_preview_decision_v1(next, before.context.as_ref(), locale)?;
+            let after = crate::decision::read_preview_decision_v1(
+                next,
+                before.context.as_ref(),
+                true,
+                locale,
+            )?;
             let deck_change = render_deck_change_v1(&line.steps[0].source_decision, next, locale);
             writeln!(output, "{}", compact_text(locale, "preview.result", &[]))
                 .expect("string write");
@@ -1513,13 +1511,22 @@ fn render_preview_action_v1(
 pub fn render_comparison_v1(
     comparison: &RunPlayComparisonV1,
     detail: bool,
+    locale: Locale,
 ) -> Result<String, String> {
+    let text = |key: &str, parameters: &[(&str, &str)]| {
+        compact_text(locale, &format!("compare.{key}"), parameters)
+    };
     let mut output = String::new();
     writeln!(
         output,
-        "compare root=n{} lines={} durable_head_unchanged=true",
-        short_id(&comparison.root_archive_node_id),
-        comparison.lines.len()
+        "{}",
+        text(
+            "heading",
+            &[
+                ("root", short_id(&comparison.root_archive_node_id)),
+                ("count", &comparison.lines.len().to_string())
+            ]
+        )
     )
     .expect("string write");
     for (line_index, line) in comparison.lines.iter().enumerate() {
@@ -1537,45 +1544,77 @@ pub fn render_comparison_v1(
             })
             .collect::<Vec<_>>()
             .join("/");
+        let actions = line
+            .steps
+            .iter()
+            .map(|step| render_preview_action_v1(step, locale))
+            .collect::<Result<Vec<_>, _>>()?
+            .join(" > ");
         writeln!(
             output,
-            "line {} choices={} actions=[{}] steps={} elapsed_ms={:.3} fork_ms={:.3}",
-            line_index + 1,
-            choices,
-            line.steps
-                .iter()
-                .map(|step| render_candidate_compact(
-                    &step.selected_candidate,
-                    &step.source_decision.observation
-                ))
-                .collect::<Vec<_>>()
-                .join(" > "),
-            line.steps.len(),
-            line.total_elapsed.as_secs_f64() * 1_000.0,
-            line.fork_elapsed.as_secs_f64() * 1_000.0
+            "{}",
+            text(
+                "line",
+                &[
+                    ("index", &(line_index + 1).to_string()),
+                    ("choices", &choices),
+                    ("actions", &actions),
+                    ("steps", &line.steps.len().to_string()),
+                    (
+                        "elapsed",
+                        &format!("{:.3}", line.total_elapsed.as_secs_f64() * 1000.0)
+                    ),
+                    (
+                        "fork",
+                        &format!("{:.3}", line.fork_elapsed.as_secs_f64() * 1000.0)
+                    )
+                ]
+            )
         )
         .expect("string write");
         if detail {
             for (step_index, step) in line.steps.iter().enumerate() {
                 writeln!(
                     output,
-                    "  step {} [{}] {} elapsed_ms={:.3} outcome={}",
-                    step_index + 1,
-                    step.choice
-                        .ordinal_path
-                        .iter()
-                        .map(usize::to_string)
-                        .collect::<Vec<_>>()
-                        .join("."),
-                    render_candidate_with_observation(
-                        &step.selected_candidate,
-                        Some(&step.source_decision.observation)
-                    ),
-                    step.elapsed.as_secs_f64() * 1_000.0,
-                    render_outcome_compact(&step.outcome, Locale::En)
+                    "{}",
+                    text(
+                        "step",
+                        &[
+                            ("index", &(step_index + 1).to_string()),
+                            (
+                                "choice",
+                                &step
+                                    .choice
+                                    .ordinal_path
+                                    .iter()
+                                    .map(usize::to_string)
+                                    .collect::<Vec<_>>()
+                                    .join(".")
+                            ),
+                            ("action", &render_preview_action_v1(step, locale)?),
+                            (
+                                "elapsed",
+                                &format!("{:.3}", step.elapsed.as_secs_f64() * 1000.0)
+                            ),
+                            ("outcome", &render_outcome_compact(&step.outcome, locale))
+                        ]
+                    )
                 )
                 .expect("string write");
-                explanation.render_step_v1(&mut output, step);
+                if let TaskPublicCandidateV1::Strategic { action } = &step.selected_candidate {
+                    crate::decision::write_choice_mechanics(&mut output, action, true, locale);
+                    if let TaskPublicObservationV1::Strategic { observation } =
+                        &step.source_decision.observation
+                    {
+                        crate::decision::write_event_resource_modifiers(
+                            &mut output,
+                            action,
+                            observation,
+                            locale,
+                        );
+                    }
+                }
+                explanation.render_step_v1(&mut output, step, locale);
             }
         }
         match line
@@ -1583,14 +1622,19 @@ pub fn render_comparison_v1(
             .last()
             .and_then(|step| step.next_decision.as_ref())
         {
-            Some(decision) => render_public_decision_status_v1(&mut output, decision, detail)?,
+            Some(decision) => {
+                let reading =
+                    crate::decision::read_preview_decision_v1(decision, None, !detail, locale)?;
+                output.push_str(&reading.view);
+            }
             None => {
                 let outcome = line
                     .steps
                     .last()
-                    .map(|step| render_terminal_result_v1(step, Locale::En))
-                    .unwrap_or_else(|| "empty".to_string());
-                writeln!(output, "  final {outcome}").expect("string write");
+                    .map(|step| render_terminal_result_v1(step, locale))
+                    .unwrap_or_else(|| text("empty", &[]));
+                writeln!(output, "{}", text("final", &[("outcome", &outcome)]))
+                    .expect("string write");
             }
         }
     }
@@ -1628,316 +1672,6 @@ pub(crate) fn render_terminal_result_v1(step: &ExactRunPlayProbeStepV1, locale: 
     match hp {
         Some(hp) => format!("{outcome} | {hp}"),
         None => outcome,
-    }
-}
-
-fn render_public_decision_status_v1(
-    output: &mut String,
-    decision: &TaskPublicDecisionV1,
-    shop_details: bool,
-) -> Result<(), String> {
-    match &decision.observation {
-        TaskPublicObservationV1::Strategic { observation } => {
-            writeln!(output, "{}", render_strategic_run_header_v1(observation))
-                .expect("string write");
-            writeln!(
-                output,
-                "deck [{}]",
-                render_card_multiset(
-                    observation
-                        .cards
-                        .iter()
-                        .map(|card| { (card.card, card.upgrades) })
-                )
-            )
-            .expect("string write");
-            writeln!(
-                output,
-                "relics [{}] potions [{}]",
-                observation
-                    .relics
-                    .iter()
-                    .map(|relic| gameplay_display_label_v1(relic.relic).to_string())
-                    .collect::<Vec<_>>()
-                    .join(", "),
-                observation
-                    .potions
-                    .iter()
-                    .map(|slot| slot.potion.as_ref().map_or_else(
-                        || "empty".to_string(),
-                        |potion| gameplay_display_label_v1(potion.potion).to_string()
-                    ))
-                    .collect::<Vec<_>>()
-                    .join(", ")
-            )
-            .expect("string write");
-            if shop_details {
-                render_shop_inventory_v1(output, &observation.context);
-            }
-            if let Some(route) = render_single_route_v1(&observation.public_map) {
-                writeln!(output, "{route}").expect("string write");
-            }
-            for route in render_route_options_v1(&observation.public_map, &decision.candidates) {
-                writeln!(output, "{route}").expect("string write");
-            }
-        }
-        TaskPublicObservationV1::Combat {
-            run_context,
-            observation,
-        } => {
-            let context = match run_context {
-                sts_oracle_learning::agent::information::run::PublicCombatRunContextV1::Available {
-                    act,
-                    floor,
-                    encounter_id,
-                    ..
-                } => format!(
-                    "act={act} floor={floor} encounter={}",
-                    encounter_id
-                        .as_ref()
-                        .map(|encounter_id| encounter_id.stable_id())
-                        .unwrap_or("unknown")
-                ),
-                sts_oracle_learning::agent::information::run::PublicCombatRunContextV1::Unavailable {
-                    reason,
-                } => format!("detached={reason:?}"),
-            };
-            writeln!(
-                output,
-                "combat {context} turn={} hp={}/{} block={} energy={}/{} played={} powers=[{}]",
-                observation.turn.turn_count,
-                observation.player.hp,
-                observation.player.max_hp,
-                render_player_block_v1(observation),
-                observation.turn.energy,
-                observation.player.energy_master,
-                observation.turn.counters.cards_played_this_turn,
-                render_powers(&observation.player.powers, Locale::En)
-            )
-            .expect("string write");
-            writeln!(
-                output,
-                "enemies [{}]",
-                observation
-                    .monsters
-                    .iter()
-                    .map(|monster| format!(
-                        "{}:{} {}/{} b{} intent={:?}/{:?} powers=[{}]",
-                        monster.slot,
-                        match monster.enemy {
-                            CombatLearningEnemyIdentityV1::Known { enemy_id } => {
-                                gameplay_display_label_v1(enemy_id)
-                            }
-                        },
-                        monster.hp,
-                        monster.max_hp,
-                        render_monster_block_v1(monster.block, &monster.powers),
-                        monster.intent.intent,
-                        monster.intent.preview_damage_per_hit,
-                        render_powers(&monster.powers, Locale::En)
-                    ))
-                    .collect::<Vec<_>>()
-                    .join("; ")
-            )
-            .expect("string write");
-            writeln!(
-                output,
-                "hand [{}] piles=draw:{} discard:{} exhaust:{} nonmaster=[{}]",
-                observation
-                    .cards
-                    .hand
-                    .cards
-                    .iter()
-                    .enumerate()
-                    .map(|(index, card)| format!(
-                        "{index}:{}({})",
-                        format_card(card.card_id, card.upgrades),
-                        card.effective_cost
-                    ))
-                    .collect::<Vec<_>>()
-                    .join(", "),
-                observation.cards.draw.cards.len(),
-                observation.cards.discard.cards.len(),
-                observation.cards.exhaust.cards.len(),
-                render_nonmaster_cards(observation)
-            )
-            .expect("string write");
-            let potions = observation
-                .potions
-                .iter()
-                .enumerate()
-                .filter_map(|(slot, potion)| {
-                    potion
-                        .as_ref()
-                        .map(|potion| format!("{slot}:{}", potion.potion_id.stable_id()))
-                })
-                .collect::<Vec<_>>();
-            writeln!(
-                output,
-                "potions [{}]",
-                if potions.is_empty() {
-                    "empty".to_string()
-                } else {
-                    potions.join(", ")
-                }
-            )
-            .expect("string write");
-        }
-    }
-    let shop = matches!(
-        &decision.observation,
-        TaskPublicObservationV1::Strategic {
-            observation: sts_oracle_learning::agent::task::TaskStrategicObservationV1 {
-                context: sts_oracle_learning::ai::planner_core::PlannerDecisionContext::Shop { .. },
-                ..
-            }
-        }
-    );
-    if shop && !shop_details {
-        writeln!(
-            output,
-            "executable choices={} (inventory and choices not expanded; use --detail)",
-            decision.candidates.len()
-        )
-        .expect("string write");
-        return Ok(());
-    }
-    let choices_label = if shop {
-        "executable choices"
-    } else {
-        "choices"
-    };
-    writeln!(
-        output,
-        "{choices_label} (engine indexes; ./p uses its own displayed rows):"
-    )
-    .expect("string write");
-    for (ordinal, candidate) in decision.candidates.iter().enumerate() {
-        writeln!(
-            output,
-            "  {ordinal}: {}",
-            render_candidate_with_observation(candidate, Some(&decision.observation))
-        )
-        .expect("string write");
-    }
-    Ok(())
-}
-
-fn render_card_multiset<I>(cards: I) -> String
-where
-    I: IntoIterator<Item = (sts_oracle_learning::content::cards::CardId, u8)>,
-{
-    let mut counts = BTreeMap::<String, usize>::new();
-    for (card, upgrades) in cards {
-        *counts.entry(format_card(card, upgrades)).or_default() += 1;
-    }
-    counts
-        .into_iter()
-        .map(|(card, count)| {
-            if count == 1 {
-                card
-            } else {
-                format!("{card}x{count}")
-            }
-        })
-        .collect::<Vec<_>>()
-        .join(", ")
-}
-
-fn render_nonmaster_cards(observation: &PublicCombatStateV1) -> String {
-    let mut surplus = BTreeMap::<String, i32>::new();
-    for card in &observation.cards.master_deck.cards {
-        *surplus
-            .entry(format_card(card.card_id, card.upgrades))
-            .or_default() -= 1;
-    }
-    for collection in [
-        &observation.cards.hand,
-        &observation.cards.draw,
-        &observation.cards.discard,
-        &observation.cards.exhaust,
-        &observation.cards.limbo,
-    ] {
-        for card in &collection.cards {
-            *surplus
-                .entry(format_card(card.card_id, card.upgrades))
-                .or_default() += 1;
-        }
-    }
-    surplus
-        .into_iter()
-        .filter(|(_, count)| *count > 0)
-        .map(|(card, count)| {
-            if count == 1 {
-                card
-            } else {
-                format!("{card}x{count}")
-            }
-        })
-        .collect::<Vec<_>>()
-        .join(", ")
-}
-
-fn render_candidate_compact(
-    candidate: &TaskPublicCandidateV1,
-    observation: &TaskPublicObservationV1,
-) -> String {
-    match candidate {
-        TaskPublicCandidateV1::CombatAtomic {
-            action:
-                PublicCombatAtomicActionV1::PlayCard {
-                    hand_index,
-                    target_monster_index,
-                },
-        } => match observation {
-            TaskPublicObservationV1::Combat { observation, .. } => observation
-                .cards
-                .hand
-                .cards
-                .get(*hand_index)
-                .map(|card| {
-                    let target = target_monster_index
-                        .map(|target| format!("@{target}"))
-                        .unwrap_or_default();
-                    format!("{}{}", format_card(card.card_id, card.upgrades), target)
-                })
-                .unwrap_or_else(|| format!("PlayCard[{hand_index}]")),
-            TaskPublicObservationV1::Strategic { .. } => format!("PlayCard[{hand_index}]"),
-        },
-        TaskPublicCandidateV1::CombatAtomic { action } => format!("{action:?}"),
-        TaskPublicCandidateV1::Strategic {
-            action:
-                TaskStrategicActionV1::ChooseEventOption {
-                    event,
-                    screen,
-                    option_index,
-                    action,
-                    public_semantics,
-                    ..
-                },
-        } => {
-            let label = public_semantics
-                .public_label
-                .as_deref()
-                .unwrap_or("<label-unavailable>");
-            let mechanics = render_event_structured_semantics_v1(
-                public_semantics.structured_semantics.as_ref(),
-                Locale::En,
-            );
-            format!(
-                "event:{}:s{screen}:o{option_index}:label={label:?}:{action:?}:mechanics=[{mechanics}]",
-                event.stable_id()
-            )
-        }
-        TaskPublicCandidateV1::Strategic { .. } => {
-            render_candidate_with_observation(candidate, Some(observation))
-        }
-        TaskPublicCandidateV1::CombatIndexedChoice {
-            reason, candidate, ..
-        } => format!("{reason:?}:{candidate:?}"),
-        TaskPublicCandidateV1::CombatSelectionFamily { family } => {
-            format!("Select:{:?}", family.reason)
-        }
     }
 }
 

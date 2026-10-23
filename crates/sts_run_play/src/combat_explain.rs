@@ -1,4 +1,5 @@
 use std::fmt::Write as _;
+use sts_presentation::Locale;
 
 use sts_oracle_learning::agent::information::action::PublicCombatAtomicActionV1;
 use sts_oracle_learning::agent::information::state::{
@@ -10,11 +11,14 @@ use sts_oracle_learning::content::cards::mechanics::{
     unconditional_card_draw_request_v1, CardMechanicRole, EndTurnHandDamageV1,
 };
 use sts_oracle_learning::content::cards::{get_card_definition, CardId, CardType};
-use sts_oracle_learning::content::identity::gameplay_display_label_v1;
 use sts_oracle_learning::content::powers::PowerId;
 use sts_oracle_learning::eval::run_control::{ExactRunPlayProbeStepV1, RunActionResultChangeV1};
 
-use crate::render::format_card;
+fn text(locale: Locale, key: &str, parameters: &[(&str, &str)]) -> String {
+    locale
+        .definition_text_with("combat", &format!("explain.{key}"), parameters)
+        .expect("combat explanation message")
+}
 
 #[derive(Clone, Copy)]
 struct PendingDrawRequestV1 {
@@ -28,9 +32,14 @@ pub(crate) struct CombatLineExplanationStateV1 {
 }
 
 impl CombatLineExplanationStateV1 {
-    pub(crate) fn render_step_v1(&mut self, output: &mut String, step: &ExactRunPlayProbeStepV1) {
+    pub(crate) fn render_step_v1(
+        &mut self,
+        output: &mut String,
+        step: &ExactRunPlayProbeStepV1,
+        locale: Locale,
+    ) {
         self.pending_draw_request =
-            render_combat_step_evidence_v1(output, step, self.pending_draw_request);
+            render_combat_step_evidence_v1(output, step, self.pending_draw_request, locale);
     }
 }
 
@@ -38,6 +47,7 @@ fn render_combat_step_evidence_v1(
     output: &mut String,
     step: &ExactRunPlayProbeStepV1,
     pending_draw_request: Option<PendingDrawRequestV1>,
+    locale: Locale,
 ) -> Option<PendingDrawRequestV1> {
     let TaskPublicObservationV1::Combat {
         observation: before,
@@ -56,18 +66,36 @@ fn render_combat_step_evidence_v1(
 
     writeln!(
         output,
-        "    observed turn={}->{} hp={}->{} ({:+}) block={}->{} ({:+}) energy={}->{} ({:+})",
-        before.turn.turn_count,
-        after.turn.turn_count,
-        before.player.hp,
-        after.player.hp,
-        after.player.hp - before.player.hp,
-        before.player.block,
-        after.player.block,
-        after.player.block - before.player.block,
-        before.turn.energy,
-        after.turn.energy,
-        i32::from(after.turn.energy) - i32::from(before.turn.energy),
+        "{}",
+        text(
+            locale,
+            "observed",
+            &[
+                ("beforeTurn", &before.turn.turn_count.to_string()),
+                ("afterTurn", &after.turn.turn_count.to_string()),
+                ("beforeHp", &before.player.hp.to_string()),
+                ("afterHp", &after.player.hp.to_string()),
+                (
+                    "hpDelta",
+                    &format!("{:+}", after.player.hp - before.player.hp)
+                ),
+                ("beforeBlock", &before.player.block.to_string()),
+                ("afterBlock", &after.player.block.to_string()),
+                (
+                    "blockDelta",
+                    &format!("{:+}", after.player.block - before.player.block)
+                ),
+                ("beforeEnergy", &before.turn.energy.to_string()),
+                ("afterEnergy", &after.turn.energy.to_string()),
+                (
+                    "energyDelta",
+                    &format!(
+                        "{:+}",
+                        i32::from(after.turn.energy) - i32::from(before.turn.energy)
+                    )
+                )
+            ]
+        ),
     )
     .expect("string write");
 
@@ -91,53 +119,84 @@ fn render_combat_step_evidence_v1(
     if !drawn.is_empty() || applied_draw_request.is_some() {
         let request = applied_draw_request
             .map(|request| {
-                format!(
-                    "{} by {}",
-                    request.requested,
-                    gameplay_display_label_v1(request.source_card)
+                text(
+                    locale,
+                    "requestBy",
+                    &[
+                        ("count", &request.requested.to_string()),
+                        (
+                            "card",
+                            locale.entity("card", request.source_card.stable_id()),
+                        ),
+                    ],
                 )
             })
-            .unwrap_or_else(|| "not_from_selected_action".to_string());
+            .unwrap_or_else(|| text(locale, "notFromAction", &[]));
         let shortfall = applied_draw_request
             .map(|request| request.requested.saturating_sub(drawn.len()))
             .unwrap_or(0);
         writeln!(
             output,
-            "    observed draw_request={} actual={} [{}] hand={}->{} draw_pile={}->{}{}",
-            request,
-            drawn.len(),
-            drawn
-                .iter()
-                .map(|(card, upgrades)| format_card(*card, *upgrades))
-                .collect::<Vec<_>>()
-                .join(", "),
-            before.cards.hand.cards.len(),
-            after.cards.hand.cards.len(),
-            before.cards.draw.cards.len(),
-            after.cards.draw.cards.len(),
-            if shortfall > 0 && after.cards.hand.cards.len() == 10 {
-                format!(" hand_limit_shortfall={shortfall}")
-            } else {
-                String::new()
-            },
+            "{}",
+            text(
+                locale,
+                "draw",
+                &[
+                    ("request", &request),
+                    ("actual", &drawn.len().to_string()),
+                    (
+                        "cards",
+                        &drawn
+                            .iter()
+                            .map(|(card, upgrades)| locale.card_name(card.stable_id(), *upgrades))
+                            .collect::<Vec<_>>()
+                            .join(", ")
+                    ),
+                    ("beforeHand", &before.cards.hand.cards.len().to_string()),
+                    ("afterHand", &after.cards.hand.cards.len().to_string()),
+                    ("beforeDraw", &before.cards.draw.cards.len().to_string()),
+                    ("afterDraw", &after.cards.draw.cards.len().to_string()),
+                    (
+                        "shortfall",
+                        &if shortfall > 0 && after.cards.hand.cards.len() == 10 {
+                            text(
+                                locale,
+                                "handLimitSuffix",
+                                &[("count", &shortfall.to_string())],
+                            )
+                        } else {
+                            String::new()
+                        }
+                    )
+                ]
+            ),
         )
         .expect("string write");
     }
     if !added_to_exhaust.is_empty() {
         writeln!(
             output,
-            "    observed exhaust_added=[{}] exhaust_pile={}->{}",
-            added_to_exhaust
-                .iter()
-                .map(|card| format_card(card.card_id, card.upgrades))
-                .collect::<Vec<_>>()
-                .join(", "),
-            before.cards.exhaust.cards.len(),
-            after.cards.exhaust.cards.len(),
+            "{}",
+            text(
+                locale,
+                "exhaust",
+                &[
+                    (
+                        "cards",
+                        &added_to_exhaust
+                            .iter()
+                            .map(|card| locale.card_name(card.card_id.stable_id(), card.upgrades))
+                            .collect::<Vec<_>>()
+                            .join(", ")
+                    ),
+                    ("before", &before.cards.exhaust.cards.len().to_string()),
+                    ("after", &after.cards.exhaust.cards.len().to_string())
+                ]
+            ),
         )
         .expect("string write");
     }
-    render_orientation_change_v1(output, step, before, after);
+    render_orientation_change_v1(output, step, before, after, locale);
     let is_end_turn = matches!(
         step.selected_candidate,
         TaskPublicCandidateV1::CombatAtomic {
@@ -150,15 +209,21 @@ fn render_combat_step_evidence_v1(
         if feel_no_pain > 0 {
             writeln!(
                 output,
-                "    explained exhaust_count={} FeelNoPain=+{} block",
-                added_to_exhaust.len(),
-                feel_no_pain,
+                "{}",
+                text(
+                    locale,
+                    "exhaustBlock",
+                    &[
+                        ("count", &added_to_exhaust.len().to_string()),
+                        ("block", &feel_no_pain.to_string())
+                    ]
+                ),
             )
             .expect("string write");
         }
     }
     if is_end_turn {
-        render_end_turn_explanation_v1(output, before, after, &added_to_exhaust, &drawn);
+        render_end_turn_explanation_v1(output, before, after, &added_to_exhaust, &drawn, locale);
     }
 
     match direct_draw_request {
@@ -225,6 +290,7 @@ fn render_orientation_change_v1(
     step: &ExactRunPlayProbeStepV1,
     before: &PublicCombatStateV1,
     after: &PublicCombatStateV1,
+    locale: Locale,
 ) {
     if before.player.facing_left == after.player.facing_left {
         return;
@@ -255,14 +321,23 @@ fn render_orientation_change_v1(
     };
     writeln!(
         output,
-        "    explained orientation target_slot={} facing_left={}->{} back_attack_slots=[{}]->[{}]",
-        target_slot
-            .map(|slot| slot.to_string())
-            .unwrap_or_else(|| "?".to_string()),
-        before.player.facing_left,
-        after.player.facing_left,
-        back_attack_slots_v1(before),
-        back_attack_slots_v1(after),
+        "{}",
+        text(
+            locale,
+            "orientation",
+            &[
+                (
+                    "slot",
+                    &target_slot
+                        .map(|slot| slot.to_string())
+                        .unwrap_or_else(|| "?".to_string())
+                ),
+                ("beforeFacing", &before.player.facing_left.to_string()),
+                ("afterFacing", &after.player.facing_left.to_string()),
+                ("beforeBack", &back_attack_slots_v1(before)),
+                ("afterBack", &back_attack_slots_v1(after))
+            ]
+        ),
     )
     .expect("string write");
 }
@@ -283,6 +358,7 @@ fn render_end_turn_explanation_v1(
     after: &PublicCombatStateV1,
     added_to_exhaust: &[CombatLearningCardV1],
     drawn: &[(CardId, u8)],
+    locale: Locale,
 ) {
     let ethereal = added_to_exhaust
         .iter()
@@ -310,34 +386,70 @@ fn render_end_turn_explanation_v1(
     let observed_hp_loss = (before.player.hp - after.player.hp).max(0);
     let mut facts = Vec::new();
     if !ethereal.is_empty() {
-        facts.push(format!(
-            "ethereal=[{}]",
-            ethereal
-                .iter()
-                .map(|card| format_card(card.card_id, card.upgrades))
-                .collect::<Vec<_>>()
-                .join(", ")
+        facts.push(text(
+            locale,
+            "ethereal",
+            &[(
+                "cards",
+                &ethereal
+                    .iter()
+                    .map(|card| locale.card_name(card.card_id.stable_id(), card.upgrades))
+                    .collect::<Vec<_>>()
+                    .join(", "),
+            )],
         ));
     }
     if feel_no_pain > 0 {
-        facts.push(format!("FeelNoPain=+{feel_no_pain} block"));
+        facts.push(text(
+            locale,
+            "blockPower",
+            &[
+                (
+                    "power",
+                    locale.entity("power", PowerId::FeelNoPain.stable_id()),
+                ),
+                ("amount", &feel_no_pain.to_string()),
+            ],
+        ));
     }
     if metallicize > 0 {
-        facts.push(format!("Metallicize=+{metallicize} block"));
+        facts.push(text(
+            locale,
+            "blockPower",
+            &[
+                (
+                    "power",
+                    locale.entity("power", PowerId::Metallicize.stable_id()),
+                ),
+                ("amount", &metallicize.to_string()),
+            ],
+        ));
     }
     if plated_armor > 0 {
-        facts.push(format!("PlatedArmor=+{plated_armor} block"));
+        facts.push(text(
+            locale,
+            "blockPower",
+            &[
+                (
+                    "power",
+                    locale.entity("power", PowerId::PlatedArmor.stable_id()),
+                ),
+                ("amount", &plated_armor.to_string()),
+            ],
+        ));
     }
     if hand_trigger_damage.blockable > 0 {
-        facts.push(format!(
-            "end_turn_hand_damage={} blockable",
-            hand_trigger_damage.blockable
+        facts.push(text(
+            locale,
+            "handDamage",
+            &[("amount", &hand_trigger_damage.blockable.to_string())],
         ));
     }
     if hand_trigger_damage.hp_loss > 0 {
-        facts.push(format!(
-            "end_turn_hand_hp_loss={}",
-            hand_trigger_damage.hp_loss
+        facts.push(text(
+            locale,
+            "handHpLoss",
+            &[("amount", &hand_trigger_damage.hp_loss.to_string())],
         ));
     }
     let base_draw_request = (5 + before.turn.turn_start_draw_modifier).max(0) as usize;
@@ -349,36 +461,79 @@ fn render_end_turn_explanation_v1(
     let evolve_draw_request = evolve_amount.saturating_mul(drawn_statuses);
     let known_draw_request = base_draw_request.saturating_add(evolve_draw_request);
     let draw_residual = drawn.len() as i64 - known_draw_request as i64;
-    facts.push(format!("turn_draw={base_draw_request}"));
+    facts.push(text(
+        locale,
+        "turnDraw",
+        &[("amount", &base_draw_request.to_string())],
+    ));
     if evolve_draw_request > 0 {
-        facts.push(format!(
-            "Evolve={}x{} statuses=+{} draw",
-            evolve_amount, drawn_statuses, evolve_draw_request
+        facts.push(text(
+            locale,
+            "evolve",
+            &[
+                ("amount", &evolve_amount.to_string()),
+                ("statuses", &drawn_statuses.to_string()),
+                ("draw", &evolve_draw_request.to_string()),
+            ],
         ));
     }
-    facts.push(format!("actual_draw={}", drawn.len()));
-    facts.push(format!("draw_residual={draw_residual:+}"));
+    facts.push(text(
+        locale,
+        "actualDraw",
+        &[("amount", &drawn.len().to_string())],
+    ));
+    facts.push(text(
+        locale,
+        "drawResidual",
+        &[("amount", &format!("{draw_residual:+}"))],
+    ));
     if known_draw_request > drawn.len() && after.cards.hand.cards.len() == 10 {
-        facts.push(format!(
-            "hand_limit_shortfall={}",
-            known_draw_request - drawn.len()
+        facts.push(text(
+            locale,
+            "handLimit",
+            &[("count", &(known_draw_request - drawn.len()).to_string())],
         ));
     }
     if let Some(incoming) = incoming {
         let defense_before_attack = before.player.block + known_end_block;
         let expected_hp_loss = hand_trigger_damage.hp_loss
             + (hand_trigger_damage.blockable + incoming - defense_before_attack).max(0);
-        facts.push(format!("visible_enemy_attack={incoming}"));
-        facts.push(format!("defense_before_attack={defense_before_attack}"));
-        facts.push(format!("expected_hp_loss={expected_hp_loss}"));
-        facts.push(format!("observed_hp_loss={observed_hp_loss}"));
-        facts.push(format!(
-            "residual={:+}",
-            observed_hp_loss - expected_hp_loss
+        facts.push(text(
+            locale,
+            "visibleAttack",
+            &[("amount", &incoming.to_string())],
+        ));
+        facts.push(text(
+            locale,
+            "defense",
+            &[("amount", &defense_before_attack.to_string())],
+        ));
+        facts.push(text(
+            locale,
+            "expectedLoss",
+            &[("amount", &expected_hp_loss.to_string())],
+        ));
+        facts.push(text(
+            locale,
+            "observedLoss",
+            &[("amount", &observed_hp_loss.to_string())],
+        ));
+        facts.push(text(
+            locale,
+            "residual",
+            &[(
+                "amount",
+                &format!("{:+}", observed_hp_loss - expected_hp_loss),
+            )],
         ));
     }
     if !facts.is_empty() {
-        writeln!(output, "    explained end_turn {}", facts.join("; ")).expect("string write");
+        writeln!(
+            output,
+            "{}",
+            text(locale, "endTurn", &[("facts", &facts.join("; "))])
+        )
+        .expect("string write");
     }
 }
 

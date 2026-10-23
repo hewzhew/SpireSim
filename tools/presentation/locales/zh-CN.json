@@ -2771,6 +2771,31 @@
         "select": "选择 {{cards}}",
         "unknownCard": "未知卡牌"
       }
+    },
+    "explain": {
+      "observed": "    实际变化：回合 {{beforeTurn}}→{{afterTurn}}，生命 {{beforeHp}}→{{afterHp}}（{{hpDelta}}），格挡 {{beforeBlock}}→{{afterBlock}}（{{blockDelta}}），能量 {{beforeEnergy}}→{{afterEnergy}}（{{energyDelta}}）",
+      "requestBy": "{{card}} 请求 {{count}}",
+      "notFromAction": "并非所选动作的抽牌请求",
+      "draw": "    实际抽牌：请求={{request}}，抽到 {{actual}} 张 [{{cards}}]，手牌 {{beforeHand}}→{{afterHand}}，抽牌堆 {{beforeDraw}}→{{afterDraw}}{{shortfall}}",
+      "handLimitSuffix": "，手牌上限少抽 {{count}} 张",
+      "exhaust": "    实际新增消耗 [{{cards}}]，消耗堆 {{before}}→{{after}}",
+      "exhaustBlock": "    消耗 {{count}} 张牌，{{entity_power_FeelNoPain}} 请求格挡 +{{block}}",
+      "orientation": "    朝向变化：目标槽 {{slot}}，朝左={{beforeFacing}}→{{afterFacing}}，背袭槽位 [{{beforeBack}}]→[{{afterBack}}]",
+      "ethereal": "虚无=[{{cards}}]",
+      "blockPower": "{{power}} 格挡 +{{amount}}",
+      "handDamage": "回合末手牌伤害={{amount}}（可格挡）",
+      "handHpLoss": "回合末手牌失血={{amount}}",
+      "turnDraw": "回合抽牌请求={{amount}}",
+      "evolve": "{{entity_power_Evolve}}={{amount}}×{{statuses}} 张状态牌，抽牌请求 +{{draw}}",
+      "actualDraw": "实际抽牌={{amount}}",
+      "drawResidual": "抽牌残差={{amount}}",
+      "handLimit": "手牌上限少抽={{count}}",
+      "visibleAttack": "可见敌方攻击={{amount}}",
+      "defense": "攻击前格挡={{amount}}",
+      "expectedLoss": "计算失血={{amount}}",
+      "observedLoss": "实际失血={{amount}}",
+      "residual": "残差={{amount}}",
+      "endTurn": "    回合末说明：{{facts}}"
     }
   },
   "decision": {
@@ -5650,6 +5675,13 @@
       "complete": "预演完成：当前位置未改变",
       "startFlush": "无法刷新预演开始提示：{{error}}",
       "completeFlush": "无法刷新预演完成提示：{{error}}"
+    },
+    "compare": {
+      "heading": "比较 root=n{{root}}，共 {{count}} 条线路；原局面保持不变",
+      "line": "线路 {{index}} 选择={{choices}}，动作=[{{actions}}]，步数={{steps}}，耗时 {{elapsed}} ms，分叉 {{fork}} ms",
+      "step": "  动作 {{index}} [{{choice}}] {{action}}，耗时 {{elapsed}} ms，结果={{outcome}}",
+      "empty": "空线路",
+      "final": "  终点：{{outcome}}"
     }
   },
   "publicDecision": {

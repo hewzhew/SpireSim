@@ -173,7 +173,7 @@ pub fn render_advice_v1(
     Ok(output)
 }
 
-pub fn render_advice_detail_v1(detail: &RunPlayAdviceDetailV1) -> String {
+pub fn render_advice_detail_v1(detail: &RunPlayAdviceDetailV1, locale: Locale) -> String {
     match detail {
         RunPlayAdviceDetailV1::Route(audit) => render_route_advice_detail_v1(audit),
         RunPlayAdviceDetailV1::CardReward(audit) => render_card_reward_advice_detail_v1(audit),
@@ -193,7 +193,7 @@ pub fn render_advice_detail_v1(detail: &RunPlayAdviceDetailV1) -> String {
                 audit.comparison.lines.len(),
                 audit.truncated,
             ));
-            match render_comparison_v1(&audit.comparison, true) {
+            match render_comparison_v1(&audit.comparison, true, locale) {
                 Ok(rendered) => output.push_str(&rendered),
                 Err(error) => {
                     writeln!(output, "event_frontier_render_error={error}").expect("string write");
@@ -3783,7 +3783,7 @@ mod tests {
             }],
         });
 
-        let rendered = render_advice_detail_v1(&detail);
+        let rendered = render_advice_detail_v1(&detail, Locale::En);
         assert!(rendered.contains("costs=zero:1 low:8 high:4 x:1"));
         assert!(rendered.contains("unpaid_core:1 slot_pressure:medium"));
         assert!(rendered.contains("label=take FusionHammer"));

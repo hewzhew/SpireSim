@@ -298,7 +298,7 @@ fn private_preview_exposes_the_same_followup_choices_and_rules_as_real_execution
             .public_decision_v1()
             .unwrap();
         let hypothetical =
-            crate::decision::read_preview_decision_v1(&current, None, Locale::En).unwrap();
+            crate::decision::read_preview_decision_v1(&current, None, true, Locale::En).unwrap();
         assert_eq!(preview["result"]["lines"][0]["view"], hypothetical.view);
         assert_eq!(
             acted["result"]["reading"]["options"],

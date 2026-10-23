@@ -1617,7 +1617,7 @@ fn strategic_locales_preserve_public_choices_and_share_preparation_overviews() {
             .unwrap();
         let full = game.decision_reading_v1(&[], None, Locale::ZhCn).unwrap();
         let public = en.state.as_ref().unwrap();
-        let preview = read_preview_decision_v1(public, None, Locale::ZhCn).unwrap();
+        let preview = read_preview_decision_v1(public, None, true, Locale::ZhCn).unwrap();
         let prepared = preparation::reading(public, Locale::ZhCn).unwrap().unwrap();
         assert_eq!(en.state, zh.state);
         assert_eq!(en.source, zh.source);
@@ -1761,7 +1761,7 @@ fn combat_locales_share_actual_state_commands_and_sources_across_pending_choices
             .unwrap();
         let full = game.decision_reading_v1(&[], None, Locale::ZhCn).unwrap();
         let public = en.state.as_ref().unwrap();
-        let preview = read_preview_decision_v1(public, None, Locale::ZhCn).unwrap();
+        let preview = read_preview_decision_v1(public, None, true, Locale::ZhCn).unwrap();
         assert_eq!(en.state, zh.state);
         assert_eq!(en.source, zh.source);
         assert_ne!(en.summary, zh.summary);
@@ -1860,7 +1860,7 @@ fn position_summaries_share_public_rendering_across_detail_and_binding_modes() {
             .unwrap()
             .public_decision_v1()
             .unwrap();
-        let preview = read_preview_decision_v1(&public, None, Locale::En).unwrap();
+        let preview = read_preview_decision_v1(&public, None, true, Locale::En).unwrap();
         assert!(!brief.summary.is_empty(), "{kind}");
         assert!(brief.view.starts_with(&brief.summary), "{kind}");
         assert_eq!(brief.summary, full.summary, "{kind}");
@@ -1895,7 +1895,7 @@ fn escape_summary_does_not_offer_the_inactive_hand() {
     };
     assert!(!observation.cards.hand.cards.is_empty());
     observation.turn.player_escaping = true;
-    let reading = read_preview_decision_v1(&public, None, Locale::En).unwrap();
+    let reading = read_preview_decision_v1(&public, None, true, Locale::En).unwrap();
     assert!(reading.summary.contains("Escape settlement pending"));
     assert!(!reading.summary.contains("Hand:"));
     assert!(!reading.summary.contains("Player turn"));
@@ -1925,7 +1925,7 @@ fn live_choice_commands_round_trip_while_preview_choices_remain_hypothetical() {
             .unwrap()
             .public_decision_v1()
             .unwrap();
-        let preview = read_preview_decision_v1(&decision, None, Locale::En).unwrap();
+        let preview = read_preview_decision_v1(&decision, None, true, Locale::En).unwrap();
         assert!(!preview.view.contains("./p "), "{kind}: {}", preview.view);
         assert_eq!(reading.options, preview.options);
         assert_eq!(reading.selections, preview.selections);

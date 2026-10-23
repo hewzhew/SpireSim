@@ -25,6 +25,54 @@ fn ordinary_preview_uses_shared_localized_actions_and_terminal_health() {
 }
 
 #[test]
+fn detailed_comparisons_localize_steps_successors_draws_and_exhaust_without_mutation() {
+    let dir = TestDirectory::new();
+    for (kind, action, expected) in [
+        ("combat_multiturn", "end", "回合末说明"),
+        (
+            "combat_pact_draft",
+            "play:BurningPact/select:Strike#0",
+            "实际新增消耗",
+        ),
+        ("combat_finish", "play:Strike@0", "打击 @M0"),
+        ("combat_defeat", "end", "失败 | 生命 1/75 → 0/75"),
+    ] {
+        let mut game = controller_with_session(&dir.0, kind, &fixture(kind));
+        let head = game.head().clone();
+        let fingerprint = game.current_state_fingerprints_v1().unwrap();
+        let actions =
+            crate::selector::parse_action_line_v1(action, "localized comparison").unwrap();
+        let comparison = game.compare_action_lines_v1(&[actions]).unwrap();
+        let facts = || {
+            comparison
+                .lines
+                .iter()
+                .map(|line| {
+                    line.steps.iter().map(|step| serde_json::json!({
+            "choice": step.choice, "selected_candidate": step.selected_candidate,
+            "source": step.source_decision, "next": step.next_decision, "outcome": step.outcome,
+            "action_result": step.action_result,
+        })).collect::<Vec<_>>()
+                })
+                .collect::<Vec<_>>()
+        };
+        let before = facts();
+        let en = render_preview_v1(&comparison, true, Locale::En).unwrap();
+        let zh = render_preview_v1(&comparison, true, Locale::ZhCn).unwrap();
+        assert!(en.contains("line 1 choices=") && zh.contains("线路 1 选择="));
+        assert!(zh.contains(expected), "{kind}: {zh}");
+        assert!(!zh.contains("{{") && !en.contains("{{"));
+        if kind == "combat_multiturn" {
+            assert!(en.contains("observed turn=") && en.contains("actual_draw="));
+            assert!(zh.contains("实际变化：回合") && zh.contains("实际抽牌="));
+        }
+        assert_eq!(facts(), before);
+        assert_eq!(game.head(), &head);
+        assert_eq!(game.current_state_fingerprints_v1().unwrap(), fingerprint);
+    }
+}
+
+#[test]
 fn permanent_card_changes_do_not_cancel_same_name_card_identities() {
     let dir = TestDirectory::new();
     let game = controller_with_session(&dir.0, "card-identity-change", &fixture("reward"));

@@ -3269,7 +3269,7 @@ fn run(cli: Cli) -> Result<(), String> {
                     render_advice_v1(&inspection.advice, &inspection.decision)?
                 );
                 if let Some(detail) = inspection.detail {
-                    print!("{}", render_advice_detail_v1(&detail));
+                    print!("{}", render_advice_detail_v1(&detail, locale));
                 }
             } else {
                 let mut controller = RunPlayControllerV1::open(paths)?;
@@ -3282,7 +3282,7 @@ fn run(cli: Cli) -> Result<(), String> {
                 print!("{}", render_advice_v1(&advice, decision)?);
                 if detail {
                     let detail = controller.advice_detail_v1()?;
-                    print!("{}", render_advice_detail_v1(&detail));
+                    print!("{}", render_advice_detail_v1(&detail, locale));
                 }
             }
         }
@@ -3804,7 +3804,7 @@ fn run(cli: Cli) -> Result<(), String> {
                 }
                 None => controller.compare_action_lines_v1(&parsed)?,
             };
-            print!("{}", render_comparison_v1(&comparison, detail)?);
+            print!("{}", render_comparison_v1(&comparison, detail, locale)?);
         }
         Command::AnchorLine { session, line } => {
             let choices = parse_action_line_v1(&line, "anchor-line")?;
@@ -4790,14 +4790,14 @@ fn run_shell_v1(session: PathBuf, locale: Locale) -> Result<(), String> {
                         })?;
                     print!("{}", render_advice_v1(&advice, decision)?);
                     let detail = controller.advice_detail_v1()?;
-                    print!("{}", render_advice_detail_v1(&detail));
+                    print!("{}", render_advice_detail_v1(&detail, locale));
                 }
                 "compare" | "compare-detail" => {
                     let lines = parse_comparison_lines_v1(words)?;
                     let comparison = controller.compare_action_lines_v1(&lines)?;
                     print!(
                         "{}",
-                        render_comparison_v1(&comparison, command == "compare-detail")?
+                        render_comparison_v1(&comparison, command == "compare-detail", locale)?
                     );
                 }
                 "anchor" => {

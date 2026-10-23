@@ -2771,6 +2771,31 @@
         "select": "Select {{cards}}",
         "unknownCard": "Unknown card"
       }
+    },
+    "explain": {
+      "observed": "    observed turn={{beforeTurn}}->{{afterTurn}} hp={{beforeHp}}->{{afterHp}} ({{hpDelta}}) block={{beforeBlock}}->{{afterBlock}} ({{blockDelta}}) energy={{beforeEnergy}}->{{afterEnergy}} ({{energyDelta}})",
+      "requestBy": "{{count}} by {{card}}",
+      "notFromAction": "not_from_selected_action",
+      "draw": "    observed draw_request={{request}} actual={{actual}} [{{cards}}] hand={{beforeHand}}->{{afterHand}} draw_pile={{beforeDraw}}->{{afterDraw}}{{shortfall}}",
+      "handLimitSuffix": " hand_limit_shortfall={{count}}",
+      "exhaust": "    observed exhaust_added=[{{cards}}] exhaust_pile={{before}}->{{after}}",
+      "exhaustBlock": "    explained exhaust_count={{count}} {{entity_power_FeelNoPain}}=+{{block}} block",
+      "orientation": "    explained orientation target_slot={{slot}} facing_left={{beforeFacing}}->{{afterFacing}} back_attack_slots=[{{beforeBack}}]->[{{afterBack}}]",
+      "ethereal": "ethereal=[{{cards}}]",
+      "blockPower": "{{power}}=+{{amount}} block",
+      "handDamage": "end_turn_hand_damage={{amount}} blockable",
+      "handHpLoss": "end_turn_hand_hp_loss={{amount}}",
+      "turnDraw": "turn_draw={{amount}}",
+      "evolve": "{{entity_power_Evolve}}={{amount}}x{{statuses}} statuses=+{{draw}} draw",
+      "actualDraw": "actual_draw={{amount}}",
+      "drawResidual": "draw_residual={{amount}}",
+      "handLimit": "hand_limit_shortfall={{count}}",
+      "visibleAttack": "visible_enemy_attack={{amount}}",
+      "defense": "defense_before_attack={{amount}}",
+      "expectedLoss": "expected_hp_loss={{amount}}",
+      "observedLoss": "observed_hp_loss={{amount}}",
+      "residual": "residual={{amount}}",
+      "endTurn": "    explained end_turn {{facts}}"
     }
   },
   "decision": {
@@ -5650,6 +5675,13 @@
       "complete": "Preview complete: current position unchanged",
       "startFlush": "failed to flush preview start signal: {{error}}",
       "completeFlush": "failed to flush preview completion signal: {{error}}"
+    },
+    "compare": {
+      "heading": "compare root=n{{root}} lines={{count}} durable_head_unchanged=true",
+      "line": "line {{index}} choices={{choices}} actions=[{{actions}}] steps={{steps}} elapsed_ms={{elapsed}} fork_ms={{fork}}",
+      "step": "  step {{index}} [{{choice}}] {{action}} elapsed_ms={{elapsed}} outcome={{outcome}}",
+      "empty": "empty",
+      "final": "  final {{outcome}}"
     }
   },
   "publicDecision": {

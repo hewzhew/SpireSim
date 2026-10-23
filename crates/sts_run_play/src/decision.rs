@@ -230,11 +230,16 @@ pub(crate) fn read_decision(
 pub(crate) fn read_preview_decision_v1(
     decision: &TaskPublicDecisionV1,
     known: Option<&DecisionKnownContextV1>,
+    brief: bool,
     locale: Locale,
 ) -> Result<RunPlayDecisionReadingV1, String> {
     read_public_decision_v1(
         decision,
-        &[DecisionDetailV1::Brief],
+        if brief {
+            &[DecisionDetailV1::Brief]
+        } else {
+            &[]
+        },
         known,
         None,
         None,
