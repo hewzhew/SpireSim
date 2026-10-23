@@ -2520,6 +2520,7 @@
       "manual": "手动示例",
       "start": "起手",
       "history": "已出牌",
+      "targetedCard": "{{card}} → {{target}}",
       "details": "变化详情",
       "progress": "已完成 {{current}} 步，共 {{total}} 步",
       "previous": "上一步",

@@ -86,7 +86,7 @@ export function recordedSequence(entries, definitions, id) {
     const state = combat(entry.before);
     const card = state.cards.hand.cards[action.candidate.action.hand_index];
     if (!card) throw new Error('Recorded action has no corresponding hand card');
-    actions.push({ card: cardView(card, definitions), command: entry.action, target: action.candidate.action.target_monster_index,
+    actions.push({ card: cardView(card, definitions), command: entry.action, hand_index: action.candidate.action.hand_index, target: action.candidate.action.target_monster_index,
       source_snapshot_id: previous.public_snapshot_id, result_snapshot_id: entry.after.position.public_snapshot_id });
     snapshots.push(snapshot(entry.after, definitions));
   }
@@ -106,4 +106,15 @@ export function sequenceView(scene, cursor) {
   return { state, action: cursor ? scene.actions[cursor - 1] : null, completed: scene.actions.slice(0, cursor), added,
     deltas: before ? { energy: state.energy - before.energy, block: state.block - before.block,
       hp: state.hp - before.hp, enemy_hp: state.enemy.hp - before.enemy.hp } : {} };
+}
+
+// Slot continuity for the supported card plays: remove the recorded source
+// slot, preserve the remaining public hand order, append any newly drawn cards.
+// If that layout does not match, omit movement rather than invent a pairing.
+export function handTransition(before, after, playedIndex) {
+  if (!Number.isInteger(playedIndex) || playedIndex < 0 || playedIndex >= before.length) return null;
+  const retained = before.map((card, from) => ({ card, from })).filter(item => item.from !== playedIndex);
+  if (after.length < retained.length || retained.some((item, to) => key(item.card) !== key(after[to]))) return null;
+  return { played: playedIndex, retained: retained.map((item, to) => ({ from: item.from, to })),
+    added: after.slice(retained.length).map((_card, index) => retained.length + index) };
 }

@@ -1,7 +1,7 @@
 import { createPresentation, preferredLocale } from '../index.mjs';
 import { neowOptionRuns } from './neow-option.mjs';
 import { intentView } from './intent-view.mjs';
-import { sequenceView } from './sequence.mjs';
+import { handTransition, sequenceView } from './sequence.mjs';
 
 async function main() {
   const data = JSON.parse(document.getElementById('data').textContent);
@@ -19,6 +19,7 @@ async function main() {
   let turnRecordOpen = true;
   let actionCursor = 0;
   let sequenceDetailsOpen = false;
+  const activeMotion = new Set();
   const openPiles = new Set();
   const byId = id => document.getElementById(id);
   const node = (tag, text, className) => {
@@ -98,8 +99,9 @@ async function main() {
     const caption = node('span', view.caption, 'intent-caption'); caption.setAttribute('aria-hidden', 'true');
     el.append(symbol, caption); return el;
   }
-  function combatBoard(before, heading) {
+  function combatBoard(before, heading, playback) {
     const board = node('section', undefined, 'combat-board'); board.setAttribute('aria-label', heading);
+    if (playback) board.classList.add('sequence-board');
     const hud = node('div', undefined, 'combat-hud'); hud.append(resources(before));
     const field = node('div', undefined, 'battlefield');
     const enemyDetails = [];
@@ -115,7 +117,7 @@ async function main() {
     energy.append(node('strong', number(before.energy), 'energy-orb'), node('span', t('combat.energyLabel'), 'energy-label'));
     const hand = node('div', undefined, 'hand'); for (const card of before.hand) hand.append(gameCard(card));
     hand.setAttribute('role', 'group'); hand.setAttribute('aria-label', t('combat.hand'));
-    dock.append(energy, hand); board.append(hud, field, dock);
+    dock.append(energy, hand); board.append(hud, field); if (playback) board.append(playback); board.append(dock);
     if (before.piles) board.append(pileViews(before.piles));
     return board;
   }
@@ -160,11 +162,10 @@ async function main() {
     }
     return row;
   }
-  function renderSequence(scene, emphasizeArrival) {
+  function renderSequence(scene, motion, scrollLeft) {
     const view = sequenceView(scene, actionCursor), state = view.state;
-    const record = node('section', undefined, 'sequence-record');
+    const record = node('section', undefined, 'sequence-detail-panel');
     const header = node('div', undefined, 'sequence-toolbar');
-    header.append(node('h2', t('scene.turn', { turn: state.turn })));
     const controls = node('div', undefined, 'sequence-controls');
     const progress = node('span', number(actionCursor) + ' / ' + number(scene.actions.length), 'sequence-progress');
     progress.id = 'sequence-progress'; progress.tabIndex = -1;
@@ -179,16 +180,20 @@ async function main() {
       controls.append(button); if (offset < 0) controls.append(progress);
     }
     header.append(controls);
-    record.append(node('h2', t('sequence.history')));
+    const history = node('div', undefined, 'sequence-record');
+    history.append(node('span', t('scene.turn', { turn: state.turn }), 'sequence-turn'));
     const actions = node('div', undefined, 'sequence-history'); actions.setAttribute('role', 'group'); actions.setAttribute('aria-label', t('sequence.history'));
     for (let index = 0; index <= actionCursor; index++) {
-      const button = node('button', index === 0 ? t('sequence.start') : display.cardName(scene.actions[index - 1].card.card_id, scene.actions[index - 1].card.upgrades), 'sequence-step');
+      const action = scene.actions[index - 1];
+      const cardName = index ? display.cardName(action.card.card_id, action.card.upgrades) : null;
+      const button = node('button', index === 0 ? t('sequence.start') : index === actionCursor && action.target === 0
+        ? t('sequence.targetedCard', { card: cardName, target: name('enemy', state.enemy.enemy_id) }) : cardName, 'sequence-step');
       button.type = 'button'; button.dataset.cursor = index;
       if (index > 0) button.prepend(icon(cardIcon(scene.actions[index - 1].card.type)));
       if (index === actionCursor) button.setAttribute('aria-current', 'step');
       button.addEventListener('click', () => selectAction(index)); actions.append(button);
     }
-    record.append(actions);
+    history.append(actions); header.append(history);
     if (actionCursor) {
       const details = node('details', undefined, 'sequence-details'); details.open = sequenceDetailsOpen;
       details.addEventListener('toggle', () => { if (details.isConnected) sequenceDetailsOpen = details.open; });
@@ -201,31 +206,65 @@ async function main() {
       if (view.added.length) changes.append(node('span', t('sequence.addedHand', { cards: view.added.map(cardGroupLabel).join(display.locale === 'zh-CN' ? '、' : ', ') }), 'sequence-new-cards'));
       details.append(changes); record.append(details);
     }
-    const board = combatBoard(state, title(scene));
-    if (emphasizeArrival) {
-      const previousHand = scene.snapshots[actionCursor - 1].hand;
-      const sameKind = (a, b) => a.card_id === b.card_id && a.upgrades === b.upgrades;
-      state.hand.forEach((card, index) => {
-        // Collection evidence identifies a newly present kind, not a new copy
-        // among otherwise identical cards already in the hand.
-        if (view.added.some(group => sameKind(group, card)) && !previousHand.some(before => sameKind(before, card))) {
-          board.querySelector('.hand').children[index].classList.add('is-arriving');
-        }
-      });
-    }
-    byId('stage').append(header, board, record);
+    const board = combatBoard(state, title(scene), header);
+    for (const index of motion?.hand?.added ?? []) board.querySelector('.hand').children[index].classList.add('is-arriving');
+    byId('stage').append(board, record);
+    const hand = board.querySelector('.hand'); hand.scrollLeft = scrollLeft;
     const arriving = board.querySelector('.is-arriving');
     if (arriving) {
-      const hand = board.querySelector('.hand');
       hand.scrollLeft += Math.max(0, arriving.getBoundingClientRect().right - hand.getBoundingClientRect().right + 6);
     }
+    const current = actions.querySelector('[aria-current]');
+    actions.scrollLeft += Math.max(0, current.getBoundingClientRect().right - actions.getBoundingClientRect().right + 4);
+    if (motion?.enabled) animateBoundary(board, motion);
   }
   function selectAction(index, focus = `[data-cursor="${index}"]`) {
     if (index < 0 || index >= scenes[selected].snapshots.length) return;
-    const emphasizeArrival = index === actionCursor + 1;
-    actionCursor = index; render(emphasizeArrival);
-    const target = byId('stage').querySelector(focus);
+    let motion = null;
+    if (index === actionCursor + 1) {
+      const scene = scenes[selected], hand = byId('stage').querySelector('.hand');
+      motion = { hand: handTransition(scene.snapshots[actionCursor].hand, scene.snapshots[index].hand, scene.actions[actionCursor].hand_index),
+        enabled: !window.matchMedia('(prefers-reduced-motion: reduce)').matches && typeof hand.animate === 'function' };
+      if (motion.enabled) {
+        motion.rects = [...hand.children].map(card => card.getBoundingClientRect());
+        motion.played = motion.hand ? hand.children[motion.hand.played].cloneNode(true) : null;
+        motion.healthWidths = [...byId('stage').querySelectorAll('.fighter-health-fill')].map(fill => fill.getBoundingClientRect().width);
+      }
+    }
+    actionCursor = index; render(motion);
+    const target = focus ? byId('stage').querySelector(focus) : null;
     (target?.disabled ? byId('sequence-progress') : target)?.focus({ preventScroll: true });
+  }
+  function clearMotion() {
+    for (const item of activeMotion) { item.animation.cancel(); item.ghost?.remove(); }
+    activeMotion.clear();
+  }
+  function animateBoundary(board, motion) {
+    const play = (element, frames, ghost) => {
+      const animation = element.animate(frames, { duration: 200, easing: 'cubic-bezier(.2,.7,.2,1)' });
+      const item = { animation, ghost }; activeMotion.add(item);
+      const settled = () => { ghost?.remove(); activeMotion.delete(item); };
+      animation.finished.then(settled, settled);
+    };
+    const hand = board.querySelector('.hand');
+    if (motion.hand) {
+      const { played, retained, added } = motion.hand;
+      const rect = motion.rects[played], ghost = motion.played;
+      if (rect.width > 0 && rect.height > 0) {
+        ghost.classList.remove('is-arriving'); ghost.classList.add('played-card-ghost'); ghost.setAttribute('aria-hidden', 'true');
+        Object.assign(ghost.style, { left: rect.left + 'px', top: rect.top + 'px', width: rect.width + 'px', height: rect.height + 'px' });
+        document.body.append(ghost);
+        play(ghost, [{ opacity: .85, transform: 'translateY(0)' }, { opacity: 0, transform: 'translateY(-16px)' }], ghost);
+      }
+      for (const { from, to } of retained) {
+        const card = hand.children[to], now = card.getBoundingClientRect(), before = motion.rects[from];
+        play(card, [{ transform: `translate(${before.left - now.left}px, ${before.top - now.top}px)` }, { transform: 'translate(0, 0)' }]);
+      }
+      for (const index of added) play(hand.children[index], [{ opacity: .25, transform: 'translateY(6px)' }, { opacity: 1, transform: 'translateY(0)' }]);
+    }
+    board.querySelectorAll('.fighter-health-fill').forEach((fill, index) => {
+      if (motion.healthWidths[index] > 0) play(fill, [{ width: motion.healthWidths[index] + 'px' }, { width: fill.style.width }]);
+    });
   }
   function resources(state) {
     const row = node('div', undefined, 'resource-line');
@@ -298,11 +337,14 @@ async function main() {
     for (const el of document.querySelectorAll('[data-act]')) el.textContent = t('scene.act', { act: story.act });
     byId('raw-summary').replaceChildren(icon('chevron-right'), t('raw.summary'));
   }
-  function render(emphasizeArrival = false) {
+  function render(motion = null) {
     const scene = scenes[selected]; byId('heading').textContent = title(scene); byId('turn-label').textContent = label(scene);
+    const scrollLeft = byId('stage').dataset.scene === scene.id ? byId('stage').querySelector('.hand')?.scrollLeft ?? 0 : 0;
+    clearMotion(); document.body.classList.toggle('has-sequence', scene.kind === 'sequence');
     for (const [index, button] of [...byId('timeline').children].entries()) { if (index === selected) button.setAttribute('aria-current', 'step'); else button.removeAttribute('aria-current'); }
     byId('stage').replaceChildren();
-    if (scene.kind === 'sequence') renderSequence(scene, emphasizeArrival); else if (scene.kind === 'combat') renderCombat(scene); else if (scene.kind === 'event') renderEvent(scene); else renderRewards(scene);
+    if (scene.kind === 'sequence') renderSequence(scene, motion, scrollLeft); else if (scene.kind === 'combat') renderCombat(scene); else if (scene.kind === 'event') renderEvent(scene); else renderRewards(scene);
+    byId('stage').dataset.scene = scene.id;
     byId('raw-record').hidden = scene.kind === 'sequence'; byId('record-model').hidden = scene.kind === 'sequence';
     if (scene.kind !== 'sequence') renderRaw(scene);
   }
@@ -312,12 +354,16 @@ async function main() {
     if (updateHash) history.replaceState(null, '', '#' + scenes[selected].id);
   }
   byId('brand-mark').append(icon('cards')); byId('run-icon').append(icon('swords')); byId('crumb-arrow').append(icon('chevron-right'));
-  byId('stage').addEventListener('keydown', event => {
-    if (scenes[selected].kind !== 'sequence' || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey
-        || event.target.closest('input, select, textarea, [contenteditable]')) return;
+  window.addEventListener('keydown', event => {
+    if (scenes[selected].kind !== 'sequence' || event.defaultPrevented || event.isComposing || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey
+        || event.target.closest?.('input, select, textarea, [contenteditable]:not([contenteditable="false"]), [role="slider"], [role="listbox"], [role="combobox"], [role="tablist"]')
+        || [...document.querySelectorAll('dialog[open], [role="dialog"][aria-modal="true"], [role="menu"], [role="listbox"]')].some(element => element.getClientRects().length > 0)
+        || window.getSelection()?.isCollapsed === false) return;
     const offset = event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : 0;
     if (!offset) return;
-    event.preventDefault(); selectAction(actionCursor + offset, '#sequence-progress');
+    event.preventDefault();
+    const focus = byId('stage').contains(document.activeElement) ? '#sequence-progress' : null;
+    selectAction(actionCursor + offset, focus);
   });
   byId('language').addEventListener('change', async event => {
     const selector = event.currentTarget; selector.disabled = true;

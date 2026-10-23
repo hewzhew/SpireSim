@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { cardGroups, recordedSequence, sequenceView } from './sequence.mjs';
+import { cardGroups, handTransition, recordedSequence, sequenceView } from './sequence.mjs';
 
 const card = id => ({ card_id: id, upgrades: 0, effective_cost: 1, current_block: id === 'ShrugItOff' ? 8 : id === 'Defend' ? 5 : 0,
   current_damage: id === 'Strike' ? 6 : 0, damage_by_monster_order: id === 'Strike' ? [9] : [] });
@@ -32,12 +32,32 @@ function recording() {
 test('an action can use a card that entered the hand at an earlier recorded boundary', () => {
   const scene = recordedSequence(recording(), definitions, 'draw');
   assert.equal(scene.actions[1].card.card_id, 'Defend');
+  assert.equal(scene.actions[1].hand_index, 1);
   assert.equal(scene.snapshots[0].hand.some(c => c.card_id === 'Defend'), false);
   assert.deepEqual(sequenceView(scene, 1).added, [{ card_id: 'Defend', upgrades: 0, count: 1 }]);
   assert.deepEqual(sequenceView(scene, 1).deltas, { energy: -1, block: 8, hp: 0, enemy_hp: 0 });
   assert.equal(scene.snapshots[0].hand[1].effects[0].damage, 9);
   assert.deepEqual(scene.snapshots[0].hand[0].effects, [{ kind: 'block', block: 8 }, { kind: 'draw', count: 1 }]);
   assert.equal(scene.snapshots[0].turn, 4);
+});
+
+test('hand movement removes the recorded duplicate slot and preserves the surviving public order', () => {
+  assert.deepEqual(handTransition([card('Strike'), card('Defend'), card('Strike')], [card('Strike'), card('Defend')], 2),
+    { played: 2, retained: [{ from: 0, to: 0 }, { from: 1, to: 1 }], added: [] });
+  assert.deepEqual(handTransition([card('ShrugItOff'), card('Strike')], [card('Strike'), card('Defend')], 0),
+    { played: 0, retained: [{ from: 1, to: 0 }], added: [1] });
+});
+
+test('drawing an existing card kind still produces a new public hand slot', () => {
+  assert.deepEqual(handTransition([card('ShrugItOff'), card('Strike')], [card('Strike'), card('Strike')], 0),
+    { played: 0, retained: [{ from: 1, to: 0 }], added: [1] });
+});
+
+test('unmatched hand changes do not fabricate movement between card instances', () => {
+  assert.equal(handTransition([card('ShrugItOff'), card('Strike'), card('Defend')], [card('Defend'), card('Strike')], 0), null);
+  assert.equal(handTransition([card('ShrugItOff'), card('Strike')], [], 0), null);
+  assert.equal(handTransition([card('Strike')], [], -1), null);
+  assert.equal(handTransition([card('Strike')], [], 1), null);
 });
 
 test('an earlier cursor contains neither later actions nor their newly revealed hand', () => {

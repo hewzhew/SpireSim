@@ -2520,6 +2520,7 @@
       "manual": "Manual example",
       "start": "Starting hand",
       "history": "Cards played",
+      "targetedCard": "{{card}} → {{target}}",
       "details": "State changes",
       "progress": "{{current}} of {{total}} actions completed",
       "previous": "Previous",
