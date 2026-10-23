@@ -1,4 +1,6 @@
 // Project recorded public observations. No game execution or private state.
+import { rewardCardView } from './reward-card.mjs';
+
 const supportedCards = new Set(['Strike', 'Defend', 'Bash', 'ShrugItOff', 'AscendersBane']);
 const snake = value => value.replace(/[A-Z]/g, (letter, index) => (index ? '_' : '') + letter.toLowerCase());
 const key = card => JSON.stringify([card.card_id, card.upgrades ?? 0]);
@@ -52,7 +54,7 @@ function snapshot(frame, definitions) {
       relic_ids: state.relics.map(relic => relic.relic), deck_count: state.cards.reduce((count, card) => count + card.count, 0),
       reward_gold: rewards.filter(reward => reward.kind === 'gold').reduce((total, reward) => total + reward.amount, 0),
       has_card_reward: rewards.some(reward => reward.kind === 'card_reward'),
-      reward_cards: state.context.kind === 'card_reward' ? rewards.filter(reward => reward.kind === 'card_reward').flatMap(reward => reward.cards.map(card => ({ card_id: card.card, upgrades: card.upgrades }))) : [] };
+      reward_cards: state.context.kind === 'card_reward' ? rewards.filter(reward => reward.kind === 'card_reward').flatMap(reward => reward.cards.map(card => rewardCardView({ card_id: card.card, upgrades: card.upgrades }, definitions))) : [] };
   }
   if (state.monsters.length !== 1 || state.monsters[0].enemy.status !== 'known') throw new Error('This sequence view requires one publicly identified enemy');
   const monster = state.monsters[0];
@@ -108,7 +110,7 @@ export function recordedSequence(entries, definitions, id) {
         ...(chosen.target_monster_index === 0 ? { target_enemy_id: state.monsters[0].enemy.enemy_id } : {}) };
     } else if (action.candidate.domain === 'combat_atomic' && chosen.kind === 'end_turn') projected = {};
     else if (action.candidate.domain === 'strategic' && chosen.kind === 'claim_reward' && chosen.reward.kind === 'gold') projected = { amount: chosen.reward.amount };
-    else if (action.candidate.domain === 'strategic' && chosen.kind === 'take_card') projected = { card: { card_id: chosen.card, upgrades: chosen.upgrades } };
+    else if (action.candidate.domain === 'strategic' && chosen.kind === 'take_card') projected = { card: rewardCardView({ card_id: chosen.card, upgrades: chosen.upgrades }, definitions) };
     else if (action.candidate.domain === 'strategic' && ['open_card_reward', 'skip_card_reward'].includes(chosen.kind)) projected = {};
     else if (action.candidate.domain === 'strategic' && chosen.kind === 'proceed' && chosen.site === 'reward') projected = {};
     else throw new Error('Unbound recorded action');

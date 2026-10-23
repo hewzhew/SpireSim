@@ -136,7 +136,15 @@ button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); 
 .sequence-progress:focus-visible { outline: 2px solid var(--accent); outline-offset: 5px; border-radius: 2px; }
 .sequence-record { display: flex; align-items: center; gap: 12px; min-width: 0; }
 .sequence-turn { flex: 0 0 auto; font-size: 11px; color: #687360; }
-.sequence-history { display: flex; align-items: center; gap: 6px; min-width: 0; padding: 3px; overflow-x: auto; }
+.sequence-history-window { display: flex; align-items: center; gap: 3px; min-width: 0; flex: 1; }
+.sequence-history { display: flex; flex: 1; align-items: center; gap: 6px; min-width: 0; padding: 3px; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; }
+.sequence-history::-webkit-scrollbar { display: none; }
+.history-scroll { display: grid; flex: 0 0 24px; place-items: center; width: 24px; height: 30px; padding: 0; border: 0; border-radius: 4px; background: transparent; color: #536745; }
+.history-scroll[hidden] { display: none; }
+.history-scroll .icon { width: 16px; height: 16px; }
+.history-scroll:disabled { opacity: .25; }
+.history-scroll:hover:not(:disabled) { background: #edf0e5; }
+.history-scroll:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .sequence-step { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 6px; min-height: 32px; padding: 6px 9px; border: 1px solid transparent; border-radius: 5px; background: transparent; color: #687360; font: inherit; font-size: 12px; white-space: nowrap; }
 .sequence-step .icon { width: 16px; height: 16px; }
 .sequence-step:hover { background: #f1f4e9; }
@@ -147,12 +155,19 @@ button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); 
 .sequence-new-cards { font-weight: 600; }
 .hand .is-arriving { animation: card-arrival .7s ease-out; }
 .played-card-ghost { position: fixed; z-index: 1000; pointer-events: none; margin: 0; }
-.battle-outcome { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 300px; padding: 28px; text-align: center; }
-.battle-outcome > .icon { width: 36px; height: 36px; color: #5e7d42; }
-.battle-outcome h2 { margin: 16px 0 20px; font-size: 20px; font-weight: 600; color: #425739; }
-.recorded-rewards { display: grid; gap: 10px; min-width: 200px; margin: 0; padding: 0; list-style: none; }
-.recorded-rewards li { padding: 10px 18px; border: 1px solid #dfe2d6; border-radius: 6px; background: #fffefa; color: #536745; font-size: 14px; }
-.recorded-rewards .recorded-reward-chosen { border-color: #9cac85; background: #f0f5e8; }
+.battle-outcome { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px; min-height: 350px; padding: 32px 24px 40px; text-align: center; background: radial-gradient(ellipse at 50% 0%, #fffdf4, #f2f4eb 80%); }
+.outcome-title { margin: 0; font-size: 24px; font-weight: 600; letter-spacing: .03em; color: #425739; }
+.combat-reward-panel { width: min(100%, 390px); padding: 20px; border: 1px solid #d9ddcf; border-radius: 9px; background: #fafbf5; box-shadow: 0 5px 18px #344a2810; text-align: start; }
+.combat-reward-panel h3 { margin: 0 0 14px; color: #6b745f; font-size: 12px; font-weight: 500; }
+.combat-rewards { display: grid; gap: 9px; margin: 0; padding: 0; list-style: none; }
+.combat-reward { display: grid; grid-template-columns: 34px minmax(0, 1fr) 18px; align-items: center; gap: 12px; min-height: 58px; padding: 10px 14px; border: 1px solid #dddcc9; border-radius: 5px; background: #fffdf4; color: #4b573d; font-size: 14px; }
+.reward-symbol { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: #f4e9cb; color: #946a20; }
+.reward-symbol .icon { width: 23px; height: 23px; stroke-width: 1.8; }
+.combat-reward.is-claimed { border-color: #e0e4d6; background: #f1f4eb; color: #657356; }
+.is-claimed .reward-symbol { background: #e6ecdc; color: #657a4c; }
+.reward-claimed { width: 18px; height: 18px; color: #5e7d42; }
+.card-reward-outcome { min-height: 410px; }
+.card-reward-outcome .reward-cards { align-self: stretch; margin: 0; padding: 8px 7px 14px; }
 @keyframes card-arrival {
   0%, 35% { outline: 2px solid #78924f; outline-offset: 3px; background: #f3f8e8; }
   100% { outline: 2px solid transparent; outline-offset: 6px; background: var(--card-paper); }
@@ -236,6 +251,8 @@ button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); 
   .sequence-controls { gap: 8px; } .sequence-control { min-width: 86px; padding-inline: 10px; }
   .event-options { gap: 10px; } .event-option { padding: 14px; gap: 10px; } .option-label { font-size: 14px; }
   .reward-cards { gap: 16px; } .reward-cards .playing-card { flex: 0 0 156px; }
+  .battle-outcome { padding: 24px 14px 30px; gap: 20px; }
+  .combat-reward-panel { padding: 15px; }
   .raw-inner { padding: 15px; } .raw-tabs { gap: 15px; }
 }
 @media (prefers-reduced-motion: reduce) {
