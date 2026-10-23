@@ -1,4 +1,5 @@
 import { createPresentation, preferredLocale } from '../index.mjs';
+import { neowOptionRuns } from './neow-option.mjs';
 
 async function main() {
   const data = JSON.parse(document.getElementById('data').textContent);
@@ -94,16 +95,16 @@ async function main() {
   function renderEvent(scene) {
     const { before, after } = scene;
     const layout = node('div', undefined, 'event-layout'); layout.append(resources(before));
-    const options = node('div', undefined, 'event-options');
+    const options = node('ol', undefined, 'event-options');
     for (const entry of scene.options) {
-      const option = node('div', undefined, 'event-option' + (scene.selected_option === entry.index ? ' selected' : ''));
-      const label = node('div', String(entry.index + 1).padStart(2, '0'), 'option-number');
-      if (scene.selected_option === entry.index) { const mark = node('span', undefined, 'option-check'); mark.append(icon('check')); label.append(mark); }
+      const option = node('li', undefined, 'event-option' + (scene.selected_option === entry.index ? ' selected' : ''));
+      const label = node('span', undefined, 'option-label');
+      for (const run of neowOptionRuns(entry.effects, display.locale)) {
+        label.append(node('span', run.text, 'option-text-' + run.tone));
+      }
       option.append(label);
-      for (const effect of entry.effects) {
-        const key = { remove_card: 'removeCard', max_hp: 'maxHp', lose_hp: 'loseHp', boss_relic: 'bossRelic', lose_relic: 'loseRelic' }[effect.kind];
-        const params = { ...effect }; if (effect.relic_id) params.relic = name('relic', effect.relic_id);
-        option.append(node(['lose_hp', 'lose_relic'].includes(effect.kind) ? 'p' : 'h3', t('event.' + key, params)));
+      if (scene.selected_option === entry.index) {
+        const mark = node('span', undefined, 'option-check'); mark.setAttribute('aria-label', t('event.selected')); mark.append(icon('check')); option.append(mark);
       }
       options.append(option);
     }

@@ -97,13 +97,14 @@ button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); 
 .turn-result strong { color: #5f6957; font-weight: 500; margin-left: 8px; font-variant-numeric: tabular-nums; }
 .turn-result .loss { color: #a46351; }
 .event-layout { max-width: 720px; }
-.event-options { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 26px; }
-.event-option { border: 1px solid var(--tblr-border-color); border-radius: 8px; padding: 22px; min-height: 122px; background: white; }
-.event-option.selected { border-color: #bd9784; background: #fcf7f3; }
-.option-number { color: #a2a89a; font: 11px var(--tblr-font-monospace); }
-.event-option h3 { font-size: 15px; font-weight: 550; margin: 13px 0 7px; }
-.event-option p { color: var(--ink-soft); font-size: 12px; margin: 0; }
-.option-check { float: right; color: var(--accent); }
+.event-options { display: flex; flex-direction: column; gap: 12px; padding: 0; margin: 0 0 26px; list-style: none; }
+.event-option { display: grid; grid-template-columns: minmax(0, 1fr) 20px; align-items: center; gap: 16px; border: 1px solid var(--tblr-border-color); border-radius: 7px; padding: 17px 21px; min-height: 64px; background: white; }
+.event-option.selected { border-color: #aab89d; background: #fafbf7; }
+.option-label { font-size: 15px; font-weight: 500; line-height: 1.8; }
+.option-text-plain { color: #74796e; }
+.option-text-positive { color: #427233; }
+.option-text-negative { color: #b43d39; }
+.option-check { display: flex; align-items: center; color: #587d42; }
 .resource-line { display: flex; align-items: center; flex-wrap: wrap; gap: 24px; margin: 0 0 25px; color: #858b7e; font-size: 12px; }
 .resource-line .icon { width: 16px; height: 16px; margin-right: 6px; vertical-align: -3px; }
 .reward-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 17px 0 0; }
@@ -155,7 +156,7 @@ button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); 
   .hand .playing-card { flex: 0 0 128px; min-height: 180px; scroll-snap-align: start; padding: 12px; }
   .resolution { padding: 19px; } .turn-result { gap: 12px 22px; } .turn-label { padding-left: 10px; font-size: 11px; }
   .title-row { gap: 10px; } .nav-buttons { gap: 6px; } .nav-buttons .btn { width: 31px; height: 31px; min-height: 31px; }
-  .event-options { gap: 10px; } .event-option { padding: 16px; } .event-option h3 { font-size: 13px; }
+  .event-options { gap: 10px; } .event-option { padding: 14px; gap: 10px; } .option-label { font-size: 14px; }
   .reward-cards { grid-template-columns: 1fr; gap: 16px; } .reward-cards .playing-card { min-height: 130px; padding: 18px; padding-left: 80px; }
   .reward-cards .card-symbol { position: absolute; left: 20px; top: 27px; height: 50px; }
   .reward-cards .card-topline { justify-content: flex-start; gap: 12px; } .reward-cards .card-name { margin-top: 10px; }

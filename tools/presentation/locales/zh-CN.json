@@ -2520,11 +2520,7 @@
       "heal": "恢复 {{amount}} 点生命"
     },
     "event": {
-      "removeCard": "移除一张牌",
-      "maxHp": "最大生命 +{{amount}}",
-      "loseHp": "失去 {{amount}} 点生命",
-      "bossRelic": "随机 Boss 遗物",
-      "loseRelic": "失去{{relic}}"
+      "selected": "已选择"
     },
     "reward": {
       "chosen": "已加入卡组"

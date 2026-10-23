@@ -2520,11 +2520,7 @@
       "heal": "Heal {{amount}} HP"
     },
     "event": {
-      "removeCard": "Remove a card",
-      "maxHp": "Max HP +{{amount}}",
-      "loseHp": "Lose {{amount}} HP",
-      "bossRelic": "Random Boss Relic",
-      "loseRelic": "Lose {{relic}}"
+      "selected": "Selected"
     },
     "reward": {
       "chosen": "Added to deck"
