@@ -2504,6 +2504,8 @@
       "pin": "固定",
       "pinned": "已固定",
       "closeMap": "收起地图",
+      "expandMap": "展开地图",
+      "returnToPlay": "返回对局画面",
       "room": "房间",
       "currentRoom": "当前位置",
       "mapNode": "{{room}}（{{x}}，{{y}}）",

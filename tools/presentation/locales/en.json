@@ -2504,6 +2504,8 @@
       "pin": "Pin",
       "pinned": "Pinned",
       "closeMap": "Close map",
+      "expandMap": "Expand map",
+      "returnToPlay": "Return to the game view",
       "room": "Room",
       "currentRoom": "Current location",
       "mapNode": "{{room}} ({{x}}, {{y}})",

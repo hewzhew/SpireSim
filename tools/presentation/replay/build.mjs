@@ -57,6 +57,7 @@ export async function buildRecording({ input, output }) {
   await writeFile(join(output, 'recording.json'), JSON.stringify(manifest, null, 2) + '\n');
   await copyFile(join(owner, 'viewer.css'), join(output, 'demo.css'));
   await copyFile(join(owner, 'THIRD_PARTY_NOTICES.txt'), join(output, 'THIRD_PARTY_NOTICES.txt'));
+  await copyFile(join(owner, '../../../LICENSE'), join(output, 'LICENSE'));
   await promisify(execFile)(process.execPath, [join(owner, '../bundle.mjs'), '--entry', join(owner, 'viewer.mjs'), '--output', join(output, 'demo.js')], { windowsHide: true });
   return { entry: join(output, 'demo.html'), recording: manifest.id, actions: entries.length, snapshots: scene.snapshots.length };
 }

@@ -78,13 +78,14 @@ button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); 
 .map-viewport { height: max(200px, calc(100dvh - 245px)); max-height: 760px; overflow-y: auto; overscroll-behavior-y: contain; border-top: 1px solid #e7e9df; background: radial-gradient(ellipse at center, #fffdf5, #f1f3e8); scrollbar-width: thin; scrollbar-color: #bfc7b0 transparent; }
 .map-graph { display: block; width: min(100%, 492px); height: auto; margin: 0 auto; }
 .map-viewport:focus-visible { outline: 2px solid var(--accent); outline-offset: -3px; }
-.map-stage { display: flex; justify-content: center; min-width: 0; padding: 0 20px; background: #f6f7f0; }
-.map-board { max-width: 560px; margin-inline: auto; }
-.map-board .sequence-toolbar { grid-template-columns: minmax(0, 1fr); gap: 6px; }
-.map-board .sequence-controls { justify-content: center; }
-.map-stage .journey-map { width: min(100%, 420px); border-radius: 0; border-block: 0; box-shadow: none; }
-.map-stage .map-viewport { height: max(220px, calc(100dvh - 360px)); max-height: 780px; }
+.map-stage { display: flex; justify-content: center; min-width: 0; min-height: 0; height: 100%; background: #f6f7f0; }
+.map-stage[hidden] { display: none; }
+.map-stage .journey-map { display: flex; flex-direction: column; width: 100%; border: 0; border-radius: 0; box-shadow: none; }
+.map-stage .map-content { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.map-stage .map-viewport { height: auto; max-height: none; min-height: 0; flex: 1; }
+.map-stage .map-graph { width: min(100%, 760px); }
 .map-transition-ghost { position: fixed; z-index: 21; margin: 0; pointer-events: none; }
+.phase-transition-ghost { position: fixed; z-index: 20; margin: 0; pointer-events: none; background: #f5f6ef; }
 .map-edges path { fill: none; stroke: #c8cebb; stroke-width: 1.6; stroke-dasharray: 4 5; }
 .map-edges path.is-travelled { stroke: #ae6048; stroke-width: 3; stroke-dasharray: none; }
 .map-node circle { fill: #fbfcf6; stroke: #aeb89e; stroke-width: 1.4; }
@@ -97,9 +98,9 @@ button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); 
 .map-node[role="button"]:hover circle, .map-node:focus-visible circle { stroke: #a34e3e; stroke-width: 3; }
 .map-node:focus-visible { outline: none; }
 .map-boss-name { text-anchor: middle; fill: #5b694d; font-size: 13px; }
-.journey-map:not([data-mode="primary"]) .map-boss-name { font-size: 17px; }
-.journey-map:not([data-mode="primary"]) .map-node .icon { stroke-width: 2.2; }
-.journey-map:not([data-mode="primary"]) .map-edges path:not(.is-travelled) { stroke-width: 2; }
+.journey-map:is([data-mode="peek"], [data-mode="docked"]) .map-boss-name { font-size: 17px; }
+.journey-map:is([data-mode="peek"], [data-mode="docked"]) .map-node .icon { stroke-width: 2.2; }
+.journey-map:is([data-mode="peek"], [data-mode="docked"]) .map-edges path:not(.is-travelled) { stroke-width: 2; }
 .map-legend { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px 12px; padding: 10px 12px; border-top: 1px solid #e7e9df; color: #6d7a5e; font-size: 11px; }
 .map-legend > span { display: inline-flex; align-items: center; gap: 5px; }
 .map-legend .icon { width: 15px; height: 15px; }
@@ -188,6 +189,11 @@ button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); 
 .has-sequence .page-header { margin-top: 18px; }
 .has-sequence .page-body { margin-top: 14px; margin-bottom: 20px; }
 .sequence-board .combat-hud { padding-block: 10px; }
+.sequence-content { height: clamp(440px, calc(100dvh - 246px), 780px); min-width: 0; overflow-y: auto; overscroll-behavior-y: contain; }
+.sequence-content.has-map-content { overflow: hidden; }
+.sequence-scene { display: flex; flex-direction: column; min-height: 100%; }
+.sequence-scene[hidden] { display: none; }
+.sequence-scene > .battlefield, .sequence-scene > .battle-outcome, .sequence-scene > .sequence-event { flex: 1; }
 .sequence-board .battlefield { min-height: clamp(216px, 30vh, 252px); padding: 8px 7% 12px; }
 .sequence-board .fighter-intent { min-height: 62px; margin-bottom: 3px; }
 .sequence-board .fighter-figure { width: 84px; height: 78px; }
@@ -311,9 +317,8 @@ button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); 
 }
 @media (max-width: 600px) {
   .map-dock { top: 80px; right: 12px; }
-  .map-stage { padding-inline: 0; }
   .map-viewport { height: max(200px, calc(100dvh - 220px)); }
-  .map-stage .map-viewport { height: max(220px, calc(100dvh - 360px)); }
+  .map-stage .map-viewport { height: auto; }
   .brand { height: 55px; padding-inline: 18px; font-size: 16px; }
   .container-xl { padding-inline: 18px; } .scene-link { padding: 8px; } .scene-text strong { font-size: 12px; }
   .app-bar { padding-inline: 18px; }

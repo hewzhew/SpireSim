@@ -29,12 +29,14 @@ async function main() {
   let scrollMapToCurrent = () => {};
   let mapPinned = false;
   let mapPeek = false;
+  let mapExpanded = false;
   let mapMode = 'hidden';
   let mapSignature;
   let mapFocusKey;
   let mapPositionFrame;
   let mapAvailable = false;
   const mapMotions = new Set();
+  const phaseMotions = new Set();
   const activeMotion = new Set();
   const openPiles = new Set();
   const byId = id => document.getElementById(id);
@@ -119,9 +121,8 @@ async function main() {
     const caption = node('span', view.caption, 'intent-caption'); caption.setAttribute('aria-hidden', 'true');
     el.append(symbol, caption); return el;
   }
-  function combatBoard(before, heading, playback) {
+  function combatBoard(before, heading) {
     const board = node('section', undefined, 'combat-board'); board.setAttribute('aria-label', heading);
-    if (playback) board.classList.add('sequence-board');
     const hud = node('div', undefined, 'combat-hud'); hud.append(resources(before));
     const field = node('div', undefined, 'battlefield');
     const enemies = before.enemies ?? [before.enemy];
@@ -141,7 +142,7 @@ async function main() {
     energy.append(node('strong', number(before.energy), 'energy-orb'), node('span', t('combat.energyLabel'), 'energy-label'));
     const hand = node('div', undefined, 'hand'); for (const card of before.hand) hand.append(gameCard(card));
     hand.setAttribute('role', 'group'); hand.setAttribute('aria-label', t('combat.hand'));
-    dock.append(energy, hand); board.append(hud, field); if (playback) board.append(playback); board.append(dock);
+    dock.append(energy, hand); board.append(hud, field, dock);
     if (before.piles) board.append(pileViews(before.piles));
     return board;
   }
@@ -200,13 +201,11 @@ async function main() {
     if (action.kind === 'take_card') return t('sequence.takeCard', { card });
     return current && action.target_enemy_id ? t('sequence.targetedCard', { card, target: name('enemy', action.target_enemy_id) }) : card;
   }
-  function postCombatBoard(state, playback, completed) {
+  function postCombatBoard(state, completed) {
     const board = node('section', undefined, 'combat-board sequence-board');
     const hud = node('div', undefined, 'combat-hud'); hud.append(resources(state));
     if (state.kind === 'map') {
-      board.classList.add('map-board');
-      const slot = node('div', undefined, 'map-stage'); slot.id = 'map-stage';
-      board.append(hud, slot, playback); return board;
+      board.append(hud); return board;
     }
     const result = node('div', undefined, 'battle-outcome');
     result.append(node('h2', t(state.kind === 'card_reward' ? 'sequence.chooseCard' : activeJourney().visit.event_id ? 'scene.initialReward' : 'sequence.victory'), 'outcome-title'));
@@ -243,7 +242,7 @@ async function main() {
       for (const action of completed.filter(action => action.kind === 'skip_card_reward' || action.kind === 'singing_bowl')) rewardRow(action.kind === 'singing_bowl' ? 'heart' : 'chevron-right', sequenceActionLabel(action), true);
       panel.append(rewards); result.append(panel);
     }
-    board.append(hud, result, playback); return board;
+    board.append(hud, result); return board;
   }
   function renderSequence(scene, motion, scrollLeft) {
     const view = sequenceView(scene, actionCursor), state = view.state;
@@ -310,8 +309,15 @@ async function main() {
     }
     const visitKey = snapshot => JSON.stringify([snapshot.location.act, snapshot.location.floor, snapshot.location.node]);
     const completedHere = view.completed.filter((_action, index) => visitKey(scene.snapshots[index + 1]) === visitKey(state));
-    const board = state.kind === 'combat' ? combatBoard(state, title(scene), header)
-      : state.kind === 'event' ? sequenceEventBoard(state, header) : postCombatBoard(state, header, completedHere);
+    const board = state.kind === 'combat' ? combatBoard(state, title(scene))
+      : state.kind === 'event' ? sequenceEventBoard(state) : postCombatBoard(state, completedHere);
+    board.classList.add('sequence-board');
+    const content = node('div', undefined, 'sequence-content');
+    const phase = node('div', undefined, 'sequence-scene');
+    const hud = board.firstElementChild;
+    while (hud.nextSibling) phase.append(hud.nextSibling);
+    const mapSlot = node('div', undefined, 'map-stage'); mapSlot.id = 'map-stage'; mapSlot.hidden = true;
+    content.append(phase, mapSlot); board.append(content, header);
     for (const index of motion?.hand?.added ?? []) board.querySelector('.hand').children[index].classList.add('is-arriving');
     byId('stage').append(board, record);
     const hand = board.querySelector('.hand'); if (hand) hand.scrollLeft = scrollLeft;
@@ -344,7 +350,7 @@ async function main() {
         motion.healthWidths = [...byId('stage').querySelectorAll('.fighter-health-fill')].map(fill => fill.getBoundingClientRect().width);
       }
     }
-    if (index !== actionCursor) mapPeek = false;
+    if (index !== actionCursor) { mapPeek = false; mapExpanded = false; }
     actionCursor = index; render(motion);
     const target = focus ? byId('stage').querySelector(focus) : null;
     (target?.disabled ? byId('sequence-progress') : target)?.focus({ preventScroll: true });
@@ -432,7 +438,7 @@ async function main() {
     }
     if (!byId('raw-output').children.length) byId('raw-output').append(node('p', t('raw.noText'), 'text-secondary small'));
   }
-  function sequenceEventBoard(state, playback) {
+  function sequenceEventBoard(state) {
     const board = node('section', undefined, 'combat-board sequence-board');
     const hud = node('div', undefined, 'combat-hud'); hud.append(resources(state));
     const layout = node('div', undefined, 'sequence-event'); layout.append(node('h2', name('event', state.event_id), 'outcome-title'));
@@ -443,7 +449,7 @@ async function main() {
       for (const run of neowStructuredRuns(option, display.locale)) label.append(node('span', run.text, 'option-text-' + run.tone));
       entry.append(label); options.append(entry);
     }
-    layout.append(options); board.append(hud, layout, playback); return board;
+    layout.append(options); board.append(hud, layout); return board;
   }
   function title(scene) { return scene.kind === 'sequence' ? t(scene.provenance.operator === 'model' ? scene.provenance.scope === 'continuous' ? 'sequence.modelRunTitle' : 'sequence.modelTitle' : 'sequence.title') : scene.kind === 'event' ? name('event', scene.event_id) : scene.kind === 'combat' ? name('encounter', scene.encounter_id) : t('scene.rewards'); }
   function label(scene) { return scene.kind === 'sequence' && scene.provenance.scope === 'continuous'
@@ -570,13 +576,19 @@ async function main() {
   function desiredMapMode() {
     const scene = scenes[selected], state = scene.kind === 'sequence' ? scene.snapshots[actionCursor] : null;
     if (!state?.location?.map_id) return 'hidden';
-    return state.kind === 'map' ? 'primary' : mapPinned ? 'docked' : mapPeek ? 'peek' : 'hidden';
+    return state.kind === 'map' ? 'primary' : mapExpanded ? 'expanded' : mapPinned ? 'docked' : mapPeek ? 'peek' : 'hidden';
   }
+  const mainMap = mode => ['primary', 'expanded'].includes(mode);
   function mapBeforeLayout(closing = false) {
     const next = desiredMapMode(), visible = mapMode !== 'hidden';
+    const scene = scenes[selected], state = scene.kind === 'sequence' ? scene.snapshots[actionCursor] : null;
+    const content = byId('stage').querySelector('.sequence-content');
+    const changed = content && byId('stage').dataset.scene === scene.id
+      && (mainMap(mapMode) !== mainMap(next) || byId('stage').dataset.phase !== state?.kind);
     return { mode: mapMode, rect: visible ? mapPanel.getBoundingClientRect() : null,
       focus: mapPanel.contains(document.activeElement) ? document.activeElement : null,
-      ghost: visible && (closing || next === 'hidden') ? mapPanel.cloneNode(true) : null };
+      ghost: !changed && visible && (closing || next === 'hidden') ? mapPanel.cloneNode(true) : null,
+      phase: changed ? { rect: content.getBoundingClientRect(), ghost: content.cloneNode(true) } : null };
   }
   function positionMap() {
     cancelAnimationFrame(mapPositionFrame);
@@ -606,17 +618,49 @@ async function main() {
     const settled = () => { ghost?.remove(); mapMotions.delete(item); };
     animation.finished.then(settled, settled);
   }
+  function animatePhase(before) {
+    for (const items of [phaseMotions, mapMotions]) {
+      for (const item of items) { item.animation.cancel(); item.ghost?.remove(); }
+      items.clear();
+    }
+    const content = byId('stage').querySelector('.sequence-content');
+    if (!content || window.matchMedia('(prefers-reduced-motion: reduce)').matches || typeof content.animate !== 'function') return;
+    const play = (element, frames, ghost) => {
+      const animation = element.animate(frames, { duration: 200, easing: 'cubic-bezier(.2,.7,.2,1)' });
+      const item = { animation, ghost }; phaseMotions.add(item);
+      const settled = () => { ghost?.remove(); phaseMotions.delete(item); }; animation.finished.then(settled, settled);
+    };
+    if (before.rect.width > 0) {
+      const ghost = before.ghost;
+      ghost.removeAttribute('id'); ghost.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
+      ghost.inert = true; ghost.setAttribute('aria-hidden', 'true'); ghost.classList.add('phase-transition-ghost', 'sequence-board');
+      Object.assign(ghost.style, { left: before.rect.left + 'px', top: before.rect.top + 'px', width: before.rect.width + 'px', height: before.rect.height + 'px' });
+      document.body.append(ghost); play(ghost, [{ opacity: 1 }, { opacity: 0 }], ghost);
+    }
+    play(content, [{ opacity: 0, transform: 'translateY(4px)' }, { opacity: 1, transform: 'none' }]);
+  }
   function updateMapLayout(before = mapBeforeLayout(), moved = false) {
     mapMode = mapAvailable ? desiredMapMode() : 'hidden';
-    const primary = mapMode === 'primary', visible = mapMode !== 'hidden';
-    const host = primary ? byId('map-stage') : byId('map-dock');
+    const primary = mapMode === 'primary', main = mainMap(mapMode), visible = mapMode !== 'hidden';
+    const host = main ? byId('map-stage') : byId('map-dock');
     if (mapPanel.parentElement !== host) host.append(mapPanel);
+    const content = byId('stage').querySelector('.sequence-content');
+    if (content) {
+      content.classList.toggle('has-map-content', main);
+      content.querySelector('.sequence-scene').hidden = main;
+      byId('map-stage').hidden = !main;
+    }
     byId('replay-layout').dataset.mapMode = mapMode; mapPanel.dataset.mode = mapMode;
-    document.body.classList.toggle('has-map-dock', visible && !primary);
+    // A pinned rail keeps its space through route stages; a temporary peek
+    // overlays the side without resizing the scene or moving its controls.
+    document.body.classList.toggle('has-map-dock', mapAvailable && mapPinned);
     mapPanel.hidden = !visible;
     byId('map-toggle').hidden = !mapAvailable || primary;
     byId('map-toggle').setAttribute('aria-expanded', String(visible));
     byId('map-close').hidden = primary;
+    const closeLabel = t(mapMode === 'expanded' ? 'nav.returnToPlay' : 'nav.closeMap');
+    byId('map-close').setAttribute('aria-label', closeLabel); byId('map-close').title = closeLabel;
+    byId('map-expand').hidden = main; byId('map-expand').title = t('nav.expandMap');
     byId('map-pin').setAttribute('aria-pressed', String(mapPinned));
     byId('map-pin-label').textContent = t(mapPinned ? 'nav.pinned' : 'nav.pin');
     const pinLabel = t(mapPinned ? 'nav.unpinMap' : 'nav.pinMap');
@@ -627,11 +671,12 @@ async function main() {
       target?.focus({ preventScroll: true });
     }
     if (visible && (moved || before.mode !== mapMode)) positionMap();
-    animateMap(before);
+    if (before.phase) animatePhase(before.phase); else animateMap(before);
   }
   function closeMap() {
-    const before = mapBeforeLayout(true);
-    mapPinned = false; mapPeek = false; updateMapLayout(before);
+    if (mapMode === 'expanded') mapExpanded = false;
+    else { mapPinned = false; mapPeek = false; }
+    const before = mapBeforeLayout(true); updateMapLayout(before);
   }
   function renderChrome() {
     document.documentElement.lang = display.locale;
@@ -645,6 +690,8 @@ async function main() {
   function render(motion = null) {
     const scene = scenes[selected]; byId('heading').textContent = title(scene); byId('turn-label').textContent = label(scene);
     const beforeMap = mapBeforeLayout();
+    for (const item of phaseMotions) { item.animation.cancel(); item.ghost?.remove(); }
+    phaseMotions.clear();
     const scrollLeft = byId('stage').dataset.scene === scene.id ? byId('stage').querySelector('.hand')?.scrollLeft ?? 0 : 0;
     clearMotion(); historyObserver?.disconnect(); document.body.classList.toggle('has-sequence', scene.kind === 'sequence');
     updateNavigation();
@@ -653,6 +700,7 @@ async function main() {
     byId('stage').replaceChildren();
     if (scene.kind === 'sequence') renderSequence(scene, motion, scrollLeft); else if (scene.kind === 'combat') renderCombat(scene); else if (scene.kind === 'event') renderEvent(scene); else renderRewards(scene);
     byId('stage').dataset.scene = scene.id;
+    byId('stage').dataset.phase = scene.kind === 'sequence' ? scene.snapshots[actionCursor].kind : scene.kind;
     const moved = renderMap(scene); updateMapLayout(beforeMap, moved);
     const manual = scene.kind === 'sequence' && scene.provenance.operator === 'developer';
     byId('raw-record').hidden = manual; byId('record-model').hidden = manual;
@@ -662,30 +710,35 @@ async function main() {
   function select(index, updateHash = true, cursor = 0) {
     if (index < 0 || index >= scenes.length) return;
     const previousRecording = activeJourney().recording.id;
-    if (selected !== index || actionCursor !== cursor) mapPeek = false;
+    if (selected !== index || actionCursor !== cursor) { mapPeek = false; mapExpanded = false; }
     selected = index; actionCursor = cursor; sequenceDetailsOpen = false; openPiles.clear(); turnRecordOpen = true; byId('raw-record').open = false;
-    if (activeJourney().recording.id !== previousRecording) { mapPinned = false; mapPeek = false; }
+    if (activeJourney().recording.id !== previousRecording) { mapPinned = false; mapPeek = false; mapExpanded = false; }
     render();
     if (updateHash) history.replaceState(null, '', '#' + scenes[selected].id);
   }
   byId('brand-mark').append(icon('cards')); byId('run-icon').append(icon('swords')); byId('crumb-arrow').append(icon('chevron-right'));
   byId('map-toggle-icon').append(icon('map'));
   byId('map-pin-icon').append(icon('pin')); byId('map-close-icon').append(icon('x'));
+  byId('map-expand-icon').append(icon('expand'));
   byId('map-toggle').addEventListener('click', () => {
     if (mapMode !== 'hidden') closeMap();
     else {
-      const before = mapBeforeLayout(); mapPeek = true; updateMapLayout(before);
+      mapPeek = true; const before = mapBeforeLayout(); updateMapLayout(before);
       mapPanel.querySelector('.map-viewport')?.focus({ preventScroll: true });
     }
   });
   byId('map-close').addEventListener('click', closeMap);
+  byId('map-expand').addEventListener('click', () => {
+    mapExpanded = true; const before = mapBeforeLayout(); updateMapLayout(before);
+    mapPanel.querySelector('.map-viewport')?.focus({ preventScroll: true });
+  });
   byId('map-pin').addEventListener('click', () => {
-    const before = mapBeforeLayout(); mapPinned = !mapPinned;
-    mapPeek = !mapPinned && mapMode !== 'primary'; updateMapLayout(before);
+    mapPinned = !mapPinned; mapPeek = !mapPinned && mapMode !== 'primary';
+    const before = mapBeforeLayout(); updateMapLayout(before);
   });
   byId('recording').addEventListener('change', event => {
     const recording = journeys.find(recording => recording.id === event.currentTarget.value);
-    mapPinned = false; mapPeek = false; select(scenes.findIndex(scene => scene.id === recording.scene_ids[0]));
+    mapPinned = false; mapPeek = false; mapExpanded = false; select(scenes.findIndex(scene => scene.id === recording.scene_ids[0]));
   });
   window.addEventListener('resize', () => { if (mapMode !== 'hidden') positionMap(); });
   window.addEventListener('keydown', event => {
@@ -693,7 +746,7 @@ async function main() {
         || event.target.closest?.('input, select, textarea, [contenteditable]:not([contenteditable="false"]), [role="slider"], [role="listbox"], [role="combobox"], [role="tablist"]')
         || [...document.querySelectorAll('dialog[open], [role="dialog"][aria-modal="true"], [role="menu"], [role="listbox"]')].some(element => element.getClientRects().length > 0)
         || window.getSelection()?.isCollapsed === false) return;
-    if (event.key === 'Escape' && ['peek', 'docked'].includes(mapMode)) { event.preventDefault(); closeMap(); return; }
+    if (event.key === 'Escape' && ['peek', 'docked', 'expanded'].includes(mapMode)) { event.preventDefault(); closeMap(); return; }
     const offset = event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : 0;
     if (!offset) return;
     event.preventDefault();

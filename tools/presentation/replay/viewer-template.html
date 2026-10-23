@@ -26,6 +26,7 @@ __ICON_SYMBOLS__
 <symbol id="i-map-boss" viewBox="0 0 24 24"><path d="m3 5 5 5 4-7 4 7 5-5-2 14H5Zm2 14h14"/></symbol>
 <symbol id="i-pin" viewBox="0 0 24 24"><path d="M8 3h8l-1 6 4 4v2H5v-2l4-4Zm4 12v6"/></symbol>
 <symbol id="i-x" viewBox="0 0 24 24"><path d="m6 6 12 12M6 18 18 6"/></symbol>
+<symbol id="i-expand" viewBox="0 0 24 24"><path d="M14 4h6v6m0-6-7 7M10 20H4v-6m0 6 7-7"/></symbol>
 </defs></svg>
 <div class="page">
   <aside class="navbar navbar-vertical navbar-expand-lg sidebar" data-aria="nav.label">
@@ -62,10 +63,11 @@ __ICON_SYMBOLS__
             <strong data-message="nav.map"></strong><span id="map-location"></span>
             <div class="map-tools">
               <button type="button" id="map-pin" class="map-tool map-pin" aria-pressed="false"><span id="map-pin-icon"></span><span id="map-pin-label"></span></button>
+              <button type="button" id="map-expand" class="map-tool" data-aria="nav.expandMap"><span id="map-expand-icon"></span></button>
               <button type="button" id="map-close" class="map-tool" data-aria="nav.closeMap"><span id="map-close-icon"></span></button>
             </div>
           </div>
-          <div id="map-content"></div>
+          <div id="map-content" class="map-content"></div>
         </section>
       </aside>
       </div>
