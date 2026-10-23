@@ -15,7 +15,7 @@ async function main() {
   let selected = Math.max(0, scenes.findIndex(scene => scene.id === location.hash.slice(1)));
   if (!location.hash) selected = 1;
   let rawTab = 'calls';
-  let turnRecordOpen = false;
+  let turnRecordOpen = true;
   const byId = id => document.getElementById(id);
   const node = (tag, text, className) => {
     const el = document.createElement(tag);
@@ -211,7 +211,7 @@ async function main() {
   }
   function select(index, updateHash = true) {
     if (index < 0 || index >= scenes.length) return;
-    selected = index; turnRecordOpen = false; byId('raw-record').open = false; render();
+    selected = index; turnRecordOpen = true; byId('raw-record').open = false; render();
     if (updateHash) history.replaceState(null, '', '#' + scenes[selected].id);
   }
   byId('brand-mark').append(icon('cards')); byId('run-icon').append(icon('swords')); byId('crumb-arrow').append(icon('chevron-right'));
