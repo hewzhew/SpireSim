@@ -256,7 +256,7 @@ async function main() {
     }
     board.append(hud, result); return board;
   }
-  function renderSequence(scene, motion, scrollLeft) {
+  function renderSequence(scene, motion) {
     const view = sequenceView(scene, actionCursor), state = view.state;
     const record = node('section', undefined, 'sequence-detail-panel');
     const header = node('div', undefined, 'sequence-toolbar');
@@ -340,11 +340,6 @@ async function main() {
     content.append(phase, mapSlot); board.append(content, header);
     for (const index of motion?.hand?.added ?? []) board.querySelector('.hand').children[index].classList.add('is-arriving');
     byId('stage').append(board, record);
-    const hand = board.querySelector('.hand'); if (hand) hand.scrollLeft = scrollLeft;
-    const arriving = board.querySelector('.is-arriving');
-    if (arriving) {
-      hand.scrollLeft += Math.max(0, arriving.getBoundingClientRect().right - hand.getBoundingClientRect().right + 6);
-    }
     const current = actions.querySelector('[aria-current]');
     refreshHistory = () => {
       const viewport = actions.getBoundingClientRect(), item = current.getBoundingClientRect();
@@ -357,7 +352,6 @@ async function main() {
     if (typeof ResizeObserver === 'function') {
       historyObserver = new ResizeObserver(refreshHistory); historyObserver.observe(actions);
     }
-    if (motion?.enabled) animateBoundary(board, motion);
   }
   function selectAction(index, focus = `[data-cursor="${index}"]`) {
     if (index < 0 || index >= scenes[selected].snapshots.length) return;
@@ -367,7 +361,8 @@ async function main() {
       const action = scene.actions[actionCursor];
       motion = { hand: action.kind === 'end_turn' ? { played: null, retained: [], added: scene.snapshots[index].hand.map((_card, index) => index) }
         : handTransition(scene.snapshots[actionCursor].hand, scene.snapshots[index].hand, action.hand_index),
-        enabled: !window.matchMedia('(prefers-reduced-motion: reduce)').matches && typeof hand.animate === 'function' };
+        enabled: !window.matchMedia('(prefers-reduced-motion: reduce)').matches && typeof hand.animate === 'function'
+          && !hand.closest('[hidden]') && hand.getBoundingClientRect().width > 0 };
       if (motion.enabled) {
         motion.rects = [...hand.children].map(card => card.getBoundingClientRect());
         motion.played = motion.hand?.played != null ? hand.children[motion.hand.played].cloneNode(true) : null;
@@ -380,15 +375,23 @@ async function main() {
     (target?.disabled ? byId('sequence-progress') : target)?.focus({ preventScroll: true });
   }
   function clearMotion() {
-    for (const item of activeMotion) { item.animation.cancel(); item.ghost?.remove(); }
-    activeMotion.clear();
+    for (const item of activeMotion) item.settled();
   }
   function animateBoundary(board, motion) {
     const play = (element, frames, ghost) => {
-      const animation = element.animate(frames, { duration: 200, easing: 'cubic-bezier(.2,.7,.2,1)' });
-      const item = { animation, ghost }; activeMotion.add(item);
-      const settled = () => { ghost?.remove(); activeMotion.delete(item); };
-      animation.finished.then(settled, settled);
+      // Pin the source pose synchronously, including while the animation is
+      // pending. Restore the renderer's target styles when finishing or cancelling.
+      const styles = Object.keys(frames[0]).map(property => [property, element.style.getPropertyValue(property), element.style.getPropertyPriority(property)]);
+      for (const [property, value] of Object.entries(frames[0])) element.style.setProperty(property, String(value));
+      const animation = element.animate(frames, { duration: 200, easing: 'cubic-bezier(.2,.7,.2,1)', fill: 'both' });
+      const item = { settled() {
+        if (!activeMotion.delete(item)) return;
+        for (const [property, value, priority] of styles) {
+          if (value) element.style.setProperty(property, value, priority); else element.style.removeProperty(property);
+        }
+        ghost?.remove(); animation.cancel();
+      } }; activeMotion.add(item);
+      animation.finished.then(item.settled, item.settled);
     };
     const hand = board.querySelector('.hand');
     if (motion.hand) {
@@ -765,7 +768,7 @@ async function main() {
     // Keep the one map panel alive while replacing a route board around it.
     if (byId('stage').contains(mapPanel)) byId('map-home').append(mapPanel);
     byId('stage').replaceChildren();
-    if (scene.kind === 'sequence') renderSequence(scene, motion, scrollLeft); else if (scene.kind === 'combat') renderCombat(scene); else if (scene.kind === 'event') renderEvent(scene); else renderRewards(scene);
+    if (scene.kind === 'sequence') renderSequence(scene, motion); else if (scene.kind === 'combat') renderCombat(scene); else if (scene.kind === 'event') renderEvent(scene); else renderRewards(scene);
     byId('stage').dataset.scene = scene.id;
     byId('stage').dataset.phase = scene.kind === 'sequence' ? scene.snapshots[actionCursor].kind : scene.kind;
     const moved = renderMap(scene); updateMapLayout(beforeMap, moved);
@@ -773,6 +776,16 @@ async function main() {
     byId('raw-record').hidden = manual; byId('record-model').hidden = manual;
     const recordKey = JSON.stringify([scene.id, display.locale]);
     if (!manual && rawRecordKey !== recordKey) { renderRaw(scene); rawRecordKey = recordKey; }
+    if (scene.kind === 'sequence') {
+      // Geometry belongs to the final map/phase layout, not the temporary full-width board.
+      const board = byId('stage').querySelector('.sequence-board'), hand = board.querySelector('.hand');
+      if (hand) {
+        hand.scrollLeft = scrollLeft;
+        const arriving = hand.querySelector('.is-arriving');
+        if (arriving) hand.scrollLeft += Math.max(0, arriving.getBoundingClientRect().right - hand.getBoundingClientRect().right + 6);
+      }
+      if (motion?.enabled) animateBoundary(board, motion);
+    }
   }
   function writeLocation() {
     const url = new URL(location.href);
