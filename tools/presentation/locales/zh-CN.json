@@ -2499,18 +2499,24 @@
       "recording": "选择记录",
       "openingRecording": "Flash 首战",
       "map": "地图",
-      "pinMap": "在其他阶段将地图固定到右侧",
-      "unpinMap": "取消固定地图",
-      "pin": "固定",
-      "pinned": "已固定",
-      "closeMap": "收起地图",
-      "expandMap": "展开地图",
-      "returnToPlay": "返回对局画面",
+      "expandMap": "放大地图",
+      "returnToPlay": "返回对局",
       "room": "房间",
       "currentRoom": "当前位置",
       "mapNode": "{{room}}（{{x}}，{{y}}）",
       "emerald": "绿钥匙精英",
-      "phase": { "combat": "战斗", "reward": "战后奖励", "map": "地图", "event": "初始奖励" }
+      "phase": {
+        "combat": "战斗",
+        "reward": "战后奖励",
+        "map": "地图",
+        "event": "初始奖励"
+      },
+      "collapseMap": "收起地图",
+      "collapse": "收起",
+      "showMap": "显示地图",
+      "viewRoom": "查看该层记录",
+      "dismissSelection": "取消地图节点选择",
+      "selectedRoom": "第 {{floor}} 层 {{room}}"
     },
     "scene": {
       "act": "第 {{act}} 幕",

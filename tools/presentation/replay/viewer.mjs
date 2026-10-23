@@ -34,8 +34,12 @@ async function main() {
   let historyObserver;
   let refreshHistory = () => {};
   let scrollMapToCurrent = () => {};
-  let mapPinned = false;
-  let mapPeek = false;
+  let mapCollapsed = null;
+  try {
+    const saved = localStorage.getItem('spiresim.demo.mapCollapsed');
+    if (saved === 'true' || saved === 'false') mapCollapsed = saved === 'true';
+  } catch {}
+  let mapSelection = null;
   let mapExpanded = false;
   let mapMode = 'hidden';
   let mapSignature;
@@ -323,7 +327,15 @@ async function main() {
     const phase = node('div', undefined, 'sequence-scene');
     const hud = board.firstElementChild;
     while (hud.nextSibling) phase.append(hud.nextSibling);
-    const mapSlot = node('div', undefined, 'map-stage'); mapSlot.id = 'map-stage'; mapSlot.hidden = true;
+    const mapSlot = node('aside', undefined, 'map-stage'); mapSlot.id = 'map-stage'; mapSlot.hidden = true;
+    const reopen = node('button', undefined, 'map-reopen'); reopen.id = 'map-reopen'; reopen.type = 'button';
+    reopen.setAttribute('aria-controls', 'journey-map'); reopen.setAttribute('aria-expanded', 'false'); reopen.setAttribute('aria-label', t('nav.showMap'));
+    reopen.append(icon('map'), node('span', t('nav.map'))); reopen.hidden = true;
+    reopen.addEventListener('click', () => {
+      mapCollapsed = false; saveMapPreference(); const before = mapBeforeLayout(); updateMapLayout(before);
+      mapPanel.querySelector('.map-viewport')?.focus({ preventScroll: true });
+    });
+    mapSlot.append(reopen);
     content.append(phase, mapSlot); board.append(content, header);
     for (const index of motion?.hand?.added ?? []) board.querySelector('.hand').children[index].classList.add('is-arriving');
     byId('stage').append(board, record);
@@ -361,7 +373,7 @@ async function main() {
         motion.healthWidths = [...byId('stage').querySelectorAll('.fighter-health-fill')].map(fill => fill.getBoundingClientRect().width);
       }
     }
-    if (index !== actionCursor) { mapPeek = false; mapExpanded = false; }
+    if (index !== actionCursor) { mapExpanded = false; mapSelection = null; }
     actionCursor = index; render(motion); writeLocation();
     const target = focus ? byId('stage').querySelector(focus) : null;
     (target?.disabled ? byId('sequence-progress') : target)?.focus({ preventScroll: true });
@@ -525,13 +537,14 @@ async function main() {
     const map = scene.kind === 'sequence' ? replayMap(scene, actionCursor) : null;
     mapAvailable = Boolean(map);
     if (!map) {
+      mapSelection = null; renderMapSelection();
       byId('map-content').replaceChildren(); mapSignature = undefined; mapFocusKey = undefined;
       scrollMapToCurrent = () => {}; return;
     }
     const focusKey = JSON.stringify([scene.id, scene.snapshots[actionCursor].location.map_id, map.current]);
     const moved = focusKey !== mapFocusKey; mapFocusKey = focusKey;
     const signature = JSON.stringify([display.locale, map]);
-    if (signature === mapSignature) return moved;
+    if (signature === mapSignature) { renderMapSelection(); return moved; }
     mapSignature = signature;
     const scrollTop = mapPanel.querySelector('.map-viewport')?.scrollTop ?? 0;
     byId('map-content').replaceChildren();
@@ -556,23 +569,33 @@ async function main() {
       const [x, y] = point(room), label = t('nav.mapNode', { room: name('room', room.room), x: room.x, y: room.y })
         + (room.current ? ' ' + t('nav.currentRoom') : '') + (room.emerald_key ? ' ' + t('nav.emerald') : '');
       const group = svgNode('g', { transform: `translate(${x} ${y})`, class: 'map-node' + (room.current ? ' is-current' : '') + (room.target ? ' is-visited' : '') + (room.emerald_key ? ' has-key' : ''),
-        role: room.target ? 'button' : 'img', 'aria-label': label, ...(room.target ? { tabindex: 0 } : {}) });
+        role: room.target ? 'button' : 'img', 'aria-label': label, ...(room.target ? { tabindex: 0, 'aria-pressed': 'false' } : {}) });
+      group.dataset.mapNode = `${room.x},${room.y}`;
       const title = svgNode('title'); title.textContent = label; group.append(title, svgNode('circle', { r: room.room === 'boss' ? 23 : 17 }));
       const glyph = icon(glyphs[room.room]); glyph.setAttribute('x', '-11'); glyph.setAttribute('y', '-11'); glyph.setAttribute('width', '22'); glyph.setAttribute('height', '22'); group.append(glyph);
       if (room.target) {
         group.dataset.mapCursor = room.target.cursor;
-        const follow = () => select(scenes.findIndex(scene => scene.id === room.target.scene_id), true, room.target.cursor);
-        group.addEventListener('click', follow);
-        group.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); follow(); } });
+        group.append(svgNode('circle', { r: room.room === 'boss' ? 28 : 22, class: 'map-selection-ring' }));
+        const choose = () => {
+          mapSelection = { node: group.dataset.mapNode, target: room.target, room: room.room,
+            scene_id: scene.id, map_id: scene.snapshots[actionCursor].location.map_id };
+          renderMapSelection();
+        };
+        group.addEventListener('click', choose);
+        group.addEventListener('keydown', event => {
+          if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); choose(); byId('map-follow').focus({ preventScroll: true }); }
+        });
       }
       if (room.room === 'boss' && map.boss) { const boss = svgNode('text', { x: 0, y: -33, class: 'map-boss-name' }); boss.textContent = name('encounter', map.boss); group.append(boss); }
       svg.append(group);
     }
     const viewport = node('div', undefined, 'map-viewport'); viewport.tabIndex = 0;
     viewport.setAttribute('aria-label', t('nav.map')); viewport.append(svg);
+    viewport.addEventListener('click', event => { if (!event.target.closest('.map-node[role="button"]')) dismissMapSelection(); });
     const legend = node('div', undefined, 'map-legend');
     for (const [kind, glyph] of Object.entries(glyphs)) legend.append(iconText(glyph, name('room', kind)));
     byId('map-content').append(viewport, legend);
+    renderMapSelection();
     // Before the first room there is no current node. Show the public entrances
     // at the bottom rather than falling back to the boss at scroll position 0.
     const current = map.nodes.find(node => node.current) ?? map.nodes.reduce((first, node) => node.y < first.y ? node : first);
@@ -584,111 +607,135 @@ async function main() {
     viewport.scrollTop = scrollTop;
     return moved;
   }
+  function renderMapSelection() {
+    const scene = scenes[selected], state = scene.kind === 'sequence' ? scene.snapshots[actionCursor] : null;
+    if (mapSelection && (mapSelection.scene_id !== scene.id || mapSelection.map_id !== state?.location.map_id)) mapSelection = null;
+    byId('map-selection').hidden = !mapSelection;
+    for (const group of mapPanel.querySelectorAll('.map-node[role="button"]')) {
+      const chosen = group.dataset.mapNode === mapSelection?.node;
+      group.classList.toggle('is-selected', chosen); group.setAttribute('aria-pressed', String(chosen));
+    }
+    if (mapSelection) {
+      const target = scenes.find(scene => scene.id === mapSelection.target.scene_id).snapshots[mapSelection.target.cursor];
+      byId('map-selection-label').textContent = t('nav.selectedRoom', { floor: target.location.floor, room: name('room', mapSelection.room) });
+    }
+  }
+  function dismissMapSelection(returnFocus = false) {
+    const group = [...mapPanel.querySelectorAll('.map-node')].find(group => group.dataset.mapNode === mapSelection?.node);
+    mapSelection = null; renderMapSelection();
+    if (returnFocus) group?.focus({ preventScroll: true });
+  }
+  function saveMapPreference() {
+    try { localStorage.setItem('spiresim.demo.mapCollapsed', String(mapCollapsed)); } catch {}
+  }
   function desiredMapMode() {
     const scene = scenes[selected], state = scene.kind === 'sequence' ? scene.snapshots[actionCursor] : null;
     if (!state?.location?.map_id) return 'hidden';
-    return state.kind === 'map' ? 'primary' : mapExpanded ? 'expanded' : mapPinned ? 'docked' : mapPeek ? 'peek' : 'hidden';
+    if (state.kind === 'map') return 'primary';
+    if (mapExpanded) return 'expanded';
+    const collapsed = mapCollapsed ?? !window.matchMedia('(min-width: 1280px)').matches;
+    return collapsed ? 'collapsed' : 'side';
   }
   const mainMap = mode => ['primary', 'expanded'].includes(mode);
-  function mapBeforeLayout(closing = false) {
-    const next = desiredMapMode(), visible = mapMode !== 'hidden';
+  const visibleMap = mode => ['primary', 'expanded', 'side'].includes(mode);
+  function mapBeforeLayout() {
+    const next = desiredMapMode(), visible = visibleMap(mapMode);
     const scene = scenes[selected], state = scene.kind === 'sequence' ? scene.snapshots[actionCursor] : null;
-    const content = byId('stage').querySelector('.sequence-content');
-    const changed = content && byId('stage').dataset.scene === scene.id
-      && (mainMap(mapMode) !== mainMap(next) || byId('stage').dataset.phase !== state?.kind);
-    return { mode: mapMode, rect: visible ? mapPanel.getBoundingClientRect() : null,
+    const phase = byId('stage').querySelector('.sequence-scene');
+    const changed = phase && byId('stage').dataset.scene === scene.id
+      && (mapMode !== next || byId('stage').dataset.phase !== state?.kind);
+    return { mode: mapMode, rect: visible ? mapPanel.getBoundingClientRect() : mapMode === 'collapsed' ? byId('map-reopen')?.getBoundingClientRect() : null,
+      scrollTop: mapPanel.querySelector('.map-viewport')?.scrollTop ?? 0,
       focus: mapPanel.contains(document.activeElement) ? document.activeElement : null,
-      ghost: !changed && visible && (closing || next === 'hidden') ? mapPanel.cloneNode(true) : null,
-      phase: changed ? { rect: content.getBoundingClientRect(), ghost: content.cloneNode(true) } : null };
+      ghost: visible && !visibleMap(next) ? mapPanel.cloneNode(true) : null,
+      phase: changed ? { rect: !phase.hidden ? phase.getBoundingClientRect() : null, ghost: !phase.hidden ? phase.cloneNode(true) : null, scrollTop: phase.scrollTop } : null };
   }
   function positionMap() {
     cancelAnimationFrame(mapPositionFrame);
-    mapPositionFrame = requestAnimationFrame(() => { if (mapMode !== 'hidden') scrollMapToCurrent(); });
+    mapPositionFrame = requestAnimationFrame(() => { if (visibleMap(mapMode)) scrollMapToCurrent(); });
   }
-  function animateMap(before) {
-    if (before.mode === mapMode || ['peek', 'docked'].includes(before.mode) && ['peek', 'docked'].includes(mapMode)) return;
-    for (const item of mapMotions) { item.animation.cancel(); item.ghost?.remove(); }
-    mapMotions.clear();
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || typeof mapPanel.animate !== 'function') return;
-    let element = mapPanel, ghost;
-    let frames = [{ opacity: .4, transform: mapMode === 'primary' ? 'translateY(8px)' : 'translateX(12px)' }, { opacity: 1, transform: 'none' }];
-    if (mapMode === 'hidden') {
-      if (!before.ghost || !before.rect?.width) return;
-      ghost = before.ghost; ghost.removeAttribute('id'); ghost.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
-      ghost.inert = true; ghost.setAttribute('aria-hidden', 'true'); ghost.classList.add('map-transition-ghost');
-      Object.assign(ghost.style, { left: before.rect.left + 'px', top: before.rect.top + 'px', width: before.rect.width + 'px', height: before.rect.height + 'px' });
-      document.body.append(ghost); element = ghost;
-      frames = [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateX(12px)' }];
-    } else if (before.rect) {
-      const rect = mapPanel.getBoundingClientRect();
-      const x = Math.max(-18, Math.min(18, before.rect.left - rect.left)), y = Math.max(-12, Math.min(12, before.rect.top - rect.top));
-      frames[0].transform = `translate(${x}px, ${y}px)`;
-    }
-    const animation = element.animate(frames, { duration: 200, easing: 'cubic-bezier(.2,.7,.2,1)' });
-    const item = { animation, ghost }; mapMotions.add(item);
-    const settled = () => { ghost?.remove(); mapMotions.delete(item); };
-    animation.finished.then(settled, settled);
-  }
-  function animatePhase(before) {
+  function stopLayoutMotion() {
     for (const items of [phaseMotions, mapMotions]) {
       for (const item of items) { item.animation.cancel(); item.ghost?.remove(); }
       items.clear();
     }
-    const content = byId('stage').querySelector('.sequence-content');
-    if (!content || window.matchMedia('(prefers-reduced-motion: reduce)').matches || typeof content.animate !== 'function') return;
-    const play = (element, frames, ghost) => {
-      const animation = element.animate(frames, { duration: 200, easing: 'cubic-bezier(.2,.7,.2,1)' });
-      const item = { animation, ghost }; phaseMotions.add(item);
-      const settled = () => { ghost?.remove(); phaseMotions.delete(item); }; animation.finished.then(settled, settled);
-    };
-    if (before.rect.width > 0) {
-      const ghost = before.ghost;
-      ghost.removeAttribute('id'); ghost.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
-      ghost.inert = true; ghost.setAttribute('aria-hidden', 'true'); ghost.classList.add('phase-transition-ghost', 'sequence-board');
-      Object.assign(ghost.style, { left: before.rect.left + 'px', top: before.rect.top + 'px', width: before.rect.width + 'px', height: before.rect.height + 'px' });
-      document.body.append(ghost); play(ghost, [{ opacity: 1 }, { opacity: 0 }], ghost);
+  }
+  function transitionGhost(source, rect, className) {
+    source.removeAttribute('id'); source.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
+    source.inert = true; source.setAttribute('aria-hidden', 'true'); source.classList.add(className);
+    Object.assign(source.style, { left: rect.left + 'px', top: rect.top + 'px', width: rect.width + 'px', height: rect.height + 'px' });
+    document.body.append(source); return source;
+  }
+  function playLayoutMotion(items, element, frames, ghost) {
+    const animation = element.animate(frames, { duration: 240, easing: 'cubic-bezier(.2,.7,.2,1)' });
+    const item = { animation, ghost }; items.add(item);
+    const settled = () => { ghost?.remove(); items.delete(item); };
+    animation.finished.then(settled, settled);
+  }
+  function animateMap(before) {
+    if (before.mode === mapMode) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || typeof mapPanel.animate !== 'function') return;
+    let element = mapPanel, ghost;
+    let frames = [{ opacity: 0, transform: 'translateX(12px)', transformOrigin: 'top left' }, { opacity: 1, transform: 'none', transformOrigin: 'top left' }];
+    if (!visibleMap(mapMode)) {
+      if (!before.ghost || !before.rect?.width) return;
+      ghost = transitionGhost(before.ghost, before.rect, 'map-transition-ghost'); element = ghost;
+      ghost.querySelector('.map-viewport').scrollTop = before.scrollTop;
+      const rail = byId('map-reopen')?.getBoundingClientRect();
+      frames = [{ opacity: 1, transform: 'none', transformOrigin: 'top left' }, { opacity: 0, transformOrigin: 'top left',
+        transform: rail?.width && mapMode === 'collapsed' ? `translate(${rail.left - before.rect.left}px, ${rail.top - before.rect.top}px) scale(${rail.width / before.rect.width}, 1)` : 'translateX(12px)' }];
+    } else if (before.rect?.width && before.rect.height) {
+      const rect = mapPanel.getBoundingClientRect();
+      if (visibleMap(before.mode)) frames[0].opacity = 1;
+      if (rect.width && rect.height) frames[0].transform = `translate(${before.rect.left - rect.left}px, ${before.rect.top - rect.top}px) scale(${before.rect.width / rect.width}, ${before.rect.height / rect.height})`;
     }
-    play(content, [{ opacity: 0, transform: 'translateY(4px)' }, { opacity: 1, transform: 'none' }]);
+    playLayoutMotion(mapMotions, element, frames, ghost);
+  }
+  function animatePhase(before) {
+    const phase = byId('stage').querySelector('.sequence-scene');
+    if (!phase || window.matchMedia('(prefers-reduced-motion: reduce)').matches || typeof phase.animate !== 'function') return;
+    if (before.rect?.width && before.ghost) {
+      const ghost = transitionGhost(before.ghost, before.rect, 'phase-transition-ghost');
+      ghost.scrollTop = before.scrollTop;
+      playLayoutMotion(phaseMotions, ghost, [{ opacity: 1 }, { opacity: 0 }], ghost);
+    }
+    if (!phase.hidden) playLayoutMotion(phaseMotions, phase, [{ opacity: 0, transform: 'translateX(-12px)' }, { opacity: 1, transform: 'none' }]);
   }
   function updateMapLayout(before = mapBeforeLayout(), moved = false) {
     mapMode = mapAvailable ? desiredMapMode() : 'hidden';
-    const primary = mapMode === 'primary', main = mainMap(mapMode), visible = mapMode !== 'hidden';
-    const host = main ? byId('map-stage') : byId('map-dock');
+    stopLayoutMotion();
+    const primary = mapMode === 'primary', main = mainMap(mapMode), visible = visibleMap(mapMode);
+    const host = mapAvailable ? byId('map-stage') : byId('map-home');
     if (mapPanel.parentElement !== host) host.append(mapPanel);
     const content = byId('stage').querySelector('.sequence-content');
     if (content) {
-      content.classList.toggle('has-map-content', main);
+      content.dataset.mapMode = mapMode;
       content.querySelector('.sequence-scene').hidden = main;
-      byId('map-stage').hidden = !main;
+      byId('map-stage').hidden = !mapAvailable;
+      byId('map-reopen').hidden = mapMode !== 'collapsed';
     }
     byId('replay-layout').dataset.mapMode = mapMode; mapPanel.dataset.mode = mapMode;
-    // Remembering the preference does not reserve an empty rail when the map
-    // is already in the main area. Only an actual docked panel owns a column.
-    document.body.classList.toggle('has-map-dock', mapMode === 'docked');
     refreshHistory();
     mapPanel.hidden = !visible;
-    byId('map-toggle').hidden = !mapAvailable || primary;
-    byId('map-toggle').setAttribute('aria-expanded', String(visible));
     byId('map-close').hidden = primary;
-    const closeLabel = t(mapMode === 'expanded' ? 'nav.returnToPlay' : 'nav.closeMap');
-    byId('map-close').setAttribute('aria-label', closeLabel); byId('map-close').title = closeLabel;
+    const closeLabel = t(mapMode === 'expanded' ? 'nav.returnToPlay' : 'nav.collapse');
+    byId('map-close-label').textContent = closeLabel;
+    byId('map-close').setAttribute('aria-label', t(mapMode === 'expanded' ? 'nav.returnToPlay' : 'nav.collapseMap')); byId('map-close').title = closeLabel;
+    byId('map-close-icon').replaceChildren(icon(mapMode === 'expanded' ? 'chevron-left' : 'chevron-right'));
     byId('map-expand').hidden = main; byId('map-expand').title = t('nav.expandMap');
-    byId('map-pin').setAttribute('aria-pressed', String(mapPinned));
-    byId('map-pin-label').textContent = t(mapPinned ? 'nav.pinned' : 'nav.pin');
-    const pinLabel = t(mapPinned ? 'nav.unpinMap' : 'nav.pinMap');
-    byId('map-pin').setAttribute('aria-label', pinLabel); byId('map-pin').title = pinLabel;
     if (before.focus) {
-      const target = visible && before.focus.isConnected ? before.focus
-        : !byId('map-toggle').hidden ? byId('map-toggle') : byId('sequence-progress');
+      const target = visible && before.focus.isConnected && !before.focus.closest('[hidden]') ? before.focus
+        : mapMode === 'collapsed' ? byId('map-reopen') : byId('sequence-progress');
       target?.focus({ preventScroll: true });
     }
     if (visible && (moved || before.mode !== mapMode)) positionMap();
-    if (before.phase) animatePhase(before.phase); else animateMap(before);
+    if (before.phase) animatePhase(before.phase);
+    animateMap(before);
   }
   function closeMap() {
     if (mapMode === 'expanded') mapExpanded = false;
-    else { mapPinned = false; mapPeek = false; }
-    const before = mapBeforeLayout(true); updateMapLayout(before);
+    else { mapCollapsed = true; saveMapPreference(); dismissMapSelection(); }
+    const before = mapBeforeLayout(); updateMapLayout(before);
   }
   function renderChrome() {
     document.documentElement.lang = display.locale;
@@ -702,13 +749,12 @@ async function main() {
   function render(motion = null) {
     const scene = scenes[selected]; byId('heading').textContent = title(scene); byId('turn-label').textContent = label(scene);
     const beforeMap = mapBeforeLayout();
-    for (const item of phaseMotions) { item.animation.cancel(); item.ghost?.remove(); }
-    phaseMotions.clear();
+    stopLayoutMotion();
     const scrollLeft = byId('stage').dataset.scene === scene.id ? byId('stage').querySelector('.hand')?.scrollLeft ?? 0 : 0;
     clearMotion(); historyObserver?.disconnect(); refreshHistory = () => {}; document.body.classList.toggle('has-sequence', scene.kind === 'sequence');
     updateNavigation();
     // Keep the one map panel alive while replacing a route board around it.
-    if (byId('stage').contains(mapPanel)) byId('map-dock').append(mapPanel);
+    if (byId('stage').contains(mapPanel)) byId('map-home').append(mapPanel);
     byId('stage').replaceChildren();
     if (scene.kind === 'sequence') renderSequence(scene, motion, scrollLeft); else if (scene.kind === 'combat') renderCombat(scene); else if (scene.kind === 'event') renderEvent(scene); else renderRewards(scene);
     byId('stage').dataset.scene = scene.id;
@@ -727,44 +773,37 @@ async function main() {
   }
   function select(index, updateHash = true, cursor = 0) {
     if (index < 0 || index >= scenes.length) return;
-    const previousRecording = activeJourney().recording.id;
-    if (selected !== index || actionCursor !== cursor) { mapPeek = false; mapExpanded = false; }
+    if (selected !== index || actionCursor !== cursor) { mapExpanded = false; mapSelection = null; }
     selected = index; actionCursor = cursor; sequenceDetailsOpen = false; openPiles.clear(); turnRecordOpen = true; byId('raw-record').open = false;
-    if (activeJourney().recording.id !== previousRecording) { mapPinned = false; mapPeek = false; mapExpanded = false; }
     render();
     if (updateHash) writeLocation();
   }
   byId('brand-mark').append(icon('cards')); byId('run-icon').append(icon('swords')); byId('crumb-arrow').append(icon('chevron-right'));
-  byId('map-toggle-icon').append(icon('map'));
-  byId('map-pin-icon').append(icon('pin')); byId('map-close-icon').append(icon('x'));
+  byId('map-close-icon').append(icon('chevron-right')); byId('map-selection-close-icon').append(icon('x'));
   byId('map-expand-icon').append(icon('expand'));
-  byId('map-toggle').addEventListener('click', () => {
-    if (mapMode !== 'hidden') closeMap();
-    else {
-      mapPeek = true; const before = mapBeforeLayout(); updateMapLayout(before);
-      mapPanel.querySelector('.map-viewport')?.focus({ preventScroll: true });
-    }
-  });
   byId('map-close').addEventListener('click', closeMap);
   byId('map-expand').addEventListener('click', () => {
     mapExpanded = true; const before = mapBeforeLayout(); updateMapLayout(before);
     mapPanel.querySelector('.map-viewport')?.focus({ preventScroll: true });
   });
-  byId('map-pin').addEventListener('click', () => {
-    mapPinned = !mapPinned; mapPeek = !mapPinned && mapMode !== 'primary';
-    const before = mapBeforeLayout(); updateMapLayout(before);
+  byId('map-selection-close').addEventListener('click', () => dismissMapSelection(true));
+  byId('map-follow').addEventListener('click', () => {
+    if (!mapSelection) return;
+    const { target } = mapSelection;
+    mapSelection = null; select(scenes.findIndex(scene => scene.id === target.scene_id), true, target.cursor);
   });
   byId('recording').addEventListener('change', event => {
     const recording = journeys.find(recording => recording.id === event.currentTarget.value);
-    mapPinned = false; mapPeek = false; mapExpanded = false; select(scenes.findIndex(scene => scene.id === recording.scene_ids[0]));
+    mapExpanded = false; mapSelection = null; select(scenes.findIndex(scene => scene.id === recording.scene_ids[0]));
   });
-  window.addEventListener('resize', () => { if (mapMode !== 'hidden') positionMap(); refreshHistory(); });
+  window.addEventListener('resize', () => { updateMapLayout(); if (visibleMap(mapMode)) positionMap(); refreshHistory(); });
   window.addEventListener('keydown', event => {
     if (scenes[selected].kind !== 'sequence' || event.defaultPrevented || event.isComposing || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey
         || event.target.closest?.('input, select, textarea, [contenteditable]:not([contenteditable="false"]), [role="slider"], [role="listbox"], [role="combobox"], [role="tablist"]')
         || [...document.querySelectorAll('dialog[open], [role="dialog"][aria-modal="true"], [role="menu"], [role="listbox"]')].some(element => element.getClientRects().length > 0)
         || window.getSelection()?.isCollapsed === false) return;
-    if (event.key === 'Escape' && ['peek', 'docked', 'expanded'].includes(mapMode)) { event.preventDefault(); closeMap(); return; }
+    if (event.key === 'Escape' && mapSelection) { event.preventDefault(); dismissMapSelection(true); return; }
+    if (event.key === 'Escape' && ['side', 'expanded'].includes(mapMode)) { event.preventDefault(); closeMap(); return; }
     const offset = event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : 0;
     if (!offset) return;
     event.preventDefault();

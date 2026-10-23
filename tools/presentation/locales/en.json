@@ -2499,18 +2499,24 @@
       "recording": "Choose recording",
       "openingRecording": "Flash opening battle",
       "map": "Map",
-      "pinMap": "Keep the map on the right during play",
-      "unpinMap": "Unpin map",
-      "pin": "Pin",
-      "pinned": "Pinned",
-      "closeMap": "Close map",
-      "expandMap": "Expand map",
-      "returnToPlay": "Return to the game view",
+      "expandMap": "Enlarge map",
+      "returnToPlay": "Back to play",
       "room": "Room",
       "currentRoom": "Current location",
       "mapNode": "{{room}} ({{x}}, {{y}})",
       "emerald": "Emerald key elite",
-      "phase": { "combat": "Combat", "reward": "Rewards", "map": "Map", "event": "Starting bonus" }
+      "phase": {
+        "combat": "Combat",
+        "reward": "Rewards",
+        "map": "Map",
+        "event": "Starting bonus"
+      },
+      "collapseMap": "Collapse map",
+      "collapse": "Collapse",
+      "showMap": "Show map",
+      "viewRoom": "View room",
+      "dismissSelection": "Dismiss room selection",
+      "selectedRoom": "Floor {{floor}} {{room}}"
     },
     "scene": {
       "act": "Act {{act}}",
