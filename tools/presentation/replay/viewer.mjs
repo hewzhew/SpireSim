@@ -1,5 +1,6 @@
 import { createPresentation, preferredLocale } from '../index.mjs';
 import { neowOptionRuns } from './neow-option.mjs';
+import { intentView } from './intent-view.mjs';
 
 async function main() {
   const data = JSON.parse(document.getElementById('data').textContent);
@@ -58,24 +59,40 @@ async function main() {
     if (chosen) { const mark = node('div', t('reward.chosen'), 'chosen-mark'); mark.prepend(icon('check')); el.append(mark); }
     return el;
   }
-  function fighter(label, hp, max, enemy, details, intent) {
+  function fighter(label, hp, max, { enemy = false, block, details = [], intent } = {}) {
     const el = node('article', undefined, 'fighter ' + (enemy ? 'fighter-enemy' : 'fighter-player'));
     el.setAttribute('aria-label', label);
     const intentRow = node('div', undefined, 'fighter-intent');
-    if (intent) intentRow.append(iconText(intent.kind === 'defend_buff' ? 'shield' : 'swords', intentLabel(intent), 'intent'));
+    if (enemy) intentRow.append(renderIntent(intent));
     else intentRow.setAttribute('aria-hidden', 'true');
     const figure = node('div', undefined, 'fighter-figure'); figure.setAttribute('aria-hidden', 'true'); figure.append(icon(enemy ? 'bug' : 'swords'));
+    const vitals = node('div', undefined, 'fighter-vitals' + (block > 0 ? ' is-blocked' : ''));
     const health = node('div', undefined, 'fighter-health');
     const fill = node('span', undefined, 'fighter-health-fill'); fill.style.width = (100 * hp / max) + '%';
     health.append(fill, node('span', number(hp) + ' / ' + number(max), 'fighter-health-value'));
+    vitals.append(health);
+    if (block > 0) {
+      const shield = node('span', undefined, 'fighter-block');
+      const blockLabel = t('combat.block', { block });
+      shield.setAttribute('role', 'img'); shield.setAttribute('aria-label', blockLabel); shield.title = blockLabel;
+      const value = node('span', number(block), 'fighter-block-value'); value.setAttribute('aria-hidden', 'true');
+      shield.append(icon('shield'), value); vitals.append(shield);
+    }
     const statuses = node('div', undefined, 'fighter-statuses'); statuses.append(...details);
-    el.append(intentRow, figure, node('div', label, 'fighter-name'), health, statuses);
+    el.append(intentRow, figure, node('div', label, 'fighter-name'), vitals, statuses);
     return el;
   }
   function iconText(iconName, text, className) { const el = node('span', text, className); el.prepend(icon(iconName)); return el; }
-  function intentLabel(intent) {
-    const key = { attack: 'attack', attack_defend: 'attackDefend', defend_buff: 'defendBuff' }[intent.kind];
-    return t('combat.' + key, intent);
+  function renderIntent(intent) {
+    const view = intentView(intent, display);
+    const el = node('span', undefined, 'intent' + (view.attack ? ' intent-attack' : ''));
+    el.setAttribute('role', 'img'); el.setAttribute('aria-label', view.label); el.title = view.label;
+    const symbol = node('span', undefined, 'intent-symbol');
+    view.glyphs.forEach((glyph, index) => {
+      const svg = icon(glyph.id); svg.classList.add(index ? 'intent-secondary' : 'intent-main', 'tone-' + glyph.tone); symbol.append(svg);
+    });
+    const caption = node('span', view.caption, 'intent-caption'); caption.setAttribute('aria-hidden', 'true');
+    el.append(symbol, caption); return el;
   }
   function renderCombat(scene) {
     const { before, after } = scene;
@@ -83,9 +100,11 @@ async function main() {
     const hud = node('div', undefined, 'combat-hud'); hud.append(resources(before));
     const field = node('div', undefined, 'battlefield');
     const enemyDetails = [];
-    if (before.enemy.block) enemyDetails.push(iconText('shield', t('combat.block', { block: before.enemy.block })));
     for (const power of before.enemy.powers) enemyDetails.push(node('span', t('combat.power', { power: name('power', power.power_id), amount: power.amount }), 'status'));
-    field.append(fighter(name('character', story.character_id), before.hp, before.max_hp, false, []), fighter(name('enemy', before.enemy.enemy_id), before.enemy.hp, before.enemy.max_hp, true, enemyDetails, before.enemy.intent));
+    field.append(
+      fighter(name('character', story.character_id), before.hp, before.max_hp, { block: before.block }),
+      fighter(name('enemy', before.enemy.enemy_id), before.enemy.hp, before.enemy.max_hp, { enemy: true, block: before.enemy.block, details: enemyDetails, intent: before.enemy.intent }),
+    );
     const dock = node('div', undefined, 'combat-dock');
     const energy = node('div', undefined, 'energy-reserve'); energy.setAttribute('aria-label', t('combat.energy', { energy: before.energy }));
     energy.append(node('strong', number(before.energy), 'energy-orb'), node('span', t('combat.energyLabel'), 'energy-label'));
