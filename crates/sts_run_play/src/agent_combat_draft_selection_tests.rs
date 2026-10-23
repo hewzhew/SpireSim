@@ -51,10 +51,131 @@ fn runtime() -> AgentCombatDraftRuntimeV1 {
 }
 
 #[test]
+fn draft_selection_language_keeps_sources_preferences_options_and_work_unchanged() {
+    use sts_presentation::Locale;
+    let mut runtime = runtime();
+    runtime
+        .draft
+        .as_mut()
+        .unwrap()
+        .advance(sts_combat_planner::CombatPlanningQuantum::deterministic(
+            1000, 65536,
+        ))
+        .unwrap();
+    let counters = runtime.draft.as_ref().unwrap().consumed();
+    let english = runtime
+        .selection_at_verified_root(None, None, None, Locale::En)
+        .unwrap();
+    let chinese = runtime
+        .selection_at_verified_root(None, None, None, Locale::ZhCn)
+        .unwrap();
+    assert_eq!(english.frame_ref, chinese.frame_ref);
+    assert_eq!(english.source_ref, chinese.source_ref);
+    assert_eq!(english.root_head_revision, chinese.root_head_revision);
+    assert_eq!(english.next_offset, chinese.next_offset);
+    assert_eq!(english.reading.preferences, chinese.reading.preferences);
+    assert_eq!(english.reading.total, chinese.reading.total);
+    assert_eq!(english.reading.offset, chinese.reading.offset);
+    assert_eq!(
+        english.reading.remaining_work,
+        chinese.reading.remaining_work
+    );
+    let mut normalized = chinese.reading.clone();
+    normalized.view = english.reading.view.clone();
+    for (original, translated) in english
+        .reading
+        .families
+        .iter()
+        .zip(&mut normalized.families)
+    {
+        translated.label = original.label.clone();
+        for (member, target) in original.members.iter().zip(&mut translated.members) {
+            target.label = member.label.clone();
+        }
+    }
+    for (original, translated) in english
+        .reading
+        .outcomes
+        .iter()
+        .zip(&mut normalized.outcomes)
+    {
+        translated.option.label = original.option.label.clone();
+    }
+    for (original, translated) in english.reading.sources.iter().zip(&mut normalized.sources) {
+        translated.label = original.label.clone();
+    }
+    assert_eq!(normalized, english.reading);
+    assert!(chinese.reading.view.starts_with("草稿选牌\n"));
+    assert!(english.reading.view.contains("Wound") && chinese.reading.view.contains("伤口"));
+    assert_eq!(runtime.draft.as_ref().unwrap().consumed(), counters);
+    let en_index = runtime
+        .selection_at_verified_root(None, None, Some(0), Locale::En)
+        .unwrap();
+    let zh_index = runtime
+        .selection_at_verified_root(None, None, Some(0), Locale::ZhCn)
+        .unwrap();
+    assert_eq!(
+        en_index.reading.sources.len(),
+        zh_index.reading.sources.len()
+    );
+    for (en, zh) in en_index
+        .reading
+        .sources
+        .iter()
+        .zip(&zh_index.reading.sources)
+    {
+        assert_eq!(en.source_ref, zh.source_ref);
+        assert_eq!(en.action_count, zh.action_count);
+        assert_ne!(en.label, zh.label);
+    }
+    assert_eq!(runtime.draft.as_ref().unwrap().consumed(), counters);
+}
+
+#[test]
+fn draft_validation_languages_keep_rejections_and_limits_independent() {
+    use sts_presentation::Locale;
+    for locale in [Locale::En, Locale::ZhCn] {
+        assert!(validate_quantum(MAX_GENERATION_WORK, MAX_ENGINE_STEPS, locale).is_ok());
+        assert!(validate_quantum(MAX_GENERATION_WORK + 1, 0, locale).is_err());
+        assert!(validate_quantum(0, MAX_ENGINE_STEPS + 1, locale).is_err());
+        assert!(validate_option_ref("T0", locale).is_ok());
+        assert!(validate_option_ref("", locale).is_err());
+        for source in ["S0", "S9", "S10"] {
+            assert!(validate_selection_request(None, Some(source), None, locale).is_ok());
+        }
+        for source in ["", "A0", "S00", "S-1", "S0 "] {
+            assert!(validate_selection_request(None, Some(source), None, locale).is_err());
+        }
+        let edit = AgentCombatDraftSelectionEditV1 {
+            source_ref: "S0".into(),
+            preferences: vec![],
+        };
+        assert!(validate_selection_request(Some(&edit), Some("S0"), None, locale).is_err());
+        assert_eq!(edit.source_ref, "S0");
+    }
+    for (english, chinese) in [
+        (
+            validate_quantum(MAX_GENERATION_WORK + 1, 0, Locale::En),
+            validate_quantum(MAX_GENERATION_WORK + 1, 0, Locale::ZhCn),
+        ),
+        (
+            validate_option_ref("", Locale::En),
+            validate_option_ref("", Locale::ZhCn),
+        ),
+        (
+            validate_selection_request(None, Some("A0"), None, Locale::En),
+            validate_selection_request(None, Some("A0"), None, Locale::ZhCn),
+        ),
+    ] {
+        assert_ne!(english.unwrap_err(), chinese.unwrap_err());
+    }
+}
+
+#[test]
 fn selection_transport_retains_progress_and_exposes_only_public_occurrences() {
     let mut runtime = runtime();
     let observed = runtime
-        .selection_at_verified_root(None, None, None)
+        .selection_at_verified_root(None, None, None, sts_presentation::Locale::En)
         .unwrap();
     let frame = runtime.draft.as_ref().unwrap().frame_ref().unwrap();
     assert_eq!(observed.frame_ref, frame);
@@ -66,9 +187,9 @@ fn selection_transport_retains_progress_and_exposes_only_public_occurrences() {
             choices: vec![1, 2],
         }],
     };
-    edit.validate().unwrap();
+    edit.validate(sts_presentation::Locale::En).unwrap();
     let response = runtime
-        .selection_at_verified_root(Some(&edit), None, None)
+        .selection_at_verified_root(Some(&edit), None, None, sts_presentation::Locale::En)
         .unwrap();
     assert_eq!(
         runtime.draft.as_ref().unwrap().consumed(),
@@ -114,7 +235,7 @@ fn selection_transport_retains_progress_and_exposes_only_public_occurrences() {
         preferences: vec![],
     };
     runtime
-        .selection_at_verified_root(Some(&clear), None, None)
+        .selection_at_verified_root(Some(&clear), None, None, sts_presentation::Locale::En)
         .unwrap();
     assert!(runtime
         .draft
@@ -142,7 +263,7 @@ fn selection_transport_retains_progress_and_exposes_only_public_occurrences() {
 fn selection_transport_rejects_stale_sources_and_preserves_advice_on_invalid_edit() {
     let mut runtime = runtime();
     let source_ref = runtime
-        .selection_at_verified_root(None, None, None)
+        .selection_at_verified_root(None, None, None, sts_presentation::Locale::En)
         .unwrap()
         .source_ref
         .unwrap();
@@ -154,7 +275,7 @@ fn selection_transport_rejects_stale_sources_and_preserves_advice_on_invalid_edi
         }],
     };
     runtime
-        .selection_at_verified_root(Some(&edit), None, None)
+        .selection_at_verified_root(Some(&edit), None, None, sts_presentation::Locale::En)
         .unwrap();
     let invalid = AgentCombatDraftSelectionEditV1 {
         source_ref: source_ref.clone(),
@@ -170,7 +291,7 @@ fn selection_transport_rejects_stale_sources_and_preserves_advice_on_invalid_edi
         ],
     };
     assert!(runtime
-        .selection_at_verified_root(Some(&invalid), None, None)
+        .selection_at_verified_root(Some(&invalid), None, None, sts_presentation::Locale::En)
         .is_err());
     assert_eq!(
         runtime
@@ -202,7 +323,7 @@ fn selection_transport_rejects_stale_sources_and_preserves_advice_on_invalid_edi
     // Even if a caller bypassed transport invalidation, exact source binding
     // refuses ordinals from the parent's selection page.
     assert!(runtime
-        .selection_at_verified_root(Some(&edit), None, None)
+        .selection_at_verified_root(Some(&edit), None, None, sts_presentation::Locale::En)
         .is_err());
     runtime.draft.as_mut().unwrap().undo().unwrap();
     assert_eq!(
@@ -218,13 +339,13 @@ fn selection_transport_rejects_stale_sources_and_preserves_advice_on_invalid_edi
     runtime.clear();
     runtime.draft = Some(selection_draft());
     let new_source = runtime
-        .selection_at_verified_root(None, None, None)
+        .selection_at_verified_root(None, None, None, sts_presentation::Locale::En)
         .unwrap()
         .source_ref
         .unwrap();
     assert_ne!(new_source, source_ref);
     assert!(runtime
-        .selection_at_verified_root(Some(&edit), None, None)
+        .selection_at_verified_root(Some(&edit), None, None, sts_presentation::Locale::En)
         .is_err());
     assert!(runtime
         .draft
@@ -244,7 +365,7 @@ fn selection_transport_requires_observation_before_mutation() {
         preferences: vec![],
     };
     assert!(runtime
-        .selection_at_verified_root(Some(&edit), None, None)
+        .selection_at_verified_root(Some(&edit), None, None, sts_presentation::Locale::En)
         .is_err());
     assert_eq!(
         runtime.draft.as_ref().unwrap().consumed(),
@@ -318,7 +439,7 @@ fn nested_burning_pact_and_gamblers_brew_are_inspected_and_edited_in_the_same_dr
         let used = runtime.draft.as_ref().unwrap().consumed();
         let before = runtime.draft.as_ref().unwrap().env.observe().unwrap();
         let index = runtime
-            .selection_at_verified_root(None, None, None)
+            .selection_at_verified_root(None, None, None, sts_presentation::Locale::En)
             .unwrap();
         println!("{}", index.reading.view);
         assert!(index.source_ref.is_none());
@@ -330,7 +451,7 @@ fn nested_burning_pact_and_gamblers_brew_are_inspected_and_edited_in_the_same_dr
         let source_ref = &index.reading.sources[0].source_ref;
         assert_eq!(index.reading.sources[0].action_count, 1);
         let detail = runtime
-            .selection_at_verified_root(None, Some(source_ref), None)
+            .selection_at_verified_root(None, Some(source_ref), None, sts_presentation::Locale::En)
             .unwrap();
         assert!(detail
             .reading
@@ -352,7 +473,7 @@ fn nested_burning_pact_and_gamblers_brew_are_inspected_and_edited_in_the_same_dr
             }],
         };
         let edited = runtime
-            .selection_at_verified_root(Some(&edit), None, None)
+            .selection_at_verified_root(Some(&edit), None, None, sts_presentation::Locale::En)
             .unwrap();
         println!(
             "Selection {}\n{}",
@@ -369,7 +490,10 @@ fn nested_burning_pact_and_gamblers_brew_are_inspected_and_edited_in_the_same_dr
             runtime.draft.as_ref().unwrap().env.observe().unwrap(),
             before
         );
-        let source = runtime.selection_binding.resolve(source_ref).unwrap();
+        let source = runtime
+            .selection_binding
+            .resolve(source_ref, sts_presentation::Locale::En)
+            .unwrap();
         runtime
             .draft
             .as_mut()
@@ -397,7 +521,12 @@ fn nested_burning_pact_and_gamblers_brew_are_inspected_and_edited_in_the_same_dr
                 .selection_outcomes(&source, offset)
                 .unwrap();
             let response = runtime
-                .selection_at_verified_root(None, Some(source_ref), Some(offset))
+                .selection_at_verified_root(
+                    None,
+                    Some(source_ref),
+                    Some(offset),
+                    sts_presentation::Locale::En,
+                )
                 .unwrap();
             assert_eq!(response.next_offset, view.next_offset);
             assert!(response
@@ -458,7 +587,7 @@ fn nested_burning_pact_and_gamblers_brew_are_inspected_and_edited_in_the_same_dr
             }],
         };
         assert!(runtime
-            .selection_at_verified_root(Some(&invalid), None, None)
+            .selection_at_verified_root(Some(&invalid), None, None, sts_presentation::Locale::En)
             .is_err());
         assert_eq!(
             runtime
@@ -476,7 +605,7 @@ fn nested_burning_pact_and_gamblers_brew_are_inspected_and_edited_in_the_same_dr
             preferences: vec![],
         };
         let cleared = runtime
-            .selection_at_verified_root(Some(&clear), None, None)
+            .selection_at_verified_root(Some(&clear), None, None, sts_presentation::Locale::En)
             .unwrap();
         assert_eq!(cleared.reading.remaining_work, Some(0));
         let after_clear = runtime
@@ -524,7 +653,7 @@ fn nested_burning_pact_and_gamblers_brew_are_inspected_and_edited_in_the_same_dr
             .choose_handle(retained.options[0].handle)
             .unwrap();
         assert!(runtime
-            .selection_at_verified_root(Some(&edit), None, None)
+            .selection_at_verified_root(Some(&edit), None, None, sts_presentation::Locale::En)
             .is_err());
         runtime.draft.as_mut().unwrap().env.undo().unwrap();
         let mut restored = runtime.draft.as_ref().unwrap().env.observe().unwrap();
@@ -553,7 +682,7 @@ fn late_zero_card_preference_finds_retained_cancel_without_rewriting_or_generati
                 .advance(CombatPlanningQuantum::deterministic(1, 500))
                 .unwrap();
             let index = runtime
-                .selection_at_verified_root(None, None, None)
+                .selection_at_verified_root(None, None, None, sts_presentation::Locale::En)
                 .unwrap();
             index
                 .reading
@@ -582,6 +711,7 @@ fn late_zero_card_preference_finds_retained_cancel_without_rewriting_or_generati
             }),
             None,
             None,
+            sts_presentation::Locale::En,
         )
         .unwrap();
     let alias = response
@@ -619,7 +749,12 @@ fn late_zero_card_preference_finds_retained_cancel_without_rewriting_or_generati
     let mut saw_unpreferred = false;
     loop {
         let page = runtime
-            .selection_at_verified_root(None, Some(&source_ref), Some(offset))
+            .selection_at_verified_root(
+                None,
+                Some(&source_ref),
+                Some(offset),
+                sts_presentation::Locale::En,
+            )
             .unwrap();
         for outcome in &page.reading.outcomes {
             assert!(handles.insert(outcome.option.option_ref.clone()));
@@ -632,7 +767,7 @@ fn late_zero_card_preference_finds_retained_cancel_without_rewriting_or_generati
     assert_eq!(handles.len(), response.reading.total);
     runtime.draft.as_mut().unwrap().choose(&option_ref).unwrap();
     assert!(runtime
-        .selection_at_verified_root(None, Some(&source_ref), None)
+        .selection_at_verified_root(None, Some(&source_ref), None, sts_presentation::Locale::En)
         .is_err());
     runtime.draft.as_mut().unwrap().undo().unwrap();
     assert_eq!(
@@ -650,8 +785,12 @@ fn late_zero_card_preference_finds_retained_cancel_without_rewriting_or_generati
 
 #[test]
 fn selection_request_modes_and_bounded_source_retention() {
-    assert!(validate_selection_request(None, Some("S0"), Some(0)).is_ok());
-    assert!(validate_selection_request(None, Some("S00"), None).is_err());
+    assert!(
+        validate_selection_request(None, Some("S0"), Some(0), sts_presentation::Locale::En).is_ok()
+    );
+    assert!(
+        validate_selection_request(None, Some("S00"), None, sts_presentation::Locale::En).is_err()
+    );
     let mut binding = SelectionSourceBinding::default();
     let mut first = None;
     for _ in 0..40 {
@@ -661,6 +800,8 @@ fn selection_request_modes_and_bounded_source_retention() {
         assert_eq!(binding.observe(source).unwrap(), name);
     }
     assert_eq!(binding.entries.len(), 32);
-    assert!(binding.resolve(first.as_deref().unwrap()).is_err());
-    assert!(binding.resolve("S39").is_ok());
+    assert!(binding
+        .resolve(first.as_deref().unwrap(), sts_presentation::Locale::En)
+        .is_err());
+    assert!(binding.resolve("S39", sts_presentation::Locale::En).is_ok());
 }

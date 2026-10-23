@@ -8,7 +8,7 @@ use sts_agent::agent::information::action::{
     PublicCombatSelectionFamilyV1,
 };
 use sts_combat_planner::{CombatDraftSession, SelectionSource};
-use sts_core::content::{cards::CardId, identity::gameplay_display_label_v1};
+use sts_core::content::cards::CardId;
 use sts_core::sim::combat_action_surface::CombatSelectionReasonV2;
 use sts_core::state::core::{GridSelectReason, HandSelectReason};
 
@@ -86,16 +86,17 @@ pub fn project_combat_draft_selection_at_v1(
 pub fn summarize_combat_draft_selection_source_v1(
     draft: &CombatDraftSession,
     source: &SelectionSource,
+    locale: Locale,
 ) -> Result<String, String> {
     let view = project_combat_draft_selection_at_v1(draft, source)?;
     let reasons = view
         .families
         .iter()
-        .map(|f| reason_label(&f.reason, Locale::En))
+        .map(|f| reason_label(&f.reason, locale))
         .collect::<Vec<_>>()
         .join(", ");
     let prefix = if source.action_count() == 0 {
-        "Now".to_owned()
+        crate::draft_message(locale, "sourceNow", &[])
     } else {
         let root = draft.current_root().ok_or("combat draft is terminal")?;
         let observation =
@@ -110,19 +111,28 @@ pub fn summarize_combat_draft_selection_source_v1(
             source.first_input().expect("non-empty source prefix"),
         )?;
         let action = crate::selected_action(&observation, &projection.public, &choice)?;
-        format!(
-            "After {} action{} | First: {}",
-            source.action_count(),
-            if source.action_count() == 1 { "" } else { "s" },
-            crate::combat_draft::render_action_brief(&action)?
+        crate::draft_message(
+            locale,
+            if source.action_count() == 1 {
+                "sourceAfterOne"
+            } else {
+                "sourceAfterOther"
+            },
+            &[
+                ("count", &source.action_count().to_string()),
+                (
+                    "first",
+                    &crate::combat_draft::render_action_brief(&action, locale)?,
+                ),
+            ],
         )
     };
     Ok(format!(
         "{prefix} | {reasons}{}",
         if view.preferences.is_empty() {
-            ""
+            String::new()
         } else {
-            " | Preferred"
+            crate::draft_message(locale, "sourcePreferred", &[])
         }
     ))
 }
@@ -195,7 +205,7 @@ pub fn render_combat_draft_selection_v1(view: &CombatDraftSelectionViewV1) -> St
                     ..
                 } => (*card_id, None, *currently_present),
             };
-            let name = card_name(card, upgrades);
+            let name = card_name(card, upgrades, Locale::En);
             writeln!(
                 text,
                 "  {ordinal} {name}{}",
@@ -271,18 +281,11 @@ pub fn reason_label(reason: &CombatSelectionReasonV2, locale: Locale) -> String 
     }
 }
 
-pub(crate) fn card_name(card: Option<CardId>, upgrades: Option<u8>) -> String {
-    let mut name = card
-        .map(gameplay_display_label_v1)
-        .unwrap_or("Unknown card")
-        .to_owned();
-    if let Some(upgrades) = upgrades.filter(|n| *n > 0) {
-        name.push('+');
-        if card == Some(CardId::SearingBlow) || upgrades > 1 {
-            write!(name, "{upgrades}").unwrap();
-        }
-    }
-    name
+pub(crate) fn card_name(card: Option<CardId>, upgrades: Option<u8>, locale: Locale) -> String {
+    card.map_or_else(
+        || crate::draft_message(locale, "unknownCard", &[]),
+        |id| locale.card_name(id.stable_id(), upgrades.unwrap_or(0)),
+    )
 }
 
 #[cfg(test)]

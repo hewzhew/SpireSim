@@ -25,43 +25,53 @@ pub(crate) struct DraftReadingV1 {
     pub options: Vec<DraftOptionV1>,
 }
 
-pub(super) fn status(env: &CombatDraftEnvV1) -> Result<DraftReadingV1, String> {
+pub(super) fn status(env: &CombatDraftEnvV1, locale: Locale) -> Result<DraftReadingV1, String> {
+    let text = |key: &str, params: &[(&str, &str)]| super::message(locale, key, params);
     if let CombatDraftEnvStatusV1::Terminal {
         selected_turn_count,
         boundary,
     } = env.status()
     {
         return Ok(DraftReadingV1 {
-            view: format!(
-                "Draft | {} | {selected_turn_count} turn{}\n",
-                boundary_label(boundary),
-                if selected_turn_count == 1 { "" } else { "s" },
+            view: text(
+                if selected_turn_count == 1 {
+                    "terminalOne"
+                } else {
+                    "terminalOther"
+                },
+                &[
+                    ("boundary", &boundary_label(boundary, locale)),
+                    ("count", &selected_turn_count.to_string()),
+                ],
             ),
             options: vec![],
         });
     }
-    let state = env.observe().map_err(|e| e.to_string())?;
-    let mut view = String::from("Draft | ");
-    view.push_str(&crate::decision::combat::state_reading(
-        &state.root,
-        Locale::En,
-    ));
+    let state = env.observe().map_err(|error| error.to_string())?;
+    let mut view = text("prefix", &[]);
+    view.push_str(&crate::decision::combat::state_reading(&state.root, locale));
     let coverage = match state.coverage {
-        CombatDraftOptionCoverage::Complete => "complete".to_owned(),
+        CombatDraftOptionCoverage::Complete => text("complete", &[]),
         CombatDraftOptionCoverage::Open {
             mechanics_gap_count: 0,
-        } => "open".to_owned(),
+        } => text("open", &[]),
         CombatDraftOptionCoverage::Open {
             mechanics_gap_count,
-        } => format!("open; {mechanics_gap_count} mechanics gaps"),
+        } => text("openGaps", &[("count", &mechanics_gap_count.to_string())]),
         CombatDraftOptionCoverage::MechanicsGap { gap_count } => {
-            format!("{gap_count} mechanics gaps")
+            text("gaps", &[("count", &gap_count.to_string())])
         }
     };
     writeln!(
         view,
-        "Turn options | {} generated | {coverage}",
-        state.options.len()
+        "{}",
+        text(
+            "options",
+            &[
+                ("count", &state.options.len().to_string()),
+                ("coverage", &coverage)
+            ]
+        )
     )
     .unwrap();
     let options = state
@@ -71,21 +81,35 @@ pub(super) fn status(env: &CombatDraftEnvV1) -> Result<DraftReadingV1, String> {
             let first = option
                 .first_action
                 .as_ref()
-                .map(render_combat_draft_action_v1)
+                .map(|action| render_combat_draft_action_v1(action, locale))
                 .transpose()?
-                .unwrap_or_else(|| "Settle".to_owned());
-            let label = format!(
-                "{}: {first} | {} action{} | {} | {}{}",
-                option.handle,
-                option.action_count,
-                if option.action_count == 1 { "" } else { "s" },
-                boundary_label(option.boundary),
-                render_combat_draft_successor_v1(&option.successor),
-                if option.continuation.is_some() {
-                    " | explored"
+                .unwrap_or_else(|| text("settle", &[]));
+            let count = text(
+                if option.action_count == 1 {
+                    "actionOne"
                 } else {
-                    ""
-                }
+                    "actionOther"
+                },
+                &[("count", &option.action_count.to_string())],
+            );
+            let explored = if option.continuation.is_some() {
+                text("explored", &[])
+            } else {
+                String::new()
+            };
+            let label = text(
+                "option",
+                &[
+                    ("handle", &option.handle.to_string()),
+                    ("first", &first),
+                    ("actions", &count),
+                    ("boundary", &boundary_label(option.boundary, locale)),
+                    (
+                        "successor",
+                        &render_combat_draft_successor_v1(&option.successor, locale),
+                    ),
+                    ("explored", &explored),
+                ],
             );
             Ok(DraftOptionV1 {
                 option_ref: option.handle.to_string(),
@@ -100,35 +124,54 @@ pub(super) fn status(env: &CombatDraftEnvV1) -> Result<DraftReadingV1, String> {
         writeln!(view, "{}", option.label).unwrap();
     }
     if options.len() > 12 {
-        writeln!(view, "{} more in options", options.len() - 12).unwrap();
+        writeln!(
+            view,
+            "{}",
+            text(
+                "moreOptions",
+                &[("count", &(options.len() - 12).to_string())]
+            )
+        )
+        .unwrap();
     }
     Ok(DraftReadingV1 { view, options })
 }
 
-pub(super) fn inspect(env: &CombatDraftEnvV1, option_ref: &str) -> Result<String, String> {
-    let detail = env.inspect(option_ref).map_err(|e| e.to_string())?;
-    let mut view = format!("{option_ref} | {}\n", boundary_label(detail.boundary));
+pub(super) fn inspect(
+    env: &CombatDraftEnvV1,
+    option_ref: &str,
+    locale: Locale,
+) -> Result<String, String> {
+    let detail = env.inspect(option_ref).map_err(|error| error.to_string())?;
+    let mut view = format!(
+        "{option_ref} | {}\n",
+        boundary_label(detail.boundary, locale)
+    );
     for (index, action) in detail.actions.iter().enumerate() {
         writeln!(
             view,
             "  {index}: {}",
-            render_combat_draft_action_v1(action)?
+            render_combat_draft_action_v1(action, locale)?
         )
         .unwrap();
     }
-    view.push_str("Successor | ");
+    view.push_str(&super::message(locale, "successor", &[]));
     view.push_str(&crate::decision::combat::state_reading(
         &detail.successor,
-        Locale::En,
+        locale,
     ));
     Ok(view)
 }
 
-pub(super) fn boundary_label(boundary: CompleteTurnOptionBoundary) -> &'static str {
-    match boundary {
-        CompleteTurnOptionBoundary::NextPlayerTurn => "Next turn",
-        CompleteTurnOptionBoundary::TerminalWin => "Victory",
-        CompleteTurnOptionBoundary::TerminalLoss => "Defeat",
-        CompleteTurnOptionBoundary::Escape => "Escape",
-    }
+pub(super) fn boundary_label(boundary: CompleteTurnOptionBoundary, locale: Locale) -> String {
+    super::message(
+        locale,
+        match boundary {
+            CompleteTurnOptionBoundary::NextPlayerTurn => "nextTurn",
+            CompleteTurnOptionBoundary::TerminalWin => "victory",
+            CompleteTurnOptionBoundary::TerminalLoss => "defeat",
+            CompleteTurnOptionBoundary::Escape => "escape",
+        },
+        &[],
+    )
 }

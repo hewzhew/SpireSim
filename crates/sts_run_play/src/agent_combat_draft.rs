@@ -23,6 +23,12 @@ mod reading;
 mod selection_reading;
 use reading::DraftReadingV1;
 
+fn message(locale: sts_presentation::Locale, key: &str, parameters: &[(&str, &str)]) -> String {
+    locale
+        .text("draft", key, parameters)
+        .expect("combat draft message")
+}
+
 const MAX_GENERATION_WORK: usize = 65_536;
 const MAX_ENGINE_STEPS: usize = 33_554_432;
 
@@ -108,20 +114,27 @@ pub(crate) struct AgentCombatDraftSelectionEditV1 {
 }
 
 impl AgentCombatDraftSelectionEditV1 {
-    pub(crate) fn validate(&self) -> Result<(), String> {
+    pub(crate) fn validate(&self, locale: sts_presentation::Locale) -> Result<(), String> {
         let digits = self
             .source_ref
             .strip_prefix('S')
-            .ok_or("selection source must be S followed by its observed number")?;
+            .ok_or_else(|| message(locale, "sourcePrefix", &[]))?;
         if digits.is_empty()
             || !digits.bytes().all(|b| b.is_ascii_digit())
             || digits.len() > 20
             || (digits.len() > 1 && digits.starts_with('0'))
         {
-            return Err("selection source must be the observed S<number>".to_owned());
+            return Err(message(locale, "sourceNumber", &[]));
         }
         if self.preferences.len() > sts_combat_planner::CombatSelectionPreferences::LIMIT {
-            return Err("selection intention accepts at most four preferences".to_owned());
+            return Err(message(
+                locale,
+                "preferenceLimit",
+                &[(
+                    "max",
+                    &(sts_combat_planner::CombatSelectionPreferences::LIMIT.to_string()),
+                )],
+            ));
         }
         Ok(())
     }
@@ -131,19 +144,20 @@ pub(crate) fn validate_selection_request(
     edit: Option<&AgentCombatDraftSelectionEditV1>,
     source_ref: Option<&str>,
     offset: Option<usize>,
+    locale: sts_presentation::Locale,
 ) -> Result<(), String> {
     if edit.is_some() && (source_ref.is_some() || offset.is_some()) {
-        return Err("selection edit cannot be combined with source_ref or offset".to_owned());
+        return Err(message(locale, "editConflict", &[]));
     }
     if let Some(edit) = edit {
-        edit.validate()?;
+        edit.validate(locale)?;
     }
     if let Some(name) = source_ref {
         AgentCombatDraftSelectionEditV1 {
             source_ref: name.to_owned(),
             preferences: Vec::new(),
         }
-        .validate()?;
+        .validate(locale)?;
     }
     Ok(())
 }
@@ -190,14 +204,16 @@ impl SelectionSourceBinding {
         Ok(name)
     }
 
-    fn resolve(&self, name: &str) -> Result<SelectionSource, String> {
+    fn resolve(
+        &self,
+        name: &str,
+        locale: sts_presentation::Locale,
+    ) -> Result<SelectionSource, String> {
         self.entries
             .iter()
             .find(|(observed, _)| observed == name)
             .map(|(_, source)| source.clone())
-            .ok_or_else(|| {
-                "selection source expired; inspect combat_draft_selection again".to_owned()
-            })
+            .ok_or_else(|| message(locale, "sourceExpired", &[]))
     }
 }
 
@@ -323,13 +339,19 @@ impl AgentCombatDraftV1 {
         }
     }
 
-    pub(crate) fn verify_frame_ref(&self, expected: &str) -> Result<(), String> {
+    pub(crate) fn verify_frame_ref(
+        &self,
+        expected: &str,
+        locale: sts_presentation::Locale,
+    ) -> Result<(), String> {
         match self.env.current_frame_handle() {
             Some(frame) if frame.to_string() == expected => Ok(()),
-            Some(frame) => Err(format!(
-                "combat draft option belongs to another frame; current frame is {frame}"
+            Some(frame) => Err(message(
+                locale,
+                "wrongFrame",
+                &[("frame", &(frame.to_string()))],
             )),
-            None => Err("combat draft is terminal; no current turn option remains".to_owned()),
+            None => Err(message(locale, "terminalOptions", &[])),
         }
     }
 
@@ -395,6 +417,7 @@ impl AgentCombatDraftRuntimeV1 {
         &mut self,
         controller: &mut RunPlayControllerV1,
         commit_ready: bool,
+        locale: sts_presentation::Locale,
     ) -> Result<AgentCombatDraftStatusV1, String> {
         if self.draft.is_none() {
             return Ok(AgentCombatDraftStatusV1 {
@@ -403,20 +426,20 @@ impl AgentCombatDraftRuntimeV1 {
                 durable_head_unchanged: true,
                 root_head_revision: None,
                 reading: DraftReadingV1 {
-                    view: "Combat draft | Not started\n".into(),
+                    view: message(locale, "notStarted", &[]),
                     options: vec![],
                 },
                 commit_candidate_ref: None,
             });
         }
-        self.verify_or_invalidate(controller)?;
+        self.verify_or_invalidate(controller, locale)?;
         let draft = self.draft.as_ref().expect("verified draft remains present");
         Ok(AgentCombatDraftStatusV1 {
             draft_present: true,
             frame_ref: draft.frame_ref(),
             durable_head_unchanged: true,
             root_head_revision: Some(draft.root_head_revision()),
-            reading: reading::status(&draft.env)?,
+            reading: reading::status(&draft.env, locale)?,
             commit_candidate_ref: commit_ready.then_some("c0"),
         })
     }
@@ -426,8 +449,9 @@ impl AgentCombatDraftRuntimeV1 {
         controller: &mut RunPlayControllerV1,
         generation_work: usize,
         engine_steps: usize,
+        locale: sts_presentation::Locale,
     ) -> Result<AgentCombatDraftAdvancedV1, String> {
-        validate_quantum(generation_work, engine_steps)?;
+        validate_quantum(generation_work, engine_steps, locale)?;
         let new_draft = self.draft.is_none();
         if new_draft {
             let root_head_revision = controller.head().head_revision;
@@ -446,7 +470,7 @@ impl AgentCombatDraftRuntimeV1 {
                 },
             )?);
         } else {
-            self.verify_or_invalidate(controller)?;
+            self.verify_or_invalidate(controller, locale)?;
         }
         let draft = self
             .draft
@@ -463,7 +487,7 @@ impl AgentCombatDraftRuntimeV1 {
             durable_head_unchanged: true,
             new_draft,
             generation: project_generation(&report),
-            reading: reading::status(&draft.env)?,
+            reading: reading::status(&draft.env, locale)?,
         };
         if controller.head().head_revision != root_head_revision {
             self.clear();
@@ -477,17 +501,18 @@ impl AgentCombatDraftRuntimeV1 {
         controller: &mut RunPlayControllerV1,
         frame_ref: &str,
         option_ref: &str,
+        locale: sts_presentation::Locale,
     ) -> Result<AgentCombatDraftInspectedV1, String> {
-        validate_option_ref(option_ref)?;
-        self.verify_or_invalidate(controller)?;
+        validate_option_ref(option_ref, locale)?;
+        self.verify_or_invalidate(controller, locale)?;
         let draft = self.draft.as_ref().expect("verified draft remains present");
-        draft.verify_frame_ref(frame_ref)?;
+        draft.verify_frame_ref(frame_ref, locale)?;
         Ok(AgentCombatDraftInspectedV1 {
             frame_ref: draft.active_frame_ref(),
             root_head_revision: draft.root_head_revision(),
             durable_head_unchanged: true,
             option_ref: option_ref.to_owned(),
-            view: reading::inspect(&draft.env, option_ref)?,
+            view: reading::inspect(&draft.env, option_ref, locale)?,
         })
     }
 
@@ -497,10 +522,11 @@ impl AgentCombatDraftRuntimeV1 {
         edit: Option<&AgentCombatDraftSelectionEditV1>,
         source_ref: Option<&str>,
         offset: Option<usize>,
+        locale: sts_presentation::Locale,
     ) -> Result<AgentCombatDraftSelectionV1, String> {
-        validate_selection_request(edit, source_ref, offset)?;
-        self.verify_or_invalidate(controller)?;
-        self.selection_at_verified_root(edit, source_ref, offset)
+        validate_selection_request(edit, source_ref, offset, locale)?;
+        self.verify_or_invalidate(controller, locale)?;
+        self.selection_at_verified_root(edit, source_ref, offset, locale)
     }
 
     fn selection_at_verified_root(
@@ -508,12 +534,13 @@ impl AgentCombatDraftRuntimeV1 {
         edit: Option<&AgentCombatDraftSelectionEditV1>,
         source_ref: Option<&str>,
         offset: Option<usize>,
+        locale: sts_presentation::Locale,
     ) -> Result<AgentCombatDraftSelectionV1, String> {
-        validate_selection_request(edit, source_ref, offset)?;
+        validate_selection_request(edit, source_ref, offset, locale)?;
         let draft = self.draft.as_mut().expect("verified draft remains present");
         let requested = edit.map(|edit| edit.source_ref.as_str()).or(source_ref);
         let source = if let Some(name) = requested {
-            Some(self.selection_binding.resolve(name)?)
+            Some(self.selection_binding.resolve(name, locale)?)
         } else if offset.is_none() && !draft.selection_view()?.families.is_empty() {
             Some(draft.selection_source()?)
         } else {
@@ -549,7 +576,7 @@ impl AgentCombatDraftRuntimeV1 {
                 .selection_outcomes(&source, offset.unwrap_or(0))
                 .map_err(|e| e.to_string())?;
             next_offset = outcomes.next_offset;
-            let reading = selection_reading::focus(view, outcomes, context, remaining)?;
+            let reading = selection_reading::focus(view, outcomes, context, remaining, locale)?;
             (Some(self.selection_binding.observe(source)?), reading)
         } else {
             let offset = offset.unwrap_or(0);
@@ -561,7 +588,7 @@ impl AgentCombatDraftRuntimeV1 {
             for source in page.sources {
                 let label = draft
                     .env
-                    .selection_summary(&source)
+                    .selection_summary(&source, locale)
                     .map_err(|e| e.to_string())?;
                 let action_count = source.action_count();
                 sources.push(selection_reading::SelectionSourceV1 {
@@ -573,7 +600,10 @@ impl AgentCombatDraftRuntimeV1 {
             if offset.saturating_add(8) < page.total {
                 next_offset = Some(offset + 8);
             }
-            (None, selection_reading::index(sources, page.total, offset))
+            (
+                None,
+                selection_reading::index(sources, page.total, offset, locale),
+            )
         };
         Ok(AgentCombatDraftSelectionV1 {
             frame_ref: draft.active_frame_ref(),
@@ -590,12 +620,13 @@ impl AgentCombatDraftRuntimeV1 {
         controller: &mut RunPlayControllerV1,
         frame_ref: &str,
         option_ref: &str,
+        locale: sts_presentation::Locale,
     ) -> Result<AgentCombatDraftChoiceV1, String> {
-        validate_option_ref(option_ref)?;
-        self.verify_or_invalidate(controller)?;
+        validate_option_ref(option_ref, locale)?;
+        self.verify_or_invalidate(controller, locale)?;
         let (root_head_revision, boundary, reading, witness, consumed) = {
             let draft = self.draft.as_mut().expect("verified draft remains present");
-            draft.verify_frame_ref(frame_ref)?;
+            draft.verify_frame_ref(frame_ref, locale)?;
             let boundary = draft.choose(option_ref)?;
             self.selection_binding.entries.clear();
             let witness = if boundary == CompleteTurnOptionBoundary::TerminalWin {
@@ -608,7 +639,7 @@ impl AgentCombatDraftRuntimeV1 {
             (
                 draft.root_head_revision(),
                 boundary,
-                reading::status(&draft.env)?,
+                reading::status(&draft.env, locale)?,
                 witness,
                 draft.consumed(),
             )
@@ -642,8 +673,9 @@ impl AgentCombatDraftRuntimeV1 {
     pub(crate) fn undo(
         &mut self,
         controller: &mut RunPlayControllerV1,
+        locale: sts_presentation::Locale,
     ) -> Result<AgentCombatDraftUndoneV1, String> {
-        self.verify_or_invalidate(controller)?;
+        self.verify_or_invalidate(controller, locale)?;
         let draft = self.draft.as_mut().expect("verified draft remains present");
         draft.undo()?;
         self.selection_binding.entries.clear();
@@ -651,49 +683,76 @@ impl AgentCombatDraftRuntimeV1 {
             frame_ref: draft.active_frame_ref(),
             root_head_revision: draft.root_head_revision(),
             durable_head_unchanged: true,
-            reading: reading::status(&draft.env)?,
+            reading: reading::status(&draft.env, locale)?,
         })
     }
 
-    fn verify_or_invalidate(&mut self, controller: &mut RunPlayControllerV1) -> Result<(), String> {
+    fn verify_or_invalidate(
+        &mut self,
+        controller: &mut RunPlayControllerV1,
+        locale: sts_presentation::Locale,
+    ) -> Result<(), String> {
         let Some(draft) = self.draft.as_ref() else {
-            return Err("combat draft is not started; use combat_draft_advance first".to_owned());
+            return Err(message(locale, "needAdvance", &[]));
         };
         let current_head_revision = controller.head().head_revision;
         let current_position = match controller.current_combat_position_for_lab_v1() {
             Ok(position) => position,
             Err(error) => {
                 self.clear();
-                return Err(format!("combat draft was invalidated: {error}"));
+                return Err(message(
+                    locale,
+                    "invalidated",
+                    &[("error", &(error.to_string()))],
+                ));
             }
         };
         if let Err(error) = draft.verify_root(current_head_revision, current_position) {
             self.clear();
-            return Err(format!("combat draft was invalidated: {error}"));
+            return Err(message(
+                locale,
+                "invalidated",
+                &[("error", &(error.to_string()))],
+            ));
         }
         Ok(())
     }
 }
 
-pub(crate) fn validate_quantum(generation_work: usize, engine_steps: usize) -> Result<(), String> {
+pub(crate) fn validate_quantum(
+    generation_work: usize,
+    engine_steps: usize,
+    locale: sts_presentation::Locale,
+) -> Result<(), String> {
     if generation_work > MAX_GENERATION_WORK {
-        return Err(format!(
-            "combat draft quantum exceeds the generation-work maximum: {generation_work} > {MAX_GENERATION_WORK}"
+        return Err(message(
+            locale,
+            "workLimit",
+            &[
+                ("actual", &(generation_work.to_string())),
+                ("max", &(MAX_GENERATION_WORK.to_string())),
+            ],
         ));
     }
     if engine_steps > MAX_ENGINE_STEPS {
-        return Err(format!(
-            "combat draft quantum exceeds the engine-step maximum: {engine_steps} > {MAX_ENGINE_STEPS}"
+        return Err(message(
+            locale,
+            "engineLimit",
+            &[
+                ("actual", &(engine_steps.to_string())),
+                ("max", &(MAX_ENGINE_STEPS.to_string())),
+            ],
         ));
     }
     Ok(())
 }
 
-pub(crate) fn validate_option_ref(option_ref: &str) -> Result<(), String> {
+pub(crate) fn validate_option_ref(
+    option_ref: &str,
+    locale: sts_presentation::Locale,
+) -> Result<(), String> {
     if option_ref.trim().is_empty() || option_ref.len() > 32 {
-        return Err(
-            "combat draft option_ref must contain 1..=32 bytes; use T0, T1, ...".to_owned(),
-        );
+        return Err(message(locale, "optionRef", &[]));
     }
     Ok(())
 }

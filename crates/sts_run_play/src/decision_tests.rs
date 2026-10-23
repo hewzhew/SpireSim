@@ -424,6 +424,63 @@ pub(crate) fn controller_with_session(
 }
 
 #[test]
+fn draft_language_switch_keeps_private_frame_work_and_durable_game_unchanged() {
+    let directory = TestDirectory::new();
+    let mut game =
+        controller_with_session(&directory.0, "draft-language", &fixture("combat_multiturn"));
+    let before = game.head().clone();
+    let fingerprints = game.current_state_fingerprints_v1().unwrap();
+    let mut draft = crate::agent_combat_draft::AgentCombatDraftRuntimeV1::default();
+    let empty = draft.status(&mut game, false, Locale::ZhCn).unwrap();
+    assert!(empty.reading.view.starts_with("战斗草稿 | 尚未开始"));
+    let generated = draft.advance(&mut game, 1000, 65536, Locale::En).unwrap();
+    let english = draft.status(&mut game, false, Locale::En).unwrap();
+    let chinese = draft.status(&mut game, false, Locale::ZhCn).unwrap();
+    assert_eq!(english.frame_ref, chinese.frame_ref);
+    assert_eq!(english.root_head_revision, chinese.root_head_revision);
+    assert_eq!(
+        english.durable_head_unchanged,
+        chinese.durable_head_unchanged
+    );
+    let mut normalized = chinese.clone();
+    normalized.reading.view = english.reading.view.clone();
+    for (original, translated) in english
+        .reading
+        .options
+        .iter()
+        .zip(&mut normalized.reading.options)
+    {
+        translated.label = original.label.clone();
+    }
+    assert_eq!(normalized, english);
+    assert!(english.reading.view.contains("Strike") && chinese.reading.view.contains("打击"));
+    assert!(chinese.reading.options.iter().any(|option| option
+        .label
+        .chars()
+        .any(|character| ('\u{4e00}'..='\u{9fff}').contains(&character))));
+    let option = english
+        .reading
+        .options
+        .first()
+        .expect("small fixture generates a completed option");
+    let frame = english.frame_ref.as_deref().unwrap();
+    let en_inspect = draft
+        .inspect(&mut game, frame, &option.option_ref, Locale::En)
+        .unwrap();
+    let zh_inspect = draft
+        .inspect(&mut game, frame, &option.option_ref, Locale::ZhCn)
+        .unwrap();
+    assert_eq!(en_inspect.frame_ref, zh_inspect.frame_ref);
+    assert_eq!(en_inspect.option_ref, zh_inspect.option_ref);
+    assert!(en_inspect.view.contains("Successor") && zh_inspect.view.contains("后继"));
+    let reread = draft.status(&mut game, false, Locale::En).unwrap();
+    assert_eq!(english, reread);
+    assert_eq!(generated.frame_ref, frame);
+    assert_eq!(game.head(), &before);
+    assert_eq!(game.current_state_fingerprints_v1().unwrap(), fingerprints);
+}
+
+#[test]
 fn brief_reading_preserves_choices_resources_and_pending_card_rules() {
     let dir = TestDirectory::new();
     for kind in [
@@ -4892,10 +4949,14 @@ fn draft_readings_keep_turn_choices_private_until_a_verified_win_is_adopted() {
     let mut game = controller(&dir.0, "combat_finish");
     let mut draft = AgentCombatDraftRuntimeV1::default();
     let before = game.head().clone();
-    let empty = draft.status(&mut game, false).unwrap();
+    let empty = draft
+        .status(&mut game, false, sts_presentation::Locale::En)
+        .unwrap();
     assert!(!empty.draft_present);
     assert!(empty.reading.options.is_empty());
-    let generated = draft.advance(&mut game, 1024, 65_536).unwrap();
+    let generated = draft
+        .advance(&mut game, 1024, 65_536, sts_presentation::Locale::En)
+        .unwrap();
     assert!(generated.generation.generation_work_consumed <= 1024);
     assert!(generated.generation.engine_steps_consumed <= 65_536);
     assert!(!generated.reading.options.is_empty());
@@ -4914,31 +4975,53 @@ fn draft_readings_keep_turn_choices_private_until_a_verified_win_is_adopted() {
     assert_eq!(option.successor.monsters[0].hp, 0);
     assert!(!option.successor.monsters[0].alive);
     assert!(option.action_count > 0);
-    let reread = draft.status(&mut game, false).unwrap();
+    let reread = draft
+        .status(&mut game, false, sts_presentation::Locale::En)
+        .unwrap();
     assert_eq!(reread.reading.options, generated.reading.options);
     let inspected = draft
-        .inspect(&mut game, &generated.frame_ref, &option.option_ref)
+        .inspect(
+            &mut game,
+            &generated.frame_ref,
+            &option.option_ref,
+            sts_presentation::Locale::En,
+        )
         .unwrap();
     assert!(inspected.view.contains("Strike[1c]"));
     assert!(draft
-        .choose(&mut game, "another frame", &option.option_ref)
+        .choose(
+            &mut game,
+            "another frame",
+            &option.option_ref,
+            sts_presentation::Locale::En
+        )
         .is_err());
     assert_eq!(*game.head(), before);
     let chosen = draft
-        .choose(&mut game, &generated.frame_ref, &option.option_ref)
+        .choose(
+            &mut game,
+            &generated.frame_ref,
+            &option.option_ref,
+            sts_presentation::Locale::En,
+        )
         .unwrap();
     assert_eq!(chosen.response.commit_candidate_ref, Some("c0"));
     assert!(chosen.response.reading.options.is_empty());
     assert!(chosen.response.reading.view.contains("Victory"));
     assert_eq!(*game.head(), before);
-    let restored = draft.undo(&mut game).unwrap();
+    let restored = draft.undo(&mut game, sts_presentation::Locale::En).unwrap();
     assert_eq!(restored.frame_ref, generated.frame_ref);
     assert_eq!(
         restored.reading.options.len(),
         generated.reading.options.len()
     );
     let chosen = draft
-        .choose(&mut game, &restored.frame_ref, &option.option_ref)
+        .choose(
+            &mut game,
+            &restored.frame_ref,
+            &option.option_ref,
+            sts_presentation::Locale::En,
+        )
         .unwrap();
     let attempt = chosen.commit_attempt.unwrap();
     let candidate_id =
@@ -4953,7 +5036,9 @@ fn draft_readings_keep_turn_choices_private_until_a_verified_win_is_adopted() {
     assert_eq!(after.control, DecisionControlV1::Strategic);
     assert!(after.view.contains("Rewards"));
     assert!(
-        draft.status(&mut game, false).is_err(),
+        draft
+            .status(&mut game, false, sts_presentation::Locale::En)
+            .is_err(),
         "adopted combat invalidates the private root"
     );
 }

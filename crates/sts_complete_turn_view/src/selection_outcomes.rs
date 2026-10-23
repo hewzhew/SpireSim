@@ -119,7 +119,10 @@ pub fn render_combat_draft_selection_outcomes_v1(
             } else {
                 ""
             },
-            crate::render_combat_draft_successor_v1(&outcome.successor)
+            crate::render_combat_draft_successor_v1(
+                &outcome.successor,
+                sts_presentation::Locale::En
+            )
         )
         .unwrap();
         match outcome.equivalence {

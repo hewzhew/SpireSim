@@ -28,7 +28,7 @@ fn candidate_draft_keeps_prefix_and_accepts_an_independently_edited_suffix() {
     assert_eq!(candidate.outcome.total_potions_consumed, 0);
     let mut draft = AgentCombatDraftRuntimeV1::default();
     let opened = draft
-        .open_candidate(&mut game, candidate, 2, false)
+        .open_candidate(&mut game, candidate, 2, false, sts_presentation::Locale::En)
         .unwrap();
     assert!(opened.reading.view.contains("Turn 2"));
     assert!(opened.reading.view.contains("2 earlier actions retained"));
@@ -38,27 +38,38 @@ fn candidate_draft_keeps_prefix_and_accepts_an_independently_edited_suffix() {
         "opening does not generate options"
     );
     assert!(
-        draft.undo(&mut game).is_err(),
+        draft.undo(&mut game, sts_presentation::Locale::En).is_err(),
         "undo cannot cross retained prefix"
     );
     assert_eq!(
-        draft.status(&mut game, false).unwrap().frame_ref,
+        draft
+            .status(&mut game, false, sts_presentation::Locale::En)
+            .unwrap()
+            .frame_ref,
         opened.frame_ref
     );
-    let generated = draft.advance(&mut game, 1024, 65_536).unwrap();
-    let saved = draft.status(&mut game, false).unwrap();
+    let generated = draft
+        .advance(&mut game, 1024, 65_536, sts_presentation::Locale::En)
+        .unwrap();
+    let saved = draft
+        .status(&mut game, false, sts_presentation::Locale::En)
+        .unwrap();
     assert!(draft
-        .open_candidate(&mut game, candidate, 1, false)
+        .open_candidate(&mut game, candidate, 1, false, sts_presentation::Locale::En)
         .unwrap_err()
         .contains("replace"));
     assert!(draft
-        .open_candidate(&mut game, candidate, 99, true)
+        .open_candidate(&mut game, candidate, 99, true, sts_presentation::Locale::En)
         .is_err());
     let mut corrupt = candidate.clone();
     corrupt.plan.steps[1].source_public_snapshot_id = "unrelated source".into();
-    assert!(draft.open_candidate(&mut game, &corrupt, 1, true).is_err());
+    assert!(draft
+        .open_candidate(&mut game, &corrupt, 1, true, sts_presentation::Locale::En)
+        .is_err());
     assert_eq!(
-        draft.status(&mut game, false).unwrap(),
+        draft
+            .status(&mut game, false, sts_presentation::Locale::En)
+            .unwrap(),
         saved,
         "failed opens preserve frame and generated work"
     );
@@ -71,7 +82,12 @@ fn candidate_draft_keeps_prefix_and_accepts_an_independently_edited_suffix() {
         .find(|option| option.boundary == "terminal_win" && option.successor.potions[0].is_none())
         .expect("can add a potion even though source consumed none");
     let chosen = draft
-        .choose(&mut game, &generated.frame_ref, &changed.option_ref)
+        .choose(
+            &mut game,
+            &generated.frame_ref,
+            &changed.option_ref,
+            sts_presentation::Locale::En,
+        )
         .unwrap();
     let edited = chosen.commit_attempt.unwrap();
     let result = &edited.attempt.candidates[0];
@@ -79,10 +95,15 @@ fn candidate_draft_keeps_prefix_and_accepts_an_independently_edited_suffix() {
     assert!(result.plan.steps.len() > candidate.plan.steps.len());
     assert_eq!(result.outcome.total_potions_consumed, 1);
     assert_eq!(*game.head(), before);
-    let restored = draft.undo(&mut game).unwrap();
+    let restored = draft.undo(&mut game, sts_presentation::Locale::En).unwrap();
     assert_eq!(restored.frame_ref, generated.frame_ref);
     let again = draft
-        .choose(&mut game, &restored.frame_ref, &changed.option_ref)
+        .choose(
+            &mut game,
+            &restored.frame_ref,
+            &changed.option_ref,
+            sts_presentation::Locale::En,
+        )
         .unwrap();
     assert_eq!(
         again.commit_attempt.unwrap().attempt.candidates[0].plan,
@@ -97,7 +118,9 @@ fn candidate_draft_keeps_prefix_and_accepts_an_independently_edited_suffix() {
             .control,
         DecisionControlV1::Strategic
     );
-    assert!(draft.open_candidate(&mut game, candidate, 2, true).is_err());
+    assert!(draft
+        .open_candidate(&mut game, candidate, 2, true, sts_presentation::Locale::En)
+        .is_err());
 }
 
 #[test]
@@ -118,20 +141,29 @@ fn candidate_draft_explicit_replacement_expires_prior_frame() {
     let source =
         prepare_commit_attempt(&game, CombatPlanningCounters::default(), &witness).unwrap();
     let mut draft = AgentCombatDraftRuntimeV1::default();
-    let old = draft.advance(&mut game, 1024, 65_536).unwrap();
+    let old = draft
+        .advance(&mut game, 1024, 65_536, sts_presentation::Locale::En)
+        .unwrap();
     let opened = draft
-        .open_candidate(&mut game, &source.attempt.candidates[0], 1, true)
+        .open_candidate(
+            &mut game,
+            &source.attempt.candidates[0],
+            1,
+            true,
+            sts_presentation::Locale::En,
+        )
         .unwrap();
     assert_ne!(opened.frame_ref.as_deref(), Some(old.frame_ref.as_str()));
     assert!(draft
         .choose(
             &mut game,
             &old.frame_ref,
-            &old.reading.options[0].option_ref
+            &old.reading.options[0].option_ref,
+            sts_presentation::Locale::En
         )
         .is_err());
     assert!(draft
-        .status(&mut game, false)
+        .status(&mut game, false, sts_presentation::Locale::En)
         .unwrap()
         .reading
         .options

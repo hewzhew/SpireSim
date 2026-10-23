@@ -715,6 +715,7 @@ dependencies = [
  "sts_combat_planner",
  "sts_complete_turn_proposal",
  "sts_complete_turn_view",
+ "sts_presentation",
  "sts_simulator",
 ]
 

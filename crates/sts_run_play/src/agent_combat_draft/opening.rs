@@ -12,16 +12,18 @@ impl AgentCombatDraftRuntimeV1 {
         candidate: &TaskResearchPlanCandidateV1,
         turn: u32,
         replace: bool,
+        locale: sts_presentation::Locale,
     ) -> Result<AgentCombatDraftStatusV1, String> {
         if turn == 0 {
-            return Err("Draft turn starts at 1".into());
+            return Err(message(locale, "turnOne", &[]));
         }
         if self.draft.is_some() && !replace {
-            return Err("A combat draft already exists; use replace: true to replace it".into());
+            return Err(message(locale, "alreadyExists", &[]));
         }
         let position = controller.current_combat_position_for_lab_v1()?;
-        let root = CombatDecisionRoot::new(position.clone())
-            .map_err(|error| format!("combat draft requires a stable root: {error:?}"))?;
+        let root = CombatDecisionRoot::new(position.clone()).map_err(|error| {
+            message(locale, "stableRoot", &[("error", &(format!("{error:?}")))])
+        })?;
         let limit = controller
             .head()
             .combat_plan_options
@@ -58,19 +60,25 @@ impl AgentCombatDraftRuntimeV1 {
                 .map(|step| &step.source_decision.information.snapshot_id)
                 != Some(&candidate.plan.root_public_snapshot_id)
         {
-            return Err("Combat candidate no longer replays from this root".into());
+            return Err(message(locale, "candidateDrift", &[]));
         }
         let prefix_count = probe.steps.iter().position(|step| {
             matches!(&step.source_decision.observation, TaskPublicObservationV1::Combat { observation, .. }
                     if observation.turn.turn_count.saturating_add(1) == turn)
-        }).ok_or_else(|| format!("Combat candidate has no turn {turn}"))?;
+        }).ok_or_else(|| message(locale,"missingTurn", &[("turn", &(turn.to_string()))]))?;
         let prefix = materialize_exact_action_line(
             &EngineCombatStepper,
             &position,
             &inputs[..prefix_count],
             limit,
         )
-        .map_err(|error| format!("Cannot replay combat draft prefix: {error:?}"))?;
+        .map_err(|error| {
+            message(
+                locale,
+                "prefixReplay",
+                &[("error", &(format!("{error:?}")))],
+            )
+        })?;
         let env = CombatDraftEnvV1::from_exact_prefix(
             position,
             TurnOptionGeneratorConfig {
@@ -87,9 +95,14 @@ impl AgentCombatDraftRuntimeV1 {
             env,
             consumed: CombatPlanningCounters::default(),
         };
-        let mut reading = reading::status(&draft.env)?;
-        reading.view.push_str(&format!(
-            "Edit from turn {turn} | {prefix_count} earlier actions retained\n"
+        let mut reading = reading::status(&draft.env, locale)?;
+        reading.view.push_str(&message(
+            locale,
+            "opening",
+            &[
+                ("turn", &(turn.to_string())),
+                ("count", &(prefix_count.to_string())),
+            ],
         ));
         let response = AgentCombatDraftStatusV1 {
             draft_present: true,

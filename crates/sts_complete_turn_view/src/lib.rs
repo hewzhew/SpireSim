@@ -6,6 +6,16 @@
 //! resource provenance, and typed combat-plan transitions.  Training targets
 //! and execution selection belong to downstream callers.
 
+fn draft_message(
+    locale: sts_presentation::Locale,
+    key: &str,
+    parameters: &[(&str, &str)],
+) -> String {
+    locale
+        .text("draft", key, parameters)
+        .expect("combat draft message")
+}
+
 mod combat_draft;
 mod draft_successor;
 pub use draft_successor::{

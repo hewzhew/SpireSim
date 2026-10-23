@@ -2,7 +2,7 @@
 use std::fmt::Write;
 
 use serde::Serialize;
-use sts_core::content::{identity::gameplay_display_label_v1, potions::PotionId};
+use sts_core::content::potions::PotionId;
 use sts_core::runtime::combat::CombatState;
 
 #[derive(Clone, Debug, PartialEq, Serialize)]
@@ -55,43 +55,58 @@ pub(crate) fn project_draft_successor(state: &CombatState) -> CombatDraftSuccess
     }
 }
 
-pub fn render_combat_draft_successor_v1(state: &CombatDraftSuccessorSummaryV1) -> String {
-    let mut text = format!("HP {}/{}", state.hp, state.max_hp);
+pub fn render_combat_draft_successor_v1(
+    state: &CombatDraftSuccessorSummaryV1,
+    locale: sts_presentation::Locale,
+) -> String {
+    let text = |key: &str, values: &[(&str, &str)]| crate::draft_message(locale, key, values);
+    let mut output = text(
+        "hp",
+        &[
+            ("hp", &state.hp.to_string()),
+            ("max", &state.max_hp.to_string()),
+        ],
+    );
     if state.block != 0 {
-        write!(text, " | Block {}", state.block).unwrap();
+        output.push_str(&text("block", &[("block", &state.block.to_string())]));
     }
     for monster in &state.monsters {
-        write!(text, " | M{} ", monster.slot).unwrap();
+        write!(output, " | M{} ", monster.slot).unwrap();
         if monster.escaped {
-            text.push_str("escaped");
+            output.push_str(&text("escaped", &[]));
         } else if monster.half_dead {
-            text.push_str("reviving");
+            output.push_str(&text("reviving", &[]));
         } else if !monster.alive {
-            text.push_str("defeated");
+            output.push_str(&text("defeated", &[]));
         } else {
-            write!(text, "{}/{}", monster.hp, monster.max_hp).unwrap();
+            write!(output, "{}/{}", monster.hp, monster.max_hp).unwrap();
             if monster.block != 0 {
-                write!(text, " +{} Block", monster.block).unwrap();
+                output.push_str(&text(
+                    "monsterBlock",
+                    &[("block", &monster.block.to_string())],
+                ));
             }
         }
     }
-    text.push_str(" | Potions: ");
-    if state.potions.iter().all(Option::is_none) {
-        text.push_str("empty");
+    let empty = text("empty", &[]);
+    let potions = if state.potions.iter().all(Option::is_none) {
+        empty.clone()
     } else {
-        for (slot, potion) in state.potions.iter().enumerate() {
-            if slot > 0 {
-                text.push_str(", ");
-            }
-            write!(
-                text,
-                "P{slot} {}",
-                potion.map_or("empty", gameplay_display_label_v1)
-            )
-            .unwrap();
-        }
-    }
-    text
+        state
+            .potions
+            .iter()
+            .enumerate()
+            .map(|(slot, potion)| {
+                format!(
+                    "P{slot} {}",
+                    potion.map_or(empty.as_str(), |id| locale.entity("potion", id.stable_id()))
+                )
+            })
+            .collect::<Vec<_>>()
+            .join(", ")
+    };
+    output.push_str(&text("potions", &[("potions", &potions)]));
+    output
 }
 
 #[cfg(test)]
@@ -123,11 +138,19 @@ mod tests {
             summary.monsters.iter().map(|m| m.slot).collect::<Vec<_>>(),
             [0, 2, 4]
         );
-        let text = render_combat_draft_successor_v1(&summary);
+        let text = render_combat_draft_successor_v1(&summary, sts_presentation::Locale::En);
         assert!(text.contains("M0 defeated"));
         assert!(text.contains("M2 reviving"));
         assert!(text.contains("M4 30/30 +7 Block"));
         assert!(text.contains("P0 empty, P1 Fairy in a Bottle"));
         assert!(!text.contains("Block 0"));
+        let original = summary.clone();
+        let chinese = render_combat_draft_successor_v1(&summary, sts_presentation::Locale::ZhCn);
+        assert!(chinese.contains("M0 已击败") && chinese.contains("M2 复活中"));
+        assert!(chinese.contains("M4 30/30 +7 格挡"));
+        assert!(chinese.contains(
+            sts_presentation::Locale::ZhCn.entity("potion", PotionId::FairyPotion.stable_id())
+        ));
+        assert_eq!(summary, original);
     }
 }

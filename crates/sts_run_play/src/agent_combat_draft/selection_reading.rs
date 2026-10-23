@@ -54,13 +54,14 @@ pub(super) fn index(
     sources: Vec<SelectionSourceV1>,
     total: usize,
     offset: usize,
+    locale: Locale,
 ) -> SelectionReadingV1 {
-    let mut view = format!("Draft selections | {total} found\n");
+    let mut view = super::message(locale, "selections", &[("count", &total.to_string())]);
     for (index, source) in sources.iter().enumerate() {
         writeln!(view, "{index}: {}", source.label).unwrap();
     }
     if offset + sources.len() < total {
-        view.push_str("More sources available\n");
+        view.push_str(&super::message(locale, "moreSources", &[]));
     }
     SelectionReadingV1 {
         view,
@@ -76,18 +77,19 @@ pub(super) fn focus(
     outcomes: CombatDraftSelectionOutcomesViewV1,
     context: Option<CombatDraftSelectionContextV1>,
     remaining_work: usize,
+    locale: Locale,
 ) -> Result<SelectionReadingV1, String> {
-    let mut view = String::from("Draft selection\n");
+    let mut view = super::message(locale, "selection", &[]);
     if let Some(context) = context {
         for (index, action) in context.actions.iter().enumerate() {
             writeln!(
                 view,
                 "  {index}: {}",
-                render_combat_draft_action_v1(action)?
+                render_combat_draft_action_v1(action, locale)?
             )
             .unwrap();
         }
-        view.push_str(&combat::state_reading(&context.state, Locale::En));
+        view.push_str(&combat::state_reading(&context.state, locale));
     }
     let families = selection
         .families
@@ -95,10 +97,10 @@ pub(super) fn focus(
         .enumerate()
         .map(|(family, value)| SelectionFamilyV1 {
             family,
-            label: combat_selection_reason_label_v1(&value.reason, Locale::En),
+            label: combat_selection_reason_label_v1(&value.reason, locale),
             min: value.declared_min,
             max: value.effective_max,
-            members: combat::selection_members(&value.domain, Locale::En),
+            members: combat::selection_members(&value.domain, locale),
         })
         .collect::<Vec<_>>();
     for family in &families {
@@ -107,7 +109,16 @@ pub(super) fn focus(
         } else {
             format!("{}..{}", family.min, family.max)
         };
-        writeln!(view, "{} | Choose {count}", family.label).unwrap();
+        writeln!(
+            view,
+            "{}",
+            super::message(
+                locale,
+                "family",
+                &[("label", &family.label), ("count", &count)]
+            )
+        )
+        .unwrap();
         for (index, member) in family.members.iter().enumerate() {
             writeln!(view, "  {index}: {}", member.label).unwrap();
         }
@@ -115,23 +126,48 @@ pub(super) fn focus(
     for preference in &selection.preferences {
         writeln!(
             view,
-            "Preferred: {}",
-            selection_label(&families, preference)?
+            "{}",
+            super::message(
+                locale,
+                "preferred",
+                &[(
+                    "selection",
+                    &selection_label(&families, preference, locale)?
+                )]
+            )
         )
         .unwrap();
     }
-    write!(view, "Outcomes: {}", outcomes.total).unwrap();
+    write!(
+        view,
+        "{}",
+        super::message(
+            locale,
+            "outcomes",
+            &[("count", &outcomes.total.to_string())]
+        )
+    )
+    .unwrap();
     if !outcomes.outcomes.is_empty() {
         write!(
             view,
-            " | Showing {}..{}",
-            outcomes.offset + 1,
-            outcomes.offset + outcomes.outcomes.len()
+            "{}",
+            super::message(
+                locale,
+                "showing",
+                &[
+                    ("first", &(outcomes.offset + 1).to_string()),
+                    (
+                        "last",
+                        &(outcomes.offset + outcomes.outcomes.len()).to_string()
+                    )
+                ]
+            )
         )
         .unwrap();
     }
     if remaining_work == 0 {
-        view.push_str(" | Complete");
+        view.push_str(&super::message(locale, "completed", &[]));
     }
     view.push('\n');
     let options = outcomes
@@ -142,16 +178,33 @@ pub(super) fn focus(
             let mut label = format!(
                 "{}: {}{}{} | {} | {}",
                 outcome.handle,
-                selection_label(&families, &outcome.selection)?,
+                selection_label(&families, &outcome.selection, locale)?,
                 match outcome.equivalence {
-                    Some(CombatSelectionStateEquivalenceV1::GamblingChipCancel) => " via Cancel",
-                    None => "",
+                    Some(CombatSelectionStateEquivalenceV1::GamblingChipCancel) =>
+                        super::message(locale, "viaCancel", &[]),
+                    None => String::new(),
                 },
-                if preferred { " (preferred)" } else { "" },
-                super::reading::boundary_label(outcome.boundary),
-                sts_complete_turn_view::render_combat_draft_successor_v1(&outcome.successor)
+                if preferred {
+                    super::message(locale, "preferredSuffix", &[])
+                } else {
+                    String::new()
+                },
+                super::reading::boundary_label(outcome.boundary, locale),
+                sts_complete_turn_view::render_combat_draft_successor_v1(
+                    &outcome.successor,
+                    locale
+                )
             );
-            write!(label, " | {} actions", outcome.action_count).unwrap();
+            write!(
+                label,
+                "{}",
+                super::message(
+                    locale,
+                    "outcomeActions",
+                    &[("count", &outcome.action_count.to_string())]
+                )
+            )
+            .unwrap();
             writeln!(view, "{label}").unwrap();
             Ok(SelectionOutcomeV1 {
                 option: super::reading::DraftOptionV1 {
@@ -182,6 +235,7 @@ pub(super) fn focus(
 fn selection_label(
     families: &[SelectionFamilyV1],
     selection: &CombatDraftSelectionMemberV1,
+    locale: Locale,
 ) -> Result<String, String> {
     let family = families
         .iter()
@@ -201,7 +255,7 @@ fn selection_label(
         })
         .collect::<Result<Vec<_>, String>>()?;
     Ok(if cards.is_empty() {
-        "0 cards".to_owned()
+        super::message(locale, "zeroCards", &[])
     } else {
         cards.join(", ")
     })

@@ -688,12 +688,12 @@ impl AgentShellRequestV1 {
             ..
         } = self
         {
-            validate_combat_draft_quantum_v1(*generation_work, *engine_steps)?;
+            validate_combat_draft_quantum_v1(*generation_work, *engine_steps, locale)?;
         }
         if let Self::CombatDraftInspect { option_ref, .. }
         | Self::CombatDraftChoose { option_ref, .. } = self
         {
-            validate_combat_draft_option_ref_v1(option_ref)?;
+            validate_combat_draft_option_ref_v1(option_ref, locale)?;
         }
         if let Self::CombatDraftSelection {
             edit,
@@ -706,6 +706,7 @@ impl AgentShellRequestV1 {
                 edit.as_ref(),
                 source_ref.as_deref(),
                 *offset,
+                locale,
             )?;
         }
         if let Self::CommitCombatPlan { candidate_ref, .. } = self {
@@ -5332,7 +5333,7 @@ fn handle_valid_request_v1(
     if capabilities.permission_envelope.information_ceiling == "public_only"
         && !request.public_manual_operation()
     {
-        return Err("Public manual play disables search, private previews and exact hidden piles. Execute actual actions; use retained returns to retry.".into());
+        return Err(request_message(locale, "manualOnly", &[]));
     }
     match request {
         AgentShellRequestV1::Decision {
@@ -5471,7 +5472,7 @@ fn handle_valid_request_v1(
         }
         AgentShellRequestV1::SlPiles { .. } => {
             if capabilities.permission_envelope.information_ceiling != "privileged_exact_allowed" {
-                return Err("SL piles require privileged exact information permission".into());
+                return Err(request_message(locale, "exactPilesPermission", &[]));
             }
             let root = controller.current_combat_position_for_lab_v1()?;
             Ok((
@@ -6007,7 +6008,8 @@ fn handle_valid_request_v1(
                         == Some(&selected.candidate_id)
                 })
                 .ok_or("combat draft source is missing from the cached report")?;
-            let response = combat_draft.open_candidate(controller, candidate, *turn, *replace)?;
+            let response =
+                combat_draft.open_candidate(controller, candidate, *turn, *replace, locale)?;
             if cached.source == AgentCombatResearchCacheSourceV1::AnalystDraft {
                 *combat_research_cache = None;
             }
@@ -6020,7 +6022,7 @@ fn handle_valid_request_v1(
             });
             Ok((
                 AgentShellResultV1::CombatDraftStatus {
-                    response: combat_draft.status(controller, commit_ready)?,
+                    response: combat_draft.status(controller, commit_ready, locale)?,
                 },
                 false,
             ))
@@ -6031,7 +6033,12 @@ fn handle_valid_request_v1(
             ..
         } => Ok((
             AgentShellResultV1::CombatDraftAdvanced {
-                response: combat_draft.advance(controller, *generation_work, *engine_steps)?,
+                response: combat_draft.advance(
+                    controller,
+                    *generation_work,
+                    *engine_steps,
+                    locale,
+                )?,
             },
             false,
         )),
@@ -6041,7 +6048,7 @@ fn handle_valid_request_v1(
             ..
         } => Ok((
             AgentShellResultV1::CombatDraftInspected {
-                response: combat_draft.inspect(controller, frame_ref, option_ref)?,
+                response: combat_draft.inspect(controller, frame_ref, option_ref, locale)?,
             },
             false,
         )),
@@ -6050,7 +6057,7 @@ fn handle_valid_request_v1(
             option_ref,
             ..
         } => {
-            let choice = combat_draft.choose(controller, frame_ref, option_ref)?;
+            let choice = combat_draft.choose(controller, frame_ref, option_ref, locale)?;
             if let Some(attempt) = choice.commit_attempt {
                 *combat_research_cache = Some(combat_research_cache_from_draft_attempt_v1(
                     choice.response.root_head_revision,
@@ -6065,7 +6072,7 @@ fn handle_valid_request_v1(
             ))
         }
         AgentShellRequestV1::CombatDraftUndo { .. } => {
-            let response = combat_draft.undo(controller)?;
+            let response = combat_draft.undo(controller, locale)?;
             if combat_research_cache.as_ref().is_some_and(|cached| {
                 cached.source == AgentCombatResearchCacheSourceV1::AnalystDraft
             }) {
@@ -6085,6 +6092,7 @@ fn handle_valid_request_v1(
                     edit.as_ref(),
                     source_ref.as_deref(),
                     *offset,
+                    locale,
                 )?,
             },
             false,
@@ -6546,7 +6554,7 @@ pub fn run_terminal_agent_jsonl_v1(
     if !matches!(head.position, RunPlayPositionV1::Terminal { .. })
         || head.current_decision.is_some()
     {
-        return Err("terminal agent transport requires a terminal head".to_string());
+        return Err(request_message(locale, "terminalHead", &[]));
     }
     let observation = project_agent_observation_v1(head, capabilities.clone(), None, locale)?;
     run_agent_jsonl_transport_v1(input, output, locale, |request| match request {
@@ -6594,7 +6602,7 @@ pub fn run_terminal_agent_jsonl_v1(
             false,
         )),
         AgentShellRequestV1::Quit { .. } => Ok((AgentShellResultV1::Quitting, true)),
-        _ => Err("agent-shell command requires a decision head".to_string()),
+        _ => Err(request_message(locale, "decisionHead", &[])),
     })
 }
 
@@ -8885,7 +8893,7 @@ mod tests {
         run_terminal_agent_jsonl_v1(
             &head,
             capabilities,
-            std::io::Cursor::new(input),
+            std::io::Cursor::new(input.as_bytes()),
             &mut output,
             Locale::En,
         )
@@ -8908,6 +8916,32 @@ mod tests {
         assert_eq!(responses[2]["error"]["code"], "command_failed");
         assert_eq!(responses[3]["status"], "ok");
         assert_eq!(responses[3]["result"]["kind"], "quitting");
+        let original = head.clone();
+        let mut chinese = Vec::new();
+        run_terminal_agent_jsonl_v1(
+            &head,
+            AgentCapabilitiesV1::new(AgentPermissionEnvelopeV1::a20_first_unrestricted_v1(None)),
+            std::io::Cursor::new(input.as_bytes()),
+            &mut chinese,
+            Locale::ZhCn,
+        )
+        .unwrap();
+        let chinese = String::from_utf8(chinese)
+            .unwrap()
+            .lines()
+            .map(|line| serde_json::from_str::<serde_json::Value>(line).unwrap())
+            .collect::<Vec<_>>();
+        assert_eq!(chinese.len(), 4);
+        assert_eq!(chinese[2]["error"]["code"], responses[2]["error"]["code"]);
+        assert_eq!(
+            chinese[2]["error"]["message"],
+            "agent-shell 的此命令需要决策 head"
+        );
+        assert_eq!(
+            chinese[1]["result"]["observation"]["position"],
+            responses[1]["result"]["observation"]["position"]
+        );
+        assert_eq!(head, original);
     }
 
     #[test]

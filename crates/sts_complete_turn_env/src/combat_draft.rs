@@ -175,9 +175,14 @@ impl CombatDraftEnvV1 {
     pub fn selection_summary(
         &self,
         source: &SelectionSource,
+        locale: sts_presentation::Locale,
     ) -> Result<String, CombatDraftEnvErrorV1> {
-        sts_complete_turn_view::summarize_combat_draft_selection_source_v1(&self.draft, source)
-            .map_err(CombatDraftEnvErrorV1::View)
+        sts_complete_turn_view::summarize_combat_draft_selection_source_v1(
+            &self.draft,
+            source,
+            locale,
+        )
+        .map_err(CombatDraftEnvErrorV1::View)
     }
 
     pub fn selection_context(

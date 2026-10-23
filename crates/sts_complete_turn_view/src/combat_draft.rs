@@ -390,14 +390,21 @@ fn intent_summary(intent: &CombatLearningIntentV1) -> String {
 }
 
 fn render_action_summary(action: &CompleteTurnSelectedActionV1) -> Result<String, String> {
-    render_action(action, false)
+    render_action(action, false, sts_presentation::Locale::En)
 }
 
-pub fn render_action_brief(action: &CompleteTurnSelectedActionV1) -> Result<String, String> {
-    render_action(action, true)
+pub fn render_action_brief(
+    action: &CompleteTurnSelectedActionV1,
+    locale: sts_presentation::Locale,
+) -> Result<String, String> {
+    render_action(action, true, locale)
 }
 
-fn render_action(action: &CompleteTurnSelectedActionV1, brief: bool) -> Result<String, String> {
+fn render_action(
+    action: &CompleteTurnSelectedActionV1,
+    brief: bool,
+    locale: sts_presentation::Locale,
+) -> Result<String, String> {
     match action {
         CompleteTurnSelectedActionV1::Atomic {
             action,
@@ -414,21 +421,48 @@ fn render_action(action: &CompleteTurnSelectedActionV1, brief: bool) -> Result<S
                     .ok_or_else(|| "draft play action is missing its public card".to_owned())?;
                 let summary = if brief {
                     let cost = match card.effective_cost {
-                        -1 => "Xc".to_owned(),
-                        -2 => "unplayable".to_owned(),
-                        cost => format!("{cost}c"),
+                        -1 => crate::draft_message(locale, "xCost", &[]),
+                        -2 => locale
+                            .text("mechanics", "card.unplayable", &[])
+                            .expect("unplayable card"),
+                        cost => {
+                            crate::draft_message(locale, "cost", &[("cost", &cost.to_string())])
+                        }
                     };
                     format!(
                         "{}[{cost}]",
-                        crate::selection_intent::card_name(Some(card.card_id), Some(card.upgrades)),
+                        crate::selection_intent::card_name(
+                            Some(card.card_id),
+                            Some(card.upgrades),
+                            locale
+                        ),
                     )
                 } else {
                     card_summary(card)
                 };
                 if brief {
                     return Ok(target_monster_index.map_or_else(
-                        || format!("Play H{hand_index} {summary}"),
-                        |target| format!("Play H{hand_index} {summary} @M{target}"),
+                        || {
+                            crate::draft_message(
+                                locale,
+                                "play",
+                                &[
+                                    ("hand", &(hand_index.to_string())),
+                                    ("card", &(summary.clone())),
+                                ],
+                            )
+                        },
+                        |target| {
+                            crate::draft_message(
+                                locale,
+                                "playTarget",
+                                &[
+                                    ("hand", &(hand_index.to_string())),
+                                    ("card", &(summary.clone())),
+                                    ("target", &(target.to_string())),
+                                ],
+                            )
+                        },
                     ));
                 }
                 Ok(target_monster_index.map_or_else(
@@ -444,14 +478,33 @@ fn render_action(action: &CompleteTurnSelectedActionV1, brief: bool) -> Result<S
                     .as_ref()
                     .ok_or_else(|| "draft potion action is missing its public potion".to_owned())?;
                 let name = if brief {
-                    sts_core::content::identity::gameplay_display_label_v1(potion.potion_id)
+                    locale.entity("potion", potion.potion_id.stable_id())
                 } else {
                     potion.potion_id.stable_id()
                 };
                 if brief {
                     return Ok(target_monster_index.map_or_else(
-                        || format!("Use P{potion_index} {name}"),
-                        |target| format!("Use P{potion_index} {name} @M{target}"),
+                        || {
+                            crate::draft_message(
+                                locale,
+                                "use",
+                                &[
+                                    ("slot", &(potion_index.to_string())),
+                                    ("potion", &(name.to_owned())),
+                                ],
+                            )
+                        },
+                        |target| {
+                            crate::draft_message(
+                                locale,
+                                "useTarget",
+                                &[
+                                    ("slot", &(potion_index.to_string())),
+                                    ("potion", &(name.to_owned())),
+                                    ("target", &(target.to_string())),
+                                ],
+                            )
+                        },
                     ));
                 }
                 Ok(target_monster_index.map_or_else(
@@ -464,20 +517,40 @@ fn render_action(action: &CompleteTurnSelectedActionV1, brief: bool) -> Result<S
                     "draft potion discard is missing its public potion".to_owned()
                 })?;
                 let name = if brief {
-                    sts_core::content::identity::gameplay_display_label_v1(potion.potion_id)
+                    locale.entity("potion", potion.potion_id.stable_id())
                 } else {
                     potion.potion_id.stable_id()
                 };
-                Ok(format!("discard P{potion_index} {name}"))
+                Ok(if brief {
+                    crate::draft_message(
+                        locale,
+                        "discard",
+                        &[("slot", &potion_index.to_string()), ("potion", name)],
+                    )
+                } else {
+                    format!("discard P{potion_index} {name}")
+                })
             }
-            PublicCombatAtomicActionV1::EndTurn => {
-                Ok(if brief { "End Turn" } else { "end_turn" }.to_owned())
-            }
-            PublicCombatAtomicActionV1::SubmitIndexedChoice { choice_index } => {
-                Ok(format!("choose option[{choice_index}]"))
-            }
-            PublicCombatAtomicActionV1::Proceed => Ok("proceed".to_owned()),
-            PublicCombatAtomicActionV1::Cancel => Ok("cancel".to_owned()),
+            PublicCombatAtomicActionV1::EndTurn => Ok(if brief {
+                crate::draft_message(locale, "end", &[])
+            } else {
+                "end_turn".to_owned()
+            }),
+            PublicCombatAtomicActionV1::SubmitIndexedChoice { choice_index } => Ok(if brief {
+                crate::draft_message(locale, "choose", &[("index", &choice_index.to_string())])
+            } else {
+                format!("choose option[{choice_index}]")
+            }),
+            PublicCombatAtomicActionV1::Proceed => Ok(if brief {
+                crate::draft_message(locale, "proceed", &[])
+            } else {
+                "proceed".to_owned()
+            }),
+            PublicCombatAtomicActionV1::Cancel => Ok(if brief {
+                crate::draft_message(locale, "cancel", &[])
+            } else {
+                "cancel".to_owned()
+            }),
         },
         CompleteTurnSelectedActionV1::Selection {
             family,
@@ -502,7 +575,7 @@ fn render_action(action: &CompleteTurnSelectedActionV1, brief: bool) -> Result<S
                         };
                         format!(
                             "{ordinal} {}",
-                            crate::selection_intent::card_name(id, upgrades)
+                            crate::selection_intent::card_name(id, upgrades, locale)
                         )
                     } else {
                         selection_candidate_summary(*ordinal, candidate)
@@ -512,10 +585,7 @@ fn render_action(action: &CompleteTurnSelectedActionV1, brief: bool) -> Result<S
             if brief {
                 return Ok(format!(
                     "{} [{}]",
-                    crate::selection_intent::reason_label(
-                        &family.reason,
-                        sts_presentation::Locale::En
-                    ),
+                    crate::selection_intent::reason_label(&family.reason, locale),
                     selected.join(", ")
                 ));
             }

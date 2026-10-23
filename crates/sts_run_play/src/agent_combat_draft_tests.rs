@@ -94,13 +94,19 @@ fn frame_ref_rejects_sibling_labels_and_resume_keeps_the_search_budget() {
     let frame_ref =
         |draft: &AgentCombatDraftV1| draft.test_env().current_frame_handle().unwrap().to_string();
     let parent = frame_ref(&draft);
-    draft.verify_frame_ref(&parent).expect("current frame");
+    draft
+        .verify_frame_ref(&parent, sts_presentation::Locale::En)
+        .expect("current frame");
 
     draft.choose("T0").expect("choose first turn");
 
     let child = frame_ref(&draft);
-    assert!(draft.verify_frame_ref(&parent).is_err());
-    draft.verify_frame_ref(&child).expect("current child");
+    assert!(draft
+        .verify_frame_ref(&parent, sts_presentation::Locale::En)
+        .is_err());
+    draft
+        .verify_frame_ref(&child, sts_presentation::Locale::En)
+        .expect("current child");
     let child_generation = draft
         .advance(CombatPlanningQuantum::deterministic(1, 65_536))
         .unwrap();
@@ -109,7 +115,7 @@ fn frame_ref_rejects_sibling_labels_and_resume_keeps_the_search_budget() {
     draft.undo().expect("undo");
     assert_eq!(draft.consumed(), consumed, "undo performs no generation");
     draft
-        .verify_frame_ref(&parent)
+        .verify_frame_ref(&parent, sts_presentation::Locale::En)
         .expect("parent frame restored");
     assert!(draft
         .render_status()
@@ -117,11 +123,13 @@ fn frame_ref_rejects_sibling_labels_and_resume_keeps_the_search_budget() {
         .contains(&format!("T0 -> {child}")));
     draft.choose("T1").expect("sibling at same depth");
     assert_ne!(frame_ref(&draft), child);
-    assert!(draft.verify_frame_ref(&child).is_err());
+    assert!(draft
+        .verify_frame_ref(&child, sts_presentation::Locale::En)
+        .is_err());
     draft.undo().unwrap();
     draft.choose("T0").unwrap();
     draft
-        .verify_frame_ref(&child)
+        .verify_frame_ref(&child, sts_presentation::Locale::En)
         .expect("original child restored");
     assert_eq!(draft.render_status().unwrap(), child_view);
     assert_eq!(
