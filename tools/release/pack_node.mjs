@@ -121,7 +121,11 @@ if (process.argv.slice(2).join(' ') === '--check') {
         await mkdir(verification);
         await writeFile(join(verification, 'package.json'), '{"private":true,"type":"module"}\n');
         const hostPeers = Object.entries(manifest.peerDependencies ?? {}).map(([name, version]) => `${name}@${version}`);
-        await npmCommand(verification, ['install', '--offline', '--ignore-scripts', '--no-audit', '--no-fund', path, ...hostPeers]);
+        // Resolve and retain the consumer lock before testing an offline
+        // reinstall. A clean machine's cache need not contain peer metadata.
+        await npmCommand(verification, ['install', '--ignore-scripts', '--no-audit', '--no-fund', path, ...hostPeers]);
+        await copyFile(join(verification, 'package-lock.json'), join(output, `verify-lock-${directoryName}.json`));
+        await npmCommand(verification, ['ci', '--offline', '--ignore-scripts', '--no-audit', '--no-fund']);
         const installed = join(verification, 'node_modules', ...manifest.name.split('/'));
         const workbench = directoryName === 'run_play' ? installed : join(installed, 'node_modules/@sts-simulator/run-play');
         const renderer = join(workbench, 'render.mjs');
