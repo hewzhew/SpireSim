@@ -203,11 +203,12 @@ CLI 在会话或命令之前接受 `--locale en|zh-CN`，默认英语。该选�
 
 ## 运行
 
-需要 Node.js 22 或更新版本。在本目录执行：
+需要 Node.js 22 或更新版本。录制测试复用 run-play 的动作规范化，从仓库根目录安装这两个模块的依赖后运行：
 
 ```powershell
-npm ci
-npm test
+npm --prefix tools/presentation ci
+npm --prefix tools/run_play ci
+npm --prefix tools/presentation test
 ```
 
 `i18next` 负责消息插值、英语复数和语言回退，`Intl.NumberFormat` 负责展示数字。`esbuild` 是离线页面的构建依赖；生成的页面不需要联网或安装 Node。
